@@ -26,6 +26,7 @@ import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.DateFormat;
 import org.mind.framework.util.MatcherUtils;
+import org.mind.framework.util.UriPath;
 
 
 /**
@@ -125,7 +126,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 			throws IOException, ServletException {
 
 		long begin = DateFormat.getTimeMillis();
-		String path = this.processRequestPath(request, response);
+		String path = UriPath.get(request);
 		
 		// set default character encoding to "utf-8" if encoding is not set:
 		if (request.getCharacterEncoding() == null)
@@ -315,40 +316,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     		log.info("Redirect path: " + uri);
     	
         response.sendRedirect(response.encodeRedirectURL(uri));
-	}
-	
-	/**
-     * Identify and return the path component (from the request URI) that
-     * we will use to select an Action to dispatch with.  If no such
-     * path can be identified, create an error response and return
-     * <code>null</code>.
-     *
-     * @param request The servlet request we are processing
-     * @param response The servlet response we are creating
-     *
-     * @exception IOException if an input/output error occurs
-     */
-	protected String processRequestPath(HttpServletRequest request, HttpServletResponse response) throws IOException{
-		String uri = request.getRequestURI();
-		String contextPath = request.getContextPath();
-		
-//		log.info("path info: "+ request.getPathInfo());
-//		log.info("servlet path: "+ request.getServletPath());
-//		log.info("Query string: "+ request.getQueryString());
-		
-		uri = contextPath.length() > 0? uri.substring(contextPath.length()) : uri;
-		
-		// check is root path
-		if(uri.length() > 1){
-			uri = uri.endsWith("/")? uri.substring(0, uri.length() - 1) : uri;
-		}
-		
-		// uri has sessionid
-		int hasJsession = uri.indexOf(";jsessionid");
-		if(hasJsession != -1)
-			uri = uri.substring(0, hasJsession);
-		
-		return uri;
 	}
 	
 	/**
