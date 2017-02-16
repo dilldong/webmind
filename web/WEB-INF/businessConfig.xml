@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+          	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+           	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+	
+	<!-- 发送邮件服务 -->
+	<bean id="emailService" class="cn.qianxiaoer.mail.service.EmailServiceImpl">
+		<property name="queueService" ref="queueService" />
+	</bean>
+	
+	
+	<!-- 悦付初始化需要缓存的服务 -->
+<!-- 	<bean id="initCacheService" class="org.mind.framework.service.UpdateCacheService"> -->
+<!-- 		<property name="spaceTime" value="3600000" />毫秒, 60分钟表示循环处理一次 -->
+<!-- 		<property name="updaters"> -->
+<!-- 			<list> -->
+<!-- 				<bean class="com.paybelieve.common.InitializationCache"> -->
+<!-- 					<property name="cache" ref="cacheManager" /> -->
+<!-- 					<property name="jdbcTemplate" ref="jdbcTemplate"/> -->
+<!-- 				</bean> -->
+<!-- 			</list> -->
+<!-- 		</property> -->
+<!-- 	</bean> -->
+	
+	<!-- spider平台初始化需要缓存的服务 -->
+	<bean id="plantformCacheService" class="org.mind.framework.service.UpdateCacheService">
+		<property name="spaceTime" value="1800000" /><!-- 毫秒, 30分钟表示循环处理一次 -->
+		<property name="updaters">
+			<list>
+				<bean class="com.paybelieve.common.InitializationCache">
+					<property name="cache" ref="cacheManager" />
+					<property name="jdbcTemplate" ref="jdbcTemplate"/>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+</beans>
