@@ -7,20 +7,22 @@
            	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
            	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
 
-	<!-- 通过Spring对AOP注解方式进行AOP编程，这里是打开切面的解释器 xmlns:aop="http://www.springframework.org/schema/aop" 
+	<!-- 
+		Spring AOP xmlns:aop="http://www.springframework.org/schema/aop" 
 		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd 
-		<aop:aspectj-autoproxy /> -->
+		<aop:aspectj-autoproxy /> 
+	-->
 
-	<context:component-scan
-		base-package="cn.qianxiaoer,org.mind.freamework,com.paybelieve" />
+	<context:component-scan base-package="org.mind.freamework" />
 
-	<!--这句可以去掉，因为 <context:component-scan/>默认打开注解装配 <context:annotation-config 
-		/> -->
+	<!--<context:component-scan/> default auto-scan  
+		<context:annotation-config />
+	-->
 
 	<tx:annotation-driven transaction-manager="txManager" />
 	<context:property-placeholder location="classpath:frame.properties" />
 
-	<!-- BoneCP configuration -->
+	<!-- HikariCP configuration -->
 	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="shutdown">
 		<property name="driverClass" value="${db.driverClass}" />
 		<property name="jdbcUrl" value="${db.jdbcUrl}" />
@@ -48,17 +50,17 @@
 
 	<bean id="cacheManager" class="org.mind.framework.cache.LruCache"
 		scope="singleton" factory-method="initCache" destroy-method="destroy">
-		<property name="cacheSize" value="2000" /><!-- 活跃缓存条目大小 -->
-		<property name="freeMemory" value="0" /><!-- 当前JVM可用内存大小，0表示忽略该参数 -->
-		<property name="timeout" value="0" /><!-- 缓存条目超时设置，0表示忽略该参数 -->
+		<property name="cacheSize" value="2000" />
+		<property name="freeMemory" value="0" /><!-- 0 igone params -->
+		<property name="timeout" value="0" /><!-- 0 igone params -->
 	</bean>
 
 	<!-- Email service -->
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl"
 		scope="singleton">
-		<property name="username" value="no-reply@qianxiaoer.cn" />
-		<property name="password" value="noreply123" />
-		<property name="host" value="smtp.exmail.qq.com" />
+		<property name="username" value="no-reply@xxxx.com" />
+		<property name="password" value="xxxx" />
+		<property name="host" value="smtp.exmail.xxxx.com" />
 		<property name="port" value="25" />
 		<property name="javaMailProperties">
 			<props>
@@ -68,7 +70,7 @@
 		</property>
 	</bean>
 
-	<!-- velocity配置 -->
+	<!-- velocity config -->
 	<bean id="velocityEngine"
 		class="org.springframework.ui.velocity.VelocityEngineFactoryBean"
 		scope="singleton">
@@ -77,7 +79,7 @@
 	</bean>
 
 
-	<!-- 消息队列服务 -->
+	<!-- MQ config -->
 	<bean id="queueService" class="org.mind.framework.service.queue.QueueLittle"
 		destroy-method="destroy">
 		<property name="queueInstance">
@@ -85,9 +87,9 @@
 		</property>
 	</bean>
 
-	<!-- 启用消息队列服务 -->
+	<!-- start MQ service -->
 	<bean id="startQueueService" class="org.mind.framework.service.UpdateCacheService">
-		<property name="spaceTime" value="10" /><!-- 毫秒, 0表示不循环处理 -->
+		<property name="spaceTime" value="10" /><!-- ms, 0 not loop -->
 		<property name="updaters">
 			<list>
 				<bean class="org.mind.framework.service.queue.ConsumerService">
@@ -97,13 +99,12 @@
 		</property>
 	</bean>
 
-	<!-- 主服务类 -->
+	<!-- WEB main service -->
 	<bean id="mainService" class="org.mind.framework.service.WebMainService"
 		destroy-method="stop">
 		<property name="childServices">
 			<list>
 				<ref local="startQueueService" />
-				<ref bean="plantformCacheService" />
 			</list>
 		</property>
 	</bean>
