@@ -10,7 +10,6 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.log4j.Logger;
 import org.mind.framework.util.JsonUtils;
-import org.mind.framework.util.Response;
 
 import com.google.gson.reflect.TypeToken;
 

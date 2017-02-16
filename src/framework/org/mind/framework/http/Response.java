@@ -1,16 +1,16 @@
-package org.mind.framework.util;
+package org.mind.framework.http;
 
+
+import org.mind.framework.util.JsonUtils;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 
 public class Response<T> {
 	
-	// ResponseState枚举类中的type
 	@Expose
 	private int state;
 
-	// ResponseState枚举类中的name
 	@Expose
 	private String msg;
 
@@ -24,14 +24,6 @@ public class Response<T> {
 	public Response(int state, String msg) {
 		this.state = state;
 		this.msg = msg;
-	}
-	
-	public Response(ResponseState state) {
-		this(state.getState(), state.getMsg());
-	}
-	
-	public Response(ResponseState state, T body) {
-		this(state.getState(), state.getMsg(), body);
 	}
 
 	public Response(int state, String msg, T body) {
@@ -49,11 +41,6 @@ public class Response<T> {
 
 	public int getState() {
 		return state;
-	}
-	
-	public void setState(ResponseState state){
-		this.setState(state.getState());
-		this.setMsg(state.getMsg());
 	}
 	
 	public void setState(int state) {
