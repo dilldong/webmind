@@ -29,11 +29,11 @@ public abstract class AbstractCache {
 		
 	}
 	
-	protected String realKey(CacheKeyValue prefix, String key){
+	protected String realKey(String prefix, String key){
 		return
 			new StringBuffer()
 				.append(prefix)
-				.append(CacheKeyValue.SEPARATOR)
+				.append(".")
 				.append(key)
 				.toString();
 	}

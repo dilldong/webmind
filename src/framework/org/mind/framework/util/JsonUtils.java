@@ -1,5 +1,6 @@
 package org.mind.framework.util;
 
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -295,6 +296,17 @@ public class JsonUtils {
 	public static <T> T fromJson(String json, TypeToken<T> token) {
 		return 
 			fromJson(json, token, null);
+	}
+	
+	
+	public static <T> T fromJson(Reader reader, TypeToken<T> token) {
+		if(reader == null)
+			return null;
+		
+		GsonBuilder builder = new GsonBuilder();
+		Gson gson = builder.setDateFormat(DEFAULT_DATE_PATTERN).create();
+		return 
+				gson.fromJson(reader, token.getType());
 	}
 
 	/**

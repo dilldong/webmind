@@ -19,7 +19,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	Cacheable addCache(CacheKeyValue prefix, String key, Object value);
+	Cacheable addCache(String prefix, String key, Object value);
 	
 	/**
 	 * 添加一个新条目
@@ -32,7 +32,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	Cacheable addCache(CacheKeyValue prefix, String key, Object value, boolean check);
+	Cacheable addCache(String prefix, String key, Object value, boolean check);
 
 	/**
 	 * 删除缓存
@@ -41,7 +41,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	void removeCache(CacheKeyValue prefix, String key);
+	void removeCache(String prefix, String key);
 
 	/**
 	 * 获得缓存对象
@@ -51,7 +51,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	CacheElement getCache(CacheKeyValue prefix, String key);
+	CacheElement getCache(String prefix, String key);
 	
 	
 	/**
@@ -65,7 +65,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	CacheElement getCache(CacheKeyValue prefix, String key, long interval);
+	CacheElement getCache(String prefix, String key, long interval);
 
 	
 	/**
@@ -84,7 +84,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 18, 2011
 	 */
-	public boolean containsKey(CacheKeyValue prefix, String key);
+	public boolean containsKey(String prefix, String key);
 	
 	/**
 	 * 获得所有的缓存对象

@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.mind.framework.util.DateFormat;
+import org.mind.framework.util.DateFormatUtils;
 
 /**
  * 默认基于LRU(Least Recently Used)的缓存实现
@@ -104,7 +104,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 	 * 
 	 * @author dongping
 	 */
-	public Cacheable addCache(CacheKeyValue prefix, String key, Object value) {
+	public Cacheable addCache(String prefix, String key, Object value) {
 		return addCache(prefix, key, value, false);
 	}
 
@@ -119,7 +119,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 	 * 
 	 * @author dongping
 	 */
-	public Cacheable addCache(CacheKeyValue prefix, String key, Object value, boolean check) {
+	public Cacheable addCache(String prefix, String key, Object value, boolean check) {
 		// 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY > Runtime.getRuntime().freeMemory()
 		write.lock();
 		try{
@@ -142,7 +142,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 			
 			itemsMap.put(
 					super.realKey(prefix, key), 
-					new CacheElement(value, DateFormat.getTimeMillis(), 0));
+					new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
 			return this;
 		}finally{
 			write.unlock();
@@ -152,13 +152,13 @@ public class LruCache extends AbstractCache implements Cacheable {
 	
 	
 	@Override
-	public CacheElement getCache(CacheKeyValue prefix, String key){
+	public CacheElement getCache(String prefix, String key){
 		return this.getCache(prefix, key, timeout);
 	}
 	
 	
 	@Override
-	public CacheElement getCache(CacheKeyValue prefix, String key, long interval) {
+	public CacheElement getCache(String prefix, String key, long interval) {
 		read.lock();
 		try{
 			CacheElement element = (CacheElement) itemsMap.get(super.realKey(prefix, key));
@@ -166,7 +166,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 				return null;
 			
 			if (interval > 0
-					&& (DateFormat.getTimeMillis() - element.getTime()) > interval) {
+					&& (DateFormatUtils.getTimeMillis() - element.getTime()) > interval) {
 				this.removeCache(prefix, key);
 				element = null;
 				
@@ -175,7 +175,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 			}
 			
 			element.recordVisited();// 记录访问次数
-			element.recordTime(DateFormat.getTimeMillis()); // 记录本次访问时间
+			element.recordTime(DateFormatUtils.getTimeMillis()); // 记录本次访问时间
 			
 			return element;
 		}finally{
@@ -185,7 +185,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 
 	
 	@Override
-	public void removeCache(CacheKeyValue prefix, String key) {
+	public void removeCache(String prefix, String key) {
 		write.lock();
 		try{
 			if(this.containsKey(prefix, key))
@@ -230,7 +230,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 	}
 	
 	@Override
-	public boolean containsKey(CacheKeyValue prefix, String key){
+	public boolean containsKey(String prefix, String key){
 		read.lock();
 		try{
 			return this.itemsMap.containsKey(super.realKey(prefix, key));

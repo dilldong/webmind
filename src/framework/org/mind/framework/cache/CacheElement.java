@@ -1,6 +1,6 @@
 package org.mind.framework.cache;
 
-import org.mind.framework.util.DateFormat;
+import org.mind.framework.util.DateFormatUtils;
 
 public class CacheElement {
 
@@ -25,7 +25,7 @@ public class CacheElement {
 
 	public CacheElement(Object data) {
 		this.value = data;
-		this.time = DateFormat.getTimeMillis();
+		this.time = DateFormatUtils.getTimeMillis();
 		this.visited = 0;
 	}
 

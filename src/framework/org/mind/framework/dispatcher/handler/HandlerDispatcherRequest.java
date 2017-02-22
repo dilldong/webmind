@@ -24,7 +24,7 @@ import org.mind.framework.dispatcher.support.ConverterFactory;
 import org.mind.framework.renderer.JavaScriptRender;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
-import org.mind.framework.util.DateFormat;
+import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.UriPath;
 
@@ -125,7 +125,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 	public void processor(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 
-		long begin = DateFormat.getTimeMillis();
+		long begin = DateFormatUtils.getTimeMillis();
 		String path = UriPath.get(request);
 		
 		// set default character encoding to "utf-8" if encoding is not set:
@@ -148,7 +148,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 		}
 		
 		if(log.isInfoEnabled()){
-			log.info("\r\nFrom path: " + path);
+			log.info("From path: " + path);
 		}
 		
 		this.processNoCache(request, response);
@@ -234,7 +234,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 		}finally{
 			Action.removeActionContext();
 			if (log.isInfoEnabled()){
-				log.info("Used time(ms): "+ (DateFormat.getTimeMillis() - begin));
+				log.info("Used time(ms): "+ (DateFormatUtils.getTimeMillis() - begin));
 				log.info("End method: "+ 
 						execution.getActionInstance().getClass().getSimpleName() 
 						+"."+ 

@@ -12,9 +12,9 @@ import org.apache.log4j.Logger;
  * 
  * @author dongping
  */
-public class DateFormat {
+public class DateFormatUtils {
 	
-	static Logger logger = Logger.getLogger(DateFormat.class);
+	static Logger logger = Logger.getLogger(DateFormatUtils.class);
 	
 	/**
 	 * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.

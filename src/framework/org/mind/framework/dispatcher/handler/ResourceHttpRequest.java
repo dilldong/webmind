@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.catalina.connector.Response;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.mind.framework.util.DateFormat;
+import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.ResponseUtils;
 
 /**
@@ -98,7 +98,7 @@ public class ResourceHttpRequest implements HandlerResult{
             response.setHeader("Cache-Control", "no-cache");
         }else if (this.expires > 0) {
             response.setHeader("Cache-Control", maxAge);
-            response.setDateHeader("Expires", DateFormat.getTimeMillis() + this.expires);
+            response.setDateHeader("Expires", DateFormatUtils.getTimeMillis() + this.expires);
         }
 	    
      // should download?

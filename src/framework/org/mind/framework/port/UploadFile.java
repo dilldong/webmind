@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
 import org.mind.framework.exception.NotSupportedException;
-import org.mind.framework.util.DateFormat;
+import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.PropertiesUtils;
 
@@ -96,7 +96,7 @@ public class UploadFile{
 		if(this.request.isRequestFailed())
 			throw new NotSupportedException("上传的文件大小: "+ this.request.getRequestContentLength() + ", 限制上传大小: "+ this.request.getDefaultSize());
 		
-		long currentTime = DateFormat.getTimeMillis();
+		long currentTime = DateFormatUtils.getTimeMillis();
 		
 		/*
 		 * 默认初始化6个上传文件大小 
