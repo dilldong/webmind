@@ -1,6 +1,5 @@
 package org.mind.framework.util;
 
-import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -19,13 +18,13 @@ public class JsonUtils {
 	static final Logger logger = Logger.getLogger(JsonUtils.class);
 
 	/** 空的 {@code JSON} 数据 - <code>"{}"</code>。 */
-	protected static final String EMPTY_JSON = "{}";
+	public static final String EMPTY_JSON = "{}";
 
 	/** 空的 {@code JSON} 数组(集合)数据 - {@code "[]"}。 */
-	protected static final String EMPTY_JSON_ARRAY = "[]";
+	public static final String EMPTY_JSON_ARRAY = "[]";
 
 	/** 默认的 {@code JSON} 日期/时间字段的格式化模式。 */
-	protected static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
+	public static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
 	/**
 	 * 将给定的目标对象根据指定的条件参数转换成 {@code JSON} 格式的字符串。
@@ -298,17 +297,6 @@ public class JsonUtils {
 			fromJson(json, token, null);
 	}
 	
-	
-	public static <T> T fromJson(Reader reader, TypeToken<T> token) {
-		if(reader == null)
-			return null;
-		
-		GsonBuilder builder = new GsonBuilder();
-		Gson gson = builder.setDateFormat(DEFAULT_DATE_PATTERN).create();
-		return 
-				gson.fromJson(reader, token.getType());
-	}
-
 	/**
 	 * 将给定的 {@code JSON} 字符串转换成指定的类型对象。<strong>此方法通常用来转换普通的 {@code JavaBean}
 	 * 对象。</strong>

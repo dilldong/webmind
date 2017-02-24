@@ -10,6 +10,8 @@ public class CacheElement {
 	// 缓存时记录的时间，如有访问过，就记录最近一次访问时间
 	private long time;
 
+	private long firstTime;
+	
 	// 命中率次数
 	private int visited;
 
@@ -19,14 +21,13 @@ public class CacheElement {
 
 	public CacheElement(Object data, long time, int visited) {
 		this.value = data;
+		this.firstTime = time;
 		this.time = time;
 		this.visited = visited;
 	}
 
 	public CacheElement(Object data) {
-		this.value = data;
-		this.time = DateFormatUtils.getTimeMillis();
-		this.visited = 0;
+		this(data, DateFormatUtils.getTimeMillis(), 0);
 	}
 
 	public void recordVisited() {
@@ -49,12 +50,20 @@ public class CacheElement {
 		this.value = value;
 	}
 
-	public long getTime() {
+	public long getLastedTime() {
 		return time;
 	}
 
 	public void recordTime(long time) {
 		this.time = time;
+	}
+
+	public long getFirstTime() {
+		return firstTime;
+	}
+
+	public void setFirstTime(long firstTime) {
+		this.firstTime = firstTime;
 	}
 
 }

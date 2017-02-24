@@ -166,7 +166,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 				return null;
 			
 			if (interval > 0
-					&& (DateFormatUtils.getTimeMillis() - element.getTime()) > interval) {
+					&& (DateFormatUtils.getTimeMillis() - element.getFirstTime()) > interval) {
 				this.removeCache(prefix, key);
 				element = null;
 				
