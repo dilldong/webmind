@@ -45,16 +45,16 @@ import org.mind.framework.util.DateFormatUtils;
  * @date Sep 17, 2011
  */
 public class LruCache extends AbstractCache implements Cacheable {
-	
+
 	private static final long serialVersionUID = -3563668641502091167L;
 
 	private static final Log log = LogFactory.getLog(LruCache.class);
-	
+
 	/*
 	 * 保持活跃的缓存条目最大数,默认大小1024
 	 */
 	private int cacheSize = 1024;
-	
+
 	/*
 	 * jvm 当前可用的内存大小
 	 */
@@ -66,39 +66,40 @@ public class LruCache extends AbstractCache implements Cacheable {
 	private long timeout = 0;
 
 	private Map<String, Object> itemsMap;
-	
+
 	private transient final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-	
+
 	private transient final Lock read = readWriteLock.readLock();
 
 	private transient final Lock write = readWriteLock.writeLock();
-	
-	
+
 	public static Cacheable initCache() {
 		return CacheHolder.cacheInstance;
 	}
-	
-	private static class CacheHolder{
+
+	private static class CacheHolder {
 		private static Cacheable cacheInstance = new LruCache();
 	}
-	
+
 	private LruCache() {
-		itemsMap = new LinkedHashMap<String, Object>(cacheSize, 0.75F, true){
+		itemsMap = new LinkedHashMap<String, Object>(cacheSize, 0.75F, true) {
 			private static final long serialVersionUID = -6005019516032449081L;
+
 			@Override
 			protected boolean removeEldestEntry(Entry<String, Object> eldest) {
 				boolean tooBig = this.size() > LruCache.this.cacheSize;
-				if(tooBig){
-					if(log.isDebugEnabled())
-						log.debug("Remove the last entry key:"+ eldest.getKey());
+				if (tooBig) {
+					if (log.isDebugEnabled())
+						log.debug("Remove the last entry key:" + eldest.getKey());
 				}
 				return tooBig;
 			}
 		};
 	}
-	
+
 	/**
 	 * 添加一个新条目，如果该条目已经存在，将不做任何操作
+	 * 
 	 * @param key
 	 * @param value
 	 * 
@@ -108,133 +109,125 @@ public class LruCache extends AbstractCache implements Cacheable {
 		return addCache(prefix, key, value, false);
 	}
 
-	
 	/**
 	 * 添加一个新条目
 	 * 
 	 * @param key
 	 * @param value
-	 * @param check false:若条目存在，不做任何操作。
-	 * 				true:先移除存在的条目，再重新装入;
+	 * @param check
+	 *            false:若条目存在，不做任何操作。 true:先移除存在的条目，再重新装入;
 	 * 
 	 * @author dongping
 	 */
 	public Cacheable addCache(String prefix, String key, Object value, boolean check) {
-		// 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY > Runtime.getRuntime().freeMemory()
+		// 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
+		// Runtime.getRuntime().freeMemory()
 		write.lock();
-		try{
-			if (freeMemory > 0 && 
-					freeMemory > Runtime.getRuntime().freeMemory()) {
-				if(log.isDebugEnabled())
+		try {
+			if (freeMemory > 0 && freeMemory > Runtime.getRuntime().freeMemory()) {
+				if (log.isDebugEnabled())
 					log.debug("At present there is insufficient space, a clear java.util.Map of all objects");
-				
+
 				this.destroy();
 				return this;
-				
+
 			} else if (!check && this.containsKey(prefix, key)) {
-				if(log.isDebugEnabled())
+				if (log.isDebugEnabled())
 					log.debug("The Cache key already exists.");
 				return this;
-				
-			}else if(check){
+
+			} else if (check) {
 				this.removeCache(prefix, key);
 			}
-			
-			itemsMap.put(
-					super.realKey(prefix, key), 
-					new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
+
+			itemsMap.put(super.realKey(prefix, key), new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
 			return this;
-		}finally{
+		} finally {
 			write.unlock();
-		}
-	}
-	
-	
-	
-	@Override
-	public CacheElement getCache(String prefix, String key){
-		return this.getCache(prefix, key, timeout);
-	}
-	
-	
-	@Override
-	public CacheElement getCache(String prefix, String key, long interval) {
-		read.lock();
-		try{
-			CacheElement element = (CacheElement) itemsMap.get(super.realKey(prefix, key));
-			if (element == null)
-				return null;
-			
-			if (interval > 0
-					&& (DateFormatUtils.getTimeMillis() - element.getFirstTime()) > interval) {
-				this.removeCache(prefix, key);
-				element = null;
-				
-				log.warn("Remove Cache key, The access time interval expires. key="+ key);
-				return element;
-			}
-			
-			element.recordVisited();// 记录访问次数
-			element.recordTime(DateFormatUtils.getTimeMillis()); // 记录本次访问时间
-			
-			return element;
-		}finally{
-			read.unlock();
 		}
 	}
 
-	
 	@Override
-	public void removeCache(String prefix, String key) {
+	public CacheElement getCache(String prefix, String key) {
+		return this.getCache(prefix, key, timeout);
+	}
+
+	@Override
+	public CacheElement getCache(String prefix, String key, long interval) {
+		read.lock();
+		CacheElement element = null;
+		try {
+			element = (CacheElement) itemsMap.get(super.realKey(prefix, key));
+			if (element == null)
+				return null;
+		} finally {
+			read.unlock();
+		}
+
+		if (interval > 0 && (DateFormatUtils.getTimeMillis() - element.getFirstTime()) > interval) {
+			this.removeCache(prefix, key);
+			element = null;
+			log.warn("Remove Cache key, The access time interval expires. key=" + key);
+			return element;
+		}
+
 		write.lock();
-		try{
-			if(this.containsKey(prefix, key))
-				itemsMap.remove(super.realKey(prefix, key));
-		}finally{
+		try {
+			element.recordVisited();// 记录访问次数
+			element.recordTime(DateFormatUtils.getTimeMillis()); // 记录本次访问时间
+			return element;
+		} finally {
 			write.unlock();
 		}
 	}
-	
-	
+
+	@Override
+	public void removeCache(String prefix, String key) {
+		write.lock();
+		try {
+			if (this.containsKey(prefix, key))
+				itemsMap.remove(super.realKey(prefix, key));
+		} finally {
+			write.unlock();
+		}
+	}
+
 	@Override
 	protected void destroy() {
 		super.destroy();
-		if(!this.isEmpty()){
+		if (!this.isEmpty()) {
 			itemsMap.clear();
 			itemsMap = null;
 			log.info("Destroy CacheManager, Clear all items");
 		}
 	}
-	
-	
-	public boolean isEmpty(){
+
+	public boolean isEmpty() {
 		return this.itemsMap == null || this.itemsMap.isEmpty();
 	}
 
 	@Override
 	public CacheElement[] getCaches() {
-		if(this.isEmpty())
+		if (this.isEmpty())
 			return null;
-		
-		return 
-			itemsMap.values().toArray(new CacheElement[]{});
+
+		return itemsMap.values().toArray(new CacheElement[] {});
 	}
-	
+
 	@Override
 	public String[] getKeys() {
-		if(this.isEmpty())
+		if (this.isEmpty())
 			return null;
-		
-		return 
-			itemsMap.keySet().toArray(new String[]{});
+
+		return itemsMap.keySet().toArray(new String[] {});
 	}
-	
+
 	@Override
-	public boolean containsKey(String prefix, String key){
+	public boolean containsKey(String prefix, String key) {
 		read.lock();
-		try{
+		try {
 			return this.itemsMap.containsKey(super.realKey(prefix, key));
-		}finally{
+		} finally {
 			read.unlock();
 		}
 	}
@@ -250,6 +243,5 @@ public class LruCache extends AbstractCache implements Cacheable {
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
-	
-}
 
+}
