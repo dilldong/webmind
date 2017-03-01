@@ -12,18 +12,16 @@ public interface Cacheable extends Serializable {
 
 	/**
 	 * 添加一个新条目，如果该条目已经存在，将不做任何操作
-	 * @param prefix 缓存对象前缀，全局不允许重复
 	 * @param key
 	 * @param value
 	 * @return
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	Cacheable addCache(String prefix, String key, Object value);
+	Cacheable addCache(String key, Object value);
 	
 	/**
 	 * 添加一个新条目
-	 * @param prefix 缓存对象前缀，全局不允许重复
 	 * @param key
 	 * @param value
 	 * @param check <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;false: default, 若条目存在，不做任何操作
@@ -32,31 +30,28 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	Cacheable addCache(String prefix, String key, Object value, boolean check);
+	Cacheable addCache(String key, Object value, boolean check);
 
 	/**
 	 * 删除缓存
-	 * @param prefix 缓存对象前缀
 	 * @param key
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	void removeCache(String prefix, String key);
+	void removeCache(String key);
 
 	/**
 	 * 获得缓存对象
-	 * @param prefix 缓存对象前缀
 	 * @param key
 	 * @return
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	CacheElement getCache(String prefix, String key);
+	CacheElement getCache(String key);
 	
 	
 	/**
 	 * 获得缓存对象
-	 * @param prefix 缓存对象前缀
 	 * @param key 缓存对象键值
 	 * @param interval 毫秒,根据给定的超时值去获取缓存对象，
 	 * 如果缓存中太长时间（就是超过给定的interval时间）无访问记录的话，就会重缓存对象池移除掉。
@@ -65,7 +60,7 @@ public interface Cacheable extends Serializable {
 	 * @author dongping
 	 * @date Nov 27, 2010
 	 */
-	CacheElement getCache(String prefix, String key, long interval);
+	CacheElement getCache(String key, long interval);
 
 	
 	/**
@@ -78,13 +73,12 @@ public interface Cacheable extends Serializable {
 	
 	/**
 	 * 判断是否已经存在的key
-	 * @param prefix
 	 * @param key
 	 * @return
 	 * @author dongping
 	 * @date Nov 18, 2011
 	 */
-	public boolean containsKey(String prefix, String key);
+	public boolean containsKey(String key);
 	
 	/**
 	 * 获得所有的缓存对象

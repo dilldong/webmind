@@ -1,5 +1,6 @@
 package org.mind.framework.cache;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -29,7 +30,14 @@ public abstract class AbstractCache {
 		
 	}
 	
-	protected String realKey(String prefix, String key){
+	protected String realKey(Object key){
+		return realKey(null, key);
+	}
+	
+	protected String realKey(String prefix, Object key){
+		if(StringUtils.isBlank(prefix))
+			return key.toString();
+		
 		return
 			new StringBuffer()
 				.append(prefix)

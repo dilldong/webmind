@@ -105,8 +105,8 @@ public class LruCache extends AbstractCache implements Cacheable {
 	 * 
 	 * @author dongping
 	 */
-	public Cacheable addCache(String prefix, String key, Object value) {
-		return addCache(prefix, key, value, false);
+	public Cacheable addCache(String key, Object value) {
+		return addCache(key, value, false);
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 	 * 
 	 * @author dongping
 	 */
-	public Cacheable addCache(String prefix, String key, Object value, boolean check) {
+	public Cacheable addCache(String key, Object value, boolean check) {
 		// 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
 		// Runtime.getRuntime().freeMemory()
 		write.lock();
@@ -131,16 +131,16 @@ public class LruCache extends AbstractCache implements Cacheable {
 				this.destroy();
 				return this;
 
-			} else if (!check && this.containsKey(prefix, key)) {
+			} else if (!check && this.containsKey(key)) {
 				if (log.isDebugEnabled())
 					log.debug("The Cache key already exists.");
 				return this;
 
 			} else if (check) {
-				this.removeCache(prefix, key);
+				this.removeCache(key);
 			}
 
-			itemsMap.put(super.realKey(prefix, key), new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
+			itemsMap.put(super.realKey(key), new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
 			return this;
 		} finally {
 			write.unlock();
@@ -148,16 +148,16 @@ public class LruCache extends AbstractCache implements Cacheable {
 	}
 
 	@Override
-	public CacheElement getCache(String prefix, String key) {
-		return this.getCache(prefix, key, timeout);
+	public CacheElement getCache(String key) {
+		return this.getCache(key, timeout);
 	}
 
 	@Override
-	public CacheElement getCache(String prefix, String key, long interval) {
+	public CacheElement getCache(String key, long interval) {
 		read.lock();
 		CacheElement element = null;
 		try {
-			element = (CacheElement) itemsMap.get(super.realKey(prefix, key));
+			element = (CacheElement) itemsMap.get(super.realKey(key));
 			if (element == null)
 				return null;
 		} finally {
@@ -165,7 +165,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 		}
 
 		if (interval > 0 && (DateFormatUtils.getTimeMillis() - element.getFirstTime()) > interval) {
-			this.removeCache(prefix, key);
+			this.removeCache(key);
 			element = null;
 			log.warn("Remove Cache key, The access time interval expires. key=" + key);
 			return element;
@@ -182,11 +182,11 @@ public class LruCache extends AbstractCache implements Cacheable {
 	}
 
 	@Override
-	public void removeCache(String prefix, String key) {
+	public void removeCache(String key) {
 		write.lock();
 		try {
-			if (this.containsKey(prefix, key))
-				itemsMap.remove(super.realKey(prefix, key));
+			if (this.containsKey(key))
+				itemsMap.remove(super.realKey(key));
 		} finally {
 			write.unlock();
 		}
@@ -223,10 +223,10 @@ public class LruCache extends AbstractCache implements Cacheable {
 	}
 
 	@Override
-	public boolean containsKey(String prefix, String key) {
+	public boolean containsKey(String key) {
 		read.lock();
 		try {
-			return this.itemsMap.containsKey(super.realKey(prefix, key));
+			return this.itemsMap.containsKey(super.realKey(key));
 		} finally {
 			read.unlock();
 		}
