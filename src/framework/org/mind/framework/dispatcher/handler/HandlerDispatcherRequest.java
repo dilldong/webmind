@@ -1,5 +1,7 @@
 package org.mind.framework.dispatcher.handler;
 
+import static org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.ATTRIBUTE_NAME;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -101,11 +103,11 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 		 * detect multipart support:
 		 */
 		try{
-			Class.forName("com.oreilly.servlet.MultipartRequest");
+			Class.forName("org.apache.commons.fileupload.servlet.ServletFileUpload");
 			log.info("using MultipartRequest to handle multipart http request.");
 			this.supportMultipartRequest = true;
 		}catch(ClassNotFoundException e){
-			log.info("MultipartRequest not found. Multipart http request can not be handled.");
+			log.error("MultipartRequest not found. Multipart http request can not be handled.");
 		}
 	}
 	
@@ -205,7 +207,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 		// currently request is multipart request.
 		if(this.supportMultipartRequest && 
 				MultipartHttpServletRequest.isMultipartRequest(request)){
-			request = new MultipartHttpServletRequest(request);
+			Object obj = request.getAttribute(ATTRIBUTE_NAME);
+			
+			if(obj == null)
+				request = new MultipartHttpServletRequest(request).requestMultipart();
+			else
+				request = (MultipartHttpServletRequest) obj; 
 		}
 		
 		/*
