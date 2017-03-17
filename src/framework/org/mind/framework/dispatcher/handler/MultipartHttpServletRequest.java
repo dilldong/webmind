@@ -59,9 +59,22 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
 	private HttpServletRequest request;
 	
-	public static final String ATTRIBUTE_NAME = MultipartHttpServletRequest.class.getName();
+	private static final String ATTRIBUTE_NAME = MultipartHttpServletRequest.class.getName();
+	
+	public static MultipartHttpServletRequest getInstance(HttpServletRequest request) throws IOException, ServletException{
+		Object obj = request.getAttribute(ATTRIBUTE_NAME);
+		if (obj != null && obj instanceof MultipartHttpServletRequest) {
+			return (MultipartHttpServletRequest) obj;
+		} else {
+			MultipartHttpServletRequest multipart = 
+					new MultipartHttpServletRequest(request).requestMultipart();
+			request.setAttribute(ATTRIBUTE_NAME, multipart);
+			return multipart;
+		}
+	}
+	
 
-	public MultipartHttpServletRequest(HttpServletRequest request) {
+	private MultipartHttpServletRequest(HttpServletRequest request) {
 		super(request);
 		this.request = request;
 		this.property = PropertiesUtils.getProperties();
@@ -105,8 +118,9 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 		return false;
 	}
 	
+	
 
-	public MultipartHttpServletRequest requestMultipart() throws IOException, ServletException {
+	private MultipartHttpServletRequest requestMultipart() throws IOException, ServletException {
 		if (this.requestContentLength > defaultSize) {
 			log.warn("Posted content length of " + this.requestContentLength + " exceeds limit of " + defaultSize);
 			this.requestFailed = true;
@@ -141,7 +155,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 		} catch (FileUploadException e) {
 			throw new ServletException(e.getMessage(), e);
 		}
-
+		
 		return this;
 	}
 

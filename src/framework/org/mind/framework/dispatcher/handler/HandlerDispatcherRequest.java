@@ -1,7 +1,5 @@
 package org.mind.framework.dispatcher.handler;
 
-import static org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.ATTRIBUTE_NAME;
-
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -207,12 +205,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 		// currently request is multipart request.
 		if(this.supportMultipartRequest && 
 				MultipartHttpServletRequest.isMultipartRequest(request)){
-			Object obj = request.getAttribute(ATTRIBUTE_NAME);
-			
-			if(obj == null)
-				request = new MultipartHttpServletRequest(request).requestMultipart();
-			else
-				request = (MultipartHttpServletRequest) obj; 
+			request = MultipartHttpServletRequest.getInstance(request);
 		}
 		
 		/*
