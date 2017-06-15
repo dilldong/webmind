@@ -10,12 +10,12 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * Render object to indicate how to rendering the http response.
- * 
+ *
  * @author dp
  */
 public abstract class Render {
-	
-	protected static final Log log = LogFactory.getLog(Render.class);
+
+    protected static final Log log = LogFactory.getLog(Render.class);
 
     protected String contentType;
 
@@ -27,7 +27,7 @@ public abstract class Render {
     }
 
     /**
-     * set response content type: "text/xml". The default content 
+     * set response content type: "text/xml". The default content
      * type is "text/html". Do not add "charset=xxx".
      */
     public void setContentType(String contentType) {
@@ -36,8 +36,8 @@ public abstract class Render {
 
     /**
      * render the output of http response.
-     * 
-     * @param request HttpServletRequest.
+     *
+     * @param request  HttpServletRequest.
      * @param response HttpServletResponse.
      * @throws any Exception.
      */

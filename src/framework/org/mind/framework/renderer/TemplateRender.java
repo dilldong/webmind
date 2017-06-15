@@ -11,38 +11,38 @@ import org.mind.framework.renderer.template.TemplateFactory;
 
 /**
  * template engine output.
- * 
+ *
  * @author dp
  */
 public class TemplateRender extends Render {
 
-	private String path;
-	private Map<String, Object> model;
+    private String path;
+    private Map<String, Object> model;
 
-	public TemplateRender(String path) {
-		this.path = path;
-		this.model = new HashMap<String, Object>();
-	}
+    public TemplateRender(String path) {
+        this.path = path;
+        this.model = new HashMap<String, Object>();
+    }
 
-	public TemplateRender(String path, Map<String, Object> model) {
-		this.path = path;
-		this.model = model;
-	}
+    public TemplateRender(String path, Map<String, Object> model) {
+        this.path = path;
+        this.model = model;
+    }
 
-	public TemplateRender(String path, String modelKey, Object modelValue) {
-		this(path);
-		this.model.put(modelKey, modelValue);
-	}
+    public TemplateRender(String path, String modelKey, Object modelValue) {
+        this(path);
+        this.model.put(modelKey, modelValue);
+    }
 
-	@Override
-	public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		if(log.isInfoEnabled())
-			log.info("Render path: " + path);
-		
-		TemplateFactory.getTemplateFactory()
-		.loadTemplate(path)
-		.render(request, response, model);
-		
+    @Override
+    public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (log.isInfoEnabled())
+            log.info("Render path: " + path);
+
+        TemplateFactory.getTemplateFactory()
+                .loadTemplate(path)
+                .render(request, response, model);
+
 //		WebEngine.setRequest(request);
 //    	WebEngine.setResponse(response);
 //    	
@@ -52,7 +52,7 @@ public class TemplateRender extends Render {
 //		} catch (ParseException e) {
 //			e.printStackTrace();
 //		}
-		
-	}
+
+    }
 
 }

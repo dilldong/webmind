@@ -6,69 +6,69 @@ import org.apache.log4j.Logger;
 
 /**
  * 提供非WEB应用服务，不允许使用多个相同的对象构建服务
- * @author dp
  *
+ * @author dp
  */
 public class MainService extends AbstractService {
 
-	static Logger logger = Logger.getLogger(MainService.class);
+    static Logger logger = Logger.getLogger(MainService.class);
 
-	private Set<Service> childServices;
+    private Set<Service> childServices;
 
-	public MainService() {
-		setServiceName(getClass().getSimpleName());
-	}
+    public MainService() {
+        setServiceName(getClass().getSimpleName());
+    }
 
-	protected void startChildServices() {
-		if (childServices != null) {
-			for (final Service serv : childServices) {
-				if (serv != null) {
-					Thread t = new Thread(new Runnable() {
-						@Override
-						public void run() {
-							logger.info("Service " + serv + " to start ....");
-							serv.start();
-						}
-					});
-					t.start();
-				}
-			}
-		}
-	}
+    protected void startChildServices() {
+        if (childServices != null) {
+            for (final Service serv : childServices) {
+                if (serv != null) {
+                    Thread t = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            logger.info("Service " + serv + " to start ....");
+                            serv.start();
+                        }
+                    });
+                    t.start();
+                }
+            }
+        }
+    }
 
-	protected void stopChildServices() {
-		if (childServices != null) {
-			for (final Service serv : childServices) {
-				if (serv != null) {
-					Thread t = new Thread(new Runnable() {
-						public void run() {
-							logger.info("Service " + serv + " to stop ....");
-							serv.stop();
-						}
-					});
+    protected void stopChildServices() {
+        if (childServices != null) {
+            for (final Service serv : childServices) {
+                if (serv != null) {
+                    Thread t = new Thread(new Runnable() {
+                        public void run() {
+                            logger.info("Service " + serv + " to stop ....");
+                            serv.stop();
+                        }
+                    });
 
-					t.start();
-				}
-			}
-		}
-	}
+                    t.start();
+                }
+            }
+        }
+    }
 
-	public final void start() {
-		startChildServices();
-		serviceState = STATE_STARTED;
-	}
+    public final void start() {
+        startChildServices();
+        serviceState = STATE_STARTED;
+    }
 
-	public final void stop() {
-		stopChildServices();
-		serviceState = STATE_STOPED;
-	}
+    public final void stop() {
+        stopChildServices();
+        serviceState = STATE_STOPED;
+    }
 
-	public Set<Service> getChildServices() {
-		return childServices;
-	}
+    public Set<Service> getChildServices() {
+        return childServices;
+    }
 
-	public void setChildServices(Set<Service> childServices) {
-		this.childServices = childServices;
-	}
+    public void setChildServices(Set<Service> childServices) {
+        this.childServices = childServices;
+    }
 
 }

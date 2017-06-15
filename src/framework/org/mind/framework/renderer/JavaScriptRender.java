@@ -2,7 +2,7 @@ package org.mind.framework.renderer;
 
 /**
  * render JavaScript.
- * 
+ *
  * @author dp
  */
 public class JavaScriptRender extends TextRender {

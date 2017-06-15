@@ -6,8 +6,8 @@ import javax.servlet.ServletConfig;
 
 /**
  * Web container instance for creating IOC container.
- * @author dp
  *
+ * @author dp
  */
 public interface ContainerAware extends Destroyable {
 

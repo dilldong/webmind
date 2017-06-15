@@ -11,13 +11,13 @@ import org.mind.framework.container.Destroyable;
 
 /**
  * Handler dispatch request processer.
- * @author dp
  *
+ * @author dp
  */
 public interface HandlerRequest extends Destroyable {
 
-	void init(List<Object> objects);
-	
-	void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
-	
+    void init(List<Object> objects);
+
+    void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
+
 }

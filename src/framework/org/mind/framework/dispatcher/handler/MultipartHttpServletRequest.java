@@ -28,302 +28,301 @@ import org.mind.framework.util.PropertiesUtils;
 
 /**
  * Wrapper class for multipart HTTP request which usually used to upload file.
- * 
+ *
  * @author dongping
  */
 public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
-	private static final Log log = LogFactory.getLog(MultipartHttpServletRequest.class);
+    private static final Log log = LogFactory.getLog(MultipartHttpServletRequest.class);
 
-	private static final int SIZE = 10 * 1024 * 1024;
+    private static final int SIZE = 10 * 1024 * 1024;
 
-	private static final int MAX_SIZE = 16 * 1024 * 1024;
+    private static final int MAX_SIZE = 16 * 1024 * 1024;
 
-	private static final int MIN_SIZE = 0;
+    private static final int MIN_SIZE = 0;
 
-	private static final String DEFAULT_CHARENCODEING = "UTF-8";
+    private static final String DEFAULT_CHARENCODEING = "UTF-8";
 
-	private int defaultSize;
+    private int defaultSize;
 
-	private Properties property;
+    private Properties property;
 
-	// multipart fileds
-	private Map<String, List<String>> formParams;
+    // multipart fileds
+    private Map<String, List<String>> formParams;
 
-	// multipart files
-	private List<FileItem> multiPartFiles;
+    // multipart files
+    private List<FileItem> multiPartFiles;
 
-	private boolean requestFailed;
+    private boolean requestFailed;
 
-	private int requestContentLength;
+    private int requestContentLength;
 
-	private HttpServletRequest request;
-	
-	private static final String ATTRIBUTE_NAME = MultipartHttpServletRequest.class.getName();
-	
-	public static MultipartHttpServletRequest getInstance(HttpServletRequest request) throws IOException, ServletException{
-		Object obj = request.getAttribute(ATTRIBUTE_NAME);
-		if (obj != null && obj instanceof MultipartHttpServletRequest) {
-			return (MultipartHttpServletRequest) obj;
-		} else {
-			MultipartHttpServletRequest multipart = 
-					new MultipartHttpServletRequest(request).requestMultipart();
-			request.setAttribute(ATTRIBUTE_NAME, multipart);
-			return multipart;
-		}
-	}
-	
+    private HttpServletRequest request;
 
-	private MultipartHttpServletRequest(HttpServletRequest request) {
-		super(request);
-		this.request = request;
-		this.property = PropertiesUtils.getProperties();
+    private static final String ATTRIBUTE_NAME = MultipartHttpServletRequest.class.getName();
 
-		defaultSize = PropertiesUtils.getInteger(property, "upload.size");
-		defaultSize = (defaultSize <= MIN_SIZE || defaultSize > MAX_SIZE) ? SIZE : defaultSize;
+    public static MultipartHttpServletRequest getInstance(HttpServletRequest request) throws IOException, ServletException {
+        Object obj = request.getAttribute(ATTRIBUTE_NAME);
+        if (obj != null && obj instanceof MultipartHttpServletRequest) {
+            return (MultipartHttpServletRequest) obj;
+        } else {
+            MultipartHttpServletRequest multipart =
+                    new MultipartHttpServletRequest(request).requestMultipart();
+            request.setAttribute(ATTRIBUTE_NAME, multipart);
+            return multipart;
+        }
+    }
 
-		// Check the content length to prevent denial of service attacks
-		this.requestContentLength = request.getContentLength();
-	}
 
-	/**
-	 * Check the content type to make sure it's "multipart/form-data" Access
-	 * header two ways to work around WebSphere oddities
-	 * 
-	 * @param request
-	 * @return
-	 */
-	public static boolean isMultipartRequest(HttpServletRequest request) {
-		String type = null;
-		String type1 = request.getHeader("Content-Type");
-		String type2 = request.getContentType();
+    private MultipartHttpServletRequest(HttpServletRequest request) {
+        super(request);
+        this.request = request;
+        this.property = PropertiesUtils.getProperties();
 
-		// If one value is null, choose the other value
-		if (type1 == null && type2 != null)
-			type = type2;
+        defaultSize = PropertiesUtils.getInteger(property, "upload.size");
+        defaultSize = (defaultSize <= MIN_SIZE || defaultSize > MAX_SIZE) ? SIZE : defaultSize;
 
-		else if (type2 == null && type1 != null)
-			type = type1;
+        // Check the content length to prevent denial of service attacks
+        this.requestContentLength = request.getContentLength();
+    }
 
-		// If neither value is null, choose the longer value
-		else if (type1 != null && type2 != null)
-			type = (type1.length() > type2.length() ? type1 : type2);
+    /**
+     * Check the content type to make sure it's "multipart/form-data" Access
+     * header two ways to work around WebSphere oddities
+     *
+     * @param request
+     * @return
+     */
+    public static boolean isMultipartRequest(HttpServletRequest request) {
+        String type = null;
+        String type1 = request.getHeader("Content-Type");
+        String type2 = request.getContentType();
 
-		if (type == null)
-			return false;
+        // If one value is null, choose the other value
+        if (type1 == null && type2 != null)
+            type = type2;
 
-		if (type.toLowerCase().startsWith("multipart/form-data"))
-			return true;
+        else if (type2 == null && type1 != null)
+            type = type1;
 
-		return false;
-	}
-	
-	
+            // If neither value is null, choose the longer value
+        else if (type1 != null && type2 != null)
+            type = (type1.length() > type2.length() ? type1 : type2);
 
-	private MultipartHttpServletRequest requestMultipart() throws IOException, ServletException {
-		if (this.requestContentLength > defaultSize) {
-			log.warn("Posted content length of " + this.requestContentLength + " exceeds limit of " + defaultSize);
-			this.requestFailed = true;
-			return this;
-		}
+        if (type == null)
+            return false;
 
-		this.formParams = new HashMap<String, List<String>>();
-		this.multiPartFiles = new ArrayList<FileItem>(6);
-		
-		if (request.getQueryString() != null) {
-			this.queryString();
-		}
+        if (type.toLowerCase().startsWith("multipart/form-data"))
+            return true;
 
-		try {
-			FileItemStream filePart;
-			FileItemIterator iterator = new ServletFileUpload().getItemIterator(request);
-			while (iterator.hasNext()) {
-				filePart = iterator.next();
+        return false;
+    }
 
-				if (filePart.isFormField()) {
-					this.addFiled(filePart.getFieldName(),
-							Streams.asString(filePart.openStream(), DEFAULT_CHARENCODEING));
-					continue;
-				}
 
-				FileItem item = process(filePart.getContentType(), filePart.getFieldName(), filePart.getName(),
-						filePart.openStream());
+    private MultipartHttpServletRequest requestMultipart() throws IOException, ServletException {
+        if (this.requestContentLength > defaultSize) {
+            log.warn("Posted content length of " + this.requestContentLength + " exceeds limit of " + defaultSize);
+            this.requestFailed = true;
+            return this;
+        }
 
-				if (item != null)
-					multiPartFiles.add(item);
-			}
-		} catch (FileUploadException e) {
-			throw new ServletException(e.getMessage(), e);
-		}
-		
-		return this;
-	}
+        this.formParams = new HashMap<String, List<String>>();
+        this.multiPartFiles = new ArrayList<FileItem>(6);
 
-	private FileItem process(String contentType, String name, String fileName, InputStream in) {
-		FileItem item = new FileItem();
-		item.setContentType(contentType);
-		item.setFiledName(name);
-		item.setFileName(fileName);
+        if (request.getQueryString() != null) {
+            this.queryString();
+        }
 
-		long size = 0;
-		int read = -1;
-		byte[] buf = new byte[8 * 1024];
+        try {
+            FileItemStream filePart;
+            FileItemIterator iterator = new ServletFileUpload().getItemIterator(request);
+            while (iterator.hasNext()) {
+                filePart = iterator.next();
 
-		ByteArrayOutputStream byteStream = null;
-		try {
-			byteStream = new ByteArrayOutputStream();
-			try {
-				while ((read = in.read(buf)) != -1) {
-					byteStream.write(buf, 0, read);
-					size += read;
-				}
+                if (filePart.isFormField()) {
+                    this.addFiled(filePart.getFieldName(),
+                            Streams.asString(filePart.openStream(), DEFAULT_CHARENCODEING));
+                    continue;
+                }
 
-			} finally {
-				/*
+                FileItem item = process(filePart.getContentType(), filePart.getFieldName(), filePart.getName(),
+                        filePart.openStream());
+
+                if (item != null)
+                    multiPartFiles.add(item);
+            }
+        } catch (FileUploadException e) {
+            throw new ServletException(e.getMessage(), e);
+        }
+
+        return this;
+    }
+
+    private FileItem process(String contentType, String name, String fileName, InputStream in) {
+        FileItem item = new FileItem();
+        item.setContentType(contentType);
+        item.setFiledName(name);
+        item.setFileName(fileName);
+
+        long size = 0;
+        int read = -1;
+        byte[] buf = new byte[8 * 1024];
+
+        ByteArrayOutputStream byteStream = null;
+        try {
+            byteStream = new ByteArrayOutputStream();
+            try {
+                while ((read = in.read(buf)) != -1) {
+                    byteStream.write(buf, 0, read);
+                    size += read;
+                }
+
+            } finally {
+                /*
 				 * When a close method is called on a such a class, it
 				 * automatically performs a flush. There is no need to
 				 * explicitly call flush before calling close.
 				 * 
 				 * byteStream.flush();
 				 */
-				byteStream.close();
-			}
+                byteStream.close();
+            }
 
-			item.setStream(byteStream.toByteArray());
-			item.setSize(size);
-			return item;
+            item.setStream(byteStream.toByteArray());
+            item.setSize(size);
+            return item;
 
-		} catch (IOException e) {
-			log.error(e.getMessage(), e);
-		}
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	private void addFiled(String name, String value) {
-		List<String> list = this.formParams.get(name);
-		if (list == null) {
-			list = new ArrayList<String>(5);
-			this.formParams.put(name, list);
-		}
+    private void addFiled(String name, String value) {
+        List<String> list = this.formParams.get(name);
+        if (list == null) {
+            list = new ArrayList<String>(5);
+            this.formParams.put(name, list);
+        }
 
-		list.add(value);
-	}
+        list.add(value);
+    }
 
-	private void queryString() {
+    private void queryString() {
 
-	}
+    }
 
-	/**
-	 * get multipart files objects by http request.
-	 * 
-	 * @return
-	 */
-	public List<FileItem> getMultipartFiles() {
-		return this.multiPartFiles;
-	}
+    /**
+     * get multipart files objects by http request.
+     *
+     * @return
+     */
+    public List<FileItem> getMultipartFiles() {
+        return this.multiPartFiles;
+    }
 
-	public String getParameter(String name) {
-		if (this.formParams == null)
-			return null;
+    public String getParameter(String name) {
+        if (this.formParams == null)
+            return null;
 
-		List<String> list = this.formParams.get(name);
-		if (list == null || list.isEmpty())
-			return null;
+        List<String> list = this.formParams.get(name);
+        if (list == null || list.isEmpty())
+            return null;
 
-		return list.get(0);
-	}
+        return list.get(0);
+    }
 
-	@Override
-	public Map<String, String[]> getParameterMap() {
-		if (this.formParams == null)
-			return null;
+    @Override
+    public Map<String, String[]> getParameterMap() {
+        if (this.formParams == null)
+            return null;
 
-		Map<String, String[]> map = new HashMap<String, String[]>(this.formParams.size());
+        Map<String, String[]> map = new HashMap<String, String[]>(this.formParams.size());
 
-		Set<Entry<String, List<String>>> entries = this.formParams.entrySet();
-		for (Entry<String, List<String>> en : entries) {
-			List<String> list = en.getValue();
-			map.put(en.getKey(), list.toArray(new String[list.size()]));
-		}
-		return map;
-	}
+        Set<Entry<String, List<String>>> entries = this.formParams.entrySet();
+        for (Entry<String, List<String>> en : entries) {
+            List<String> list = en.getValue();
+            map.put(en.getKey(), list.toArray(new String[list.size()]));
+        }
+        return map;
+    }
 
-	@Override
-	public Enumeration<String> getParameterNames() {
-		if (this.formParams == null)
-			return null;
+    @Override
+    public Enumeration<String> getParameterNames() {
+        if (this.formParams == null)
+            return null;
 
-		return Collections.enumeration(this.formParams.keySet());
-	}
+        return Collections.enumeration(this.formParams.keySet());
+    }
 
-	@Override
-	public String[] getParameterValues(String name) {
-		if (this.formParams == null)
-			return null;
+    @Override
+    public String[] getParameterValues(String name) {
+        if (this.formParams == null)
+            return null;
 
-		List<String> list = this.formParams.get(name);
-		return list.toArray(new String[list.size()]);
-	}
+        List<String> list = this.formParams.get(name);
+        return list.toArray(new String[list.size()]);
+    }
 
-	public boolean isRequestFailed() {
-		return this.requestFailed;
-	}
+    public boolean isRequestFailed() {
+        return this.requestFailed;
+    }
 
-	public int getDefaultSize() {
-		return this.defaultSize;
-	}
+    public int getDefaultSize() {
+        return this.defaultSize;
+    }
 
-	public int getRequestContentLength() {
-		return this.requestContentLength;
-	}
+    public int getRequestContentLength() {
+        return this.requestContentLength;
+    }
 
-	public class FileItem {
-		private String filedName;
-		private String fileName;
-		private String contentType;
-		private byte[] stream;
-		private long size;
+    public class FileItem {
+        private String filedName;
+        private String fileName;
+        private String contentType;
+        private byte[] stream;
+        private long size;
 
-		public String getFiledName() {
-			return filedName;
-		}
+        public String getFiledName() {
+            return filedName;
+        }
 
-		public void setFiledName(String filedName) {
-			this.filedName = filedName;
-		}
+        public void setFiledName(String filedName) {
+            this.filedName = filedName;
+        }
 
-		public String getFileName() {
-			return fileName;
-		}
+        public String getFileName() {
+            return fileName;
+        }
 
-		public void setFileName(String fileName) {
-			this.fileName = fileName;
-		}
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
 
-		public String getContentType() {
-			return contentType;
-		}
+        public String getContentType() {
+            return contentType;
+        }
 
-		public void setContentType(String contentType) {
-			this.contentType = contentType;
-		}
+        public void setContentType(String contentType) {
+            this.contentType = contentType;
+        }
 
-		public byte[] getStream() {
-			return stream;
-		}
+        public byte[] getStream() {
+            return stream;
+        }
 
-		public void setStream(byte[] stream) {
-			this.stream = stream;
-		}
+        public void setStream(byte[] stream) {
+            this.stream = stream;
+        }
 
-		public long getSize() {
-			return size;
-		}
+        public long getSize() {
+            return size;
+        }
 
-		public void setSize(long size) {
-			this.size = size;
-		}
-	}
+        public void setSize(long size) {
+            this.size = size;
+        }
+    }
 
 }

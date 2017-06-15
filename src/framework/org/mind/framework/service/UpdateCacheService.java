@@ -7,53 +7,53 @@ import org.apache.log4j.Logger;
 
 /**
  * 从数据库定时同步数据
- * 
+ *
  * @author dongping
  */
 public class UpdateCacheService extends LoopWorkerService {
 
-	static Logger logger = Logger.getLogger(UpdateCacheService.class);
-	
-	private List<Updateable> updaters;
+    static Logger logger = Logger.getLogger(UpdateCacheService.class);
 
-	@Override
-	protected void doLoopWork() {
-		if (updaters != null && !updaters.isEmpty()) {
-			for (Updateable update : updaters) {
-				if (update != null) {
-					try {
-						update.doUpate();
-					} catch (Exception e) {
-						logger.error(e.getMessage(), e);
-					}
-				}
-			}
-		}
-		System.gc();
-	}
+    private List<Updateable> updaters;
 
-	public List<Updateable> getUpdaters() {
-		return updaters;
-	}
+    @Override
+    protected void doLoopWork() {
+        if (updaters != null && !updaters.isEmpty()) {
+            for (Updateable update : updaters) {
+                if (update != null) {
+                    try {
+                        update.doUpate();
+                    } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+        }
+        System.gc();
+    }
 
-	public void setUpdaters(List<Updateable> updaters) {
-		this.updaters = updaters;
-	}
+    public List<Updateable> getUpdaters() {
+        return updaters;
+    }
 
-	public void addUpdater(Updateable updater) {
-		if (updaters == null) {
-			updaters = new CopyOnWriteArrayList<Updateable>();
-		}
-		
-		if (updater != null && !updaters.contains(updater)) {
-			updaters.add(updater);
-		}
-	}
+    public void setUpdaters(List<Updateable> updaters) {
+        this.updaters = updaters;
+    }
 
-	public boolean removeUpdater(Updateable updater) {
-		if (updaters == null) {
-			updaters = new CopyOnWriteArrayList<Updateable>();
-		}
-		return updaters.remove(updater);
-	}
+    public void addUpdater(Updateable updater) {
+        if (updaters == null) {
+            updaters = new CopyOnWriteArrayList<Updateable>();
+        }
+
+        if (updater != null && !updaters.contains(updater)) {
+            updaters.add(updater);
+        }
+    }
+
+    public boolean removeUpdater(Updateable updater) {
+        if (updaters == null) {
+            updaters = new CopyOnWriteArrayList<Updateable>();
+        }
+        return updaters.remove(updater);
+    }
 }

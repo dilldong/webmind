@@ -10,30 +10,30 @@ import org.mind.framework.container.ContainerAware;
 
 /**
  * Web Container Wrapper for Spring 2.x.
+ *
  * @author dp
- * 
  */
 public class SpringContainerAware implements ContainerAware {
 
 
     public List<Object> loadBeans() {
-    	//get defined name by spring
+        //get defined name by spring
         String[] names = ContextSupport.getBeanNames();
         List<Object> beans = new ArrayList<Object>(names.length);
-        
-        for (String name : names){
+
+        for (String name : names) {
 //        	BeanModel model = new BeanModel(
 //        			this.wctx.getBean(name), 
 //        			this.wctx.isSingleton(name));
-        	
+
             beans.add(ContextSupport.getBean(name));
         }
-        
+
         return beans;
     }
 
     public void init(ServletConfig config) {
-    	ContextSupport.initSpringContext(config.getServletContext());
+        ContextSupport.initSpringContext(config.getServletContext());
     }
 
     public void destroy() {
