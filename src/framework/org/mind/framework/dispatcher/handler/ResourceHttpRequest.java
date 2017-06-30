@@ -9,7 +9,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.catalina.connector.Response;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mind.framework.util.DateFormatUtils;
@@ -63,16 +62,17 @@ public class ResourceHttpRequest implements HandlerResult {
 
         String uri = (String) result;
         if (uri.toUpperCase().startsWith("/WEB-INF/") || uri.toUpperCase().startsWith("/META-INF/")) {
-            log.error(Response.SC_NON_AUTHORITATIVE_INFORMATION + " - Not Author access.");
-            response.sendError(Response.SC_NON_AUTHORITATIVE_INFORMATION, "Not Author access.");
+
+            log.error(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION + " - Not Author access.");
+            response.sendError(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION, "Not Author access.");
             return;
         }
 
         File file = new File(this.servletContext.getRealPath(uri));
 
         if (file == null || !file.isFile()) {
-            log.error(Response.SC_NOT_FOUND + " - " + request.getRequestURI() + " - Access resource is not found.");
-            response.sendError(Response.SC_NOT_FOUND, "Access resource is not found.");
+            log.error(HttpServletResponse.SC_NOT_FOUND + " - " + request.getRequestURI() + " - Access resource is not found.");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
 
@@ -112,9 +112,5 @@ public class ResourceHttpRequest implements HandlerResult {
         // write stream
         ResponseUtils.write(response.getOutputStream(), file);
     }
-
-
-//	http://www.jarvana.com/jarvana/view/org/springframework/spring-webmvc/3.1.0.RELEASE/spring-webmvc-3.1.0.RELEASE-sources.jar!/org/springframework/web/servlet/support/WebContentGenerator.java?format=ok
-
 
 }
