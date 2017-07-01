@@ -13,7 +13,7 @@
 		<aop:aspectj-autoproxy /> 
 	-->
 
-	<context:component-scan base-package="org.mind.freamework" />
+	<context:component-scan base-package="org.mind.framework" />
 
 	<!--<context:component-scan/> default auto-scan  
 		<context:annotation-config />
@@ -23,8 +23,8 @@
 	<context:property-placeholder location="classpath:frame.properties" />
 
 	<!-- HikariCP configuration -->
-	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="shutdown">
-		<property name="driverClass" value="${db.driverClass}" />
+	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+		<property name="driverClassName" value="${db.driverClass}" />
 		<property name="jdbcUrl" value="${db.jdbcUrl}" />
 		<property name="username" value="${db.user}" />
 		<property name="password" value="${db.password}" />
