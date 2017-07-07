@@ -12,6 +12,7 @@ public class MailHead {
             PropertiesUtils.getProperties().getProperty("email.default.from");
 
     private String from;
+    private String personal;
     private String address;
     private String subject;
     private Object body;
@@ -28,6 +29,11 @@ public class MailHead {
 
     public void setFrom(String from) {
         this.from = from;
+    }
+
+    public void setFrom(String from, String personal) {
+        this.from = from;
+        this.personal = personal;
     }
 
     public String getAddress() {
@@ -73,4 +79,11 @@ public class MailHead {
         this.templateName = templateName;
     }
 
+    public String getPersonal() {
+        return personal;
+    }
+
+    public void setPersonal(String personal) {
+        this.personal = personal;
+    }
 }

@@ -16,6 +16,7 @@ public abstract class MailAbstract implements DelegateMessage {
     protected static final Logger logger = Logger.getLogger(MailAbstract.class);
 
     private String from;
+    private String persoanl;
     private String subject;
     private String address;
     private Object model;
@@ -52,8 +53,8 @@ public abstract class MailAbstract implements DelegateMessage {
         MimeMessage msg = this.sender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(msg, true, defaultCharset);
 
+        helper.setFrom(from, persoanl);
         helper.setTo(address);
-        helper.setFrom(new String(from.getBytes("GBK"), "ISO-8859-1"));
         helper.setSubject(subject);
         helper.setText(content, true);
 
@@ -70,6 +71,11 @@ public abstract class MailAbstract implements DelegateMessage {
 
     public void setFrom(String from) {
         this.from = from;
+    }
+
+    public void setFrom(String from, String persoanl) {
+        setFrom(from);
+        this.persoanl = persoanl;
     }
 
     public String getSubject() {
