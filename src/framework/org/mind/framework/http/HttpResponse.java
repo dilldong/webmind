@@ -29,6 +29,11 @@ public class HttpResponse<T> {
 
     }
 
+    /**
+     * Returns the response GZip stream.
+     * @param con
+     * @throws IOException
+     */
     public HttpResponse(HttpURLConnection con) throws IOException {
         this.con = con;
         try {
