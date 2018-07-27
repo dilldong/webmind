@@ -12,4 +12,5 @@
     <bean id="emailService" class="org.mind.framework.mail.service.EmailServiceImpl">
         <property name="queueService" ref="queueService"/>
     </bean>
+
 </beans>

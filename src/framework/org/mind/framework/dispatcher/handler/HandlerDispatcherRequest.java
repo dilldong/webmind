@@ -1,5 +1,27 @@
 package org.mind.framework.dispatcher.handler;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.mind.framework.Action;
+import org.mind.framework.annotation.Interceptor;
+import org.mind.framework.annotation.Mapping;
+import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.exception.NotSupportedException;
+import org.mind.framework.interceptor.AbstractHandlerInterceptor;
+import org.mind.framework.interceptor.HandlerInterceptor;
+import org.mind.framework.renderer.JavaScriptRender;
+import org.mind.framework.renderer.Render;
+import org.mind.framework.renderer.TextRender;
+import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.MatcherUtils;
+import org.mind.framework.util.UriPath;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -8,25 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mind.framework.Action;
-import org.mind.framework.annotation.Mapping;
-import org.mind.framework.dispatcher.support.ConverterFactory;
-import org.mind.framework.renderer.JavaScriptRender;
-import org.mind.framework.renderer.Render;
-import org.mind.framework.renderer.TextRender;
-import org.mind.framework.util.DateFormatUtils;
-import org.mind.framework.util.MatcherUtils;
-import org.mind.framework.util.UriPath;
 
 
 /**
@@ -46,6 +49,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     private Map<String, Execution> actions;// URI regex mapping object
     private List<String> urisRegex; // URI regex list
 
+    // interceptor mapping
+    private Map<String, HandlerInterceptor> interceptorMap;
+    private List<String> interceptorsRegex;
+
     // static resource decl.
     private String resStr;
 
@@ -64,6 +71,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     public void init(List<Object> beans) {
         this.converter = ConverterFactory.getInstance();
         this.urisRegex = new ArrayList<String>();
+        this.interceptorsRegex = new ArrayList<String>();
         this.resourceHandler = new ResourceHttpRequest(this.servletConfig);
 
         // load web application static resource strs.
@@ -89,16 +97,31 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         };
 
-		/*
-		 * init Action by Spring/Guice Container and create on the URI mapping relationship
-		 */
+        // init Interceptor
+        this.interceptorMap = new HashMap<String, HandlerInterceptor>() {
+            private String regexKey;
+
+            @Override
+            public HandlerInterceptor put(String key, HandlerInterceptor value) {
+                regexKey = MatcherUtils.convertURI(key);
+                if (this.containsKey(regexKey))
+                    throw new IllegalArgumentException("URI mapping is a globally unique, and can not be repeated: " + key);
+
+                interceptorsRegex.add(regexKey);
+                return super.put(regexKey, value);
+            }
+        };
+
+        /*
+         * init Action by Spring/Guice Container and create on the URI mapping relationship
+         */
         for (Object bean : beans) {
             this.loadAction(bean);
         }
-		
-		/*
-		 * detect multipart support:
-		 */
+
+        /*
+         * detect multipart support:
+         */
         try {
             Class.forName("org.apache.commons.fileupload.servlet.ServletFileUpload");
             log.info("using MultipartRequest to handle multipart http request.");
@@ -151,10 +174,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         this.processNoCache(request, response);
-		
-		/*
-		 * find and process action
-		 */
+
+        /*
+         * find and process action
+         */
         Execution execution = null;
         Object[] args = null;
 
@@ -169,10 +192,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             int number = execution.getArgsNumber();
             if (number > 0) {
                 args = new Object[number];
-			
-				/*
-				 * Fetch request parameters in the URI
-				 */
+
+                /*
+                 * Fetch request parameters in the URI
+                 */
                 Class<?> type;
                 for (int i = 0; i < number; i++) {
                     type = execution.getParameterTypes()[i];
@@ -184,11 +207,11 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
             break;
         }
-		
-		/*
-		 * Status code (404) indicating that the requested resource is not
-		 * available.
-		 */
+
+        /*
+         * Status code (404) indicating that the requested resource is not
+         * available.
+         */
         if (execution == null) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
             return;
@@ -206,22 +229,54 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 MultipartHttpServletRequest.isMultipartRequest(request)) {
             request = MultipartHttpServletRequest.getInstance(request);
         }
-		
-		/*
-		 * gloable interceptor exchain
-		 * 
-		 * interceptor.doBefore(execution, request, response);
-		 * execute();
-		 * doAfter();
-		 * renderCompletion();
-		 */
 
+        /*
+         * gloable interceptor exchain
+         *
+         * interceptor.doBefore(execution, request, response);
+         * doAfter();
+         * renderCompletion();
+         */
+        List<HandlerInterceptor> interceptors = new ArrayList<>();
+        if (interceptorsRegex != null) {
+            HandlerInterceptor interceptor;
+            for (String regex : interceptorsRegex) {
+                matcher = MatcherUtils.matcher(path, regex, MatcherUtils.DEFAULT_EQ);
+                if (!matcher.matches())// not-match
+                    continue;
+
+                interceptor = interceptorMap.get(regex);
+
+                // Interceptor doBefore
+                // return false, Return to the request page
+                if (!interceptor.doBefore(request, response))
+                    return;
+
+                interceptors.add(interceptor);
+            }
+        }
 
         // execute action
         try {
             Action.setActionContext(servletContext, request, response);
             Object result = execution.execute(args);
+
+            // Interceptor doAfter
+            if (!interceptors.isEmpty()) {
+                int size = interceptors.size();
+                for (int i = size - 1; i >= 0; i--) {
+                    interceptors.get(i).doAfter(request, response);
+                }
+            }
             this.handleResult(result, request, response);
+
+            // Interceptor renderCompletion
+            if (!interceptors.isEmpty()) {
+                int size = interceptors.size();
+                for (int i = size - 1; i >= 0; i--) {
+                    interceptors.get(i).renderCompletion(request, response);
+                }
+            }
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
@@ -339,11 +394,25 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
      * @param bean
      */
     protected void loadAction(Object bean) {
-        StringBuilder sb = new StringBuilder();
-
         Class<? extends Object> clazz = bean.getClass();
-        Method[] methods = clazz.getMethods();
 
+        // if Interceptor
+        if (clazz.isAnnotationPresent(Interceptor.class)) {
+            if (AbstractHandlerInterceptor.class.isAssignableFrom(clazz) || HandlerInterceptor.class.isAssignableFrom(clazz)) {
+                Interceptor interceptor = clazz.getAnnotation(Interceptor.class);
+                interceptorMap.put(interceptor.value(), (HandlerInterceptor) bean);
+                if (log.isInfoEnabled())
+                    log.info("Loaded Interceptor: " + interceptor.value());
+            } else {
+                log.error("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
+                throw new NotSupportedException("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
+            }
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        // Mapping
+        Method[] methods = clazz.getMethods();
         for (Method method : methods) {
             if (!this.isMappingMethod(method))
                 continue;

@@ -68,6 +68,7 @@ public class MatcherUtils {
         sb.append("^");
         sb.append(
                 uri.replaceAll("(\\$\\{)[A-Za-z_]+\\}", "([^\\/]+)")
+                        .replaceAll("\\*", "([^\\/]+)")
                         .replaceAll("\\/", "\\\\/"));
         sb.append("$");
 
@@ -75,7 +76,6 @@ public class MatcherUtils {
     }
 
     public static void main(String[] args) {
-
         String v = "/user/${id}";
 
         String regex = convertURI(v);
