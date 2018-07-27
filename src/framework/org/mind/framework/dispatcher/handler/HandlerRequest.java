@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.mind.framework.container.Destroyable;
+import org.mind.framework.exception.BaseException;
 
 /**
  * Handler dispatch request processer.
@@ -16,7 +17,7 @@ import org.mind.framework.container.Destroyable;
  */
 public interface HandlerRequest extends Destroyable {
 
-    void init(List<Object> objects);
+    void init(List<Object> objects) throws ServletException;
 
     void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 

@@ -6,6 +6,7 @@ import org.mind.framework.Action;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
@@ -68,7 +69,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     }
 
     @Override
-    public void init(List<Object> beans) {
+    public void init(List<Object> beans) throws ServletException {
         this.converter = ConverterFactory.getInstance();
         this.urisRegex = new ArrayList<String>();
         this.interceptorsRegex = new ArrayList<String>();
@@ -393,7 +394,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
      *
      * @param bean
      */
-    protected void loadAction(Object bean) {
+    protected void loadAction(Object bean) throws ServletException {
         Class<? extends Object> clazz = bean.getClass();
 
         // if Interceptor
@@ -404,8 +405,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 if (log.isInfoEnabled())
                     log.info("Loaded Interceptor: " + interceptor.value());
             } else {
-                log.error("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
-                throw new NotSupportedException("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
+                throw new ServletException("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
             }
             return;
         }
