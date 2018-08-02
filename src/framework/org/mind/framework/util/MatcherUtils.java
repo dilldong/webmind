@@ -1,9 +1,9 @@
 package org.mind.framework.util;
 
+import org.mind.framework.annotation.Mapping;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.mind.framework.annotation.Mapping;
 
 public class MatcherUtils {
 
@@ -68,32 +68,32 @@ public class MatcherUtils {
         sb.append("^");
         sb.append(
                 uri.replaceAll("(\\$\\{)[A-Za-z_]+\\}", "([^\\/]+)")
-                        .replaceAll("\\*", "([^\\/]+)")
+                        .replaceAll("\\*", "\\S*")
                         .replaceAll("\\/", "\\\\/"));
         sb.append("$");
 
         return sb.toString();
     }
 
-    public static void main(String[] args) {
-        String v = "/user/${id}";
-
-        String regex = convertURI(v);
-        System.out.println(regex);
-
-        int count = MatcherUtils.checkCount(v, "(\\$\\{)[A-Za-z_]+\\}");
-        System.out.println("count:" + count);
-
-        String uri = "/user/1332?id=13&path=http://www.c.cs/user/idja/tt";
-        boolean f = MatcherUtils.matcher(uri, regex);
-        System.out.println(f);
-
-
-        String res = "css|js|jpg|png|gif|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
-
-        f = MatcherUtils.matcher("TXT", res, IGNORECASE_EQ).matches();
-        System.out.println("=====" + f);
-
-    }
+//    public static void main(String[] args) {
+//        String v = "/user/${id}";
+//
+//        String regex = convertURI(v);
+//        System.out.println(regex);
+//
+//        int count = MatcherUtils.checkCount(v, "(\\$\\{)[A-Za-z_]+\\}");
+//        System.out.println("count:" + count);
+//
+//        String uri = "/user/1332?id=13&path=http://www.c.cs/user/idja/tt";
+//        boolean f = MatcherUtils.matcher(uri, regex);
+//        System.out.println(f);
+//
+//
+//        String res = "css|js|jpg|png|gif|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
+//
+//        f = MatcherUtils.matcher("TXT", res, IGNORECASE_EQ).matches();
+//        System.out.println("=====" + f);
+//
+//    }
 
 }
