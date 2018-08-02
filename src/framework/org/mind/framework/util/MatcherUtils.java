@@ -68,7 +68,7 @@ public class MatcherUtils {
         sb.append("^");
         sb.append(
                 uri.replaceAll("(\\$\\{)[A-Za-z_]+\\}", "([^\\/]+)")
-                        .replaceAll("\\*", "\\S*")
+                        .replaceAll("\\*", "\\\\S*")
                         .replaceAll("\\/", "\\\\/"));
         sb.append("$");
 
