@@ -2,6 +2,7 @@ package org.mind.framework.renderer;
 
 import org.mind.framework.renderer.template.TemplateFactory;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class TemplateRender extends Render {
     }
 
     @Override
-    public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         if (log.isInfoEnabled())
             log.info("Render path: " + path);
 
