@@ -15,11 +15,11 @@ import java.io.IOException;
 public class NullRender extends Render {
 
     private String uri;
-    private NullRenderType type = NullRenderType.REDIRECT;
+    private NullRenderType type = NullRenderType.FORWARD;
 
     public enum NullRenderType {
         REDIRECT,
-        FORWARD;
+        FORWARD
     }
 
     public NullRender(String uri) {
