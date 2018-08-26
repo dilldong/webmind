@@ -1,8 +1,8 @@
 package org.mind.framework.security;
 
-import java.security.MessageDigest;
-
 import org.apache.log4j.Logger;
+
+import java.security.MessageDigest;
 
 /**
  * MD5Digest用来进行密码加密的md5公用参数

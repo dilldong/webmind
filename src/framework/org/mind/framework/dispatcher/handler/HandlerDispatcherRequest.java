@@ -6,18 +6,16 @@ import org.mind.framework.Action;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.ConverterFactory;
-import org.mind.framework.exception.BaseException;
-import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.renderer.JavaScriptRender;
+import org.mind.framework.renderer.NullRender;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.UriPath;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -312,12 +310,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             String str = (String) result;
 
             if (str.startsWith("forward:")) {
-                this.doForward(str.substring("forward:".length()), request, response);
+                new NullRender(str.substring("forward:".length()), NullRender.NullRenderType.FORWARD).render(request, response);
                 return;
             }
 
             if (str.startsWith("redirect:")) {
-                this.doRedirect(str.substring("redirect:".length()), request, response);
+                new NullRender(str.substring("redirect:".length()), NullRender.NullRenderType.REDIRECT).render(request, response);
                 return;
             }
 
@@ -332,45 +330,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
         throw new ServletException("Cannot handle result with type '" + result.getClass().getName());
 
-    }
-
-    protected void doForward(
-            String uri,
-            HttpServletRequest request,
-            HttpServletResponse response)
-            throws IOException, ServletException {
-
-        if (log.isInfoEnabled())
-            log.info("Forward path: " + uri);
-
-        // 	Unwrap the multipart request, if there is one.
-//	        if (request instanceof MultipartRequestWrapper) {
-//	            request = ((MultipartRequestWrapper) request).getRequest();
-//	        }
-
-        RequestDispatcher rd = request.getRequestDispatcher(uri);
-        if (rd == null) {
-            response.sendError(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not forward path: " + uri);
-            return;
-        }
-
-        rd.forward(request, response);
-    }
-
-    protected void doRedirect(
-            String uri,
-            HttpServletRequest request,
-            HttpServletResponse response)
-            throws IOException, ServletException {
-
-        if (uri.startsWith("/"))
-            uri = request.getContextPath() + uri;
-
-        if (log.isInfoEnabled())
-            log.info("Redirect path: " + uri);
-
-        response.sendRedirect(response.encodeRedirectURL(uri));
     }
 
     /**

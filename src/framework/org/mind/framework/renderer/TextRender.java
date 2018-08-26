@@ -1,11 +1,10 @@
 package org.mind.framework.renderer;
 
-import java.io.IOException;
+import org.mind.framework.util.ResponseUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.mind.framework.util.ResponseUtils;
+import java.io.IOException;
 
 /**
  * Render html, javascript, css or any text type

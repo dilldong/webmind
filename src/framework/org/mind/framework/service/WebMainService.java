@@ -17,6 +17,7 @@ public class WebMainService extends AbstractService {
         this.setServiceName(getClass().getSimpleName());
     }
 
+    @SuppressWarnings("Duplicates")
     protected void startChildServices() {
         if (childServices != null) {
             for (final Service serv : childServices) {
@@ -34,6 +35,7 @@ public class WebMainService extends AbstractService {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     protected void stopChildServices() {
         if (childServices != null) {
             for (final Service serv : childServices) {

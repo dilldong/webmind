@@ -1,16 +1,15 @@
 package org.mind.framework.renderer.template;
 
-import java.io.IOException;
-import java.util.Map;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.io.VelocityWriter;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.io.VelocityWriter;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Velocity Template.

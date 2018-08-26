@@ -1,8 +1,8 @@
 package org.mind.framework.security;
 
-import java.io.UnsupportedEncodingException;
-
 import org.apache.log4j.Logger;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * 是一个标准的Base64编码和转换的工具，为了迎合js的需要，

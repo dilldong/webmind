@@ -1,12 +1,12 @@
 package org.mind.framework.renderer;
 
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * Render object to indicate how to rendering the http response.
@@ -41,6 +41,6 @@ public abstract class Render {
      * @param response HttpServletResponse.
      * @throws any Exception.
      */
-    public abstract void render(HttpServletRequest request, HttpServletResponse response) throws IOException;
+    public abstract void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 
 }

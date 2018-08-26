@@ -1,8 +1,7 @@
 package org.mind.framework.util;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 
 public class UriPath {
 

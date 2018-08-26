@@ -1,9 +1,9 @@
 package org.mind.framework.service;
 
+import org.apache.log4j.Logger;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import org.apache.log4j.Logger;
 
 /**
  * 从数据库定时同步数据

@@ -1,13 +1,12 @@
 package org.mind.framework.renderer;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import org.mind.framework.renderer.template.TemplateFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.mind.framework.renderer.template.TemplateFactory;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * template engine output.

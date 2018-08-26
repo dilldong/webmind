@@ -1,14 +1,13 @@
 package org.mind.framework.renderer;
 
-import java.io.File;
-import java.io.IOException;
+import org.mind.framework.Action;
+import org.mind.framework.util.ResponseUtils;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.mind.framework.Action;
-import org.mind.framework.util.ResponseUtils;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Render http response as binary stream. This is usually used to render PDF,

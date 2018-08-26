@@ -1,9 +1,9 @@
 package org.mind.framework;
 
-import javax.servlet.ServletContext;
-
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import javax.servlet.ServletContext;
 
 public final class ContextSupport {
 

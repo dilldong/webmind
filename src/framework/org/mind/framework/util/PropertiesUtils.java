@@ -1,13 +1,13 @@
 package org.mind.framework.util;
 
+import org.apache.log4j.Logger;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import org.apache.log4j.Logger;
 
 /**
  * 读取*.properies文件。

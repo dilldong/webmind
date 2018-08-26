@@ -1,9 +1,9 @@
 package org.mind.framework.renderer.template;
 
-import javax.servlet.ServletContext;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.ServletContext;
 
 /**
  * TemplateFactory which holds the singleton instance of TemplateFactory.

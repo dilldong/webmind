@@ -1,11 +1,11 @@
 package org.mind.framework.util;
 
+import org.apache.log4j.Logger;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-
-import org.apache.log4j.Logger;
 
 /**
  * 对日期、时间格式化工具类

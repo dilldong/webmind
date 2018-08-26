@@ -1,9 +1,9 @@
 package org.mind.framework.service.queue;
 
-import java.util.concurrent.BlockingQueue;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.util.concurrent.BlockingQueue;
 
 public final class QueueLittle implements QueueService {
 	

@@ -1,8 +1,8 @@
 package org.mind.framework.service;
 
-import java.util.Set;
-
 import org.apache.log4j.Logger;
+
+import java.util.Set;
 
 /**
  * 提供非WEB应用服务，不允许使用多个相同的对象构建服务
@@ -19,6 +19,7 @@ public class MainService extends AbstractService {
         setServiceName(getClass().getSimpleName());
     }
 
+    @SuppressWarnings("Duplicates")
     protected void startChildServices() {
         if (childServices != null) {
             for (final Service serv : childServices) {
@@ -36,6 +37,7 @@ public class MainService extends AbstractService {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     protected void stopChildServices() {
         if (childServices != null) {
             for (final Service serv : childServices) {
