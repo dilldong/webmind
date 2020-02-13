@@ -82,10 +82,6 @@ public final class Action {
         return request.getSession();
     }
 
-    public void getRequestValue(String def){
-        StringUtils.defaultString();
-    }
-
     /**
      * Get current Action object.
      */
