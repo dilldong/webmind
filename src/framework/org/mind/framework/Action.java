@@ -1,5 +1,7 @@
 package org.mind.framework;
 
+import org.apache.commons.lang.StringUtils;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -78,6 +80,10 @@ public final class Action {
      */
     public HttpSession getSession() {
         return request.getSession();
+    }
+
+    public void getRequestValue(String def){
+        StringUtils.defaultString();
     }
 
     /**
