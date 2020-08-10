@@ -1,11 +1,28 @@
 package org.mind.framework;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContext;
 
 public final class ContextSupport {
+
+    /**
+     * 支持本地Spring文件加载
+     * @param configLocations
+     * @return
+     */
+    public static ApplicationContext initContext(String[] configLocations) {
+        for (int i = 0; i < configLocations.length; i++) {
+            if (!configLocations[i].startsWith("file:")) {
+                configLocations[i] = "file:" + configLocations[i];
+            }
+        }
+        return new FileSystemXmlApplicationContext(configLocations);
+    }
+
 
     /**
      * 获取spring上下文管理的java对象
