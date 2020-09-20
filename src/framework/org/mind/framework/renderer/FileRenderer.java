@@ -46,7 +46,7 @@ public class FileRenderer extends Render {
         }
 
         if (file.length() > Integer.MAX_VALUE)
-            throw new IOException("Resource content too long (beyond Integer.MAX_VALUE): " + file.getName());
+            throw new IOException(String.format("Resource content too long (beyond Integer.MAX_VALUE): %s", file.getName()));
 
 
         String mime = contentType;

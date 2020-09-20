@@ -1,5 +1,10 @@
 package org.mind.framework.http;
 
+import com.google.gson.reflect.TypeToken;
+import org.mind.framework.util.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,14 +13,9 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.log4j.Logger;
-import org.mind.framework.util.JsonUtils;
-
-import com.google.gson.reflect.TypeToken;
-
 public class HttpResponse<T> {
 
-    protected static final Logger logger = Logger.getLogger(HttpResponse.class);
+    protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
 
     protected int responseCode;
     protected String responseAsString = null;
@@ -47,7 +47,7 @@ public class HttpResponse<T> {
             this.responseCode = con.getResponseCode();
         }
 
-        logger.info("http response code: " + this.responseCode);
+        log.info("http response code: {}", this.responseCode);
 
         if ((inStream = con.getErrorStream()) == null)
             inStream = con.getInputStream();
@@ -113,7 +113,7 @@ public class HttpResponse<T> {
             streamConsumed = true;
 
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         return responseAsString;

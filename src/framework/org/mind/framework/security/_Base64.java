@@ -1,8 +1,10 @@
 package org.mind.framework.security;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 是一个标准的Base64编码和转换的工具，为了迎合js的需要，
@@ -13,7 +15,7 @@ import java.io.UnsupportedEncodingException;
  */
 final class _Base64 {
 	
-	private static Logger logger = Logger.getLogger(_Base64.class);
+	private static final Logger log = LoggerFactory.getLogger(_Base64.class);
 
 	private static final String KEY_STR = "Aa9Bb8Cc7Dd6Ee5Ff4Gg3Hh2Ii1Jj0Kk_Ll@Mm$NnOoPpQqRrSsTtUuVvWwXxYyZz";
 //	private static final String KEY_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@*=";
@@ -55,14 +57,9 @@ final class _Base64 {
 			return input;
 
 		byte[] b = null;
-		try {
-			b = input.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			logger.error(e.getMessage(), e);
-			return null;
-		}
+        b = input.getBytes(StandardCharsets.UTF_8);
 
-		return this.encode(b);
+        return this.encode(b);
 
 	}
 
@@ -120,13 +117,9 @@ final class _Base64 {
 		byte[] b = decodeToByte(decodeStr);
 		if (b == null || b.length == 0)
 			return null;
-		
-		try {
-			return new String(b, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			logger.error(e.getMessage(), e);
-		}
-		return null;
+
+        return new String(b, StandardCharsets.UTF_8);
+        return null;
 	}
 
 	/**

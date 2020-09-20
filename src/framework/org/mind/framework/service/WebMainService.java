@@ -1,6 +1,7 @@
 package org.mind.framework.service;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 提供WEB应用服务，允许使用多个相同Service对象构建服务
@@ -9,7 +10,7 @@ import org.apache.log4j.Logger;
  */
 public class WebMainService extends AbstractService {
 
-    static Logger logger = Logger.getLogger(WebMainService.class);
+    static final Logger logger = LoggerFactory.getLogger(WebMainService.class);
 
     private Service[] childServices;
 
@@ -25,7 +26,7 @@ public class WebMainService extends AbstractService {
                     Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("Service " + serv + " to start ....");
+                            logger.info("Service [{}] to start ....", serv);
                             serv.start();
                         }
                     });
@@ -35,7 +36,6 @@ public class WebMainService extends AbstractService {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     protected void stopChildServices() {
         if (childServices != null) {
             for (final Service serv : childServices) {
@@ -43,7 +43,7 @@ public class WebMainService extends AbstractService {
                     Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("Service " + serv + " to stop ....");
+                            logger.info("Service [{}] to stop ....", serv);
                             serv.stop();
                         }
                     });

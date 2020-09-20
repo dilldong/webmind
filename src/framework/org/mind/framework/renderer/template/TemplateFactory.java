@@ -1,7 +1,7 @@
 package org.mind.framework.renderer.template;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 
@@ -11,8 +11,8 @@ import javax.servlet.ServletContext;
  * @author dp
  */
 public abstract class TemplateFactory {
-	
-	private static final Log log = LogFactory.getLog(TemplateFactory.class);
+
+	private static final Logger log = LoggerFactory.getLogger(TemplateFactory.class);
 	
 	private static TemplateFactory tf;
 	
@@ -22,7 +22,7 @@ public abstract class TemplateFactory {
 	 */
 	public static void setTemplateFactory(TemplateFactory instanceFactory){
 		tf = instanceFactory;
-		log.info("Template factory is: "+ tf.getClass().getName());
+		log.info("Template factory is: {}", tf.getClass().getName());
 	}
 	
 	public static TemplateFactory getTemplateFactory(){

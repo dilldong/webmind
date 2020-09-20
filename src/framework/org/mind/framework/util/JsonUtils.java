@@ -3,7 +3,9 @@ package org.mind.framework.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -12,7 +14,7 @@ import java.util.Iterator;
 
 public class JsonUtils {
 
-    static final Logger logger = Logger.getLogger(JsonUtils.class);
+    static final Logger log = LoggerFactory.getLogger(JsonUtils.class);
 
     /**
      * 空的 {@code JSON} 数据 - <code>"{}"</code>。
@@ -42,8 +44,7 @@ public class JsonUtils {
      * @return 目标对象的 {@code JSON} 格式的字符串。
      */
     public static String toJson(Object target) {
-        return
-                toJson(target, null, false, null, null, true);
+        return toJson(target, null, false, null, null, true);
     }
 
     /**
@@ -59,8 +60,7 @@ public class JsonUtils {
      * @return 目标对象的 {@code JSON} 格式的字符串。
      */
     public static String toJson(Object target, boolean isSerializeNulls, boolean excludesFieldsWithoutExpose) {
-        return
-                toJson(target, null, isSerializeNulls, null, null, excludesFieldsWithoutExpose);
+        return toJson(target, null, isSerializeNulls, null, null, excludesFieldsWithoutExpose);
     }
 
     /**
@@ -76,8 +76,7 @@ public class JsonUtils {
      * @return 目标对象的 {@code JSON} 格式的字符串。
      */
     public static String toJson(Object target, boolean excludesFieldsWithoutExpose) {
-        return
-                toJson(target, null, false, null, null, excludesFieldsWithoutExpose);
+        return toJson(target, null, false, null, null, excludesFieldsWithoutExpose);
     }
 
 
@@ -95,8 +94,7 @@ public class JsonUtils {
      * @return 目标对象的 {@code JSON} 格式的字符串。
      */
     public static String toJson(Object target, Type targetType, boolean excludesFieldsWithoutExpose) {
-        return
-                toJson(target, targetType, false, null, null, excludesFieldsWithoutExpose);
+        return toJson(target, targetType, false, null, null, excludesFieldsWithoutExpose);
     }
 
     /**
@@ -135,8 +133,7 @@ public class JsonUtils {
         if (excludesFieldsWithoutExpose)
             builder.excludeFieldsWithoutExposeAnnotation();
 
-        return
-                toJson(target, targetType, builder);
+        return toJson(target, targetType, builder);
     }
 
     /**
@@ -163,7 +160,9 @@ public class JsonUtils {
                             gson.toJson(target) :
                             gson.toJson(target, targetType);
         } catch (Exception ex) {
-            logger.warn("目标对象 " + target.getClass().getName() + " 转换 JSON 字符串时，发生异常！", ex);
+            log.warn("目标对象: {} 转换 JSON 字符串时，发生异常！", target.getClass().getName());
+            log.warn(ex.getMessage(), ex);
+
             if (target instanceof Collection<?>
                     || target instanceof Iterator<?>
                     || target instanceof Enumeration<?>
@@ -185,18 +184,19 @@ public class JsonUtils {
      * @return 给定的 {@code JSON} 字符串表示的指定的类型对象。
      */
     public static <T> T fromJson(String json, TypeToken<T> token, String datePattern) {
-        if (json == null || "".equals(json))
+        if (StringUtils.isBlank(json))
             return null;
 
         GsonBuilder builder = new GsonBuilder();
-        if (datePattern == null || "".equals(datePattern.trim()))
+        if (StringUtils.isBlank(datePattern))
             datePattern = DEFAULT_DATE_PATTERN;
 
         Gson gson = builder.setDateFormat(datePattern).create();
         try {
             return gson.fromJson(json, token.getType());
         } catch (Exception ex) {
-            logger.error(json + " 无法转换为 " + token.getRawType().getName() + " 对象!", ex);
+            log.error("{} 无法转换为: {} 对象", json, token.getRawType().getName());
+            log.error(ex.getMessage(), ex);
             return null;
         }
     }
@@ -210,8 +210,7 @@ public class JsonUtils {
      * @return 给定的 {@code JSON} 字符串表示的指定的类型对象。
      */
     public static <T> T fromJson(String json, TypeToken<T> token) {
-        return
-                fromJson(json, token, null);
+        return fromJson(json, token, null);
     }
 
     /**
@@ -225,19 +224,19 @@ public class JsonUtils {
      * @return 给定的 {@code JSON} 字符串表示的指定的类型对象。
      */
     public static <T> T fromJson(String json, Class<T> clazz, String datePattern) {
-        if (json == null || "".equals(json))
+        if (StringUtils.isBlank(json))
             return null;
 
         GsonBuilder builder = new GsonBuilder();
-        if (datePattern == null || "".equals(datePattern.trim()))
+        if (StringUtils.isBlank(datePattern))
             datePattern = DEFAULT_DATE_PATTERN;
 
         Gson gson = builder.setDateFormat(datePattern).create();
         try {
-            return
-                    gson.fromJson(json, clazz);
+            return gson.fromJson(json, clazz);
         } catch (Exception ex) {
-            logger.error(json + " 无法转换为 " + clazz.getName() + " 对象!", ex);
+            log.error("{} 无法转换为: {} 对象", json, clazz.getName());
+            log.error(ex.getMessage(), ex);
             return null;
         }
     }
@@ -252,8 +251,7 @@ public class JsonUtils {
      * @return 给定的 {@code JSON} 字符串表示的指定的类型对象。
      */
     public static <T> T fromJson(String json, Class<T> clazz) {
-        return
-                fromJson(json, clazz, null);
+        return fromJson(json, clazz, null);
     }
 
 }

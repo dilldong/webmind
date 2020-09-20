@@ -88,7 +88,7 @@ public abstract class ReflectionUtils {
         } catch (IllegalAccessException ex) {
             handleReflectionException(ex);
             throw new IllegalStateException(
-                    "Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
+                    String.format("Unexpected reflection exception - %s : %s", ex.getClass().getName(), ex.getMessage()));
         }
     }
 
@@ -110,7 +110,7 @@ public abstract class ReflectionUtils {
         } catch (IllegalAccessException ex) {
             handleReflectionException(ex);
             throw new IllegalStateException(
-                    "Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
+                    String.format("Unexpected reflection exception - %s : %s", ex.getClass().getName(), ex.getMessage()));
         }
     }
 
@@ -245,10 +245,10 @@ public abstract class ReflectionUtils {
      */
     public static void handleReflectionException(Exception ex) {
         if (ex instanceof NoSuchMethodException) {
-            throw new IllegalStateException("Method not found: " + ex.getMessage());
+            throw new IllegalStateException(String.format("Method not found: %s", ex.getMessage()));
         }
         if (ex instanceof IllegalAccessException) {
-            throw new IllegalStateException("Could not access method: " + ex.getMessage());
+            throw new IllegalStateException(String.format("Could not access method: %s", ex.getMessage()));
         }
         if (ex instanceof InvocationTargetException) {
             handleInvocationTargetException((InvocationTargetException) ex);
@@ -322,8 +322,7 @@ public abstract class ReflectionUtils {
      */
     private static void handleUnexpectedException(Throwable ex) {
         // Needs to avoid the chained constructor for JDK 1.4 compatibility.
-        IllegalStateException isex = new IllegalStateException("Unexpected exception thrown");
-        isex.initCause(ex);
+        IllegalStateException isex = new IllegalStateException("Unexpected exception thrown", ex);
         throw isex;
     }
 
@@ -480,7 +479,7 @@ public abstract class ReflectionUtils {
                     mc.doWith(methods[i]);
                 } catch (IllegalAccessException ex) {
                     throw new IllegalStateException(
-                            "Shouldn't be illegal to access method '" + methods[i].getName() + "': " + ex);
+                            String.format("Shouldn't be illegal to access method '%s': %s", methods[i].getName(), ex));
                 }
             }
             targetClass = targetClass.getSuperclass();
@@ -499,7 +498,7 @@ public abstract class ReflectionUtils {
                 list.add(method);
             }
         });
-        return (Method[]) list.toArray(new Method[list.size()]);
+        return list.toArray(new Method[list.size()]);
     }
 
 
@@ -538,7 +537,7 @@ public abstract class ReflectionUtils {
                     fc.doWith(fields[i]);
                 } catch (IllegalAccessException ex) {
                     throw new IllegalStateException(
-                            "Shouldn't be illegal to access field '" + fields[i].getName() + "': " + ex);
+                            String.format("Shouldn't be illegal to access field '%s': %s", fields[i].getName(), ex));
                 }
             }
             targetClass = targetClass.getSuperclass();
@@ -561,8 +560,9 @@ public abstract class ReflectionUtils {
             throw new IllegalArgumentException("Destination for field copy cannot be null");
         }
         if (!src.getClass().isAssignableFrom(dest.getClass())) {
-            throw new IllegalArgumentException("Destination class [" + dest.getClass().getName() +
-                    "] must be same or subclass as source class [" + src.getClass().getName() + "]");
+            throw new IllegalArgumentException(
+                    String.format("Destination class [%s] must be same or subclass as source class [%s]",
+                            dest.getClass().getName(), src.getClass().getName()));
         }
         doWithFields(src.getClass(), new FieldCallback() {
             public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
@@ -577,7 +577,7 @@ public abstract class ReflectionUtils {
     /**
      * Action to take on each method.
      */
-    public static interface MethodCallback {
+    public interface MethodCallback {
 
         /**
          * Perform an operation using the given method.
@@ -591,7 +591,7 @@ public abstract class ReflectionUtils {
     /**
      * Callback optionally used to method fields to be operated on by a method callback.
      */
-    public static interface MethodFilter {
+    public interface MethodFilter {
 
         /**
          * Determine whether the given method matches.
@@ -605,7 +605,7 @@ public abstract class ReflectionUtils {
     /**
      * Callback interface invoked on each field in the hierarchy.
      */
-    public static interface FieldCallback {
+    public interface FieldCallback {
 
         /**
          * Perform an operation using the given field.
@@ -619,7 +619,7 @@ public abstract class ReflectionUtils {
     /**
      * Callback optionally used to filter fields to be operated on by a field callback.
      */
-    public static interface FieldFilter {
+    public interface FieldFilter {
 
         /**
          * Determine whether the given field matches.

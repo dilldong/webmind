@@ -36,17 +36,15 @@ public class NullRender extends Render {
         switch (type) {
             case REDIRECT:
                 if (uri.startsWith("/"))
-                    uri = request.getContextPath() + uri;
+                    uri = String.format("%s%s", request.getContextPath(), uri);
 
-                if (log.isInfoEnabled())
-                    log.info("Redirect path: " + uri);
+                log.info("Redirect path: {}", uri);
 
                 response.sendRedirect(response.encodeRedirectURL(uri));
                 break;
 
             case FORWARD:
-                if (log.isInfoEnabled())
-                    log.info("Forward path: " + uri);
+                log.info("Forward path: {}", uri);
 
                 // 	Unwrap the multipart request, if there is one.
 //	        if (request instanceof MultipartRequestWrapper) {
@@ -56,7 +54,8 @@ public class NullRender extends Render {
                 RequestDispatcher rd = request.getRequestDispatcher(uri);
                 if (rd == null) {
                     response.sendError(
-                            HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not forward path: " + uri);
+                            HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                            String.format("Not forward path: %s", uri));
                     return;
                 }
 

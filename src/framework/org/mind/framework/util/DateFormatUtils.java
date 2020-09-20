@@ -1,6 +1,7 @@
 package org.mind.framework.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,7 +15,7 @@ import java.util.Date;
  */
 public class DateFormatUtils {
 
-    static Logger logger = Logger.getLogger(DateFormatUtils.class);
+    static final Logger log = LoggerFactory.getLogger(DateFormatUtils.class);
 
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
@@ -103,7 +104,7 @@ public class DateFormatUtils {
         try {
             return java.text.DateFormat.getDateInstance().parse(source);
         } catch (ParseException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }
@@ -116,7 +117,7 @@ public class DateFormatUtils {
         try {
             return java.text.DateFormat.getDateTimeInstance().parse(source);
         } catch (ParseException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }
@@ -130,7 +131,7 @@ public class DateFormatUtils {
         try {
             return df.parse(source);
         } catch (ParseException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }

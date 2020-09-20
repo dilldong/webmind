@@ -5,7 +5,7 @@
  * 反而会增加。这些人对freeMemory()这个方法的意义应该有一些误解，他们认为这个方法返回的是操作系统的剩余可用内存，
  * 其实根本就不是这样的。这三个方法反映的都是java这个进程的内存情况，跟操作系统的内存根本没有关系。
  * 下面结合totalMemory(),maxMemory()一起来解释。
- * 
+ *
  * maxMemory()这个方法返回的是java虚拟机（这个进程）能构从操作系统那里挖到的最大的内存，
  * 以字节为单位，如果在运行java程序的时候，没有添加-Xmx参数，那么就是64兆，
  * 也就是说maxMemory()返回的大约是64*1024*1024字节，这是java虚拟机默认情况下能从操作系统
@@ -27,16 +27,16 @@
 
 package org.mind.framework.cache;
 
+import org.mind.framework.util.DateFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mind.framework.util.DateFormatUtils;
 
 /**
  * 默认基于LRU(Least Recently Used)的缓存实现
@@ -48,7 +48,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     private static final long serialVersionUID = -3563668641502091167L;
 
-    private static final Log log = LogFactory.getLog(LruCache.class);
+    private static final Logger log = LoggerFactory.getLogger(LruCache.class);
 
     /*
      * 保持活跃的缓存条目最大数,默认大小1024
@@ -89,8 +89,7 @@ public class LruCache extends AbstractCache implements Cacheable {
             protected boolean removeEldestEntry(Entry<String, Object> eldest) {
                 boolean tooBig = this.size() > LruCache.this.cacheSize;
                 if (tooBig) {
-                    if (log.isDebugEnabled())
-                        log.debug("Remove the last entry key:" + eldest.getKey());
+                    log.debug("Remove the last entry key: {}", eldest.getKey());
                 }
                 return tooBig;
             }
@@ -164,7 +163,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (interval > 0 && (DateFormatUtils.getTimeMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
             element = null;
-            log.warn("Remove Cache key, The access time interval expires. key=" + key);
+            log.warn("Remove Cache key, The access time interval expires. key = {}", key);
             return element;
         }
 
@@ -195,7 +194,8 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (!this.isEmpty()) {
             itemsMap.clear();
             itemsMap = null;
-            log.info("Destroy CacheManager, Clear all items");
+            if (log.isInfoEnabled())
+                log.info("Destroy CacheManager, Clear all items");
         }
     }
 

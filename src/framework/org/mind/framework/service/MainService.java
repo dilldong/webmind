@@ -1,6 +1,7 @@
 package org.mind.framework.service;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -11,7 +12,7 @@ import java.util.Set;
  */
 public class MainService extends AbstractService {
 
-    static Logger logger = Logger.getLogger(MainService.class);
+    static final Logger logger = LoggerFactory.getLogger(MainService.class);
 
     private Set<Service> childServices;
 
@@ -27,7 +28,7 @@ public class MainService extends AbstractService {
                     Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("Service " + serv + " to start ....");
+                            logger.info("Service [{}] to start ....", serv);
                             serv.start();
                         }
                     });
@@ -44,7 +45,7 @@ public class MainService extends AbstractService {
                 if (serv != null) {
                     Thread t = new Thread(new Runnable() {
                         public void run() {
-                            logger.info("Service " + serv + " to stop ....");
+                            logger.info("Service [{}] to stop ....", serv);
                             serv.stop();
                         }
                     });

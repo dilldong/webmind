@@ -16,20 +16,20 @@ import java.io.OutputStream;
 
 import javax.imageio.ImageIO;
 
-import org.apache.log4j.Logger;
-
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGEncodeParam;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ImageUtils {
 	
-	private static final Logger logger = Logger.getLogger(ImageUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(ImageUtils.class);
 	
 	/**
 	 * 为图片添加水印处理
-	 * @param sourceImage 源图片
+	 * @param imageStream 源图片
 	 * @param savePath 保存图片路径(JPG格式)
 	 * @param markPath 水印图片路径
 	 */
@@ -46,7 +46,7 @@ public class ImageUtils {
 	
 	/**
 	 * 为图片添加水印处理
-	 * @param sourceImage 源图片
+	 * @param imageStream 源图片
 	 * @param out 输出图片(输出JPG格式)
 	 * @param markPath 水印图片路径
 	 */

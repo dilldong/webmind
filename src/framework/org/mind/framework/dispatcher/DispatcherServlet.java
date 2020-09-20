@@ -1,15 +1,5 @@
 package org.mind.framework.dispatcher;
 
-import java.io.IOException;
-import java.util.List;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.dispatcher.handler.HandlerDispatcherRequest;
@@ -18,6 +8,15 @@ import org.mind.framework.dispatcher.support.WebContainerGenerator;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * DispatcherServlet must be mapped to root URL "/". It handles ALL requests
@@ -29,7 +28,7 @@ public class DispatcherServlet extends HttpServlet {
 
     private static final long serialVersionUID = 4011062653282779809L;
 
-    private static final Log log = LogFactory.getLog(DispatcherServlet.class);
+    private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
     /**
      * HTTP method "GET"
@@ -128,12 +127,6 @@ public class DispatcherServlet extends HttpServlet {
      * @throws BaseException
      */
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        /*
-         * 剩余处理请求:
-		 *    
-		 * 2：对拦截器进行处理，拦截器顺序处理（延迟）
-		 * 3：调用拦截器（延迟）
-		 */
         this.dispatcher.processor(request, response);
     }
 

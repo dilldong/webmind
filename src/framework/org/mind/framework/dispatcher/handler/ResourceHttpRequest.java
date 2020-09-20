@@ -1,25 +1,24 @@
 package org.mind.framework.dispatcher.handler;
 
-import java.io.File;
-import java.io.IOException;
+import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.ResponseUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mind.framework.util.DateFormatUtils;
-import org.mind.framework.util.ResponseUtils;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author dp
  */
 public class ResourceHttpRequest implements HandlerResult {
 
-    private static final Log log = LogFactory.getLog(ResourceHttpRequest.class);
+    private static final Logger log = LoggerFactory.getLogger(ResourceHttpRequest.class);
 
     private ServletContext servletContext;
 
@@ -45,8 +44,8 @@ public class ResourceHttpRequest implements HandlerResult {
         int t = Integer.parseInt(expSec);
         if (t > 0) {
             this.expires = t * 1000L;// ms
-            this.maxAge = "max-age=" + t;
-            log.info("Static file's cache time is set to " + t + " seconds.");
+            this.maxAge = String.format("max-age=%d", t);
+            log.info("Static file's cache time is set to {} seconds.", t);
         } else if (t < 0) {
             this.expires = -1L;
             log.info("Static file is set to no cache.");
@@ -63,7 +62,7 @@ public class ResourceHttpRequest implements HandlerResult {
         String uri = (String) result;
         if (uri.toUpperCase().startsWith("/WEB-INF/") || uri.toUpperCase().startsWith("/META-INF/")) {
 
-            log.error(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION + " - Not Author access.");
+            log.error("{} - Not Author access.", HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION);
             response.sendError(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION, "Not Author access.");
             return;
         }
@@ -71,7 +70,7 @@ public class ResourceHttpRequest implements HandlerResult {
         File file = new File(this.servletContext.getRealPath(uri));
 
         if (file == null || !file.isFile()) {
-            log.error(HttpServletResponse.SC_NOT_FOUND + " - " + request.getRequestURI() + " - Access resource is not found.");
+            log.error("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
@@ -82,7 +81,7 @@ public class ResourceHttpRequest implements HandlerResult {
 
         // cache
         if (modifiedSince != -1 && modifiedSince >= lastModified) {
-            log.info(HttpServletResponse.SC_NOT_MODIFIED + " - Resource Not Modified.");
+            log.info("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             return;
         }
@@ -103,7 +102,7 @@ public class ResourceHttpRequest implements HandlerResult {
 //      String name = request.getParameter("_download");
 //      if (name!=null) {
 //          resp.setContentType(MIME_OCTET_STREAM);
-//          resp.setHeader("Content-disposition", "attachment; filename=" + name);
+//          resp.setHeader(String.format("Content-disposition", "attachment; filename=%s", name));
 //      }
 
         String mime = servletContext.getMimeType(file.getName());

@@ -6,11 +6,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Compress by GZIP stream
@@ -19,7 +20,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class GZip {
 
-    private static final Log log = LogFactory.getLog(GZip.class);
+    private static final Logger log = LoggerFactory.getLogger(GZip.class);
 
     public static String decompress(byte[] bytes) {
         try {
@@ -51,7 +52,7 @@ public class GZip {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GZIPOutputStream gzipOut = new GZIPOutputStream(out);
-            gzipOut.write(str.getBytes("UTF-8"));
+            gzipOut.write(str.getBytes(StandardCharsets.UTF_8));
             gzipOut.flush();
             gzipOut.close();
             return out.toByteArray();

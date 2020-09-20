@@ -1,7 +1,7 @@
 package org.mind.framework.renderer;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +15,7 @@ import java.io.IOException;
  */
 public abstract class Render {
 
-    protected static final Log log = LogFactory.getLog(Render.class);
+    protected static final Logger log = LoggerFactory.getLogger(Render.class);
 
     protected String contentType;
 

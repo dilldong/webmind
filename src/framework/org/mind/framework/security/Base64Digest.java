@@ -44,13 +44,10 @@ public class Base64Digest {
      * @author dongping
      * @date May 2, 2010
      */
-    public static void main(String[] args) {
-
-        String str = Base64Digest.decode("EgEt5BASeB7veT7z");
-        System.out.println(str);
-
-
-    }
+//    public static void main(String[] args) {
+//        String str = Base64Digest.decode("EgEt5BASeB7veT7z");
+//        System.out.println(str);
+//    }
 
 }
 

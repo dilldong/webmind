@@ -11,13 +11,14 @@ import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.log4j.Logger;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.PropertiesUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 上传文件
@@ -26,7 +27,7 @@ import org.mind.framework.util.PropertiesUtils;
  */
 public class UploadFile {
 
-    private static Logger logger = Logger.getLogger(UploadFile.class);
+    private static final Logger log = LoggerFactory.getLogger(UploadFile.class);
 
     private String directory;
 
@@ -53,7 +54,6 @@ public class UploadFile {
      * 需要设置文件的存放路径；
      * 如果未设置该项，将使用frame.prperties文件的: upload.dir属性值。
      *
-     * @param dir
      * @throws IOException
      * @author dongping
      */
@@ -71,11 +71,11 @@ public class UploadFile {
 
         // check directory
         if (!file.isDirectory())
-            throw new IllegalArgumentException("Not a directory: " + directory);
+            throw new IllegalArgumentException(String.format("Not a directory: %s", directory));
 
         // check writable
         if (!file.canWrite())
-            throw new IllegalArgumentException("Not writable: " + directory);
+            throw new IllegalArgumentException(String.format("Not writable: %s", directory));
 
         this.directory = directory;
 
@@ -93,13 +93,15 @@ public class UploadFile {
      */
     public List<UploadProperty> upload() throws IOException {
         if (this.request.isRequestFailed())
-            throw new NotSupportedException("上传的文件大小: " + this.request.getRequestContentLength() + ", 限制上传大小: " + this.request.getDefaultSize());
+            throw new NotSupportedException(
+                    String.format("上传的文件大小: %d, 限制大小: %d",
+                            this.request.getRequestContentLength(), this.request.getDefaultSize()));
 
         long currentTime = DateFormatUtils.getTimeMillis();
 
-		/*
-		 * 默认初始化6个上传文件大小 
-		 */
+        /*
+         * 默认初始化6个上传文件大小
+         */
         List<UploadProperty> props = new ArrayList<UploadProperty>(6);
 
         int i = 1;
@@ -112,13 +114,13 @@ public class UploadFile {
             String fileName = item.getFileName();
             if (fileName == null)
                 continue;
-			
-			/*
-			 * 匹配允许的文件格式
-			 */
+
+            /*
+             * 匹配允许的文件格式
+             */
             String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
             if (!MatcherUtils.matcher(suffix, regexType, MatcherUtils.IGNORECASE_EQ).matches())
-                throw new NotSupportedException(suffix + "类型文件格式不匹配，允许格式有：" + regexType);
+                throw new NotSupportedException(String.format("%s类型文件格式不匹配，允许格式有：%s", suffix, regexType));
 
             fileName = sb
                     .append(this.directory).append(File.separator).append(currentTime)
@@ -144,8 +146,7 @@ public class UploadFile {
 //				continue;
 //			}
 
-            if (logger.isDebugEnabled())
-                logger.debug("upload files: " + fileName);
+            log.debug("upload files: {}", fileName);
 
             props.add(new UploadProperty(
                     item.getFiledName(),

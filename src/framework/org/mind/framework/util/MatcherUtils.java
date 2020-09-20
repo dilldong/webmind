@@ -30,7 +30,6 @@ public class MatcherUtils {
      *
      * @param value 匹配内容
      * @param regex 给定的正则表达式
-     * @param flags 匹配模式，PatternUtil.IGNORECASE_EQ（忽略大小写的匹配）| PatternUtil.DEFAULT_EQ(默认等价匹配)
      * @return 相等返回true，反之false
      * @author dongping
      */

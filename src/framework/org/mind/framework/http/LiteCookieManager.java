@@ -10,8 +10,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.Logger;
 import org.mind.framework.container.Destroyable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * CookieManager is a simple utilty for handling cookies when working with
@@ -32,7 +33,7 @@ import org.mind.framework.container.Destroyable;
  * @author Ian Brown
  */
 public class LiteCookieManager implements Destroyable {
-    private static final Logger logger = Logger.getLogger(LiteCookieManager.class);
+    private static final Logger log = LoggerFactory.getLogger(LiteCookieManager.class);
     private Map<String, Map<String, Map<String, String>>> store;
 
     private static final String SET_COOKIE = "Set-Cookie";
@@ -94,11 +95,9 @@ public class LiteCookieManager implements Destroyable {
 
                 if (st.hasMoreTokens()) {
                     String token = st.nextToken();
-                    String name = token.substring(0,
-                            token.indexOf(NAME_VALUE_SEPARATOR));
-                    String value = token.substring(
-                            token.indexOf(NAME_VALUE_SEPARATOR) + 1,
-                            token.length());
+                    String name = token.substring(0, token.indexOf(NAME_VALUE_SEPARATOR));
+                    String value = token.substring(token.indexOf(NAME_VALUE_SEPARATOR) + 1
+                    );
                     domainStore.put(name, cookie);
                     cookie.put(name, value);
                 }
@@ -109,8 +108,8 @@ public class LiteCookieManager implements Destroyable {
                             token.substring(0,
                                     token.indexOf(NAME_VALUE_SEPARATOR))
                                     .toLowerCase(), token.substring(
-                                    token.indexOf(NAME_VALUE_SEPARATOR) + 1,
-                                    token.length()));
+                                    token.indexOf(NAME_VALUE_SEPARATOR) + 1
+                            ));
                 }
             }
         }
@@ -143,26 +142,25 @@ public class LiteCookieManager implements Destroyable {
 
         Iterator<String> cookieNames = domainStore.keySet().iterator();
         while (cookieNames.hasNext()) {
-            String cookieName = (String) cookieNames.next();
+            String cookieName = cookieNames.next();
             Map<String, String> cookie = domainStore.get(cookieName);
             // check cookie to ensure path matches and cookie is not expired
             // if all is cool, add cookie to header string
-            if (comparePaths((String) cookie.get(PATH), path)
-                    && isNotExpired((String) cookie.get(EXPIRES))) {
+            if (comparePaths(cookie.get(PATH), path)
+                    && isNotExpired(cookie.get(EXPIRES))) {
                 cookieStringBuffer.append(cookieName);
                 cookieStringBuffer.append("=");
-                cookieStringBuffer.append((String) cookie.get(cookieName));
+                cookieStringBuffer.append(cookie.get(cookieName));
                 if (cookieNames.hasNext())
                     cookieStringBuffer.append(SET_COOKIE_SEPARATOR);
             }
         }
         try {
-            logger.info("set-cookie: " + cookieStringBuffer.toString());
+            log.info("set-cookie: {}", cookieStringBuffer.toString());
             conn.setRequestProperty(COOKIE, cookieStringBuffer.toString());
         } catch (java.lang.IllegalStateException ise) {
             IOException ioe = new IOException(
-                    "Illegal State! Cookies cannot be set on a URLConnection that is already connected. "
-                            + "Only call setCookies(java.net.URLConnection) AFTER calling java.net.URLConnection.connect().");
+                    "Illegal State! Cookies cannot be set on a URLConnection that is already connected. Only call setCookies(java.net.URLConnection) AFTER calling java.net.URLConnection.connect().");
             throw ioe;
         }
     }
@@ -205,7 +203,7 @@ public class LiteCookieManager implements Destroyable {
         try {
             return (now.compareTo(new SimpleDateFormat(DATE_FORMAT).parse(cookieExpires))) <= 0;
         } catch (java.text.ParseException pe) {
-            logger.error(pe.getMessage(), pe);
+            log.error(pe.getMessage(), pe);
             return false;
         }
     }
@@ -215,11 +213,7 @@ public class LiteCookieManager implements Destroyable {
             return true;
         } else if (cookiePath.equals("/")) {
             return true;
-        } else if (targetPath.regionMatches(0, cookiePath, 0, cookiePath.length())) {
-            return true;
-        } else {
-            return false;
-        }
+        } else return targetPath.regionMatches(0, cookiePath, 0, cookiePath.length());
 
     }
 

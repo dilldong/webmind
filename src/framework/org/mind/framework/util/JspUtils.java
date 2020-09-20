@@ -1,5 +1,8 @@
 package org.mind.framework.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.concurrent.locks.Lock;
@@ -11,15 +14,13 @@ import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.Tag;
 
-import org.apache.log4j.Logger;
-
 /**
  * 
  * @author dongping
  */
 public final class JspUtils extends ResponseUtils {
 
-	static Logger logger = Logger.getLogger(JspUtils.class);
+	private static Logger logger = LoggerFactory.getLogger(JspUtils.class);
 	
 	private static final ThreadLocal<JspUtils> responseInstance = 
 		new ThreadLocal<JspUtils>();
@@ -155,7 +156,7 @@ public final class JspUtils extends ResponseUtils {
 		while (!(clazz.isAssignableFrom(tag.getClass()))) {
 			tag = tag.getParent();
 			if (tag == null) {
-				final String message = "Parent tag of class " + clazz+ " of the tag's class " + self + " was not found.";
+				final String message = String.format("Parent tag of class %s of the tag's class %s was not found.", clazz.getClass().getName(), self.getClass().getName());
 				logger.error(message);
 				throw new JspException(message);
 			}

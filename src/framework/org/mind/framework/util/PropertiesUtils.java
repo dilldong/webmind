@@ -1,6 +1,7 @@
 package org.mind.framework.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -16,7 +17,7 @@ import java.util.Properties;
  */
 public abstract class PropertiesUtils {
 
-    static Logger logger = Logger.getLogger(PropertiesUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(PropertiesUtils.class);
 
     private static final String DEFAULT_PROPERTIES = "/frame.properties";
 
@@ -51,7 +52,7 @@ public abstract class PropertiesUtils {
     /**
      * 需要指定properties输入流
      *
-     * @param resourceFilePath 可以是BufferedInputStream或InputStream
+     * @param in 可以是BufferedInputStream或InputStream
      * @return Properties
      * @throws IOException
      * @author dongping
@@ -75,7 +76,7 @@ public abstract class PropertiesUtils {
     public static long getLong(Properties property, String key) {
         String str = getString(property, key);
         if (str == null || str.trim().isEmpty())
-            throw new IllegalArgumentException("Corresponding to the key value is empty or characters, For input string: \"" + str + "\"");
+            throw new IllegalArgumentException(String.format("Corresponding to the key value is empty or characters, For input string: \" %s \"", str));
 
         return Long.parseLong(str);
     }
@@ -83,7 +84,7 @@ public abstract class PropertiesUtils {
     public static int getInteger(Properties property, String key) {
         String str = getString(property, key);
         if (str == null || str.trim().isEmpty())
-            throw new IllegalArgumentException("Corresponding to the key value is empty or characters, For input string: \"" + str + "\"");
+            throw new IllegalArgumentException(String.format("Corresponding to the key value is empty or characters, For input string: \" %s \"", str));
 
         return Integer.parseInt(str);
     }
@@ -95,8 +96,7 @@ public abstract class PropertiesUtils {
         }
 
         String str = property.getProperty(key);
-        if (logger.isDebugEnabled())
-            logger.debug(key + " = " + str);
+        logger.debug("{} = {}", key, str);
         return str;
     }
 

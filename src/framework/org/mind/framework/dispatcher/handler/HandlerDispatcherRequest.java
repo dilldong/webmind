@@ -1,7 +1,5 @@
 package org.mind.framework.dispatcher.handler;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.mind.framework.Action;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
@@ -15,6 +13,8 @@ import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.UriPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -39,7 +39,7 @@ import java.util.regex.Matcher;
  */
 public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
-    private static final Log log = LogFactory.getLog(HandlerDispatcherRequest.class);
+    private static final Logger log = LoggerFactory.getLogger(HandlerDispatcherRequest.class);
 
     private ConverterFactory converter;
     private ServletContext servletContext;
@@ -75,9 +75,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         // load web application static resource strs.
         this.resStr = this.servletConfig.getInitParameter("resource");
-        if (log.isDebugEnabled())
-            log.debug("resource suffix: " + resStr);
-
+        log.debug("resource suffix: {}", resStr);
 
         // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
         this.actions = new HashMap<String, Execution>() {
@@ -88,7 +86,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             public Execution put(String key, Execution value) {
                 regexKey = MatcherUtils.convertURI(key);// convert URI to Regex
                 if (this.containsKey(regexKey))
-                    throw new IllegalArgumentException("URI mapping is a globally unique, and can not be repeated: " + key);
+                    throw new IllegalArgumentException(String.format("URI mapping is a globally unique, and can not be repeated: %s", key));
 
                 value.setArgsNumber(MatcherUtils.checkCount(key, MatcherUtils.URI_PARAM_MATCH));// find args number
                 urisRegex.add(regexKey);// add List
@@ -104,7 +102,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             public HandlerInterceptor put(String key, HandlerInterceptor value) {
                 regexKey = MatcherUtils.convertURI(key);
                 if (this.containsKey(regexKey))
-                    throw new IllegalArgumentException("URI mapping is a globally unique, and can not be repeated: " + key);
+                    throw new IllegalArgumentException(String.format("URI mapping is a globally unique, and can not be repeated: %s", key));
 
                 interceptorsRegex.add(regexKey);
                 return super.put(regexKey, value);
@@ -123,7 +121,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          */
         try {
             Class.forName("org.apache.commons.fileupload.servlet.ServletFileUpload");
-            log.info("using MultipartRequest to handle multipart http request.");
+            if (log.isInfoEnabled())
+                log.info("Using MultipartRequest to handle multipart http request.");
+
             this.supportMultipartRequest = true;
         } catch (ClassNotFoundException e) {
             log.error("MultipartRequest not found. Multipart http request can not be handled.");
@@ -138,8 +138,17 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         if (!urisRegex.isEmpty())
             urisRegex.clear();
 
+        if (!interceptorsRegex.isEmpty())
+            interceptorsRegex.clear();
+
+        if (!interceptorMap.isEmpty())
+            interceptorMap.clear();
+
         actions = null;
         urisRegex = null;
+
+        interceptorsRegex = null;
+        interceptorMap = null;
     }
 
     @Override
@@ -148,11 +157,42 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         long begin = DateFormatUtils.getTimeMillis();
         String path = UriPath.get(request);
+        Matcher matcher;
+
+        /*
+         * gloable interceptor exchain
+         *
+         * interceptor.doBefore(execution, request, response);
+         * doAfter();
+         * renderCompletion();
+         */
+        List<HandlerInterceptor> interceptors = new ArrayList<>();
+        if (interceptorsRegex != null) {
+            HandlerInterceptor interceptor;
+            for (String regex : interceptorsRegex) {
+                matcher = MatcherUtils.matcher(path, regex, MatcherUtils.DEFAULT_EQ);
+                if (!matcher.matches())// not-match
+                    continue;
+
+                interceptor = interceptorMap.get(regex);
+
+                // Interceptor doBefore
+                // return false, Return to the request page
+                if (!interceptor.doBefore(request, response)) {
+                    log.debug("Intercept access request URI: {}, The interception class is: {}", path, interceptor.getClass().getSimpleName());
+                    return;
+                }
+
+                // Continue to use later: doAfter(), renderCompletion()
+                interceptors.add(interceptor);
+            }
+        }
 
         // set default character encoding to "utf-8" if encoding is not set:
         if (request.getCharacterEncoding() == null)
             request.setCharacterEncoding("UTF-8");
 
+        // static resource
         int subIndex = path.lastIndexOf(".");
         if (subIndex != -1) {
             String suffix = path.substring(subIndex + 1);
@@ -168,9 +208,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         }
 
-        if (log.isInfoEnabled()) {
-            log.info("From path: " + path);
-        }
+        log.info("From path: {}", path);
 
         this.processNoCache(request, response);
 
@@ -179,8 +217,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          */
         Execution execution = null;
         Object[] args = null;
-
-        Matcher matcher;
 
         for (String regex : this.urisRegex) {
             matcher = MatcherUtils.matcher(path, regex, MatcherUtils.DEFAULT_EQ);
@@ -216,12 +252,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if (log.isInfoEnabled()) {
-            log.info("Action is: " +
-                    execution.getActionInstance().getClass().getSimpleName()
-                    + "." +
-                    execution.getMethod().getName());
-        }
+        log.info("Action is: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
 
         // currently request is multipart request.
         if (this.supportMultipartRequest &&
@@ -229,31 +260,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             request = MultipartHttpServletRequest.getInstance(request);
         }
 
-        /*
-         * gloable interceptor exchain
-         *
-         * interceptor.doBefore(execution, request, response);
-         * doAfter();
-         * renderCompletion();
-         */
-        List<HandlerInterceptor> interceptors = new ArrayList<>();
-        if (interceptorsRegex != null) {
-            HandlerInterceptor interceptor;
-            for (String regex : interceptorsRegex) {
-                matcher = MatcherUtils.matcher(path, regex, MatcherUtils.DEFAULT_EQ);
-                if (!matcher.matches())// not-match
-                    continue;
-
-                interceptor = interceptorMap.get(regex);
-
-                // Interceptor doBefore
-                // return false, Return to the request page
-                if (!interceptor.doBefore(request, response))
-                    return;
-
-                interceptors.add(interceptor);
-            }
-        }
 
         // execute action
         try {
@@ -263,7 +269,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             // Interceptor doAfter
             if (!interceptors.isEmpty()) {
                 int size = interceptors.size();
-                for (int i = size - 1; i >= 0; i--) {
+                for (int i = 0; i < size; i++) {
                     interceptors.get(i).doAfter(request, response);
                 }
             }
@@ -272,7 +278,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             // Interceptor renderCompletion
             if (!interceptors.isEmpty()) {
                 int size = interceptors.size();
-                for (int i = size - 1; i >= 0; i--) {
+                for (int i = 0; i < size; i++) {
                     interceptors.get(i).renderCompletion(request, response);
                 }
             }
@@ -286,13 +292,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
             Action.removeActionContext();
-            if (log.isInfoEnabled()) {
-                log.info("Used time(ms): " + (DateFormatUtils.getTimeMillis() - begin));
-                log.info("End method: " +
-                        execution.getActionInstance().getClass().getSimpleName()
-                        + "." +
-                        execution.getMethod().getName());
-            }
+            log.info("Used time(ms): {}", (DateFormatUtils.getTimeMillis() - begin));
+            log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
         }
     }
 
@@ -328,7 +329,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             new TextRender(str).render(request, response);
             return;
         }
-        throw new ServletException("Cannot handle result with type '" + result.getClass().getName());
+        throw new ServletException(String.format("Cannot handle result with type '%s'", result.getClass().getName()));
 
     }
 
@@ -361,8 +362,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             if (AbstractHandlerInterceptor.class.isAssignableFrom(clazz) || HandlerInterceptor.class.isAssignableFrom(clazz)) {
                 Interceptor interceptor = clazz.getAnnotation(Interceptor.class);
                 interceptorMap.put(interceptor.value(), (HandlerInterceptor) bean);
-                if (log.isInfoEnabled())
-                    log.info("Loaded Interceptor: " + interceptor.value());
+                log.info("Loaded Interceptor: {}", interceptor.value());
             } else {
                 throw new ServletException("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
             }
@@ -384,8 +384,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             sb.append(mapping.value()).append(", ");
         }
 
-        if (log.isInfoEnabled() && sb.length() > 0)
-            log.info("Loaded URI mapping: " + sb.substring(0, sb.length() - 1));
+        if (sb.length() > 0)
+            log.info("Loaded URI mapping: {}", sb.substring(0, sb.length() - 1));
     }
 
     private boolean isMappingMethod(Method method) {
@@ -394,19 +394,19 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return false;
 
         if (mapping.value().trim().length() == 0) {
-            log.warn("Invalid Action method '" + method.toGenericString() + "', URI mapping value cannot be empty.");
+            log.warn("Invalid Action method '{}', URI mapping value cannot be empty.", method.toGenericString());
             return false;
         }
 
         if (Modifier.isStatic(method.getModifiers())) {
-            log.warn("Invalid Action method '" + method.toGenericString() + "' is static.");
+            log.warn("Invalid Action method '{}' is static.", method.toGenericString());
             return false;
         }
 
         Class<?>[] argTypes = method.getParameterTypes();
         for (Class<?> argType : argTypes) {
             if (!converter.isConvert(argType)) {
-                log.warn("Invalid Action method '" + method.toGenericString() + "' unsupported parameter type '" + argType.getName() + "'.");
+                log.warn("Invalid Action method '{}' unsupported parameter type '{}'.", method.toGenericString(), argType.getName());
                 return false;
             }
         }
@@ -418,7 +418,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return true;
         }
 
-        log.warn("Unsupported Action method '" + method.toGenericString() + "'.");
+        log.warn("Unsupported Action method '{}'.", method.toGenericString());
         return false;
     }
 

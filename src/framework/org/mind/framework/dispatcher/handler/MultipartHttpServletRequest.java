@@ -22,9 +22,9 @@ import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.util.Streams;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.mind.framework.util.PropertiesUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wrapper class for multipart HTTP request which usually used to upload file.
@@ -33,7 +33,7 @@ import org.mind.framework.util.PropertiesUtils;
  */
 public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
-    private static final Log log = LogFactory.getLog(MultipartHttpServletRequest.class);
+    private static final Logger log = LoggerFactory.getLogger(MultipartHttpServletRequest.class);
 
     private static final int SIZE = 10 * 1024 * 1024;
 
@@ -112,16 +112,14 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
         if (type == null)
             return false;
 
-        if (type.toLowerCase().startsWith("multipart/form-data"))
-            return true;
+        return type.toLowerCase().startsWith("multipart/form-data");
 
-        return false;
     }
 
 
     private MultipartHttpServletRequest requestMultipart() throws IOException, ServletException {
         if (this.requestContentLength > defaultSize) {
-            log.warn("Posted content length of " + this.requestContentLength + " exceeds limit of " + defaultSize);
+            log.warn("Posted content length of {} exceeds limit of {}", this.requestContentLength, defaultSize);
             this.requestFailed = true;
             return this;
         }
@@ -179,12 +177,12 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
             } finally {
                 /*
-				 * When a close method is called on a such a class, it
-				 * automatically performs a flush. There is no need to
-				 * explicitly call flush before calling close.
-				 * 
-				 * byteStream.flush();
-				 */
+                 * When a close method is called on a such a class, it
+                 * automatically performs a flush. There is no need to
+                 * explicitly call flush before calling close.
+                 *
+                 * byteStream.flush();
+                 */
                 byteStream.close();
             }
 

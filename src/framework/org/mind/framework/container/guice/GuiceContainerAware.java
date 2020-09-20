@@ -9,8 +9,6 @@ import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.container.Destroyable;
 import org.mind.framework.container.ServletContextAware;
@@ -21,6 +19,8 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Create Guice 3.0 Injector instance, and bind it on ServletContext with name
@@ -30,7 +30,7 @@ import com.google.inject.Stage;
  */
 public class GuiceContainerAware implements ContainerAware {
 
-    private static final Log log = LogFactory.getLog(GuiceContainerAware.class);
+    private static final Logger log = LoggerFactory.getLogger(GuiceContainerAware.class);
 
     private Injector injector;
 
@@ -53,8 +53,7 @@ public class GuiceContainerAware implements ContainerAware {
     public void init(final ServletConfig config) {
         String value = config.getInitParameter("modules");
         if (value == null)
-            throw new IllegalArgumentException(
-                    "init Guice failed. missing parameter '<modules>' by web.xml.");
+            throw new IllegalArgumentException("init Guice failed. missing parameter '<modules>' by web.xml.");
 
         String[] strs = value.split("\\,");
         List<Module> moduleList = new ArrayList<Module>(strs.length);
@@ -77,8 +76,7 @@ public class GuiceContainerAware implements ContainerAware {
 
     private Module initModule(String name, ServletContext servletContext) {
         if (name.length() > 0) {
-            if (log.isInfoEnabled())
-                log.info("Initializing module '" + name + "'....");
+            log.info("Initializing module '{}'....", name);
 
             try {
                 Object obj = Class.forName(name).newInstance();
@@ -90,15 +88,14 @@ public class GuiceContainerAware implements ContainerAware {
                 }
 
                 throw new IllegalArgumentException(
-                        "Class '" + name
-                                + "' does not implement '" + Module.class.getName()
-                                + "'.");
+                        String.format("Class '%s' does not implement '%s'.", name, Module.class.getName()));
+
             } catch (InstantiationException e) {
-                throw new IllegalArgumentException("Cannot instanciate class '" + name + "'.", e);
+                throw new IllegalArgumentException(String.format("Cannot instanciate class '%s'.", name), e);
             } catch (IllegalAccessException e) {
-                throw new IllegalArgumentException("Cannot instanciate class '" + name + "'.", e);
+                throw new IllegalArgumentException(String.format("Cannot instanciate class '%s'.", name), e);
             } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException("Cannot instanciate class '" + name + "'.", e);
+                throw new IllegalArgumentException(String.format("Cannot instanciate class '%s'.", name), e);
             }
         }
         return null;

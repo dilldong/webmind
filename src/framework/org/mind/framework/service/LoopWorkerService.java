@@ -1,6 +1,7 @@
 package org.mind.framework.service;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 利用独立线程执行循环处理工作服务类
@@ -9,7 +10,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class LoopWorkerService extends AbstractService {
 
-    static Logger logger = Logger.getLogger(LoopWorkerService.class);
+    static final Logger logger = LoggerFactory.getLogger(LoopWorkerService.class);
 
     private boolean isLoop = true;
 
@@ -40,7 +41,7 @@ public abstract class LoopWorkerService extends AbstractService {
         }
 
         if (spaceTime <= 0) {
-            logger.warn("The space time is(ms) " + spaceTime);
+            logger.warn("The space time is {}(ms)", spaceTime);
         }
 
         if (!workerThread.isAlive()) {
@@ -70,14 +71,14 @@ public abstract class LoopWorkerService extends AbstractService {
      * 服务线程刚开始时调用的方法，若需做一些初始化操作可覆盖此方法来添加
      */
     protected void toStart() {
-        logger.info("service [" + serviceName + "] is to start ....");
+        logger.info("service [{}] is to start ....", serviceName);
     }
 
     /**
      * 服务线程将要结束时调用的方法，若需做一些清理操作可覆盖此方法来添加
      */
     protected void toEnd() {
-        logger.info("service [" + serviceName + "] is to end ....");
+        logger.info("service [{}] is to end ....", serviceName);
     }
 
     @Override

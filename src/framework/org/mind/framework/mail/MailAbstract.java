@@ -1,19 +1,19 @@
 package org.mind.framework.mail;
 
-import java.io.IOException;
-
-import javax.mail.internet.MimeMessage;
-
-import org.apache.log4j.Logger;
 import org.apache.velocity.exception.VelocityException;
 import org.mind.framework.service.queue.DelegateMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
+import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+
 
 public abstract class MailAbstract implements DelegateMessage {
-    protected static final Logger logger = Logger.getLogger(MailAbstract.class);
+    protected static final Logger logger = LoggerFactory.getLogger(MailAbstract.class);
 
     private String from;
     private String persoanl;

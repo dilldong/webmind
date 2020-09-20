@@ -1,15 +1,15 @@
 package org.mind.framework.dispatcher.support;
 
-import javax.servlet.ServletConfig;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.renderer.template.JspTemplateFactory;
 import org.mind.framework.renderer.template.TemplateFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletConfig;
 
 public final class WebContainerGenerator {
-    private static final Log log = LogFactory.getLog(WebContainerGenerator.class);
+    private static final Logger log = LoggerFactory.getLogger(WebContainerGenerator.class);
 
     /**
      * init web container (Guice or Spring) by web application define.
@@ -29,10 +29,11 @@ public final class WebContainerGenerator {
         try {
             if (obj == null) {
                 obj = Class.forName(
-                        ContainerAware.class.getPackage().getName() +
-                                "." + containerName.toLowerCase() +
-                                "." + containerName +
-                                ContainerAware.class.getSimpleName())
+                        String.format("%s.%s.%s%s",
+                                ContainerAware.class.getPackage().getName(),
+                                containerName.toLowerCase(),
+                                containerName,
+                                ContainerAware.class.getSimpleName()))
                         .newInstance();
             }
 
@@ -56,7 +57,7 @@ public final class WebContainerGenerator {
         String templateName = config.getInitParameter("template");
         if (templateName == null) {
             templateName = JspTemplateFactory.class.getName();
-            log.info("No template factory specified. Default to '" + templateName + "'.");
+            log.info("No template factory specified. Default to '{}'.", templateName);
         }
 
         Object obj = null;
@@ -68,8 +69,9 @@ public final class WebContainerGenerator {
         try {
             if (obj == null) {
                 obj = Class.forName(
-                        TemplateFactory.class.getPackage().getName() +
-                                "." + templateName + TemplateFactory.class.getSimpleName())
+                        String.format("%s.%s",
+                                TemplateFactory.class.getPackage().getName(),
+                                templateName + TemplateFactory.class.getSimpleName()))
                         .newInstance();
             }
 

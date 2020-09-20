@@ -1,6 +1,7 @@
 package org.mind.framework.security;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.MessageDigest;
 
@@ -11,7 +12,7 @@ import java.security.MessageDigest;
  */
 public class MD5Digest {
 
-    private static final Logger logger = Logger.getLogger(MD5Digest.class);
+    private static final Logger log = LoggerFactory.getLogger(MD5Digest.class);
 
     private MD5Digest() {
 
@@ -33,12 +34,12 @@ public class MD5Digest {
             digest.update(input.getBytes(charset));
             return digest.digest();
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return null;
     }
 
-    public static final String encodeHex(byte bytes[]) {
+    public static final String encodeHex(byte[] bytes) {
         StringBuffer sb = new StringBuffer(bytes.length << 1);
         for (byte b : bytes) {
             if ((b & 0xff) < 16)
