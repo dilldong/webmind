@@ -119,7 +119,6 @@ final class _Base64 {
 			return null;
 
         return new String(b, StandardCharsets.UTF_8);
-        return null;
 	}
 
 	/**

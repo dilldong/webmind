@@ -14,6 +14,7 @@ import java.util.zip.GZIPInputStream;
 
 /**
  * 支持Apache HttpClient get/post请求
+ *
  * @author Ping
  */
 public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
@@ -33,14 +34,14 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
         try {
             if (entity.getContentEncoding() != null) {
                 super.inStream = new GZIPInputStream(entity.getContent());
-                logger.info(entity.getContentEncoding().getName() + "=" + entity.getContentEncoding().getValue());
+                log.info("{} = {}", entity.getContentEncoding().getName(), entity.getContentEncoding().getValue());
             } else {
                 super.inStream = entity.getContent();
             }
         } catch (UnsupportedOperationException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 

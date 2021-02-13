@@ -18,5 +18,11 @@ import java.lang.annotation.Target;
 @Inherited
 @Documented
 public @interface Interceptor {
+
     String value() default "/*";
+
+    /*
+     * forward sorting
+     */
+    int order() default 0;
 }

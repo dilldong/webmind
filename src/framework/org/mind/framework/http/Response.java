@@ -1,10 +1,16 @@
 package org.mind.framework.http;
 
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.lang.StringUtils;
 import org.mind.framework.util.JsonUtils;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
+
+import java.util.Arrays;
 
 public class Response<T> {
 
@@ -58,7 +64,6 @@ public class Response<T> {
     /**
      * 默认不排除未标注 @Expose 注解的字段.
      *
-     * @param excludesFieldsWithoutExpose false
      * @return
      */
     public String toJson() {
@@ -88,6 +93,36 @@ public class Response<T> {
                         .append(":")
                         .append(this.getMsg())
                         .toString();
+    }
+
+
+    /**
+     * 设置需要跳过的字段
+     * @param excludesFieldsWithoutExpose
+     * @param skipField 跳过的字段名称，不会在json中显示
+     * @return
+     */
+    public String toJson(boolean excludesFieldsWithoutExpose, final String... skipField) {
+        // 过滤json中的children字段
+        GsonBuilder gsonBuilder = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes field) {
+                return StringUtils.contains(Arrays.toString(skipField), field.getName());
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> aClass) {
+                return false;
+            }
+        }).setDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        if (excludesFieldsWithoutExpose)
+            gsonBuilder.excludeFieldsWithoutExposeAnnotation();
+
+        return JsonUtils.toJson(this,
+                new TypeToken<Response<T>>() {
+                }.getType(),
+                gsonBuilder);
     }
 
 }
