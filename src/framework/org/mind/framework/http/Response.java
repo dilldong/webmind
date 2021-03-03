@@ -41,24 +41,27 @@ public class Response<T> {
         return body;
     }
 
-    public void setBody(T body) {
+    public Response<T> setBody(T body) {
         this.body = body;
+        return this;
     }
 
     public int getState() {
         return state;
     }
 
-    public void setState(int state) {
+    public Response<T> setState(int state) {
         this.state = state;
+        return this;
     }
 
     public String getMsg() {
         return msg;
     }
 
-    public void setMsg(String msg) {
+    public Response<T> setMsg(String msg) {
         this.msg = msg;
+        return this;
     }
 
     /**
