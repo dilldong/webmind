@@ -88,8 +88,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             @Override
             public Execution put(String key, Execution value) {
                 regexKey = MatcherUtils.convertURI(key);// convert URI to Regex
-                if (this.containsKey(regexKey))
+                if (this.containsKey(regexKey)) {
+                    log.error("URI mapping is a globally unique, and can not be repeated: {}", key);
                     throw new IllegalArgumentException(String.format("URI mapping is a globally unique, and can not be repeated: %s", key));
+                }
 
                 value.setArgsNumber(MatcherUtils.checkCount(key, MatcherUtils.URI_PARAM_MATCH));// find args number
                 urisRegex.add(regexKey);// add List
