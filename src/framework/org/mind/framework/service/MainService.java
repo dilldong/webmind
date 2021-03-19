@@ -28,7 +28,7 @@ public class MainService extends AbstractService {
                     Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("Service [{}] to start ....", serv);
+                            logger.info("Service [{}] to start ....", serv.getClass().getName());
                             serv.start();
                         }
                     });
@@ -45,7 +45,7 @@ public class MainService extends AbstractService {
                 if (serv != null) {
                     Thread t = new Thread(new Runnable() {
                         public void run() {
-                            logger.info("Service [{}] to stop ....", serv);
+                            logger.info("Service [{}] to stop ....", serv.getClass().getName());
                             serv.stop();
                         }
                     });
