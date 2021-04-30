@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Interceptor {
 
-    String value() default "/*";
+    String[] value() default {"/*"};
 
     /*
      * forward sorting

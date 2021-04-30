@@ -104,7 +104,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          * init Action by Spring/Guice Container and create on the URI mapping relationship
          */
         for (Object bean : beans) {
-            this.loadAction(bean);
+            this.loadBean(bean);
         }
 
         // Interceptor forward sorting
@@ -147,7 +147,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         long begin = DateFormatUtils.getTimeMillis();
         String path = UriPath.get(request);
-        Matcher matcher;
 
         /*
          * Gloable interceptor exchain
@@ -159,8 +158,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
         if (interceptorsCatcher != null) {
             for (Catcher catcher : interceptorsCatcher) {
-                matcher = MatcherUtils.matcher(path, catcher.getInterceptorRegex(), MatcherUtils.DEFAULT_EQ);
-                if (!matcher.matches())// not-match
+                if(!catcher.matchOne(path, MatcherUtils.DEFAULT_EQ))// not-match
                     continue;
 
                 HandlerInterceptor interceptor = catcher.getHander();
@@ -206,6 +204,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          */
         Execution execution = null;
         Object[] args = null;
+        Matcher matcher;
 
         for (String regex : this.urisRegex) {
             matcher = MatcherUtils.matcher(path, regex, MatcherUtils.DEFAULT_EQ);
@@ -337,11 +336,11 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
 
     /**
-     * Initialize all Action objects, and {@link Mapping} increased URI mapping.
+     * Initialize all Bean objects, and {@link Mapping} increased URI mapping.
      *
      * @param bean
      */
-    protected void loadAction(Object bean) throws ServletException {
+    protected void loadBean(Object bean) throws ServletException {
         Class<? extends Object> clazz = bean.getClass();
 
         // if Interceptor

@@ -8,6 +8,7 @@ import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.util.MatcherUtils;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * @author Ping
@@ -18,7 +19,7 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     private HandlerInterceptor hander;
 
-    private String interceptorRegex;
+    private String[] interceptorRegex;
 
     public Catcher() {
     }
@@ -26,7 +27,20 @@ public class Catcher implements Comparable<Catcher>, Serializable {
     public Catcher(Interceptor annotation, HandlerInterceptor hander) {
         this.annotation = annotation;
         this.hander = hander;
-        this.interceptorRegex = MatcherUtils.convertURI(annotation.value());
+
+        String[] values = annotation.value();
+        interceptorRegex = new String[values.length];
+
+        for (int i = 0; i < values.length; i++)
+            this.interceptorRegex[i] = MatcherUtils.convertURI(values[i]);
+    }
+
+    public boolean matchOne(String value, int... flags) {
+        for (String regex : interceptorRegex)
+            if (MatcherUtils.matcher(value, regex, flags).matches())// matched
+                return true;
+
+        return false;
     }
 
     public Interceptor getAnnotation() {
@@ -45,11 +59,11 @@ public class Catcher implements Comparable<Catcher>, Serializable {
         this.hander = hander;
     }
 
-    public String getInterceptorRegex() {
+    public String[] getInterceptorRegex() {
         return interceptorRegex;
     }
 
-    public void setInterceptorRegex(String interceptorRegex) {
+    public void setInterceptorRegex(String[] interceptorRegex) {
         this.interceptorRegex = interceptorRegex;
     }
 
@@ -61,6 +75,6 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     @Override
     public String toString() {
-        return annotation.value();
+        return Arrays.toString(annotation.value());
     }
 }

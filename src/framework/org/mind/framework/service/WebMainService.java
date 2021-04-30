@@ -26,7 +26,10 @@ public class WebMainService extends AbstractService {
                     Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("Service [{}] to start ....", serv.getClass().getName());
+                            logger.info("Service [{}@{}] to start ....",
+                                    serv.getClass().getName(),
+                                    Integer.toHexString(serv.hashCode()));
+
                             serv.start();
                         }
                     });
@@ -43,7 +46,10 @@ public class WebMainService extends AbstractService {
                     Thread t = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            logger.info("Service [{}] to stop ....", serv.getClass().getName());
+                            logger.info("Service [{}@{}] to stop ....",
+                                    serv.getClass().getName(),
+                                    Integer.toHexString(serv.hashCode()));
+
                             serv.stop();
                         }
                     });
