@@ -109,7 +109,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         // Interceptor forward sorting
         Collections.sort(interceptorsCatcher);
-        log.info("Interceptors: {}", Arrays.toString(interceptorsCatcher.toArray(new Catcher[]{})));
+        log.info("Interceptors: {}", String.format("[%s]", StringUtils.substringBetween(Arrays.toString(interceptorsCatcher.toArray(new Catcher[]{})),"[[","]]")));
 
         /*
          * detect multipart support:
@@ -349,7 +349,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 Interceptor interceptor = clazz.getAnnotation(Interceptor.class);
 
                 interceptorsCatcher.add(new Catcher(interceptor, (HandlerInterceptor) bean));
-                log.debug("Loaded Interceptor: {}", interceptor.value());
+                log.debug("Loaded Interceptor: {}", Arrays.toString(interceptor.value()));
             } else {
                 throw new ServletException("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
             }
