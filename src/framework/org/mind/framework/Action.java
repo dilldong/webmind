@@ -1,11 +1,15 @@
 package org.mind.framework;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -66,6 +70,37 @@ public final class Action {
      */
     public HttpServletRequest getRequest() {
         return request;
+    }
+
+    /**
+     * Get the byte[] content of the post request
+     * @param request
+     * @return
+     * @throws IOException
+     */
+    public byte[] getRequestPostBytes(HttpServletRequest request) throws IOException {
+        int contentLength = request.getContentLength();
+        if (contentLength <= 0)
+            return null;
+
+        byte[] buffer = new byte[contentLength];
+        int actualLen = IOUtils.read(request.getInputStream(), buffer, 0, contentLength);
+        if (actualLen != contentLength)
+            return null;
+
+        return buffer;
+    }
+
+    /**
+     * Get the content of the post request
+     * @param request
+     * @return
+     * @throws IOException
+     */
+    public String getRequestPostString(HttpServletRequest request) throws IOException {
+        byte[] data = getRequestPostBytes(request);
+        String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), "UTF-8");
+        return data == null ? null : new String(data, encoding);
     }
 
     /**
