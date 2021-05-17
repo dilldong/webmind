@@ -21,6 +21,8 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     private String[] interceptorRegex;
 
+    private String[] excludesRegex;
+
     public Catcher() {
     }
 
@@ -32,10 +34,24 @@ public class Catcher implements Comparable<Catcher>, Serializable {
         interceptorRegex = new String[values.length];
 
         for (int i = 0; i < values.length; i++)
-            this.interceptorRegex[i] = MatcherUtils.convertURI(values[i]);
+            interceptorRegex[i] = MatcherUtils.convertURI(values[i]);
+
+        String[] excludes = annotation.excludes();
+        if (excludes != null) {
+            excludesRegex = new String[excludes.length];
+            for (int i = 0; i < excludes.length; i++)
+                excludesRegex[i] = MatcherUtils.convertURI(excludes[i]);
+        }
     }
 
     public boolean matchOne(String value, int... flags) {
+        // first excludeRegex
+        if (excludesRegex != null)
+            for (String exclude : excludesRegex)
+                if (MatcherUtils.matcher(value, exclude, flags).matches())// matched
+                    return false;
+
+        // intercept regex
         for (String regex : interceptorRegex)
             if (MatcherUtils.matcher(value, regex, flags).matches())// matched
                 return true;
@@ -67,6 +83,13 @@ public class Catcher implements Comparable<Catcher>, Serializable {
         this.interceptorRegex = interceptorRegex;
     }
 
+    public String[] getExcludesRegex() {
+        return excludesRegex;
+    }
+
+    public void setExcludesRegex(String[] excludesRegex) {
+        this.excludesRegex = excludesRegex;
+    }
 
     @Override
     public int compareTo(Catcher catcher) {
@@ -75,6 +98,9 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     @Override
     public String toString() {
-        return Arrays.toString(annotation.value());
+        return "Catcher{" +
+                "interceptorRegex=" + Arrays.toString(interceptorRegex) +
+                ", excludesRegex=" + Arrays.toString(excludesRegex) +
+                '}';
     }
 }

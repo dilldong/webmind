@@ -21,6 +21,8 @@ public @interface Interceptor {
 
     String[] value() default {"/*"};
 
+    String[] excludes();
+
     /*
      * forward sorting
      */
