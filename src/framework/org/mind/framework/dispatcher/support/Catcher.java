@@ -37,7 +37,7 @@ public class Catcher implements Comparable<Catcher>, Serializable {
             interceptorRegex[i] = MatcherUtils.convertURI(values[i]);
 
         String[] excludes = annotation.excludes();
-        if (excludes != null) {
+        if (excludes.length > 0) {
             excludesRegex = new String[excludes.length];
             for (int i = 0; i < excludes.length; i++)
                 excludesRegex[i] = MatcherUtils.convertURI(excludes[i]);
