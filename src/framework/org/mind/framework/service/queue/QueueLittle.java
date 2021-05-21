@@ -30,18 +30,30 @@ public final class QueueLittle implements QueueService {
 
     @Override
     public DelegateMessage consumer() throws InterruptedException {
-        log.info("current queue size: {}", queueInstance.size());
+        log.info("Current Queue size: {}", queueInstance.size());
         DelegateMessage message = queueInstance.take();
         return message;
     }
 
     @Override
+    public BlockingQueue<DelegateMessage> getQueue() {
+        return queueInstance;
+    }
+
+    @Override
+    public int size() {
+        return queueInstance == null ? 0 : queueInstance.size();
+    }
+
+
+    @Override
     public void destroy() {
         log.info("Destroy QueueLittle elements....");
+
         if (this.queueInstance == null || this.queueInstance.isEmpty())
             return;
 
-        int size = this.queueInstance.size();
+        int size = size();
         log.info("QueueService size: {}", size);
         if (size > 0)
             this.queueInstance.clear();
