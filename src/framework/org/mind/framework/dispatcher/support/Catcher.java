@@ -98,9 +98,7 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     @Override
     public String toString() {
-        return "Catcher{" +
-                "interceptorRegex=" + Arrays.toString(interceptorRegex) +
-                ", excludesRegex=" + Arrays.toString(excludesRegex) +
-                '}';
+        return "interceptor=" + Arrays.toString(annotation.value()) +
+                "; excludes=" + Arrays.toString(annotation.excludes());
     }
 }

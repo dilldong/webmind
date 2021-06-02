@@ -109,7 +109,11 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         // Interceptor forward sorting
         Collections.sort(interceptorsCatcher);
-        log.info("Interceptors: {}", String.format("[%s]", StringUtils.substringBetween(Arrays.toString(interceptorsCatcher.toArray(new Catcher[]{})),"[[","]]")));
+
+        if (log.isInfoEnabled()) {
+            for (Catcher catcher : interceptorsCatcher)
+                log.info("Interceptors: {}", String.format("%s", catcher.toString()));
+        }
 
         /*
          * detect multipart support:
@@ -158,7 +162,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
         if (interceptorsCatcher != null) {
             for (Catcher catcher : interceptorsCatcher) {
-                if(!catcher.matchOne(path, MatcherUtils.DEFAULT_EQ))// not-match
+                if (!catcher.matchOne(path, MatcherUtils.DEFAULT_EQ))// not-match
                     continue;
 
                 HandlerInterceptor interceptor = catcher.getHander();

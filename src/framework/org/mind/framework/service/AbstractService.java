@@ -7,7 +7,7 @@ package org.mind.framework.service;
  */
 public abstract class AbstractService implements Service {
 
-    protected String serviceName;
+    protected String serviceName = getClass().getSimpleName();
 
     protected int serviceState;
 
@@ -18,8 +18,6 @@ public abstract class AbstractService implements Service {
     public static final int STATE_STOPED = 2;
 
     public AbstractService() {
-        this.serviceName = String.format("%s@%s",
-                getClass().getSimpleName(), Integer.toHexString(getClass().hashCode()));
     }
 
     public AbstractService(String serviceName) {
