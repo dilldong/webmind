@@ -8,7 +8,10 @@ import java.lang.reflect.Modifier;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Simple utility class for working with the reflection API and handling
@@ -51,7 +54,7 @@ public abstract class ReflectionUtils {
         if (clazz == null)
             throw new IllegalArgumentException("Class must not be null");
 
-        if (name != null || type != null)
+        if (name == null && type == null)
             throw new IllegalArgumentException("Either name or type of the field must be specified");
 
         Class<?> searchType = clazz;
@@ -68,6 +71,28 @@ public abstract class ReflectionUtils {
         }
         return null;
     }
+
+    public static Field[] getDeclaredFields(Class<?> clazz) {
+        if (clazz == null)
+            throw new IllegalArgumentException("Class must not be null");
+
+        Class<?> searchType = clazz;
+        Field[] fields = searchType.getDeclaredFields();
+        return fields;
+    }
+
+    public static Map<String, Field> getDeclaredFieldByMap(Class<?> clazz) {
+        Field[] fields = getDeclaredFields(clazz);
+        if (fields == null || fields.length == 0)
+            return Collections.emptyMap();
+
+        Map<String, Field> fieldMap = new HashMap<>(fields.length);
+        for (Field f : fields)
+            fieldMap.put(f.getName(), f);
+
+        return fieldMap;
+    }
+
 
     /**
      * Set the field represented by the supplied {@link Field field object} on

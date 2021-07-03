@@ -4,13 +4,15 @@ package org.mind.framework.http;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.GsonBuilder;
-import org.apache.commons.lang.StringUtils;
-import org.mind.framework.util.JsonUtils;
-
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang.StringUtils;
+import org.mind.framework.util.JsonUtils;
+import org.mind.framework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Map;
 
 public class Response<T> {
 
@@ -101,16 +103,37 @@ public class Response<T> {
 
     /**
      * 设置需要跳过的字段
+     *
      * @param excludesFieldsWithoutExpose
-     * @param skipField 跳过的字段名称，不会在json中显示
+     * @param skipField                   跳过的字段名称，不会在json中显示
      * @return
      */
     public String toJson(boolean excludesFieldsWithoutExpose, final String... skipField) {
+        return toJson(excludesFieldsWithoutExpose, false, skipField);
+    }
+
+
+    /**
+     * 设置需要跳过的字段
+     *
+     * @param excludesFieldsWithoutExpose
+     * @param isShowField                 显示/隐藏
+     * @param fieldName                   字段名称，根据isShow是否在json中显示
+     * @return
+     */
+    public String toJson(boolean excludesFieldsWithoutExpose, final boolean isShowField, final String... fieldName) {
         // 过滤json中的children字段
         GsonBuilder gsonBuilder = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
+            Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
+
             @Override
             public boolean shouldSkipField(FieldAttributes field) {
-                return StringUtils.contains(Arrays.toString(skipField), field.getName());
+                if (fieldMap.containsKey(field.getName()))
+                    return false;
+
+                boolean isSkip = StringUtils.contains(Arrays.toString(fieldName), field.getName());
+
+                return isShowField != isSkip;
             }
 
             @Override
@@ -127,5 +150,6 @@ public class Response<T> {
                 }.getType(),
                 gsonBuilder);
     }
+
 
 }
