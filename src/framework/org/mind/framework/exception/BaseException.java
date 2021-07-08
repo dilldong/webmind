@@ -19,6 +19,8 @@ public class BaseException extends Exception {
 
     public final static int ERR_SYS = 3;
 
+    public static final String SYS_EXCEPTION = "system_exception_mf";
+
     protected int errLevel = ERR_INF;
 
     protected StringBuffer backStacks = new StringBuffer();

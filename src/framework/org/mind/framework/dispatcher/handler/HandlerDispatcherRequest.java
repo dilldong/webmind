@@ -6,6 +6,7 @@ import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.Catcher;
 import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.exception.BaseException;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.renderer.JavaScriptRender;
@@ -276,6 +277,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
             Throwable c = e.getCause();
+            request.setAttribute(BaseException.SYS_EXCEPTION, c);
+
             if (c instanceof IOException)
                 throw new IOException(c.getMessage(), c);
             else
@@ -287,6 +290,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
     }
 
+    @Override
     public void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         if (result == null)
             return;

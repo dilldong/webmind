@@ -27,13 +27,18 @@
 
 package org.mind.framework.cache;
 
+import org.apache.commons.lang.StringUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -178,18 +183,40 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public void removeCache(String key) {
+    public Object removeCache(String key) {
         write.lock();
         try {
             if (this.containsKey(key))
-                itemsMap.remove(super.realKey(key));
+                return itemsMap.remove(super.realKey(key));
+
+            return null;
         } finally {
             write.unlock();
         }
     }
 
     @Override
-    protected void destroy() {
+    public List<Object> removeCacheContains(String searchStr) {
+        read.lock();
+        List<Object> list = Collections.emptyList();
+        try {
+            Set<String> keys = itemsMap.keySet();
+            if (keys == null || keys.isEmpty())
+                return list;
+
+            list = new ArrayList<>();
+            for (String key : keys)
+                if (StringUtils.contains(key, searchStr))
+                    list.add(this.removeCache(key));
+
+            return list;
+        } finally {
+            read.unlock();
+        }
+    }
+
+    @Override
+    public void destroy() {
         super.destroy();
         if (!this.isEmpty()) {
             itemsMap.clear();
