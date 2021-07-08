@@ -38,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -197,22 +196,16 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public List<Object> removeCacheContains(String searchStr) {
-        read.lock();
-        List<Object> list = Collections.emptyList();
-        try {
-            Set<String> keys = itemsMap.keySet();
-            if (keys == null || keys.isEmpty())
-                return list;
+        String[] keys = this.getKeys();
+        if (keys == null || keys.length == 0)
+            return Collections.emptyList();
 
-            list = new ArrayList<>();
-            for (String key : keys)
-                if (StringUtils.contains(key, searchStr))
-                    list.add(this.removeCache(key));
+        List<Object> list = new ArrayList<>();
+        for (String key : keys)
+            if (StringUtils.contains(key, searchStr))
+                list.add(this.removeCache(key));
 
-            return list;
-        } finally {
-            read.unlock();
-        }
+        return list;
     }
 
     @Override
