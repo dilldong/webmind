@@ -32,10 +32,7 @@ import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
@@ -182,34 +179,35 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public Object removeCache(String key) {
+    public void removeCache(String key) {
         write.lock();
         try {
             if (this.containsKey(key))
-                return itemsMap.remove(super.realKey(key));
+                itemsMap.remove(super.realKey(key));
+        } finally {
+            write.unlock();
+        }
+    }
 
-            return null;
+
+    @Override
+    public void removeCacheContains(String searchStr) {
+        String[] keys = this.getKeys();
+        if (keys == null || keys.length == 0)
+            return;
+
+        write.lock();
+        try {
+            for (String key : keys)
+                if (StringUtils.contains(key, searchStr))
+                    itemsMap.remove(key);
         } finally {
             write.unlock();
         }
     }
 
     @Override
-    public List<Object> removeCacheContains(String searchStr) {
-        String[] keys = this.getKeys();
-        if (keys == null || keys.length == 0)
-            return Collections.emptyList();
-
-        List<Object> list = new ArrayList<>();
-        for (String key : keys)
-            if (StringUtils.contains(key, searchStr))
-                list.add(this.removeCache(key));
-
-        return list;
-    }
-
-    @Override
-    public void destroy() {
+    protected void destroy() {
         super.destroy();
         if (!this.isEmpty()) {
             itemsMap.clear();

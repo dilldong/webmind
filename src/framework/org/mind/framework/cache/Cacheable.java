@@ -33,7 +33,7 @@ public interface Cacheable extends Serializable {
 	 * 删除缓存
 	 * @param key
 	 */
-	Object removeCache(String key);
+	void removeCache(String key);
 
 
 	/**
@@ -42,7 +42,7 @@ public interface Cacheable extends Serializable {
 	 * @return
 	 * @date July 8, 2021
 	 */
-	List<Object> removeCacheContains(String searchStr);
+	void removeCacheContains(String searchStr);
 
 	/**
 	 * 获得缓存对象

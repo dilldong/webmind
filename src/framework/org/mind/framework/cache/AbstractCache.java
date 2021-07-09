@@ -51,7 +51,7 @@ public abstract class AbstractCache {
      * @author dongping
      * @date Nov 26, 2010
      */
-    public void destroy() {
+    protected void destroy() {
         log.info("Destroy {} manager.", cacheName);
     }
 
