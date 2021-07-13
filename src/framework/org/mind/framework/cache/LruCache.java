@@ -192,19 +192,44 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public void removeCacheContains(String searchStr) {
+        removeCacheContains(searchStr, null);
+    }
+
+    @Override
+    public void removeCacheContains(String searchStr, String[] excludes) {
+        removeCacheContains(searchStr, excludes, Cacheable.EQ_FULL);
+    }
+
+    @Override
+    public void removeCacheContains(String searchStr, String[] excludes, int exclidesRule) {
         String[] keys = this.getKeys();
         if (keys == null || keys.length == 0)
             return;
 
         write.lock();
         try {
-            for (String key : keys)
-                if (StringUtils.contains(key, searchStr))
+            for (String key : keys) {
+                if (StringUtils.contains(key, searchStr)) {
+                    if (excludes != null && excludes.length > 0) {// Exclude
+                        boolean flag = false;
+                        for (String exKey : excludes) {
+                            flag = Cacheable.EQ_FULL == exclidesRule ? StringUtils.equals(key, exKey) : StringUtils.contains(key, exKey);
+                            if (flag)
+                                break;
+                        }
+
+                        if (flag)
+                            continue;
+                    }
+
                     itemsMap.remove(key);
+                }
+            }
         } finally {
             write.unlock();
         }
     }
+
 
     @Override
     protected void destroy() {
