@@ -276,7 +276,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
-            Throwable c = e.getCause();
+            Throwable c = e.getCause() == null ? e : e.getCause();
             request.setAttribute(BaseException.SYS_EXCEPTION, c);
 
             if (c instanceof IOException)
