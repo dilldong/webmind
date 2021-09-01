@@ -127,7 +127,15 @@ public class DispatcherServlet extends HttpServlet {
      * @throws BaseException
      */
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        this.dispatcher.processor(request, response);
+        try {
+            this.dispatcher.processor(request, response);
+        } catch (IOException | ServletException e) {
+            Object object = request.getAttribute(BaseException.SYS_EXCEPTION);
+            if (object == null)
+                request.setAttribute(BaseException.SYS_EXCEPTION, e);
+
+            throw e;
+        }
     }
 
 

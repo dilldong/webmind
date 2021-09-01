@@ -126,7 +126,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
             this.supportMultipartRequest = true;
         } catch (ClassNotFoundException e) {
-            log.error("MultipartRequest not found. Multipart http request can not be handled.");
+            log.warn("MultipartRequest not found. Multipart http request can not be handled.");
         }
     }
 
