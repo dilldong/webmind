@@ -129,12 +129,18 @@ public class DispatcherServlet extends HttpServlet {
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
             this.dispatcher.processor(request, response);
-        } catch (IOException | ServletException e) {
+        } catch (Throwable e) {
             Object object = request.getAttribute(BaseException.SYS_EXCEPTION);
-            if (object == null)
-                request.setAttribute(BaseException.SYS_EXCEPTION, e);
 
-            throw e;
+            if (object == null) {
+                Throwable c = e.getCause() == null ? e : e.getCause();
+                request.setAttribute(BaseException.SYS_EXCEPTION, c);
+            }
+
+            if (e instanceof IOException)
+                throw new IOException(e.getMessage(), e);
+            else
+                throw new ServletException(e.getMessage(), e);// other exception throws with ServletException.
         }
     }
 

@@ -8,8 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -17,6 +16,8 @@ import java.nio.charset.Charset;
  * @author dp
  */
 public final class Action {
+
+    private static final String BODY_PARAMS = "body_input_param";
 
     private static final ThreadLocal<Action> actionContext =
             new ThreadLocal<Action>();
@@ -74,6 +75,7 @@ public final class Action {
 
     /**
      * Get the byte[] content of the post request
+     *
      * @param request
      * @return
      * @throws IOException
@@ -93,15 +95,27 @@ public final class Action {
 
     /**
      * Get the content of the post request
+     *
      * @param request
      * @return
      * @throws IOException
      */
     public String getRequestPostString(HttpServletRequest request) throws IOException {
         byte[] data = getRequestPostBytes(request);
-        String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), "UTF-8");
-        return data == null ? null : new String(data, encoding);
+        if (data != null) {
+            String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
+            String body = new String(data, encoding);
+            /*
+             * servlet规范:
+             * 一个InputStream对象在被读取完成后，将无法被再次读取，始终返回-1；
+             * InputStream并没有实现reset方法（可以重置首次读取的位置），无法实现重置操作；
+             */
+            request.setAttribute(BODY_PARAMS, body);
+        }
+
+        return (String) request.getAttribute(BODY_PARAMS);
     }
+
 
     /**
      * Return current response object.
