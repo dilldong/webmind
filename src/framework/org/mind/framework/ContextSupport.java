@@ -2,12 +2,13 @@ package org.mind.framework;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContext;
 
 public final class ContextSupport {
+
+    private static ApplicationContext wctx;
 
     /**
      * 支持本地Spring文件加载
@@ -15,13 +16,13 @@ public final class ContextSupport {
      * @param configLocations
      * @return
      */
-    public static ApplicationContext initContext(String[] configLocations) {
+    public static void initContext(String[] configLocations) {
         for (int i = 0; i < configLocations.length; i++) {
             if (!configLocations[i].startsWith("file:")) {
                 configLocations[i] = String.format("file:%s", configLocations[i]);
             }
         }
-        return new FileSystemXmlApplicationContext(configLocations);
+        wctx = new FileSystemXmlApplicationContext(configLocations);
     }
 
 
@@ -75,17 +76,14 @@ public final class ContextSupport {
 //				sc, 
 //				ContextLoaderPlugIn.SERVLET_CONTEXT_PREFIX);
 
-
         /*
          * ContextLoaderListener配置
          */
         wctx = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
-
     }
 
     public static String[] getBeanNames() {
         return wctx.getBeanDefinitionNames();
     }
 
-    private static WebApplicationContext wctx;
 }
