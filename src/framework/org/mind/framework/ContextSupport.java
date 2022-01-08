@@ -16,13 +16,15 @@ public final class ContextSupport {
      * @param configLocations
      * @return
      */
-    public static void initContext(String[] configLocations) {
+    public static ApplicationContext initContext(String[] configLocations) {
         for (int i = 0; i < configLocations.length; i++) {
             if (!configLocations[i].startsWith("file:")) {
                 configLocations[i] = String.format("file:%s", configLocations[i]);
             }
         }
+
         wctx = new FileSystemXmlApplicationContext(configLocations);
+        return wctx;
     }
 
 
@@ -47,7 +49,7 @@ public final class ContextSupport {
      */
     public static Object getBean(String name, Class<?> requiredType) {
         if (wctx == null)
-            throw new NullPointerException("Spring WebApplicationContext is null.");
+            throw new NullPointerException("Spring ApplicationContext is null.");
 
         if (requiredType == null)
             return wctx.getBean(name);
