@@ -1,21 +1,23 @@
 package org.mind.framework.util;
 
+import java.nio.charset.StandardCharsets;
+
 public class IOUtils {
 
     public IOUtils() {
     }
 
-    public static final int byte2int(byte b[], int offset) {
+    public static final int byte2int(byte[] b, int offset) {
         return b[offset + 3] & 0xff | (b[offset + 2] & 0xff) << 8
                 | (b[offset + 1] & 0xff) << 16 | (b[offset] & 0xff) << 24;
     }
 
-    public static final int byte2int(byte b[]) {
+    public static final int byte2int(byte[] b) {
         return b[3] & 0xff | (b[2] & 0xff) << 8 | (b[1] & 0xff) << 16
                 | (b[0] & 0xff) << 24;
     }
 
-    public static final long byte2long(byte b[]) {
+    public static final long byte2long(byte[] b) {
         return (long) b[7] & (long) 255 | ((long) b[6] & (long) 255) << 8
                 | ((long) b[5] & (long) 255) << 16
                 | ((long) b[4] & (long) 255) << 24
@@ -24,7 +26,7 @@ public class IOUtils {
                 | ((long) b[1] & (long) 255) << 48 | (long) b[0] << 56;
     }
 
-    public static final long byte2long(byte b[], int offset) {
+    public static final long byte2long(byte[] b, int offset) {
         return (long) b[offset + 7] & (long) 255
                 | ((long) b[offset + 6] & (long) 255) << 8
                 | ((long) b[offset + 5] & (long) 255) << 16
@@ -36,7 +38,7 @@ public class IOUtils {
     }
 
     public static final byte[] int2byte(int n) {
-        byte b[] = new byte[4];
+        byte[] b = new byte[4];
         b[0] = (byte) (n >> 24);
         b[1] = (byte) (n >> 16);
         b[2] = (byte) (n >> 8);
@@ -44,7 +46,7 @@ public class IOUtils {
         return b;
     }
 
-    public static final void int2byte(int n, byte buf[], int offset) {
+    public static final void int2byte(int n, byte[] buf, int offset) {
         buf[offset] = (byte) (n >> 24);
         buf[offset + 1] = (byte) (n >> 16);
         buf[offset + 2] = (byte) (n >> 8);
@@ -52,19 +54,19 @@ public class IOUtils {
     }
 
     public static final byte[] short2byte(int n) {
-        byte b[] = new byte[2];
+        byte[] b = new byte[2];
         b[0] = (byte) (n >> 8);
         b[1] = (byte) n;
         return b;
     }
 
-    public static final void short2byte(int n, byte buf[], int offset) {
+    public static final void short2byte(int n, byte[] buf, int offset) {
         buf[offset] = (byte) (n >> 8);
         buf[offset + 1] = (byte) n;
     }
 
     public static final byte[] long2byte(long n) {
-        byte b[] = new byte[8];
+        byte[] b = new byte[8];
         b[0] = (byte) (int) (n >> 56);
         b[1] = (byte) (int) (n >> 48);
         b[2] = (byte) (int) (n >> 40);
@@ -76,7 +78,7 @@ public class IOUtils {
         return b;
     }
 
-    public static final void long2byte(long n, byte buf[], int offset) {
+    public static final void long2byte(long n, byte[] buf, int offset) {
         buf[offset] = (byte) (int) (n >> 56);
         buf[offset + 1] = (byte) (int) (n >> 48);
         buf[offset + 2] = (byte) (int) (n >> 40);
@@ -95,14 +97,10 @@ public class IOUtils {
     }
 
     public static final String readString(byte[] b, int offset, int len) {
-        try {
-            if (len > 0)
-                return (new String(b, offset, len, "US-ASCII"));
-            else
-                return ("");
-        } catch (java.io.UnsupportedEncodingException x) {
+        if (len > 0)
+            return (new String(b, offset, len, StandardCharsets.US_ASCII));
+        else
             return ("");
-        }
     }
 
     /**
@@ -306,12 +304,12 @@ public class IOUtils {
     }
 
 
-    public static void main(String[] arg) {
-        int i = 132;
-        byte b = IOUtils.int2byte(i)[3];
-        int k = IOUtils.bytesToInt(new byte[]{b}, 0, 1);
-        System.out.println(b);
-        System.out.println(k);
-    }
+//    public static void main(String[] arg) {
+//        int i = 132;
+//        byte b = IOUtils.int2byte(i)[3];
+//        int k = IOUtils.bytesToInt(new byte[]{b}, 0, 1);
+//        System.out.println(b);
+//        System.out.println(k);
+//    }
 
 }
