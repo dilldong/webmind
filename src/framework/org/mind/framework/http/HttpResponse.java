@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
 public class HttpResponse<T> {
@@ -22,8 +24,6 @@ public class HttpResponse<T> {
     protected InputStream inStream;
     protected HttpURLConnection con;
     protected boolean streamConsumed = false;
-    public static final String UTF8 = "UTF-8";
-    public static final String GBK = "GBK";
 
     public HttpResponse() {
 
@@ -31,6 +31,7 @@ public class HttpResponse<T> {
 
     /**
      * Returns the response GZip stream.
+     *
      * @param con
      * @throws IOException
      */
@@ -82,15 +83,21 @@ public class HttpResponse<T> {
     }
 
     public String asString() {
-        return this.asString(UTF8);
+        return this.asString(StandardCharsets.UTF_8);
     }
+
+
+    public String asString(String charset) {
+        return this.asString(Charset.forName(charset));
+    }
+
 
     /**
      * Returns the response body as string.<br>
      * Disconnects the internal HttpURLConnection silently. @return response
      * body as string @throws
      */
-    public String asString(String charset) {
+    public String asString(Charset charset) {
         if (this.responseAsString != null)
             return this.responseAsString;
 
@@ -125,7 +132,7 @@ public class HttpResponse<T> {
      * body as json @throws
      */
     public T asJson() {
-        return this.asJson(UTF8);
+        return this.asJson(StandardCharsets.UTF_8);
     }
 
     /**
@@ -134,8 +141,11 @@ public class HttpResponse<T> {
      * body as json @throws
      */
     public T asJson(String charset) {
-        String result = this.asString(charset);
+        return this.asJson(Charset.forName(charset));
+    }
 
+    public T asJson(Charset charset) {
+        String result = this.asString(charset);
         return JsonUtils.fromJson(result, new TypeToken<T>() {
         });
     }

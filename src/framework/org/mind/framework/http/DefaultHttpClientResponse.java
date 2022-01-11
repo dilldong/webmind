@@ -1,7 +1,15 @@
 package org.mind.framework.http;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.ContentType;
@@ -9,7 +17,13 @@ import org.mind.framework.util.JsonUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -19,17 +33,18 @@ import java.util.zip.GZIPInputStream;
  */
 public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
 
-    private String charset;
+    private Charset charset = StandardCharsets.UTF_8;
 
-    public DefaultHttpClientResponse(CloseableHttpResponse httpresponse) {
-        super.responseCode = httpresponse.getStatusLine().getStatusCode();
-        HttpEntity entity = httpresponse.getEntity();
+    private CloseableHttpResponse httpResponse;
+
+    public DefaultHttpClientResponse(CloseableHttpResponse httpResponse) {
+        this.httpResponse = httpResponse;
+        super.responseCode = httpResponse.getStatusLine().getStatusCode();
+        HttpEntity entity = httpResponse.getEntity();
         ContentType contentType = ContentType.getOrDefault(entity);
 
         if (contentType.getCharset() != null)
-            charset = contentType.getCharset().name();
-        else
-            charset = UTF8;
+            charset = contentType.getCharset();
 
         try {
             if (entity.getContentEncoding() != null) {
@@ -43,6 +58,10 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    public Header[] getAllHeaders() {
+        return this.httpResponse.getAllHeaders();
     }
 
     @Override
@@ -123,4 +142,7 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
                 }.getType());
     }
 
+    public CloseableHttpResponse getResponse() {
+        return httpResponse;
+    }
 }
