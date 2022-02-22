@@ -30,8 +30,9 @@ public class VelocityTemplateFactory extends TemplateFactory {
         WebApplicationContext wctx =
                 WebApplicationContextUtils.getRequiredWebApplicationContext(context);
 
-        Object object = ContextSupport.getBean("velocityEngine");
-        if (object != null)
-            this.velocityEngine = (VelocityEngine) object;
+        this.velocityEngine =
+                (VelocityEngine)
+                        ContextSupport.getBean("velocityEngine", VelocityEngine.class);
+
     }
 }

@@ -4,6 +4,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.VelocityException;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.NotSupportedException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.ui.velocity.VelocityEngineUtils;
 
@@ -14,16 +15,18 @@ import java.util.Map;
 public class DefaultEmailSupport extends MailAbstract {
 
     private String templateName;
-    protected VelocityEngine velocityEngine;
+    protected Object velocityEngine;
 
     public DefaultEmailSupport() {
         JavaMailSender sender =
                 (JavaMailSender)
                         ContextSupport.getBean("mailSender", JavaMailSender.class);
 
-        Object object = ContextSupport.getBean("velocityEngine");
-        if (object != null)
-            this.velocityEngine = (VelocityEngine) object;
+        try {
+            this.velocityEngine = ContextSupport.getBean("velocityEngine");
+        } catch (NoSuchBeanDefinitionException e) {
+            logger.warn(e.getMessage());
+        }
 
         this.setSender(sender);
     }
@@ -39,11 +42,11 @@ public class DefaultEmailSupport extends MailAbstract {
                     logger.debug("Loading email template...");
 
                 if (this.velocityEngine == null)
-                    throw new NotSupportedException("Velocity Engine object not configured");
+                    throw new NotSupportedException("VelocityEngine spring bean is not defined");
 
                 return
                         VelocityEngineUtils.mergeTemplateIntoString(
-                                this.velocityEngine,
+                                (VelocityEngine) velocityEngine,
                                 templateName,
                                 defaultCharset,
                                 (Map<String, Object>) this.getModel());
