@@ -1,113 +1,98 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans 
-			http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-           	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
-           	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans.xsd
+           	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<!-- 
-		Spring AOP xmlns:aop="http://www.springframework.org/schema/aop" 
-		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd 
-		<aop:aspectj-autoproxy /> 
-	-->
+    <context:component-scan base-package="org.mind.framework"/>
+    <!--<tx:annotation-driven transaction-manager="txManager"/>-->
+    <context:property-placeholder location="classpath:frame.properties"/>
 
-	<context:component-scan base-package="org.mind.framework" />
+    <!-- HikariCP configuration -->
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+        <property name="driverClassName" value="${db.driverClass}"/>
+        <property name="jdbcUrl" value="${db.jdbcUrl}"/>
+        <property name="username" value="${db.user}"/>
+        <property name="password" value="${db.password}"/>
+        <property name="connectionTimeout" value="${db.connectionTimeout}"/>
+        <property name="idleTimeout" value="${db.idleTimeout}"/>
+        <property name="maxLifetime" value="${db.maxLifetime}"/>
+        <property name="maximumPoolSize" value="${db.maximumPoolSize}"/>
+    </bean>
 
-	<!--<context:component-scan/> default auto-scan  
-		<context:annotation-config />
-	-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="fetchSize" value="100"/>
+        <property name="maxRows" value="2000"/>
+        <property name="queryTimeout" value="0"/>
+    </bean>
 
-	<tx:annotation-driven transaction-manager="txManager" />
-	<context:property-placeholder location="classpath:frame.properties" />
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+    </bean>
 
-	<!-- HikariCP configuration -->
-	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-		<property name="driverClassName" value="${db.driverClass}" />
-		<property name="jdbcUrl" value="${db.jdbcUrl}" />
-		<property name="username" value="${db.user}" />
-		<property name="password" value="${db.password}" />
-		<property name="connectionTimeout" value="${db.connectionTimeout}" />
-		<property name="idleTimeout" value="${db.idleTimeout}" />
-		<property name="maxLifetime" value="${db.maxLifetime}" />
-		<property name="maximumPoolSize" value="${db.maximumPoolSize}" />
-	</bean>
+    <bean id="cacheManager" class="org.mind.framework.cache.LruCache"
+          scope="singleton" factory-method="initCache" destroy-method="destroy">
+        <property name="cacheSize" value="2000"/>
+        <property name="freeMemory" value="0"/><!-- 0 igone params -->
+        <property name="timeout" value="0"/><!-- 0 igone params -->
+    </bean>
 
-	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
-		<property name="dataSource" ref="dataSource" />
-		<property name="fetchSize" value="100" />
-		<property name="maxRows" value="2000" />
-		<property name="queryTimeout" value="0" />
-	</bean>
+    <!-- Email service -->
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl"
+          scope="singleton">
+        <property name="username" value="no-reply@xxxx.com"/>
+        <property name="password" value="xxxx"/>
+        <property name="host" value="smtp.exmail.xxxx.com"/>
+        <property name="port" value="25"/>
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.timeout">25000</prop>
+            </props>
+        </property>
+    </bean>
 
-	<bean id="txManager"
-		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-		<property name="dataSource">
-			<ref local="dataSource" />
-		</property>
-	</bean>
-
-	<bean id="cacheManager" class="org.mind.framework.cache.LruCache"
-		scope="singleton" factory-method="initCache" destroy-method="destroy">
-		<property name="cacheSize" value="2000" />
-		<property name="freeMemory" value="0" /><!-- 0 igone params -->
-		<property name="timeout" value="0" /><!-- 0 igone params -->
-	</bean>
-
-	<!-- Email service -->
-	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl"
-		scope="singleton">
-		<property name="username" value="no-reply@xxxx.com" />
-		<property name="password" value="xxxx" />
-		<property name="host" value="smtp.exmail.xxxx.com" />
-		<property name="port" value="25" />
-		<property name="javaMailProperties">
-			<props>
-				<prop key="mail.smtp.auth">true</prop>
-				<prop key="mail.smtp.timeout">25000</prop>
-			</props>
-		</property>
-	</bean>
-
-	<!-- velocity config -->
-	<bean id="velocityEngine"
-		class="org.springframework.ui.velocity.VelocityEngineFactoryBean"
-		scope="singleton">
-		<property name="resourceLoaderPath" value="/WEB-INF/templates" />
-		<property name="configLocation" value="classpath:velocity.properties" />
-	</bean>
+    <!-- velocity config -->
+    <bean id="velocityEngine" class="org.springframework.ui.velocity.VelocityEngineFactoryBean" scope="singleton">
+        <property name="resourceLoaderPath" value="/WEB-INF/templates"/>
+        <property name="configLocation" value="classpath:velocity.properties"/>
+    </bean>
 
 
-	<!-- MQ config -->
-	<bean id="queueService" class="org.mind.framework.service.queue.QueueLittle"
-		destroy-method="destroy">
-		<property name="queueInstance">
-			<bean class="java.util.concurrent.LinkedBlockingQueue" />
-		</property>
-	</bean>
+    <!-- MQ config -->
+    <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle"
+          destroy-method="destroy">
+        <property name="queueInstance">
+            <bean class="java.util.concurrent.LinkedBlockingQueue"/>
+        </property>
+    </bean>
 
-	<!-- start MQ service -->
-	<bean id="startQueueService" class="org.mind.framework.service.UpdateCacheService">
-		<property name="spaceTime" value="10" /><!-- ms, 0 not loop -->
-		<property name="updaters">
-			<list>
-				<bean class="org.mind.framework.service.queue.ConsumerService">
-					<property name="queueService" ref="queueService" />
-				</bean>
-			</list>
-		</property>
-	</bean>
+    <!-- start MQ service -->
+    <bean id="startQueueService" class="org.mind.framework.service.UpdateCacheService">
+        <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
+        <property name="updaters">
+            <list>
+                <bean class="org.mind.framework.service.queue.ConsumerService">
+                    <property name="queueService" ref="queueService"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
 
-	<!-- WEB main service -->
-	<bean id="mainService" class="org.mind.framework.service.WebMainService"
-		destroy-method="stop">
-		<property name="childServices">
-			<list>
-				<ref local="startQueueService" />
-			</list>
-		</property>
-	</bean>
+    <!-- WEB main service -->
+    <bean id="mainService" class="org.mind.framework.service.WebMainService"
+          destroy-method="stop">
+        <property name="childServices">
+            <list>
+                <ref bean="startQueueService"/>
+            </list>
+        </property>
+    </bean>
 
 
 </beans>

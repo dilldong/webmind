@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,8 +73,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     @Override
     public void init(List<Object> beans) throws ServletException {
         this.converter = ConverterFactory.getInstance();
-        this.urisRegex = new ArrayList<String>();
-        this.interceptorsCatcher = new ArrayList<Catcher>();
+        this.urisRegex = new ArrayList<>();
+        this.interceptorsCatcher = new ArrayList<>();
         this.resourceHandler = new ResourceHttpRequest(this.servletConfig);
 
         // load web application static resource strs.
@@ -82,12 +83,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
         this.actions = new HashMap<String, Execution>() {
-            private static final long serialVersionUID = 64639524551549449L;
-            private String regexKey;
-
             @Override
             public Execution put(String key, Execution value) {
-                regexKey = MatcherUtils.convertURI(key);// convert URI to Regex
+                String regexKey = MatcherUtils.convertURI(key);// convert URI to Regex
                 if (this.containsKey(regexKey)) {
                     log.error("URI mapping is a globally unique, and can not be repeated: {}", key);
                     throw new IllegalArgumentException(String.format("URI mapping is a globally unique, and can not be repeated: %s", key));
@@ -153,7 +151,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         String path = UriPath.get(request);
 
         /*
-         * Gloable interceptor exchain
+         * Global interceptors for application containers
          *
          * interceptor.doBefore(execution, request, response);
          * doAfter();
@@ -181,7 +179,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         // set default character encoding to "utf-8" if encoding is not set:
         if (request.getCharacterEncoding() == null)
-            request.setCharacterEncoding("UTF-8");
+            request.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         // static resource
         int subIndex = path.lastIndexOf(".");
@@ -240,7 +238,20 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          * available.
          */
         if (execution == null) {
+            log.warn("The requested URI (404) Not found");
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
+            return;
+        }
+
+        /*
+         * validation request method
+         */
+        if (!execution.isSupportMethod(request.getMethod())) {
+            log.warn("HTTP method {} is not supported by this URL, specified as: {}",
+                    request.getMethod(), execution.requestMethodsString());
+
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    String.format("HTTP method %s is not supported by this URL", request.getMethod()));
             return;
         }
 
@@ -372,7 +383,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             Mapping mapping = method.getAnnotation(Mapping.class);
             this.actions.put(
                     mapping.value(),
-                    new Execution(bean, method));
+                    new Execution(bean, method, mapping.method()));
 
             sb.append(mapping.value()).append(", ");
         }

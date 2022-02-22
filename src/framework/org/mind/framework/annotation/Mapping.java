@@ -1,5 +1,7 @@
 package org.mind.framework.annotation;
 
+import org.springframework.web.bind.annotation.RequestMethod;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,13 +11,15 @@ import java.lang.annotation.Target;
 
 /**
  * Action method annotation for mapping URI
- * 
- * @author dp
  *
+ * @author dp
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Mapping {
-	String value() default "/";
+
+    String value() default "/";
+
+    RequestMethod[] method() default {};
 }

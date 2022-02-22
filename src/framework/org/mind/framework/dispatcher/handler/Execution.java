@@ -1,8 +1,10 @@
 package org.mind.framework.dispatcher.handler;
 
-import java.lang.reflect.Method;
-
 import org.mind.framework.util.ReflectionUtils;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 
 /**
@@ -18,6 +20,9 @@ public class Execution {
     // Method instance
     private Method method;
 
+    // Http request method
+    private RequestMethod[] requestMethods;
+
     // Method's arguments types
     private Class<?>[] parameterTypes;
 
@@ -27,15 +32,16 @@ public class Execution {
     // Method's need arguments length
     private int argsNumber;
 
-    public Execution(Object actionInstance, Method method) {
-        this(actionInstance, method, null);
+    public Execution(Object actionInstance, Method method, RequestMethod[] requestMethods) {
+        this(actionInstance, method, null, requestMethods);
     }
 
-    public Execution(Object actionInstance, Method method, Object[] arguments) {
+    public Execution(Object actionInstance, Method method, Object[] arguments, RequestMethod[] requestMethods) {
         this.actionInstance = actionInstance;
         this.method = method;
         this.parameterTypes = method.getParameterTypes();
         this.arguments = arguments;
+        this.requestMethods = requestMethods;
     }
 
 
@@ -73,5 +79,26 @@ public class Execution {
         this.argsNumber = argsNumber;
     }
 
+    public RequestMethod[] getRequestMethods() {
+        return requestMethods;
+    }
 
+    public void setRequestMethods(RequestMethod[] requestMethods) {
+        this.requestMethods = requestMethods;
+    }
+
+    public boolean isSupportMethod(String method) {
+        if (requestMethods == null || requestMethods.length == 0)
+            return method.equalsIgnoreCase(RequestMethod.GET.name()) || method.equalsIgnoreCase(RequestMethod.POST.name());
+
+        for (RequestMethod m : requestMethods)
+            if (method.equalsIgnoreCase(m.name()))
+                return true;
+
+        return false;
+    }
+
+    public String requestMethodsString() {
+        return requestMethods == null ? "" : Arrays.toString(requestMethods);
+    }
 }

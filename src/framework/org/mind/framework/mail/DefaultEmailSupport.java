@@ -1,13 +1,14 @@
 package org.mind.framework.mail;
 
-import java.io.IOException;
-import java.util.Map;
-
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.VelocityException;
 import org.mind.framework.ContextSupport;
+import org.mind.framework.exception.NotSupportedException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.ui.velocity.VelocityEngineUtils;
+
+import java.io.IOException;
+import java.util.Map;
 
 
 public class DefaultEmailSupport extends MailAbstract {
@@ -20,22 +21,25 @@ public class DefaultEmailSupport extends MailAbstract {
                 (JavaMailSender)
                         ContextSupport.getBean("mailSender", JavaMailSender.class);
 
-        this.velocityEngine =
-                (VelocityEngine)
-                        ContextSupport.getBean("velocityEngine", VelocityEngine.class);
+        Object object = ContextSupport.getBean("velocityEngine");
+        if (object != null)
+            this.velocityEngine = (VelocityEngine) object;
 
         this.setSender(sender);
     }
 
 
+    @SuppressWarnings({"unchecked"})
     @Override
-    @SuppressWarnings("unchecked")
     public String loadContent(SendMailType mailType) throws VelocityException, IOException {
 
         switch (mailType) {
             case HTML:
                 if (logger.isDebugEnabled())
                     logger.debug("Loading email template...");
+
+                if (this.velocityEngine == null)
+                    throw new NotSupportedException("Velocity Engine object not configured");
 
                 return
                         VelocityEngineUtils.mergeTemplateIntoString(

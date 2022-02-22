@@ -1,29 +1,26 @@
 package org.mind.framework.container.guice;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-
-import org.mind.framework.container.ContainerAware;
-import org.mind.framework.container.Destroyable;
-import org.mind.framework.container.ServletContextAware;
-
 import com.google.inject.Binding;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import org.mind.framework.container.ContainerAware;
+import org.mind.framework.container.Destroyable;
+import org.mind.framework.container.ServletContextAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
- * Create Guice 3.0 Injector instance, and bind it on ServletContext with name
+ * Create Guice 4.0 Injector instance, and bind it on ServletContext with name
  * of <code>Injector.class.getName()</code>.
  *
  * @author dp
@@ -36,10 +33,10 @@ public class GuiceContainerAware implements ContainerAware {
 
     public List<Object> loadBeans() {
         Map<Key<?>, Binding<?>> map = injector.getBindings();
-        Set<Entry<Key<?>, Binding<?>>> set = map.entrySet();
+        Set<Map.Entry<Key<?>, Binding<?>>> set = map.entrySet();
         List<Object> list = new ArrayList<Object>(set.size());
 
-        for (Entry<Key<?>, Binding<?>> entry : set) {
+        for (Map.Entry<Key<?>, Binding<?>> entry : set) {
 //			BeanModel model = new BeanModel(
 //					injector.getInstance(entry.getKey()), 
 //					true);

@@ -26,19 +26,7 @@ import java.util.List;
  */
 public class DispatcherServlet extends HttpServlet {
 
-    private static final long serialVersionUID = 4011062653282779809L;
-
     private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
-
-    /**
-     * HTTP method "GET"
-     */
-    private static final String METHOD_GET = "GET";
-
-    /**
-     * HTTP method "POST"
-     */
-    private static final String METHOD_POST = "POST";
 
     /**
      * Request http processer
@@ -98,15 +86,40 @@ public class DispatcherServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String method = request.getMethod();
-        if (!METHOD_GET.equals(method) && !METHOD_POST.equals(method)) {
-            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported http method.");
-            return;
-        }
-
-        this.process(request, response);
+//        String method = request.getMethod();
+//        if (!METHOD_GET.equals(method) && !METHOD_POST.equals(method)) {
+//            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported http method.");
+//            return;
+//        }
+//
+//        this.process(request, response);
+        super.service(request, response);
     }
 
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        this.process(req, resp);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        this.process(req, resp);
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        this.process(req, resp);
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        this.process(req, resp);
+    }
+
+    @Override
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setHeader("Allow", "GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE");
+    }
 
     @Override
     public void destroy() {

@@ -1,7 +1,10 @@
 package org.mind.framework;
 
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.mind.framework.util.JsonUtils;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -9,6 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -114,6 +119,26 @@ public final class Action {
         }
 
         return (String) request.getAttribute(BODY_PARAMS);
+    }
+
+    public String requestJson(HttpServletRequest request) {
+        try {
+            return this.getRequestPostString(request);
+        } catch (IOException e) {
+        }
+        return null;
+    }
+
+    public Map<String, JsonObject> requestJsonMap(HttpServletRequest request) {
+        return JsonUtils.fromJson(
+                requestJson(request),
+                new TypeToken<Map<String, JsonObject>>() {});
+    }
+
+    public List<JsonObject> requestJsonList(HttpServletRequest request) {
+        return JsonUtils.fromJson(
+                requestJson(request),
+                new TypeToken<List<JsonObject>>() {});
     }
 
 
