@@ -1,6 +1,7 @@
 package org.mind.framework.cache;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
 
 /**
  * 缓存能力接口
@@ -12,6 +13,13 @@ public interface Cacheable extends Serializable {
 
     int EQ_FULL = 1;
     int EQ_PART = 2;
+
+    /**
+     * 指定新的LinkedHashMap<String, Object>
+     * @param newMap
+     * @return
+     */
+    Cacheable newLinkedMap(LinkedHashMap<String, CacheElement> newMap);
 
     /**
      * 添加一个新条目，如果该条目已经存在，将不做任何操作
@@ -116,4 +124,11 @@ public interface Cacheable extends Serializable {
      * @date July 8, 2021
      */
     String[] getKeys();
+
+    /**
+     * 指定有效的缓存数量
+     *
+     * @param size
+     */
+    void setCacheSize(int size);
 }

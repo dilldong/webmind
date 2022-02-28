@@ -47,8 +47,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class LruCache extends AbstractCache implements Cacheable {
 
-    private static final long serialVersionUID = -3563668641502091167L;
-
     private static final Logger log = LoggerFactory.getLogger(LruCache.class);
 
     /*
@@ -66,7 +64,7 @@ public class LruCache extends AbstractCache implements Cacheable {
      */
     private long timeout = 0;
 
-    private Map<String, Object> itemsMap;
+    private Map<String, CacheElement> itemsMap;
 
     private transient final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
@@ -83,11 +81,9 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     private LruCache() {
-        itemsMap = new LinkedHashMap<String, Object>(cacheSize, 0.75F, true) {
-            private static final long serialVersionUID = -6005019516032449081L;
-
+        itemsMap = new LinkedHashMap<String, CacheElement>(cacheSize, 0.75F, true) {
             @Override
-            protected boolean removeEldestEntry(Entry<String, Object> eldest) {
+            protected boolean removeEldestEntry(Entry<String, CacheElement> eldest) {
                 boolean tooBig = this.size() > LruCache.this.cacheSize;
                 if (tooBig) {
                     log.debug("Remove the last entry key: {}", eldest.getKey());
@@ -95,6 +91,12 @@ public class LruCache extends AbstractCache implements Cacheable {
                 return tooBig;
             }
         };
+    }
+
+    @Override
+    public Cacheable newLinkedMap(LinkedHashMap<String, CacheElement> newMap) {
+        this.itemsMap = newMap;
+        return this;
     }
 
     /**
@@ -144,6 +146,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         }
     }
 
+
     @Override
     public CacheElement getCache(String key) {
         return this.getCache(key, timeout);
@@ -152,9 +155,9 @@ public class LruCache extends AbstractCache implements Cacheable {
     @Override
     public CacheElement getCache(String key, long interval) {
         read.lock();
-        CacheElement element = null;
+        CacheElement element;
         try {
-            element = (CacheElement) itemsMap.get(super.realKey(key));
+            element = itemsMap.get(super.realKey(key));
             if (element == null)
                 return null;
         } finally {
@@ -272,6 +275,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         }
     }
 
+    @Override
     public void setCacheSize(int cacheSize) {
         this.cacheSize = cacheSize;
     }
