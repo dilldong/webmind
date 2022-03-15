@@ -12,6 +12,7 @@ import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.webresources.DirResourceSet;
 import org.apache.catalina.webresources.StandardRoot;
+import org.apache.commons.lang.StringUtils;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.PropertiesUtils;
@@ -46,13 +47,23 @@ public class WebServer {
     private int maxThreads = 200;
     @Setter
     private int acceptCount = 100;
+    @Setter
+    private String baseDir;
+    @Setter
+    private String webXml;
 
     private List<DirResourceBuilder> resourceSetList;
     private Properties properties;
 
     public WebServer() {
         this.resourceSetList = new ArrayList<>();
-        this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(SERVER_PROPERTIES));
+        this.baseDir = PropertiesUtils.class.getResource("/").getPath();
+
+        File file = new File(PropertiesUtils.class.getResource(SERVER_PROPERTIES).getPath());
+        if (file.exists())
+            this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(SERVER_PROPERTIES));
+        else
+            this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(String.format("/config%s", SERVER_PROPERTIES)));
 
         if (properties != null) {
             this.serverName = properties.getProperty("server", serverName);
@@ -86,11 +97,11 @@ public class WebServer {
         tomcat.getHost().setAutoDeploy(false);
 
         // 创建webapp
-        String baseDir = new File("web").getAbsolutePath();
         tomcat.setBaseDir(baseDir);
 
         StandardContext ctx = (StandardContext) tomcat.addWebapp("", baseDir);
-        ctx.setDefaultWebXml(baseDir + "/WEB-INF/web.xml");
+        if (StringUtils.isNotEmpty(webXml))
+            ctx.setDefaultWebXml(String.format("%s%s", baseDir, webXml));
         tomcat.enableNaming();
         ctx.setAddWebinfClassesResources(true);
 

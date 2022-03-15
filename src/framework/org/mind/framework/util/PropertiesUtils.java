@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,10 +27,13 @@ public abstract class PropertiesUtils {
      *
      * @return Properties
      * @throws IOException
-     * @author dongping
      */
     public static Properties getProperties() {
-        return getProperties(PropertiesUtils.class.getResourceAsStream(DEFAULT_PROPERTIES));
+        File file = new File(PropertiesUtils.class.getResource(DEFAULT_PROPERTIES).getPath());
+        if (file.exists())
+            return getProperties(PropertiesUtils.class.getResourceAsStream(DEFAULT_PROPERTIES));
+
+        return getProperties(PropertiesUtils.class.getResourceAsStream(String.format("/config%s", DEFAULT_PROPERTIES)));
     }
 
     /**
@@ -38,7 +42,6 @@ public abstract class PropertiesUtils {
      * @param resPath properties绝对文件路径
      * @return Properties
      * @throws IOException
-     * @author dongping
      */
     public static Properties getProperties(String resPath) {
         try {
@@ -55,7 +58,6 @@ public abstract class PropertiesUtils {
      * @param in 可以是BufferedInputStream或InputStream
      * @return Properties
      * @throws IOException
-     * @author dongping
      */
     public static Properties getProperties(InputStream in) {
         Properties props = new Properties();
