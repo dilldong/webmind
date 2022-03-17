@@ -52,6 +52,8 @@ public class WebServer {
     private boolean webApp = true;
     @Setter
     private String webXml;
+    @Setter
+    private String webContext = StringUtils.EMPTY;
 
     private List<DirResourceBuilder> resourceSetList;
     private Properties properties;
@@ -102,8 +104,8 @@ public class WebServer {
 
         // addWebapp方法启动web项目
         StandardContext ctx = webApp ?
-                (StandardContext) tomcat.addWebapp("", baseDir)
-                : (StandardContext) tomcat.addContext("", baseDir);
+                (StandardContext) tomcat.addWebapp(webContext, baseDir)
+                : (StandardContext) tomcat.addContext(webContext, baseDir);
 
         //addContext启动非web项目，没有webapp子类的文件夹，也不存在web.xml文件
 //        StandardContext ctx = (StandardContext) tomcat.addContext("", baseDir);

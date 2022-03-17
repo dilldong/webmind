@@ -72,7 +72,7 @@ public class GracefulShutdown extends Thread {
                 log.info("Protocol-Executor request active count: [{}]", threadPoolExecutor.getActiveCount());
                 threadPoolExecutor.shutdown();
 
-                log.info("Request active thread processing, waiting [{}s] ....", waitTime);
+                log.info("Request active thread processing, waiting ....");
                 if (!threadPoolExecutor.awaitTermination(waitTime, TimeUnit.SECONDS))
                     log.warn("Tomcat thread pool did not shutdown gracefully within [{}] seconds. Proceeding with forceful shutdown", waitTime);
 
