@@ -60,7 +60,8 @@ public class WebServer {
 
     public WebServer() {
         this.resourceSetList = new ArrayList<>();
-        this.baseDir = PropertiesUtils.class.getResource("/").getPath();
+        if (WebServer.class.getResource("/") != null)
+            this.baseDir = WebServer.class.getResource("/").getPath();
 
         try {
             this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(SERVER_PROPERTIES));
