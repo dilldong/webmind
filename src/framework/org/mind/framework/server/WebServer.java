@@ -19,7 +19,6 @@ import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -50,6 +49,8 @@ public class WebServer {
     @Setter
     private String baseDir;
     @Setter
+    private boolean webApp = true;
+    @Setter
     private String webXml;
 
     private List<DirResourceBuilder> resourceSetList;
@@ -59,11 +60,11 @@ public class WebServer {
         this.resourceSetList = new ArrayList<>();
         this.baseDir = PropertiesUtils.class.getResource("/").getPath();
 
-        File file = new File(PropertiesUtils.class.getResource(SERVER_PROPERTIES).getPath());
-        if (file.exists())
+        try {
             this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(SERVER_PROPERTIES));
-        else
+        } catch (NullPointerException e) {
             this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(String.format("/config%s", SERVER_PROPERTIES)));
+        }
 
         if (properties != null) {
             this.serverName = properties.getProperty("server", serverName);
@@ -99,9 +100,20 @@ public class WebServer {
         // 创建webapp
         tomcat.setBaseDir(baseDir);
 
-        StandardContext ctx = (StandardContext) tomcat.addWebapp("", baseDir);
-        if (StringUtils.isNotEmpty(webXml))
+        // addWebapp方法启动web项目
+        StandardContext ctx = webApp ?
+                (StandardContext) tomcat.addWebapp("", baseDir)
+                : (StandardContext) tomcat.addContext("", baseDir);
+
+        //addContext启动非web项目，没有webapp子类的文件夹，也不存在web.xml文件
+//        StandardContext ctx = (StandardContext) tomcat.addContext("", baseDir);
+
+        // 如通过addContext启动，为StandardContext添加Listener，
+//        ctx.addLifecycleListener((LifecycleListener) Class.forName(tomcat.getHost().getConfigClass()).newInstance());
+
+        if (webApp && StringUtils.isNotEmpty(webXml))
             ctx.setDefaultWebXml(String.format("%s%s", baseDir, webXml));
+
         tomcat.enableNaming();
         ctx.setAddWebinfClassesResources(true);
 

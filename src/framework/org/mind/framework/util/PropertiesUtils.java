@@ -1,10 +1,10 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,11 +29,14 @@ public abstract class PropertiesUtils {
      * @throws IOException
      */
     public static Properties getProperties() {
-        File file = new File(PropertiesUtils.class.getResource(DEFAULT_PROPERTIES).getPath());
-        if (file.exists())
-            return getProperties(PropertiesUtils.class.getResourceAsStream(DEFAULT_PROPERTIES));
+        InputStream in;
+        try {
+            in = PropertiesUtils.class.getResourceAsStream(DEFAULT_PROPERTIES);
+        } catch (NullPointerException e) {
+            in = PropertiesUtils.class.getResourceAsStream(String.format("/config%s", DEFAULT_PROPERTIES));
+        }
 
-        return getProperties(PropertiesUtils.class.getResourceAsStream(String.format("/config%s", DEFAULT_PROPERTIES)));
+        return getProperties(in);
     }
 
     /**
@@ -77,7 +80,7 @@ public abstract class PropertiesUtils {
 
     public static long getLong(Properties property, String key) {
         String str = getString(property, key);
-        if (str == null || str.trim().isEmpty())
+        if (StringUtils.isEmpty(str))
             throw new IllegalArgumentException(String.format("Corresponding to the key value is empty or characters, For input string: \" %s \"", str));
 
         return Long.parseLong(str);
@@ -85,7 +88,7 @@ public abstract class PropertiesUtils {
 
     public static int getInteger(Properties property, String key) {
         String str = getString(property, key);
-        if (str == null || str.trim().isEmpty())
+        if (StringUtils.isEmpty(str))
             throw new IllegalArgumentException(String.format("Corresponding to the key value is empty or characters, For input string: \" %s \"", str));
 
         return Integer.parseInt(str);

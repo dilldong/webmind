@@ -62,15 +62,17 @@ public class GracefulShutdown extends Thread {
 
     protected void onStoppingEvent() {
         Connector connector = this.tomcat.getConnector();
-        log.debug("Connector is: {}", connector.toString());
+        log.info("Connector is: {}", connector.toString());
         connector.pause();
-        Executor executor = connector.getProtocolHandler().getExecutor();
+        final Executor executor = connector.getProtocolHandler().getExecutor();
 
         if (executor instanceof ThreadPoolExecutor) {
             try {
                 ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-                log.debug("Protocol-Executor isTerminated: {}, {}", threadPoolExecutor.isTerminated(), threadPoolExecutor.toString());
+                log.info("Protocol-Executor request active count: [{}]", threadPoolExecutor.getActiveCount());
                 threadPoolExecutor.shutdown();
+
+                log.info("Request active thread processing, waiting [{}s] ....", waitTime);
                 if (!threadPoolExecutor.awaitTermination(waitTime, TimeUnit.SECONDS))
                     log.warn("Tomcat thread pool did not shutdown gracefully within [{}] seconds. Proceeding with forceful shutdown", waitTime);
 
