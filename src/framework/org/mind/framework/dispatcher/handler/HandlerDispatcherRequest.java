@@ -148,7 +148,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             throws IOException, ServletException {
 
         long begin = DateFormatUtils.getTimeMillis();
-        String path = UriPath.get(request);
+        final String path = UriPath.get(request);
 
         /*
          * Global interceptors for application containers

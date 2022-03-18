@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Properties;
 
 /**
@@ -21,6 +22,7 @@ public abstract class PropertiesUtils {
     private static final Logger logger = LoggerFactory.getLogger(PropertiesUtils.class);
 
     private static final String DEFAULT_PROPERTIES = "/frame.properties";
+    private static final String JAR_PROPERTIES = "WEB-INF/classes/frame.properties";
 
     /**
      * 默认参数为frame.properties
@@ -30,11 +32,12 @@ public abstract class PropertiesUtils {
      */
     public static Properties getProperties() {
         InputStream in;
-        try {
+        URL url = PropertiesUtils.class.getResource(DEFAULT_PROPERTIES);
+
+        if (url != null)
             in = PropertiesUtils.class.getResourceAsStream(DEFAULT_PROPERTIES);
-        } catch (NullPointerException e) {
-            in = PropertiesUtils.class.getResourceAsStream(String.format("/config%s", DEFAULT_PROPERTIES));
-        }
+        else
+            in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
 
         return getProperties(in);
     }

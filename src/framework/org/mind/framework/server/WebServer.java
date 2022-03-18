@@ -15,10 +15,13 @@ import org.apache.catalina.webresources.StandardRoot;
 import org.apache.commons.lang.StringUtils;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -31,7 +34,7 @@ import java.util.Properties;
 public class WebServer {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private static final String SERVER_PROPERTIES = "/server.properties";
-
+    private static final String JAR_PROPERTIES = "WEB-INF/classes/server.properties";
     @Setter
     private String serverName = "Tomcat";
     @Setter
@@ -60,15 +63,18 @@ public class WebServer {
 
     public WebServer() {
         this.resourceSetList = new ArrayList<>();
-        if (WebServer.class.getResource("/") != null)
-            this.baseDir = WebServer.class.getResource("/").getPath();
+        final String runtimePath = JarFileUtils.getRuntimePath();
+        baseDir = runtimePath;
 
-        try {
-            this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(SERVER_PROPERTIES));
-        } catch (NullPointerException e) {
-            this.properties = PropertiesUtils.getProperties(WebServer.class.getResourceAsStream(String.format("/config%s", SERVER_PROPERTIES)));
-        }
+        InputStream in;
+        URL url = WebServer.class.getResource(SERVER_PROPERTIES);
 
+        if (url != null)
+            in = WebServer.class.getResourceAsStream(SERVER_PROPERTIES);
+        else
+            in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
+
+        properties = PropertiesUtils.getProperties(in);
         if (properties != null) {
             this.serverName = properties.getProperty("server", serverName);
             this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));
@@ -79,6 +85,7 @@ public class WebServer {
             this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
         }
     }
+
 
     public WebServer addPreResources(String webAppMount, String base, String internalPath) {
         this.resourceSetList.add(
