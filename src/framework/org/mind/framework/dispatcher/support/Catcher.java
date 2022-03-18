@@ -3,6 +3,10 @@ package org.mind.framework.dispatcher.support;/**
  * @date 2021-02-14
  */
 
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.util.MatcherUtils;
@@ -15,12 +19,20 @@ import java.util.Arrays;
  * @date 2021-02-14
  */
 public class Catcher implements Comparable<Catcher>, Serializable {
+    @Setter
+    @Getter
     private Interceptor annotation;
 
+    @Setter
+    @Getter
     private HandlerInterceptor hander;
 
+    @Setter
+    @Getter
     private String[] interceptorRegex;
 
+    @Setter
+    @Getter
     private String[] excludesRegex;
 
     public Catcher() {
@@ -59,38 +71,6 @@ public class Catcher implements Comparable<Catcher>, Serializable {
         return false;
     }
 
-    public Interceptor getAnnotation() {
-        return annotation;
-    }
-
-    public void setAnnotation(Interceptor annotation) {
-        this.annotation = annotation;
-    }
-
-    public HandlerInterceptor getHander() {
-        return hander;
-    }
-
-    public void setHander(HandlerInterceptor hander) {
-        this.hander = hander;
-    }
-
-    public String[] getInterceptorRegex() {
-        return interceptorRegex;
-    }
-
-    public void setInterceptorRegex(String[] interceptorRegex) {
-        this.interceptorRegex = interceptorRegex;
-    }
-
-    public String[] getExcludesRegex() {
-        return excludesRegex;
-    }
-
-    public void setExcludesRegex(String[] excludesRegex) {
-        this.excludesRegex = excludesRegex;
-    }
-
     @Override
     public int compareTo(Catcher catcher) {
         return this.annotation.order() - catcher.annotation.order();
@@ -98,7 +78,9 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     @Override
     public String toString() {
-        return "interceptor=" + Arrays.toString(annotation.value()) +
-                "; excludes=" + Arrays.toString(annotation.excludes());
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append("interceptor = ").append(Arrays.toString(annotation.value()))
+                .append("excludes = ").append(Arrays.toString(annotation.excludes()))
+                .toString();
     }
 }

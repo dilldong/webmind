@@ -110,7 +110,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         if (log.isInfoEnabled()) {
             for (Catcher catcher : interceptorsCatcher)
-                log.info("Interceptors: {}", String.format("%s", catcher.toString()));
+                log.info("Interceptors: {}", catcher.toString());
         }
 
         /*
@@ -332,8 +332,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             new TextRender(str).render(request, response);
             return;
         }
-        throw new ServletException(String.format("Cannot handle result with type '%s'", result.getClass().getName()));
 
+        throw new ServletException(String.format("Cannot handle result with type '%s'", result.getClass().getName()));
     }
 
     /**

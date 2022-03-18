@@ -122,7 +122,7 @@ public class WebServer {
 //        ctx.addLifecycleListener((LifecycleListener) Class.forName(tomcat.getHost().getConfigClass()).newInstance());
 
         if (webApp && StringUtils.isNotEmpty(webXml))
-            ctx.setDefaultWebXml(String.format("%s%s", baseDir, webXml));
+            ctx.setDefaultWebXml(String.join("", baseDir, webXml));
 
         tomcat.enableNaming();
         ctx.setAddWebinfClassesResources(true);

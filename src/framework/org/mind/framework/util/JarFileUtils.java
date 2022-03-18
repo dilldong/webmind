@@ -16,7 +16,7 @@ import java.util.jar.JarFile;
  */
 public final class JarFileUtils {
     public static String getRuntimePath() {
-        String classPath = JarFileUtils.class.getName().replaceAll("\\.", "/") + ".class";
+        String classPath = String.join(".", JarFileUtils.class.getName().replaceAll("\\.", "/"), "class");
         URL resource = JarFileUtils.class.getClassLoader().getResource(classPath);
         if (resource == null)
             return null;
