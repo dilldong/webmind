@@ -2,6 +2,7 @@ package org.mind.framework.server;
 
 import lombok.Builder;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import org.apache.catalina.Server;
 import org.apache.catalina.WebResourceRoot;
 import org.apache.catalina.connector.Connector;
@@ -20,6 +21,7 @@ import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -61,6 +63,7 @@ public class WebServer {
     private List<DirResourceBuilder> resourceSetList;
     private Properties properties;
 
+    @SneakyThrows
     public WebServer() {
         this.resourceSetList = new ArrayList<>();
         final String runtimePath = JarFileUtils.getRuntimePath();
@@ -69,10 +72,14 @@ public class WebServer {
         InputStream in;
         URL url = WebServer.class.getResource(SERVER_PROPERTIES);
 
-        if (url != null)
-            in = WebServer.class.getResourceAsStream(SERVER_PROPERTIES);
-        else
-            in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
+        try {
+            if (url != null)
+                in = WebServer.class.getResourceAsStream(SERVER_PROPERTIES);
+            else
+                in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
+        }catch (Exception e){
+            throw new FileNotFoundException("Not found 'server.properties'");
+        }
 
         properties = PropertiesUtils.getProperties(in);
         if (properties != null) {
@@ -122,7 +129,7 @@ public class WebServer {
 //        ctx.addLifecycleListener((LifecycleListener) Class.forName(tomcat.getHost().getConfigClass()).newInstance());
 
         if (webApp && StringUtils.isNotEmpty(webXml))
-            ctx.setDefaultWebXml(String.join("", baseDir, webXml));
+            ctx.setDefaultWebXml(webXml);
 
         tomcat.enableNaming();
         ctx.setAddWebinfClassesResources(true);

@@ -62,7 +62,7 @@ public class GracefulShutdown extends Thread {
 
     protected void onStoppingEvent() {
         Connector connector = this.tomcat.getConnector();
-        log.info("Connector is: {}", connector.toString());
+        log.info("Stopping connector is: {}", connector.toString());
         connector.pause();
         final Executor executor = connector.getProtocolHandler().getExecutor();
 
