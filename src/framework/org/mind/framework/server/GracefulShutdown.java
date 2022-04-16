@@ -7,6 +7,7 @@ import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +21,7 @@ public class GracefulShutdown extends Thread {
 
     private Thread mainThread;
     private volatile Tomcat tomcat;
+    private volatile Executor executor;
     private long waitTime = 30L;// await 30s
     private final Object shutdownMonitor = new Object();
     private boolean shutDownSignalReceived;
@@ -29,10 +31,20 @@ public class GracefulShutdown extends Thread {
         this.tomcat = tomcat;
         this.mainThread = mainThread;
         this.shutDownSignalReceived = false;
+        this.setName("Tomcat-Graceful");
     }
 
-    public void setWaitTime(long waitTime) {
+    public GracefulShutdown(Thread mainThread, Executor executor) {
+        super();
+        this.executor = executor;
+        this.mainThread = mainThread;
+        this.shutDownSignalReceived = false;
+        this.setName("Executor-Graceful");
+    }
+
+    public GracefulShutdown setWaitTime(long waitTime) {
         this.waitTime = waitTime;
+        return this;
     }
 
     public boolean shutDownSignalReceived() {
@@ -46,7 +58,7 @@ public class GracefulShutdown extends Thread {
     @Override
     public void run() {
         synchronized (shutdownMonitor) {
-            log.info("Stopping the tomcat server ....");
+            log.info("Stopping the {} server ....", this.getName());
             this.shutDownSignalReceived = true;
             this.onStoppingEvent();
             try {
@@ -56,28 +68,31 @@ public class GracefulShutdown extends Thread {
                 mainThread.join();
             } catch (InterruptedException e) {
             }
-            log.info("Shutdown tomcat server completed.");
+            log.info("Shutdown {} server completed.", this.getName());
         }
     }
 
     protected void onStoppingEvent() {
-        Connector connector = this.tomcat.getConnector();
-        log.info("Stopping connector is: {}", connector.toString());
-        connector.pause();
-        final Executor executor = connector.getProtocolHandler().getExecutor();
+        if (Objects.nonNull(tomcat)) {
+            Connector connector = this.tomcat.getConnector();
+            log.info("Stopping connector is: {}", connector.toString());
+            connector.pause();
+            this.executor = connector.getProtocolHandler().getExecutor();
+        }
 
-        if (executor instanceof ThreadPoolExecutor) {
+        if (this.executor instanceof ThreadPoolExecutor) {
             try {
                 ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-                log.info("Protocol-Executor request active count: [{}]", threadPoolExecutor.getActiveCount());
+                log.info("{} request active count: [{}]", this.getName(), threadPoolExecutor.getActiveCount());
                 threadPoolExecutor.shutdown();
 
                 log.info("Request active thread processing, waiting ....");
                 if (!threadPoolExecutor.awaitTermination(waitTime, TimeUnit.SECONDS))
-                    log.warn("Tomcat thread pool did not shutdown gracefully within [{}] seconds. Proceeding with forceful shutdown", waitTime);
+                    log.warn("{} thread pool did not shutdown gracefully within [{}] seconds. Proceeding with forceful shutdown", this.getName(), waitTime);
 
                 // tomcat stopping
-                tomcat.stop();
+                if (Objects.nonNull(tomcat))
+                    tomcat.stop();
             } catch (InterruptedException | LifecycleException ex) {
             }
         }
