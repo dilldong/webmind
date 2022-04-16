@@ -1,4 +1,0 @@
-Manifest-Version: 3.0.0
-Build-Jdk-Spec: 1.8
-Created-By: Marcus
-

@@ -5,6 +5,8 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.mind.framework.util.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -21,7 +23,7 @@ import java.util.Map;
  * @author dp
  */
 public final class Action {
-
+    private static final Logger log = LoggerFactory.getLogger(Action.class);
     private static final String BODY_PARAMS = "body_input_param";
 
     private static final ThreadLocal<Action> actionContext =
@@ -125,6 +127,7 @@ public final class Action {
         try {
             return this.getRequestPostString(request);
         } catch (IOException e) {
+            log.error(e.getMessage(), e);
         }
         return null;
     }
@@ -132,13 +135,15 @@ public final class Action {
     public Map<String, JsonObject> requestJsonMap(HttpServletRequest request) {
         return JsonUtils.fromJson(
                 requestJson(request),
-                new TypeToken<Map<String, JsonObject>>() {});
+                new TypeToken<Map<String, JsonObject>>() {
+                });
     }
 
     public List<JsonObject> requestJsonList(HttpServletRequest request) {
         return JsonUtils.fromJson(
                 requestJson(request),
-                new TypeToken<List<JsonObject>>() {});
+                new TypeToken<List<JsonObject>>() {
+                });
     }
 
 
