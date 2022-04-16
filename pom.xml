@@ -9,6 +9,10 @@
     <packaging>jar</packaging>
     <version>3.0.0</version>
 
+    <properties>
+        <start.class>org.mind.framework.Application</start.class>
+    </properties>
+
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
@@ -32,6 +36,10 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.6.5</version>
+                <configuration>
+                    <mainClass>${start.class}</mainClass>
+<!--                    <layout>ZIP</layout>-->
+                </configuration>
                 <executions>
                     <execution>
                         <id>repackage</id>
@@ -54,17 +62,12 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
-            <version>2.3.4.RELEASE</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot</artifactId>
-            <version>1.5.13.RELEASE</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-tomcat</artifactId>-->
+<!--            <version>2.3.4.RELEASE</version>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -210,13 +213,13 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>4.3.30.RELEASE</version>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

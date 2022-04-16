@@ -1,7 +1,6 @@
 package org.mind.framework;
 
 import org.mind.framework.server.WebServer;
-import org.springframework.boot.SpringApplication;
 
 /**
  * @author Marcus
@@ -21,7 +20,6 @@ public class Application {
         webServer.setBaseDir(webPath.substring(0, webPath.lastIndexOf('/')));
 //        webServer.setWebXml(new File("web/WEB-INF/web.xml").getAbsolutePath());
 
-        SpringApplication.run()
         webServer.setWebApp(false);
         webServer.startServer();
     }
