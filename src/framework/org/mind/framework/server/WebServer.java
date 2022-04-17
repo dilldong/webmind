@@ -93,6 +93,10 @@ public class WebServer {
 
     private List<DirResourceBuilder> resourceSetList;
 
+    //https://gitee.com/github-16334221/my_springboot/blob/main/src/main/java/com/zxh/springboot/bean/SpringApplication.java
+
+    //https://blog.csdn.net/weixin_46822085/article/details/109561241
+
     @SneakyThrows
     public WebServer() {
         this.resourceSetList = new ArrayList<>();
