@@ -1,12 +1,11 @@
 package org.mind.framework.container.spring;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.ServletConfig;
-
 import org.mind.framework.ContextSupport;
 import org.mind.framework.container.ContainerAware;
+
+import javax.servlet.ServletConfig;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Web Container Wrapper for Spring 2.x.
@@ -33,7 +32,7 @@ public class SpringContainerAware implements ContainerAware {
     }
 
     public void init(ServletConfig config) {
-        ContextSupport.initSpringContext(config.getServletContext());
+        ContextSupport.initWebContext(config.getServletContext());
     }
 
     public void destroy() {

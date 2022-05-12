@@ -30,7 +30,7 @@ public final class QueueLittle implements QueueService {
 
     @Override
     public DelegateMessage consumer() throws InterruptedException {
-        log.info("Current Queue size: {}", queueInstance.size());
+        // BlockingQueue.take() is thread safety
         DelegateMessage message = queueInstance.take();
         return message;
     }

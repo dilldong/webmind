@@ -10,7 +10,7 @@
         <init-param>
             <param-name>container</param-name>
             <!-- Google Guice -->
-             <!--<param-value>Guice</param-value>-->
+            <!--<param-value>Guice</param-value>-->
 
             <!-- Spring -->
             <param-value>Spring</param-value>
@@ -49,7 +49,7 @@
 
     <context-param>
         <param-name>contextConfigLocation</param-name>
-        <param-value>/WEB-INF/springContext.xml,/WEB-INF/businessConfig.xml</param-value>
+        <param-value>/WEB-INF/springContext.xml, /WEB-INF/businessConfig.xml</param-value>
     </context-param>
 
     <listener>

@@ -22,7 +22,7 @@ public abstract class PropertiesUtils {
     private static final Logger logger = LoggerFactory.getLogger(PropertiesUtils.class);
 
     private static final String DEFAULT_PROPERTIES = "/frame.properties";
-    private static final String JAR_PROPERTIES = "WEB-INF/classes/frame.properties";
+    private static final String JAR_PROPERTIES = "BOOT-INF/classes/frame.properties";
 
     /**
      * 默认参数为frame.properties

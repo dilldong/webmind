@@ -23,27 +23,32 @@ public class GracefulShutdown extends Thread {
     private volatile Tomcat tomcat;
     private volatile Executor executor;
     private long waitTime = 30L;// await 30s
+    private TimeUnit waitTimeUnit;
     private final Object shutdownMonitor = new Object();
     private boolean shutDownSignalReceived;
 
-    public GracefulShutdown(Thread mainThread, Tomcat tomcat) {
+    private GracefulShutdown(Thread mainThread) {
         super();
-        this.tomcat = tomcat;
         this.mainThread = mainThread;
         this.shutDownSignalReceived = false;
+        this.waitTimeUnit = TimeUnit.SECONDS;
+    }
+
+    public GracefulShutdown(Thread mainThread, Tomcat tomcat) {
+        this(mainThread);
+        this.tomcat = tomcat;
         this.setName("Tomcat-Graceful");
     }
 
     public GracefulShutdown(Thread mainThread, Executor executor) {
-        super();
+        this(mainThread);
         this.executor = executor;
-        this.mainThread = mainThread;
-        this.shutDownSignalReceived = false;
         this.setName("Executor-Graceful");
     }
 
-    public GracefulShutdown setWaitTime(long waitTime) {
+    public GracefulShutdown waitTime(long waitTime, TimeUnit waitTimeUnit) {
         this.waitTime = waitTime;
+        this.waitTimeUnit = waitTimeUnit;
         return this;
     }
 
@@ -80,6 +85,7 @@ public class GracefulShutdown extends Thread {
             this.executor = connector.getProtocolHandler().getExecutor();
         }
 
+        // This apache-ThreadPoolExecutor object
         if (this.executor instanceof ThreadPoolExecutor) {
             try {
                 ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
@@ -87,8 +93,8 @@ public class GracefulShutdown extends Thread {
                 threadPoolExecutor.shutdown();
 
                 log.info("Request active thread processing, waiting ....");
-                if (!threadPoolExecutor.awaitTermination(waitTime, TimeUnit.SECONDS))
-                    log.warn("{} thread pool did not shutdown gracefully within [{}] seconds. Proceeding with forceful shutdown", this.getName(), waitTime);
+                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit))
+                    log.warn("{} thread pool did not shutdown gracefully within [{}] {}. Proceeding with forceful shutdown", this.getName(), waitTime, waitTimeUnit.name());
 
                 // tomcat stopping
                 if (Objects.nonNull(tomcat))

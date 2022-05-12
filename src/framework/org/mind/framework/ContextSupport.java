@@ -11,9 +11,9 @@ public final class ContextSupport {
     private static ApplicationContext wctx;
 
     /**
-     * 支持本地Spring文件加载
+     * Support Spring file loading
      *
-     * @param configLocations
+     * @param configLocations spring files
      * @return
      */
     public static ApplicationContext initContext(String[] configLocations) {
@@ -29,7 +29,7 @@ public final class ContextSupport {
 
 
     /**
-     * 获取spring上下文管理的java对象
+     * Get the Spring context
      *
      * @param name
      * @return
@@ -40,10 +40,10 @@ public final class ContextSupport {
     }
 
     /**
-     * 获取spring上下文管理的java对象
+     * Get the Spring context
      *
      * @param name
-     * @param requiredType 可以是interface或实现类
+     * @param requiredType interface or an implementation class
      * @return
      * @author dongping
      */
@@ -58,25 +58,14 @@ public final class ContextSupport {
     }
 
     /**
-     * 该方法是提供给系统使用，待server容器启动时初始化Spring WebContext。
+     * Initialize Spring WebContext when the web server container starts
      *
      * @param sc ServletContext
      * @author dongping
      */
-    public static void initSpringContext(ServletContext sc) {
+    public static void initWebContext(ServletContext sc) {
         if (sc == null)
             throw new NullPointerException("HttpServlet ServletContext is null");
-
-
-        /*
-         * 这里获取spring上下文多出了一个属性字段，ContextLoaderPlugIn.SERVLET_CONTEXT_PREFIX,
-         * 这是因为通过struts的<plug-in/>配置了sping容器，和ContextLoaderListener处理一样，
-         * 将容器放到servlet容器，但是这个时候的的key值正是这个，而不是默认的
-         * WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUT
-         */
-//		wctx = WebApplicationContextUtils.getWebApplicationContext(
-//				sc, 
-//				ContextLoaderPlugIn.SERVLET_CONTEXT_PREFIX);
 
         /*
          * ContextLoaderListener配置
