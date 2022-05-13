@@ -25,6 +25,7 @@ import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.io.ClassPathResource;
@@ -142,14 +143,7 @@ public class WebServer {
         if (springFileList == null)
             springFileList = new ArrayList<>();
 
-//        URL url = WebServer.class.getResource(filePath);
-//        if (url != null) {
-//            String resultPath = url.getPath().startsWith("file:") ?
-//                    url.getPath() :
-//                    String.format("%s%s", "file:", url.getPath());
-
         this.springFileList.add(filePath);
-//        }
         return this;
     }
 
@@ -306,7 +300,7 @@ public class WebServer {
             } else {
                 XmlWebApplicationContext xmas = new XmlLoadForSpringContext();
                 xmas.setConfigLocations(springFileList.toArray(new String[springFileList.size()]));// load spring config
-                loadResource(xmas.getEnvironment());// load properties
+                //loadResource(xmas.getEnvironment());// load properties
                 ctx.addApplicationLifecycleListener(new ContextLoaderListener(xmas));
             }
 
@@ -319,10 +313,12 @@ public class WebServer {
             ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/Exception"));
         }
 
-
         private void loadResource(ConfigurableEnvironment environment) {
             if (resourceList == null || resourceList.isEmpty())
                 return;
+
+            environment.setPlaceholderPrefix(PropertyPlaceholderConfigurer.DEFAULT_PLACEHOLDER_PREFIX);
+            environment.setPlaceholderSuffix(PropertyPlaceholderConfigurer.DEFAULT_PLACEHOLDER_SUFFIX);
 
             MutablePropertySources propertySources = environment.getPropertySources();
             resourceList.forEach(res -> {

@@ -389,7 +389,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         if (sb.length() > 0)
-            log.info("Loaded URI mapping: {}", sb.substring(0, sb.length() - 1));
+            log.info("Loaded URI mapping: {}", StringUtils.substringBeforeLast(sb.toString(), ","));
     }
 
     private boolean isMappingMethod(Method method) {
