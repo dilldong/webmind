@@ -212,9 +212,9 @@ public class WebServer {
             ctx.addErrorPage(newErrorPage(400, "/error/400"));
             ctx.addErrorPage(newErrorPage(404, "/error/404"));
             ctx.addErrorPage(newErrorPage(500, "/error/500"));
-            ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/NullPointerException"));
-            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/ServletException"));
-            ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/Exception"));
+            ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/199"));
+            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/199"));
+            ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/199"));
         }
 
         private void loadResource(ConfigurableEnvironment environment) {
