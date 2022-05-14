@@ -10,7 +10,6 @@ public class Application {
         SpringApplication.run(
                 Application.class,
                 new String[]{"spring/springContext.xml", "spring/businessConfig.xml"},
-                new String[]{"frame.properties"},
                 args);
     }
 
