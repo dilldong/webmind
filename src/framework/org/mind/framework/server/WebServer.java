@@ -84,6 +84,10 @@ public class WebServer {
         shutdown.registerShutdownHook();
 
         tomcat.start();
+        log.info("Starting Protocol: [{}], [{}]",
+                serverConfig.getPort(),
+                StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
+
         log.info("{} startup time: {}ms", serverConfig.getServerName(), (DateFormatUtils.getTimeMillis() - begin));
         server.await();
     }
