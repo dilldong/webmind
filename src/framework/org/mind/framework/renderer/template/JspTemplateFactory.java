@@ -22,7 +22,7 @@ public class JspTemplateFactory extends TemplateFactory {
 
     @Override
     public void init(ServletContext context) {
-        log.info("JspTemplateFactory init success.");
+        log.debug("JspTemplateFactory init success.");
     }
 
 }

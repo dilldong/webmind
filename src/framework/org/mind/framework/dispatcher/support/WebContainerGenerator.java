@@ -66,21 +66,20 @@ public final class WebContainerGenerator {
         } catch (Exception e) {
         }
 
-        try {
-            if (obj == null) {
+        if (obj == null) {
+            try {
                 obj = Class.forName(
                         String.format("%s.%s",
                                 TemplateFactory.class.getPackage().getName(),
                                 templateName + TemplateFactory.class.getSimpleName()))
                         .newInstance();
+            } catch (Exception e) {
             }
-
-            if (obj instanceof TemplateFactory)
-                return (TemplateFactory) obj;
-
-        } catch (Exception e) {
         }
 
-        throw new IllegalArgumentException("init param invalid.");
+        if (obj instanceof TemplateFactory)
+            return (TemplateFactory) obj;
+
+        throw new IllegalArgumentException("Init template param invalid. Optional as Velocity");
     }
 }

@@ -27,6 +27,21 @@ public final class ContextSupport {
         return wctx;
     }
 
+    /**
+     * Initialize Spring WebContext when the web server container starts
+     *
+     * @param sc ServletContext
+     * @author dongping
+     */
+    public static void initWebContext(ServletContext sc) {
+        if (sc == null)
+            throw new NullPointerException("HttpServlet ServletContext is null");
+
+        /*
+         * ContextLoaderListener配置
+         */
+        wctx = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
+    }
 
     /**
      * Get the Spring context
@@ -57,24 +72,12 @@ public final class ContextSupport {
         return wctx.getBean(name, requiredType);
     }
 
-    /**
-     * Initialize Spring WebContext when the web server container starts
-     *
-     * @param sc ServletContext
-     * @author dongping
-     */
-    public static void initWebContext(ServletContext sc) {
-        if (sc == null)
-            throw new NullPointerException("HttpServlet ServletContext is null");
-
-        /*
-         * ContextLoaderListener配置
-         */
-        wctx = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
-    }
-
     public static String[] getBeanNames() {
         return wctx.getBeanDefinitionNames();
+    }
+
+    public static long getStartupTime() {
+        return wctx.getStartupDate();
     }
 
 }

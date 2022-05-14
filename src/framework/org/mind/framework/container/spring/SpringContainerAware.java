@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Web Container Wrapper for Spring 2.x.
+ * Web Container Wrapper for Spring 2+
  *
  * @author dp
  */

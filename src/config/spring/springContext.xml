@@ -8,6 +8,7 @@
 
     <context:component-scan base-package="org.mind.framework"/>
     <context:property-placeholder location="classpath:frame.properties"/>
+    <!--<tx:annotation-driven transaction-manager="txManager"/>-->
 
     <!-- HikariCP configuration -->
     <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
@@ -19,6 +20,20 @@
         <property name="idleTimeout" value="${db.idleTimeout}"/>
         <property name="maxLifetime" value="${db.maxLifetime}"/>
         <property name="maximumPoolSize" value="${db.maximumPoolSize}"/>
+    </bean>
+
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="fetchSize" value="100"/>
+        <property name="maxRows" value="2000"/>
+        <property name="queryTimeout" value="0"/>
+    </bean>
+
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
     </bean>
 
     <bean id="cacheManager" class="org.mind.framework.cache.LruCache"

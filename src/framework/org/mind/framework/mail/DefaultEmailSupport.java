@@ -1,5 +1,6 @@
 package org.mind.framework.mail;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.exception.VelocityException;
 import org.mind.framework.ContextSupport;
@@ -57,7 +58,7 @@ public class DefaultEmailSupport extends MailAbstract {
                 return (String) this.getModel();
         }
 
-        return "";
+        return StringUtils.EMPTY;
     }
 
     public void setTemplateName(String templateName) {

@@ -17,16 +17,14 @@ import java.util.Arrays;
 /**
  * @author Marcus
  * @version 1.0
- * @date 2022-05-12
  */
-public class XmlLoadForSpringContext extends XmlWebApplicationContext {
+public class XmlLoad4SpringContext extends XmlWebApplicationContext {
 
-    private static final Logger log = LoggerFactory.getLogger(XmlLoadForSpringContext.class);
+    private static final Logger log = LoggerFactory.getLogger(XmlLoad4SpringContext.class);
 
     @Override
     protected void initBeanDefinitionReader(XmlBeanDefinitionReader beanDefinitionReader) {
         super.initBeanDefinitionReader(beanDefinitionReader);
-        beanDefinitionReader.setValidating(false);
     }
 
     @Override
@@ -38,12 +36,15 @@ public class XmlLoadForSpringContext extends XmlWebApplicationContext {
         boolean showLog = false;
         for (String location : configLocations) {
             Resource resource = new ClassPathResource(location, reader.getBeanClassLoader());
+
+            // resource in jar
             if (!resource.exists()) {
-                showLog = true;
                 String tempLoc = location.startsWith("/") ? location.substring(1) : location;
                 InputStream in = JarFileUtils.getJarEntryStream(
-                        String.format("%s%c%s", WebServer.JAR_IN_CLASSES, IOUtils.DIR_SEPARATOR_UNIX, tempLoc));
+                        String.format("%s%c%s", WebServerConfig.JAR_IN_CLASSES, IOUtils.DIR_SEPARATOR_UNIX, tempLoc));
 
+                showLog = true;
+                reader.setValidating(false);// close validate
                 resource = new InputStreamResource(in);
             }
 

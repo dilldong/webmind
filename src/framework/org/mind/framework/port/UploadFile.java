@@ -1,16 +1,5 @@
 package org.mind.framework.port;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
 import org.mind.framework.exception.NotSupportedException;
@@ -20,10 +9,20 @@ import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
 /**
- * 上传文件
+ * Upload files
  *
- * @author dongping
+ * @author Marcus
  */
 public class UploadFile {
 
@@ -55,7 +54,7 @@ public class UploadFile {
      * 如果未设置该项，将使用frame.prperties文件的: upload.dir属性值。
      *
      * @throws IOException
-     * @author dongping
+     * @author Marcus
      */
     public UploadFile(HttpServletRequest request, String directory) {
         this.request = (MultipartHttpServletRequest) request;
@@ -89,7 +88,7 @@ public class UploadFile {
      * @return UploadProperty类的集合，其中可以获取上传后
      * 文件的存放路径、名称、大小、前台页面file控件name名称
      * @throws IOException
-     * @author dongping
+     * @author Marcus
      */
     public List<UploadProperty> upload() throws IOException {
         if (this.request.isRequestFailed())

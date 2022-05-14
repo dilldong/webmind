@@ -1,7 +1,5 @@
 package org.mind.framework.server;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
@@ -21,8 +19,6 @@ import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.util.DateFormatUtils;
-import org.mind.framework.util.JarFileUtils;
-import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
@@ -34,70 +30,27 @@ import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.management.ManagementFactory;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Marcus
- * @version 1.0
- * @date 2022-03-14
+ * @version 1.1
  */
 public class WebServer {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private static final String SERVLET_NAME = "mindDispatcher";
     private static final String SERVLET_CLASS = "org.mind.framework.dispatcher.DispatcherServlet";
 
-    public static final String JAR_IN_CLASSES = "BOOT-INF/classes";
-    private static final String SERVER_PROPERTIES = "/server.properties";
-    private static final String JAR_PROPERTIES = String.format("%s%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
+    private volatile Set<String> springFileSet;
+    private volatile Set<String> resourceSet;
+    private WebServerConfig serverConfig;
 
-    @Setter
-    @Getter
-    private String serverName = "Tomcat";
-
-    @Setter
-    @Getter
-    private int port = 10030;
-
-    @Setter
-    @Getter
-    private int connectionTimeout = 20_000;
-
-    @Setter
-    @Getter
-    private int maxConnections = 1024;
-
-    @Setter
-    @Getter
-    private int minSpareThreads = 5;
-
-    @Setter
-    @Getter
-    private int maxThreads = 200;
-
-    @Getter
-    @Setter
-    private int acceptCount = 100;
-
-    @Getter
-    @Setter
-    private String contextPath = StringUtils.EMPTY;
-
-    @Setter
-    @Getter
-    private String webXml;
-
-    private volatile List<String> springFileList;
-    private volatile List<String> resourceList;
-
-    public WebServer() throws FileNotFoundException {
-        this.initServer();
+    public WebServer() {
+        this.serverConfig = WebServerConfig.init();
     }
 
     public void startServer() throws LifecycleException {
@@ -118,7 +71,7 @@ public class WebServer {
         this.logServer();
 
         // add webapp
-        tomcat.addWebapp(host, contextPath, createTempDir("Tomcat").getAbsolutePath());
+        tomcat.addWebapp(host, serverConfig.getContextPath(), createTempDir(serverConfig.getServerName()).getAbsolutePath());
 
         // Prevent memory leaks due to use of particular java/javax APIs
         Server server = tomcat.getServer();
@@ -131,40 +84,19 @@ public class WebServer {
         shutdown.registerShutdownHook();
 
         tomcat.start();
-        log.info("{} startup time: {}ms", serverName, (DateFormatUtils.getTimeMillis() - begin));
+        log.info("{} startup time: {}ms", serverConfig.getServerName(), (DateFormatUtils.getTimeMillis() - begin));
         server.await();
     }
 
-
-    public WebServer addSpringFile(String filePath) {
-        if (StringUtils.isEmpty(filePath))
-            return this;
-
-        if (springFileList == null)
-            springFileList = new ArrayList<>();
-
-        this.springFileList.add(filePath);
-        return this;
-    }
 
     public WebServer addSpringFile(String... filePath) {
         if (filePath == null || filePath.length == 0)
             return this;
 
-        for (String file : filePath)
-            this.addSpringFile(file);
+        if (this.springFileSet == null)
+            this.springFileSet = new HashSet<>();
 
-        return this;
-    }
-
-    public WebServer addResource(String resPath) {
-        if (StringUtils.isEmpty(resPath))
-            return this;
-
-        if (resourceList == null)
-            resourceList = new ArrayList<>();
-
-        this.resourceList.add(resPath);
+        this.springFileSet.addAll(Arrays.asList(filePath));
         return this;
     }
 
@@ -172,22 +104,22 @@ public class WebServer {
         if (resPath == null || resPath.length == 0)
             return this;
 
-        for (String file : resPath)
-            this.addResource(file);
+        if (this.resourceSet == null)
+            this.resourceSet = new HashSet<>();
 
+        this.resourceSet.addAll(Arrays.asList(resPath));
         return this;
     }
 
-
     protected File createTempDir(String prefix) {
         try {
-            File tempDir = File.createTempFile(prefix + ".", "." + this.getPort());
+            File tempDir = File.createTempFile(prefix + ".", "." + serverConfig.getPort());
             tempDir.delete();
             tempDir.mkdir();
             tempDir.deleteOnExit();
             return tempDir;
         } catch (IOException e) {
-            log.error("Unable to create tempDir", e);
+            log.error("Unable to create tempDir, {}", e.getMessage());
             throw new NotSupportedException(e.getMessage(), e);
         }
     }
@@ -198,44 +130,14 @@ public class WebServer {
         connector.setThrowOnFailure(true);
 
         Http11NioProtocol nioProtocol = (Http11NioProtocol) connector.getProtocolHandler();
-        nioProtocol.setPort(port);
-        nioProtocol.setConnectionTimeout(connectionTimeout);
+        nioProtocol.setPort(serverConfig.getPort());
+        nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
         nioProtocol.setCompression("on");
-        nioProtocol.setMaxThreads(maxThreads);
-        nioProtocol.setAcceptCount(acceptCount);
-        nioProtocol.setMaxConnections(maxConnections);
-        nioProtocol.setMinSpareThreads(minSpareThreads);
+        nioProtocol.setMaxThreads(serverConfig.getMaxThreads());
+        nioProtocol.setAcceptCount(serverConfig.getAcceptCount());
+        nioProtocol.setMaxConnections(serverConfig.getMaxConnections());
+        nioProtocol.setMinSpareThreads(serverConfig.getMinSpareThreads());
         return connector;
-    }
-
-    private void initServer() throws FileNotFoundException {
-        InputStream in;
-        URL url = WebServer.class.getResource(SERVER_PROPERTIES);
-
-        try {
-            if (url != null)
-                in = WebServer.class.getResourceAsStream(SERVER_PROPERTIES);
-            else
-                in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
-        } catch (Exception e) {
-            throw new FileNotFoundException("Not found 'server.properties'");
-        }
-
-        Properties properties = PropertiesUtils.getProperties(in);
-        if (properties != null) {
-            this.serverName = properties.getProperty("server", serverName);
-            this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));
-            this.connectionTimeout = Integer.parseInt(properties.getProperty("server.connectionTimeout", String.valueOf(connectionTimeout)));
-            this.maxConnections = Integer.parseInt(properties.getProperty("server.maxConnections", String.valueOf(maxConnections)));
-            this.maxThreads = Integer.parseInt(properties.getProperty("server.maxThreads", String.valueOf(maxThreads)));
-            this.minSpareThreads = Integer.parseInt(properties.getProperty("server.minSpareThreads", String.valueOf(minSpareThreads)));
-            this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
-        }
-    }
-
-    private void initSpringConfig() throws FileNotFoundException {
-        if (springFileList != null && !springFileList.isEmpty())
-            return;
     }
 
     private void logServer() {
@@ -262,16 +164,16 @@ public class WebServer {
             ctx.setDocBase(docBase);
 
             // by web.xml
-            if (StringUtils.isNotEmpty(webXml)) {
-                log.info("Load Web-Server config: {}", webXml);
+            if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
+                log.info("Load Web-Server config: {}", serverConfig.getWebXml());
                 ctx.addLifecycleListener(this.getDefaultWebXmlListener());
                 LifecycleListener config = this.getContextListener(host);
                 ctx.addLifecycleListener(config);
 
                 if (config instanceof ContextConfig)
-                    ((ContextConfig) config).setDefaultWebXml(new File(webXml).getAbsolutePath());
+                    ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
             } else {
-                log.info("Creation servlet: [{}]", SERVLET_CLASS);
+                log.info("Creation mindframework servlet: [{}]", SERVLET_CLASS);
                 createServlet(host, ctx);// create servlet
             }
 
@@ -285,22 +187,24 @@ public class WebServer {
 
             Wrapper wrapper = Tomcat.addServlet(ctx, SERVLET_NAME, SERVLET_CLASS);
 
-            wrapper.addInitParameter("container", "Spring");
-            wrapper.addInitParameter("template", "Velocity");
-            wrapper.addInitParameter("resource", "css|js|jpg|png|gif|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt");
-            wrapper.addInitParameter("expires", "-1");
+            wrapper.addInitParameter("container", serverConfig.getContainerAware());
+            if (StringUtils.isNotEmpty(serverConfig.getTemplateEngine()))
+                wrapper.addInitParameter("template", serverConfig.getTemplateEngine());
+
+            wrapper.addInitParameter("resource", serverConfig.getStaticSuffix());
+            wrapper.addInitParameter("expires", serverConfig.getResourceExpires());
             wrapper.setLoadOnStartup(1);
 
-            ctx.setSessionTimeout(30);
+            ctx.setSessionTimeout(serverConfig.getSessionTimeout());
             ctx.addServletMappingDecoded("/", SERVLET_NAME);
 
             // Add Spring loader
-            if (springFileList == null || springFileList.isEmpty()) {
+            if (springFileSet == null || springFileSet.isEmpty()) {
                 log.warn("Spring's config file is not set.");
             } else {
-                XmlWebApplicationContext xmas = new XmlLoadForSpringContext();
-                xmas.setConfigLocations(springFileList.toArray(new String[springFileList.size()]));// load spring config
-                //loadResource(xmas.getEnvironment());// load properties
+                XmlWebApplicationContext xmas = new XmlLoad4SpringContext();
+                xmas.setConfigLocations(springFileSet.toArray(new String[springFileSet.size()]));// load spring config
+                loadResource(xmas.getEnvironment());// load properties
                 ctx.addApplicationLifecycleListener(new ContextLoaderListener(xmas));
             }
 
@@ -314,14 +218,14 @@ public class WebServer {
         }
 
         private void loadResource(ConfigurableEnvironment environment) {
-            if (resourceList == null || resourceList.isEmpty())
+            if (resourceSet == null || resourceSet.isEmpty())
                 return;
 
             environment.setPlaceholderPrefix(PropertyPlaceholderConfigurer.DEFAULT_PLACEHOLDER_PREFIX);
             environment.setPlaceholderSuffix(PropertyPlaceholderConfigurer.DEFAULT_PLACEHOLDER_SUFFIX);
 
             MutablePropertySources propertySources = environment.getPropertySources();
-            resourceList.forEach(res -> {
+            resourceSet.forEach(res -> {
                 try {
                     propertySources.addFirst(new ResourcePropertySource(new ClassPathResource(res)));
                 } catch (IOException e) {

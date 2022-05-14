@@ -18,6 +18,14 @@ public class SpringApplication {
         this.resources = resources;
     }
 
+    public static void run(Class<?> mainClass, String... args) {
+        run(mainClass, null, args);
+    }
+
+    public static void run(Class<?> mainClass, String[] springLocations, String... args) {
+        run(mainClass, springLocations, null, args);
+    }
+
     public static void run(Class<?> mainClass, String[] springLocations, String[] resources, String... args) {
         new SpringApplication(mainClass, springLocations, resources).run(args);
     }
