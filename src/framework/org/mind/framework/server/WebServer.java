@@ -17,6 +17,7 @@ import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
+import org.mind.framework.dispatcher.DispatcherServlet;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
@@ -169,7 +170,7 @@ public class WebServer {
 
             // by web.xml
             if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
-                log.info("Load Web-Server config: {}", serverConfig.getWebXml());
+                log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
                 ctx.addLifecycleListener(this.getDefaultWebXmlListener());
                 LifecycleListener config = this.getContextListener(host);
                 ctx.addLifecycleListener(config);
@@ -177,7 +178,7 @@ public class WebServer {
                 if (config instanceof ContextConfig)
                     ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
             } else {
-                log.info("Creation mindframework servlet: [{}]", SERVLET_CLASS);
+                log.debug("Creation mindframework servlet: [{}]", SERVLET_CLASS);
                 createServlet(host, ctx);// create servlet
             }
 
@@ -189,7 +190,7 @@ public class WebServer {
             ctx.addLifecycleListener(new Tomcat.FixContextListener());
             ctx.addLifecycleListener(getContextListener(host));
 
-            Wrapper wrapper = Tomcat.addServlet(ctx, SERVLET_NAME, SERVLET_CLASS);
+            Wrapper wrapper = Tomcat.addServlet(ctx, SERVLET_NAME, new DispatcherServlet());
 
             wrapper.addInitParameter("container", serverConfig.getContainerAware());
             if (StringUtils.isNotEmpty(serverConfig.getTemplateEngine()))

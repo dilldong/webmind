@@ -35,9 +35,9 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
 
         boolean showLog = false;
         for (String location : configLocations) {
-            Resource resource = new ClassPathResource(location, reader.getBeanClassLoader());
+            Resource resource = new ClassPathResource(location, Thread.currentThread().getContextClassLoader());
 
-            // resource in jar
+            // xml in jar
             if (!resource.exists()) {
                 String tempLoc = location.startsWith("/") ? location.substring(1) : location;
                 InputStream in = JarFileUtils.getJarEntryStream(
