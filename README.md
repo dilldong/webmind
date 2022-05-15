@@ -1,7 +1,7 @@
 
 # Webmind Framework
 
-[![License](https://img.shields.io/badge/License-MIT-green)](https://raw.githubusercontent.com/PlanckX/PlanckXSDK-Java/master/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache-green)](https://raw.githubusercontent.com/dilldong/webmind/master/LICENSE)
 
 
 ## License
