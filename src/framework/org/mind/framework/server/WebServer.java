@@ -57,7 +57,7 @@ public class WebServer {
     public void startServer() throws LifecycleException {
         final long begin = DateFormatUtils.getTimeMillis();
 
-        Tomcat tomcat = new TomcatServer();
+        Tomcat tomcat = new WebServer.TomcatServer();
         Connector connector = getNioConnector();
         tomcat.getService().addConnector(connector);// getService auto create
         tomcat.setConnector(connector);
