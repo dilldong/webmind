@@ -1,18 +1,8 @@
-## web mind framework
 
-####更新日志
-~~~~ 
-V2.4.9
-1. 优化拦截器.
+# Webmind Framework
+
+[![License](https://img.shields.io/badge/License-MIT-green)](https://raw.githubusercontent.com/PlanckX/PlanckXSDK-Java/master/LICENSE)
 
 
-V2.4.8
-1. 多拦截器正向筛选.
-2. 增加Interceptor手动控制执行顺序.
-3. 增加Json字段Filter过滤器.
-
-
-V2.4.7
-1. 对Json的数组对象支持.
-2. 支持Spring2.5.6及以上版本.
-~~~~
+## License
+The Webmind Framework is released under version 2.0 of the Apache License.
