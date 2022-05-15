@@ -6,7 +6,7 @@
 Webmind is a lightweight web service framework that integrates with SpringFramework. Realize the embedded startup of Tomcat, which is easy to use, occupies less memory, responds quickly, and has stable service. Suitable for Java microservices and web projects.
 
 ## Example
-### 1.Controller
+### 1. Mapping
 ```java
 @Controller
 public class HelloController {
