@@ -35,7 +35,7 @@ public class SpringApplication {
         new WebServer()
                 .addSpringFile(springLocations)
                 .addResource(resources)
-                .startServer();
+                .startup();
     }
 
 }

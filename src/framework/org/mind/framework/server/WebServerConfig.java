@@ -1,6 +1,7 @@
 package org.mind.framework.server;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.mind.framework.util.JarFileUtils;
@@ -9,6 +10,7 @@ import org.mind.framework.util.PropertiesUtils;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author Marcus
@@ -49,6 +51,12 @@ class WebServerConfig {
     private String containerAware = "Spring";
 
     private String templateEngine;
+
+    @Setter
+    private volatile Set<String> springFileSet;
+
+    @Setter
+    private volatile Set<String> resourceSet;
 
     private WebServerConfig() {
         InputStream in;

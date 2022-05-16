@@ -12,7 +12,6 @@ import org.springframework.ui.velocity.VelocityEngineUtils;
 import java.io.IOException;
 import java.util.Map;
 
-
 public class DefaultEmailSupport extends MailAbstract {
 
     private String templateName;
