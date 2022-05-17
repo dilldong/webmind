@@ -9,10 +9,13 @@ import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.lang.StringUtils;
 import org.mind.framework.exception.NotSupportedException;
+import org.mind.framework.exception.WebServerException;
+import org.mind.framework.server.tomcat.TomcatServer;
 import org.mind.framework.util.DateFormatUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,7 +32,9 @@ public abstract class ServerContext {
     private volatile Set<String> springFileSet;
     private volatile Set<String> resourceSet;
 
-    protected WebServerConfig serverConfig;
+    private volatile WebServerConfig serverConfig;
+
+    private final Object monitor = new Object();
 
     /**
      * Register tomcat-server you custom
@@ -37,31 +42,38 @@ public abstract class ServerContext {
      * @param tomcat
      * @throws LifecycleException
      */
-    protected abstract void registerServer(Tomcat tomcat) throws LifecycleException;
+    protected abstract void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException;
 
     public ServerContext() {
         this.serverConfig = WebServerConfig.init();
     }
 
-    public void startup() throws LifecycleException {
-        final long begin = DateFormatUtils.getTimeMillis();
+    public void startup() throws WebServerException {
+        synchronized (this.monitor) {
+            try {
+                final long begin = DateFormatUtils.getTimeMillis();
+                Tomcat tomcat = creationServer();
+                this.registerServer(tomcat, serverConfig);
 
-        Tomcat tomcat = creationServer();
-        this.registerServer(tomcat);
+                // Prevent memory leaks due to use of particular java/javax APIs
+                Server server = tomcat.getServer();
+                server.addLifecycleListener(new JreMemoryLeakPreventionListener());
+                server.addLifecycleListener(new GlobalResourcesLifecycleListener());
+                server.addLifecycleListener(new ThreadLocalLeakPreventionListener());
 
-        // Prevent memory leaks due to use of particular java/javax APIs
-        Server server = tomcat.getServer();
-        server.addLifecycleListener(new JreMemoryLeakPreventionListener());
-        server.addLifecycleListener(new GlobalResourcesLifecycleListener());
-        server.addLifecycleListener(new ThreadLocalLeakPreventionListener());
+                // Unlike Jetty, all Tomcat threads are daemon threads. We create a
+                // blocking non-daemon to stop immediate shutdown
+                tomcat.start();
 
-        tomcat.start();
-        log.info("Starting Protocol: [{}], [{}]",
-                serverConfig.getPort(),
-                StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
+                log.info("Starting Protocol: [{}], [{}]",
+                        serverConfig.getPort(),
+                        StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
 
-        log.info("{} startup time: {}ms", serverConfig.getServerName(), (DateFormatUtils.getTimeMillis() - begin));
-        server.await();
+                log.info("{} startup time: {}ms", serverConfig.getServerName(), (DateFormatUtils.getTimeMillis() - begin));
+            } catch (Exception e) {
+                throw new WebServerException("Unable to start embedded Tomcat", e);
+            }
+        }
     }
 
     public ServerContext addSpringFile(String... filePath) {
@@ -97,11 +109,15 @@ public abstract class ServerContext {
         return tomcat;
     }
 
-    protected File createTempDir(String prefix) {
+    /**
+     * Return the absolute temp dir for given web server.
+     *
+     * @param prefix server name
+     * @return the temp dir for given server.
+     */
+    protected final File createTempDir(String prefix) {
         try {
-            File tempDir = File.createTempFile(prefix + ".", "." + serverConfig.getPort());
-            tempDir.delete();
-            tempDir.mkdir();
+            File tempDir = Files.createTempDirectory(prefix + "." + serverConfig.getPort() + ".").toFile();
             tempDir.deleteOnExit();
             return tempDir;
         } catch (IOException e) {

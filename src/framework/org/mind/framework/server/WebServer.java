@@ -14,7 +14,7 @@ public class WebServer extends ServerContext {
     }
 
     @Override
-    protected void registerServer(Tomcat tomcat) throws LifecycleException {
+    protected void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException {
         // register webapp
         tomcat.addWebapp(
                 tomcat.getHost(),

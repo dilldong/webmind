@@ -1,8 +1,10 @@
-package org.mind.framework.server;
+package org.mind.framework.server.tomcat;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
+import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.connector.Connector;
@@ -14,6 +16,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.mind.framework.dispatcher.DispatcherServlet;
+import org.mind.framework.exception.WebServerException;
+import org.mind.framework.server.ServerContext;
+import org.mind.framework.server.WebServerConfig;
+import org.mind.framework.server.XmlLoad4SpringContext;
 import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
@@ -52,7 +58,7 @@ public class TomcatServer extends Tomcat {
 
     @Override
     public Context addWebapp(Host host, String contextPath, String docBase) {
-        StandardContext ctx = new StandardContext();
+        StandardContext ctx = new TomcatEmbeddedContext();
         ctx.setPath(contextPath);
         ctx.setDocBase(docBase);
 
@@ -83,7 +89,8 @@ public class TomcatServer extends Tomcat {
     }
 
     protected Connector getNioConnector() {
-        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");//org.apache.coyote.http11.Http11Nio2Protocol
+        // org.apache.coyote.http11.Http11Nio2Protocol
+        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
         connector.setUseBodyEncodingForURI(true);
         connector.setThrowOnFailure(true);
 
@@ -104,6 +111,58 @@ public class TomcatServer extends Tomcat {
         System.out.println("CATALINA_HOME:  " + System.getProperty("catalina.home"));
         ManagementFactory.getRuntimeMXBean().getInputArguments().forEach(arg -> System.out.println("Command line argument: " + arg));
     }
+
+    /**
+     * Tomcat threads are daemon threads.
+     * Create a blocking non-daemon to stop immediate shutdown
+     */
+    @Override
+    public void start() {
+        try {
+            super.start();
+            Thread awaitThread = new Thread(() -> TomcatServer.this.getServer().await());
+            awaitThread.setName("web-container-" + serverConfig.getPort());
+            awaitThread.setContextClassLoader(getClass().getClassLoader());
+            awaitThread.setDaemon(false);
+            awaitThread.start();
+        } catch (Exception e) {
+            stop();
+            destroy();
+            throw new WebServerException(e.getMessage(), e);
+        }
+    }
+
+    public Context findContext() {
+        Container[] containers = this.getHost().findChildren();
+        for (Container child : containers)
+            if (child instanceof Context)
+                return (Context) child;
+
+        throw new IllegalStateException("The host does not contain a Context");
+    }
+
+    /**
+     * Stop Quietly
+     */
+    @Override
+    public void stop() {
+        try {
+            super.stop();
+        } catch (LifecycleException e) {
+        }
+    }
+
+    /**
+     * Destory Quietly
+     */
+    @Override
+    public void destroy() {
+        try {
+            super.destroy();
+        } catch (LifecycleException e) {
+        }
+    }
+
 
     private void createServlet(Host host, StandardContext ctx) {
         ctx.addLifecycleListener(new Tomcat.FixContextListener());

@@ -1,6 +1,5 @@
 package org.mind.framework;
 
-import lombok.SneakyThrows;
 import org.mind.framework.server.WebServer;
 
 /**
@@ -30,7 +29,6 @@ public class SpringApplication {
         new SpringApplication(mainClass, springLocations, resources).run(args);
     }
 
-    @SneakyThrows
     private void run(String... args) {
         new WebServer()
                 .addSpringFile(springLocations)

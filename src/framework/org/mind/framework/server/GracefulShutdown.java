@@ -1,6 +1,5 @@
 package org.mind.framework.server;
 
-import org.apache.catalina.LifecycleException;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
@@ -94,12 +93,20 @@ public class GracefulShutdown extends Thread {
 
                 log.info("Request active thread processing, waiting ....");
                 if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit))
-                    log.warn("{} thread pool did not shutdown gracefully within [{}] {}. Proceeding with forceful shutdown", this.getName(), waitTime, waitTimeUnit.name());
+                    log.warn("{} thread pool did not shutdown gracefully within [{}] {}. Proceeding with forceful shutdown",
+                            this.getName(),
+                            waitTime,
+                            waitTimeUnit.name());
+            } catch (InterruptedException ex) {
+            }
+        }
 
-                // tomcat stopping
-                if (Objects.nonNull(tomcat))
-                    tomcat.stop();
-            } catch (InterruptedException | LifecycleException ex) {
+        // tomcat stopping(see TomcatServer: stop(), destroy())
+        if (Objects.nonNull(tomcat)) {
+            try {
+                tomcat.stop();
+                tomcat.destroy();
+            } catch (Exception e) {
             }
         }
     }

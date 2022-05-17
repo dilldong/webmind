@@ -19,7 +19,7 @@ import java.util.Set;
  */
 @Getter
 @Slf4j
-class WebServerConfig {
+public class WebServerConfig {
     public static final String JAR_IN_CLASSES = "BOOT-INF/classes";
     private static final String SERVER_PROPERTIES = "/server.properties";
     private static final String JAR_PROPERTIES = String.format("%s%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
