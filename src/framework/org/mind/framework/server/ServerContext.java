@@ -29,10 +29,10 @@ public abstract class ServerContext {
     public static final String SERVLET_NAME = "mindDispatcher";
     public static final String SERVLET_CLASS = "org.mind.framework.dispatcher.DispatcherServlet";
 
-    private volatile Set<String> springFileSet;
-    private volatile Set<String> resourceSet;
+    private transient Set<String> springFileSet;
+    private transient Set<String> resourceSet;
 
-    private volatile WebServerConfig serverConfig;
+    private transient WebServerConfig serverConfig;
 
     private final Object monitor = new Object();
 

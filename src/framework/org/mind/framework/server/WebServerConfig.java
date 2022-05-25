@@ -53,10 +53,10 @@ public class WebServerConfig {
     private String templateEngine;
 
     @Setter
-    private volatile Set<String> springFileSet;
+    private transient Set<String> springFileSet;
 
     @Setter
-    private volatile Set<String> resourceSet;
+    private transient Set<String> resourceSet;
 
     private WebServerConfig() {
         InputStream in;

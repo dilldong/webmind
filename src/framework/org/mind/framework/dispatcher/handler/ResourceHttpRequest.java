@@ -1,5 +1,6 @@
 package org.mind.framework.dispatcher.handler;
 
+import org.apache.commons.lang.StringUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.ResponseUtils;
 import org.slf4j.Logger;
@@ -60,8 +61,9 @@ public class ResourceHttpRequest implements HandlerResult {
                              HttpServletResponse response) throws IOException, ServletException {
 
         String uri = (String) result;
-        if (uri.toUpperCase().startsWith("/WEB-INF/") || uri.toUpperCase().startsWith("/META-INF/")) {
+        boolean startFlag = StringUtils.startsWithAny(uri.toUpperCase(), new String[]{"/BOOT-INF/", "/WEB-INF/", "/META-INF/"});
 
+        if (startFlag) {
             log.error("{} - Not Author access.", HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION);
             response.sendError(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION, "Not Author access.");
             return;
