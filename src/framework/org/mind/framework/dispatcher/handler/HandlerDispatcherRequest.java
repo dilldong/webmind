@@ -366,7 +366,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 Interceptor interceptor = clazz.getAnnotation(Interceptor.class);
 
                 interceptorsCatcher.add(new Catcher(interceptor, (HandlerInterceptor) bean));
-                log.debug("Loaded Interceptor: {}", Arrays.toString(interceptor.value()));
+                log.info("Loaded Interceptor: {}", Arrays.toString(interceptor.value()));
             } else {
                 throw new ServletException("The interceptor needs to implement the HandlerInterceptor interface or inherit the AbstractHandlerInterceptor class.");
             }
