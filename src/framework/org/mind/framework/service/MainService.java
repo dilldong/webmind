@@ -69,6 +69,7 @@ public class MainService extends AbstractService {
     public final void stop() {
         stopChildServices();
         serviceState = STATE_STOPED;
+        System.gc();
     }
 
     public Set<Service> getChildServices() {

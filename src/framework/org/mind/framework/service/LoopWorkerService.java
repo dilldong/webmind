@@ -60,11 +60,9 @@ public abstract class LoopWorkerService extends AbstractService {
     }
 
     protected void prepareStart() {
-
     }
 
     protected void prepareStop() {
-        System.gc();
     }
 
     /**

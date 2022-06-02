@@ -70,6 +70,7 @@ public class WebMainService extends AbstractService {
     public final void stop() {
         stopChildServices();
         serviceState = STATE_STOPED;
+        System.gc();
     }
 
     public Service[] getChildServices() {
