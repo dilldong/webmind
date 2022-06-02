@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * 从数据库定时同步数据
- *
  * @author dongping
  */
 public class UpdateCacheService extends LoopWorkerService {
@@ -30,8 +28,8 @@ public class UpdateCacheService extends LoopWorkerService {
                 }
             }
         }
-        System.gc();
     }
+
 
     public List<Updateable> getUpdaters() {
         return updaters;

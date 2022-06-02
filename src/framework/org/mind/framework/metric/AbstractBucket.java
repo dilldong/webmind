@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -21,7 +22,7 @@ public abstract class AbstractBucket {
     private int intervalInMills;
     private final AtomicReferenceArray<Indicator> indicatorArray;
 
-    private final ReentrantLock reentrantLock = new ReentrantLock();
+    private transient final Lock lock = new ReentrantLock();
 
     protected abstract Indicator newIndicator(long duration, long startTime);
 
@@ -58,11 +59,11 @@ public abstract class AbstractBucket {
             } else if (startTime == old.getStartTimeOfBucket())// the same time period
                 return old;
             else if (startTime > old.getStartTimeOfBucket()) {// the next time period
-                if (reentrantLock.tryLock()) {
+                if (lock.tryLock()) {
                     try {
                         return resetIndicator(old, startTime);
                     } finally {
-                        reentrantLock.unlock();
+                        lock.unlock();
                     }
                 }
 

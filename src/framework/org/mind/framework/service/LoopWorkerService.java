@@ -64,7 +64,7 @@ public abstract class LoopWorkerService extends AbstractService {
     }
 
     protected void prepareStop() {
-
+        System.gc();
     }
 
     /**
@@ -100,26 +100,18 @@ public abstract class LoopWorkerService extends AbstractService {
         public void run() {
             toStart();
             while (isLoop) {
-                try {
-                    doLoopWork();
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e1) {
-                        logger.error(e1.getMessage());
-                    }
-                }
+                // process child thread
+                doLoopWork();
 
+                // sleep
                 if (spaceTime > 0) {
                     try {
                         Thread.sleep(spaceTime);
                     } catch (InterruptedException e) {
-                        logger.error(e.getMessage());
                     }
-                } else { // 通过spaceTime等于0则跳出循环处理
+                    Thread.yield();
+                } else // 通过spaceTime<=0跳出for循环
                     break;
-                }
             }
             toEnd();
         }
