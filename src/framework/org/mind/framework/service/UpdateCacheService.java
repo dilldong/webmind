@@ -23,7 +23,7 @@ public class UpdateCacheService extends LoopWorkerService {
                     try {
                         update.doUpate();
                     } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
+                        log.error(e.getMessage(), e);
                     }
                 }
             }
