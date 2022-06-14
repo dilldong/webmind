@@ -56,9 +56,9 @@ public abstract class AbstractBucket {
 
                 // yield CPU scheduling
                 Thread.yield();
-            } else if (startTime == old.getStartTimeOfBucket())// the same time period
+            } else if (startTime == old.getStartTimeOfBucket()) {// the same time period
                 return old;
-            else if (startTime > old.getStartTimeOfBucket()) {// the next time period
+            } else if (startTime > old.getStartTimeOfBucket()) {// the next time period
                 if (lock.tryLock()) {
                     try {
                         return resetIndicator(old, startTime);
