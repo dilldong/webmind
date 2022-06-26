@@ -3,7 +3,6 @@ package org.mind.framework.security;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -143,14 +142,14 @@ final class _Base64 {
 		int tmp = 0;
 		
 		while (i < len) {
-			c = KEY_STR.indexOf((int) decodeStr.charAt(i++));
+			c = KEY_STR.indexOf(decodeStr.charAt(i++));
 			tmp = c << 18;
-			c = KEY_STR.indexOf((int) decodeStr.charAt(i++));
+			c = KEY_STR.indexOf(decodeStr.charAt(i++));
 			tmp |= c << 12;
-			c = KEY_STR.indexOf((int) decodeStr.charAt(i++));
+			c = KEY_STR.indexOf(decodeStr.charAt(i++));
 			if (c < 64) {
 				tmp |= c << 6;
-				c = KEY_STR.indexOf((int) decodeStr.charAt(i++));
+				c = KEY_STR.indexOf(decodeStr.charAt(i++));
 				if (c < 64) {
 					tmp |= c;
 				} else {
