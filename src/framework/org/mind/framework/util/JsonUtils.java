@@ -129,6 +129,7 @@ public class JsonUtils {
             datePattern = DEFAULT_DATE_PATTERN;
 
         builder.setDateFormat(datePattern);
+        builder.disableHtmlEscaping();// 禁止转义Unicode字符\uxxxx
 
         if (excludesFieldsWithoutExpose)
             builder.excludeFieldsWithoutExposeAnnotation();

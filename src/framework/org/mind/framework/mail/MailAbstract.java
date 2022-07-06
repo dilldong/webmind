@@ -1,6 +1,5 @@
 package org.mind.framework.mail;
 
-import org.apache.velocity.exception.VelocityException;
 import org.mind.framework.service.queue.DelegateMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +8,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.internet.MimeMessage;
-import java.io.IOException;
 
 
 public abstract class MailAbstract implements DelegateMessage {
@@ -47,7 +45,7 @@ public abstract class MailAbstract implements DelegateMessage {
 
     public abstract void after();
 
-    public abstract String loadContent(SendMailType mailType) throws VelocityException, IOException;
+    public abstract String loadContent(SendMailType mailType) throws Exception;
 
     protected void send(String content) throws Exception {
         MimeMessage msg = this.sender.createMimeMessage();

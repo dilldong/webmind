@@ -1,15 +1,12 @@
 package org.mind.framework.mail;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.exception.VelocityException;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.NotSupportedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.ui.velocity.VelocityEngineUtils;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class DefaultEmailSupport extends MailAbstract {
@@ -34,7 +31,7 @@ public class DefaultEmailSupport extends MailAbstract {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public String loadContent(SendMailType mailType) throws VelocityException, IOException {
+    public String loadContent(SendMailType mailType) throws Exception {
 
         switch (mailType) {
             case HTML:
@@ -46,7 +43,7 @@ public class DefaultEmailSupport extends MailAbstract {
 
                 return
                         VelocityEngineUtils.mergeTemplateIntoString(
-                                (VelocityEngine) velocityEngine,
+                                (org.apache.velocity.app.VelocityEngine) velocityEngine,
                                 templateName,
                                 defaultCharset,
                                 (Map<String, Object>) this.getModel());
@@ -72,7 +69,7 @@ public class DefaultEmailSupport extends MailAbstract {
     }
 
 
-    public void setVelocityEngine(VelocityEngine velocityEngine) {
+    public void setVelocityEngine(Object velocityEngine) {
         this.velocityEngine = velocityEngine;
     }
 
