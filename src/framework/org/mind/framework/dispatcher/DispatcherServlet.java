@@ -10,6 +10,7 @@ import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -47,7 +48,7 @@ public class DispatcherServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        log.info("Initializing mindframework servlet....");
+        log.info("Initializing mind-framework servlet....");
 
         this.webContainer = WebContainerGenerator.initMindContainer(this.getServletConfig());
         this.webContainer.init(this.getServletConfig());
@@ -117,13 +118,13 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     @Override
-    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) {
         resp.setHeader("Allow", "GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE");
     }
 
     @Override
     public void destroy() {
-        log.info("Destroy mindframework web container....");
+        log.info("Destroy mind-framework web container....");
         this.webContainer.destroy();
         this.dispatcher.destroy();
         this.dispatcher = null;
@@ -162,7 +163,11 @@ public class DispatcherServlet extends HttpServlet {
      * starting web thread service.
      */
     private void startServer() {
-        Service serv = (Service) ContextSupport.getBean("mainService", Service.class);
-        serv.start();
+        try {
+            Service serv = (Service) ContextSupport.getBean("mainService", Service.class);
+            serv.start();
+        }catch (NoSuchBeanDefinitionException e){
+            log.warn("Queue and Thread services are not running: {}", e.getMessage());
+        }
     }
 }
