@@ -104,9 +104,7 @@ public class ResponseUtils {
      * @throws IOException
      */
     public static void write(OutputStream output, File file) throws IOException {
-        InputStream input = null;
-        try {
-            input = new BufferedInputStream(new FileInputStream(file));
+        try (InputStream input = new BufferedInputStream(new FileInputStream(file))) {
             byte[] buffer = new byte[MAX_BUFFER_SIZE];
 
             int length;
@@ -114,10 +112,8 @@ public class ResponseUtils {
                 output.write(buffer, 0, length);
 
             output.flush();
-
-        } finally {
-            if (input != null)
-                input.close();
+        } catch (IOException e) {
+            throw e;
         }
     }
 

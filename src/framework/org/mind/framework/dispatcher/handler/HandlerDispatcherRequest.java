@@ -6,6 +6,7 @@ import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.Catcher;
 import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.http.Response;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.renderer.JavaScriptRender;
@@ -47,8 +48,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     private static final Logger log = LoggerFactory.getLogger(HandlerDispatcherRequest.class);
 
     private ConverterFactory converter;
-    private ServletContext servletContext;
-    private ServletConfig servletConfig;
+    private final ServletContext servletContext;
+    private final ServletConfig servletConfig;
 
     private Map<String, Execution> actions;// URI regex mapping object
     private List<String> urisRegex; // URI regex list
@@ -144,9 +145,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     }
 
     @Override
-    public void processor(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, ServletException {
-
+    public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         long begin = DateFormatUtils.getTimeMillis();
         final String path = UriPath.get(request);
 
@@ -218,9 +217,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             if (number > 0) {
                 args = new Object[number];
 
-                /*
-                 * Fetch request parameters in the URI
-                 */
+                // Fetch request parameters in the URI
                 Class<?> type;
                 for (int i = 0; i < number; i++) {
                     type = execution.getParameterTypes()[i];
@@ -239,7 +236,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          */
         if (execution == null) {
             log.warn("The requested URI (404) Not found");
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            this.handleResult(
+                    new Response<String>(HttpServletResponse.SC_NOT_FOUND, "The request URI (404) Not found").toJson(),
+                    request,
+                    response);
+            //response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
             return;
         }
 
@@ -247,11 +249,17 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          * validation request method
          */
         if (!execution.isSupportMethod(request.getMethod())) {
-            log.warn("HTTP method {} is not supported by this URL, specified as: {}",
+            log.warn("HTTP method {} is not supported by this URI, specified as: {}",
                     request.getMethod(), execution.requestMethodsString());
 
-            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                    String.format("HTTP method %s is not supported by this URL", request.getMethod()));
+            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            this.handleResult(
+                    new Response<String>(HttpServletResponse.SC_METHOD_NOT_ALLOWED, String.format("HTTP method '%s' is not supported by this URI", request.getMethod())).toJson(),
+                    request,
+                    response);
+
+//            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+//                    String.format("HTTP method %s is not supported by this URL", request.getMethod()));
             return;
         }
 
@@ -262,7 +270,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 MultipartHttpServletRequest.isMultipartRequest(request)) {
             request = MultipartHttpServletRequest.getInstance(request);
         }
-
 
         // execute action
         try {
@@ -286,15 +293,15 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
-            Throwable c = e.getCause() == null ? e : e.getCause();
 
+            Throwable c = e.getCause() == null ? e : e.getCause();
             if (c instanceof IOException)
                 throw new IOException(c.getMessage(), c);
             else
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
             Action.removeActionContext();
-            log.info("Used time(ms): {}", (DateFormatUtils.getTimeMillis() - begin));
+            log.info("Used time(ms): {}", DateFormatUtils.getTimeMillis() - begin);
             log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
         }
     }

@@ -8,7 +8,7 @@ import org.apache.catalina.core.ThreadLocalLeakPreventionListener;
 import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.lang.StringUtils;
-import org.mind.framework.exception.NotSupportedException;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.tomcat.TomcatServer;
 import org.mind.framework.util.DateFormatUtils;
@@ -32,7 +32,7 @@ public abstract class ServerContext {
     private transient Set<String> springFileSet;
     private transient Set<String> resourceSet;
 
-    private transient WebServerConfig serverConfig;
+    private final transient WebServerConfig serverConfig;
 
     private final Object monitor = new Object();
 
@@ -54,6 +54,9 @@ public abstract class ServerContext {
                 final long begin = DateFormatUtils.getTimeMillis();
                 Tomcat tomcat = creationServer();
                 this.registerServer(tomcat, serverConfig);
+
+                // use JNDI sevice
+                tomcat.enableNaming();
 
                 // Prevent memory leaks due to use of particular java/javax APIs
                 Server server = tomcat.getServer();
@@ -102,7 +105,11 @@ public abstract class ServerContext {
         serverConfig.setResourceSet(resourceSet);
         serverConfig.setSpringFileSet(springFileSet);
 
+        if (StringUtils.isEmpty(serverConfig.getTomcatBaseDir()))
+            serverConfig.setTomcatBaseDir(createTempDir(serverConfig.getServerName()).getAbsolutePath());
+
         TomcatServer tomcat = new TomcatServer(serverConfig);
+
         // logging server
         tomcat.logServer();
 
@@ -122,7 +129,8 @@ public abstract class ServerContext {
             return tempDir;
         } catch (IOException e) {
             log.error("Unable to create tempDir, {}", e.getMessage());
-            throw new NotSupportedException(e.getMessage(), e);
+            ThrowProvider.doThrow(e);
+            return null;
         }
     }
 }

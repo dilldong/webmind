@@ -1,5 +1,6 @@
 package org.mind.framework.renderer;
 
+import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ResponseUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,13 +49,15 @@ public class TextRender extends Render {
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
         StringBuilder sb = new StringBuilder(64);
         // json
-        boolean isJson = text.indexOf("{") != -1 && text.lastIndexOf("}") != -1;
+        boolean isJson = JsonUtils.isJson(text);
 
-        sb.append(contentType == null ? isJson ? "application/json" : "text/html" : contentType).append(";charset=")
+        sb.append(contentType == null ? isJson ? "application/json" : "text/html" : contentType)
+                .append(";charset=")
                 .append(characterEncoding == null ? "UTF-8" : characterEncoding);
 
         response.setContentType(sb.toString());
-        ResponseUtils.write(response.getOutputStream(),
+        ResponseUtils.write(
+                response.getOutputStream(),
                 text.getBytes(characterEncoding == null ? "UTF-8" : characterEncoding));
     }
 

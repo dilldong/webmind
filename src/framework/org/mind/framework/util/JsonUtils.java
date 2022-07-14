@@ -31,6 +31,24 @@ public class JsonUtils {
      */
     public static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    public static boolean isJson(String text) {
+        return (isJsonArray(text) || isJsonObject(text));
+    }
+
+    public static boolean isJsonArray(String text) {
+        if (StringUtils.isBlank(text))
+            return false;
+
+        return text.startsWith("[") && text.endsWith("]");
+    }
+
+    public static boolean isJsonObject(String text) {
+        if (StringUtils.isBlank(text))
+            return false;
+
+        return text.startsWith("{") && text.endsWith("}");
+    }
+
     /**
      * 将给定的目标对象转换成 {@code JSON} 格式的字符串。<strong>此方法只用来转换普通的 {@code JavaBean} 对象。</strong>
      * <ul>

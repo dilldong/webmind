@@ -15,19 +15,21 @@ import java.util.Arrays;
 public class Execution {
 
     // Action instance
-    private Object actionInstance;
+    private final Object actionInstance;
 
     // Method instance
-    private Method method;
+    private final Method method;
 
     // Http request method
     private RequestMethod[] requestMethods;
 
+    private final RequestMethod[] noneDefaultMethods = {RequestMethod.GET, RequestMethod.POST};
+
     // Method's arguments types
-    private Class<?>[] parameterTypes;
+    private final Class<?>[] parameterTypes;
 
     // Method's need arguments
-    private Object[] arguments;
+    private final Object[] arguments;
 
     // Method's need arguments length
     private int argsNumber;
@@ -43,7 +45,6 @@ public class Execution {
         this.arguments = arguments;
         this.requestMethods = requestMethods;
     }
-
 
     public Object execute() {
         return
@@ -89,16 +90,18 @@ public class Execution {
 
     public boolean isSupportMethod(String method) {
         if (requestMethods == null || requestMethods.length == 0)
-            return method.equalsIgnoreCase(RequestMethod.GET.name()) || method.equalsIgnoreCase(RequestMethod.POST.name());
+            return method.equals(RequestMethod.GET.name()) || method.equals(RequestMethod.POST.name());
 
         for (RequestMethod m : requestMethods)
-            if (method.equalsIgnoreCase(m.name()))
+            if (method.equals(m.name()))
                 return true;
 
         return false;
     }
 
     public String requestMethodsString() {
-        return requestMethods == null ? "" : Arrays.toString(requestMethods);
+        return requestMethods == null || requestMethods.length == 0 ?
+                Arrays.toString(noneDefaultMethods) :
+                Arrays.toString(requestMethods);
     }
 }

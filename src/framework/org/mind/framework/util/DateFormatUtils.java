@@ -24,7 +24,7 @@ public class DateFormatUtils {
      * @author dongping
      */
     public static long getTimeMillis() {
-        return Calendar.getInstance().getTimeInMillis();
+        return System.currentTimeMillis();
     }
 
     /**

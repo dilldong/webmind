@@ -26,6 +26,9 @@ public class WebServerConfig {
 
     private String contextPath = StringUtils.EMPTY;
 
+    @Setter
+    private String tomcatBaseDir;
+
     private String webXml;
 
     private String serverName = "Tomcat";
@@ -48,7 +51,7 @@ public class WebServerConfig {
 
     private String resourceExpires = "-1";
 
-    private String containerAware = "Spring";
+    private final String containerAware = "Spring";
 
     private String templateEngine;
 
@@ -75,6 +78,7 @@ public class WebServerConfig {
         Properties properties = PropertiesUtils.getProperties(in);
         if (properties != null) {
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
+            this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
             this.webXml = properties.getProperty("server.webXml", StringUtils.EMPTY);
             this.serverName = properties.getProperty("server", serverName);
             this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));

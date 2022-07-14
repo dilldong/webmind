@@ -19,7 +19,7 @@ public class WebServer extends ServerContext {
         tomcat.addWebapp(
                 tomcat.getHost(),
                 serverConfig.getContextPath(),
-                createTempDir(serverConfig.getServerName()).getAbsolutePath());
+                serverConfig.getTomcatBaseDir());
 
         // Monitor tomcat to stop, Use kill -15 to stop the service gracefully
         GracefulShutdown shutdown = new GracefulShutdown(Thread.currentThread(), tomcat);

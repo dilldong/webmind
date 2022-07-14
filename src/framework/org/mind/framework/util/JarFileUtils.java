@@ -1,8 +1,9 @@
 package org.mind.framework.util;
 
-import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
+import org.mind.framework.exception.ThrowProvider;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -36,11 +37,13 @@ public final class JarFileUtils {
         return getJarEntry(getRuntimePath(), fileName);
     }
 
-    @SneakyThrows
     public static String getJarEntry(String jarPath, String fileName) {
         InputStream in = getJarEntryStream(jarPath, fileName);
         try {
             return IOUtils.toString(in, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            ThrowProvider.doThrow(e);
+            return null;
         } finally {
             IOUtils.closeQuietly(in);
         }
@@ -50,12 +53,16 @@ public final class JarFileUtils {
         return getJarEntryStream(getRuntimePath(), fileName);
     }
 
-    @SneakyThrows
     public static InputStream getJarEntryStream(String jarPath, String fileName) {
         Objects.requireNonNull(fileName);
         Objects.requireNonNull(jarPath);
 
-        JarFile jf = new JarFile(jarPath);
-        return jf.getInputStream(jf.getJarEntry(fileName));
+        try {
+            JarFile jf = new JarFile(jarPath);
+            return jf.getInputStream(jf.getJarEntry(fileName));
+        } catch (IOException e) {
+            ThrowProvider.doThrow(e);
+            return null;
+        }
     }
 }

@@ -6,6 +6,7 @@ import org.mind.framework.dispatcher.handler.HandlerDispatcherRequest;
 import org.mind.framework.dispatcher.handler.HandlerRequest;
 import org.mind.framework.dispatcher.support.WebContainerGenerator;
 import org.mind.framework.exception.BaseException;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
 import org.slf4j.Logger;
@@ -138,7 +139,6 @@ public class DispatcherServlet extends HttpServlet {
      * @param response
      * @throws IOException
      * @throws ServletException
-     * @throws BaseException
      */
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
@@ -151,10 +151,7 @@ public class DispatcherServlet extends HttpServlet {
                 request.setAttribute(BaseException.SYS_EXCEPTION, c);
             }
 
-            if (e instanceof IOException)
-                throw new IOException(e.getMessage(), e);
-            else
-                throw new ServletException(e.getMessage(), e);// other exception throws with ServletException.
+            ThrowProvider.doThrow(e);
         }
     }
 
@@ -166,7 +163,7 @@ public class DispatcherServlet extends HttpServlet {
         try {
             Service serv = (Service) ContextSupport.getBean("mainService", Service.class);
             serv.start();
-        }catch (NoSuchBeanDefinitionException e){
+        } catch (NoSuchBeanDefinitionException e) {
             log.warn("Queue and Thread services are not running: {}", e.getMessage());
         }
     }

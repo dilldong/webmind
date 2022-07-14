@@ -16,8 +16,8 @@ import java.util.Map;
  */
 public class TemplateRender extends Render {
 
-    private String path;
-    private Map<String, Object> model;
+    private final String path;
+    private final Map<String, Object> model;
 
     public TemplateRender(String path) {
         this.path = path;
@@ -41,17 +41,6 @@ public class TemplateRender extends Render {
         TemplateFactory.getTemplateFactory()
                 .loadTemplate(path)
                 .render(request, response, model);
-
-//		WebEngine.setRequest(request);
-//    	WebEngine.setResponse(response);
-//    	
-//    	Engine we = WebEngine.getEngine();
-//    	try {
-//			we.getTemplate(path).render(model, response.getOutputStream());
-//		} catch (ParseException e) {
-//			e.printStackTrace();
-//		}
-
     }
 
 }

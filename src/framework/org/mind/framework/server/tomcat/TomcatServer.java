@@ -12,10 +12,12 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.ContextConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.util.ServerInfo;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.mind.framework.dispatcher.DispatcherServlet;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.ServerContext;
 import org.mind.framework.server.WebServerConfig;
@@ -39,21 +41,21 @@ import java.lang.management.ManagementFactory;
 @Slf4j
 public class TomcatServer extends Tomcat {
 
-    private WebServerConfig serverConfig;
+    private final WebServerConfig serverConfig;
 
     public TomcatServer(WebServerConfig serverConfig) {
         super();
         this.serverConfig = serverConfig;
 
+        super.setPort(serverConfig.getPort());
+        super.setBaseDir(serverConfig.getTomcatBaseDir());
+
         Connector connector = getNioConnector();
-        this.getService().addConnector(connector);// getService auto create
-        this.setConnector(connector);
+        super.getService().addConnector(connector);// getService auto create
+        super.setConnector(connector);
 
-        Host host = this.getHost();
+        Host host = super.getHost();
         host.setAutoDeploy(false);
-
-        // use JNDI sevice
-        this.enableNaming();
     }
 
     @Override
@@ -65,14 +67,14 @@ public class TomcatServer extends Tomcat {
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
             log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
-            ctx.addLifecycleListener(this.getDefaultWebXmlListener());
+            ctx.addLifecycleListener(super.getDefaultWebXmlListener());
             LifecycleListener config = this.getContextListener(host);
             ctx.addLifecycleListener(config);
 
             if (config instanceof ContextConfig)
                 ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
-            log.debug("Creation mindframework servlet: [{}]", ServerContext.SERVLET_CLASS);
+            log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
             this.createServlet(host, ctx);// create servlet
 
             // Add error | exception page
@@ -111,6 +113,7 @@ public class TomcatServer extends Tomcat {
         System.out.println("CATALINA_HOME:  " + System.getProperty("catalina.home"));
         ManagementFactory.getRuntimeMXBean().getInputArguments().forEach(arg -> System.out.println("Command line argument: " + arg));
     }
+
 
     /**
      * Tomcat threads are daemon threads.
@@ -161,8 +164,15 @@ public class TomcatServer extends Tomcat {
             super.destroy();
         } catch (LifecycleException e) {
         }
-    }
 
+        log.debug("Delete tomcat temp directory ....");
+        try {
+            if (StringUtils.isNotEmpty(serverConfig.getTomcatBaseDir()))
+                FileUtils.deleteDirectory(new File(serverConfig.getTomcatBaseDir()));
+        } catch (IOException e) {
+            log.warn("Failed to delete tomcat temp directory, {}", e.getMessage());
+        }
+    }
 
     private void createServlet(Host host, StandardContext ctx) {
         ctx.addLifecycleListener(new Tomcat.FixContextListener());
@@ -185,9 +195,16 @@ public class TomcatServer extends Tomcat {
         if (serverConfig.getSpringFileSet() == null || serverConfig.getSpringFileSet().isEmpty()) {
             log.warn("Spring's config file is not set.");
         } else {
+            // init spring by xml, XmlLoad4SpringContext is custom implementation
             XmlWebApplicationContext xmas = new XmlLoad4SpringContext();
-            xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[serverConfig.getSpringFileSet().size()]));// load spring config
-            loadResource(xmas.getEnvironment());// load properties
+
+            // load spring config
+            xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[serverConfig.getSpringFileSet().size()]));
+
+            // load properties
+            loadResource(xmas.getEnvironment());
+
+            // Listen when spring starts by ContextLoaderListener
             ctx.addApplicationLifecycleListener(new ContextLoaderListener(xmas));
         }
     }
@@ -204,6 +221,7 @@ public class TomcatServer extends Tomcat {
             try {
                 propertySources.addFirst(new ResourcePropertySource(new ClassPathResource(res)));
             } catch (IOException e) {
+                ThrowProvider.doThrow(e);
             }
         });
 
@@ -217,9 +235,10 @@ public class TomcatServer extends Tomcat {
         try {
             Class<?> clazz = Class.forName(host.getConfigClass());
             return (LifecycleListener) clazz.getConstructor().newInstance();
-        } catch (ReflectiveOperationException ex) {
-            throw new IllegalArgumentException(ex);
+        } catch (ReflectiveOperationException e) {
+            ThrowProvider.doThrow(e);
         }
+        return null;
     }
 
     private ErrorPage newErrorPage(int errorCode, String location) {
