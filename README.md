@@ -10,7 +10,7 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>3.0.2</version>
+    <version>3.0.4</version>
 </dependency>
 ```
 ## Example
@@ -19,9 +19,53 @@ Add the following Maven dependency to your project's pom.xml
 @Controller
 public class HelloController {
     
-    @Mapping("/hello")
-    public String hello() {
-        return "Hello World!";
+    @Mapping
+    public String first() {
+        return "Welcome usage mind-framework.";
+    }
+
+    // Spec a GET request, text response.
+    @Mapping(value = "/request/text", method = RequestMethod.GET)
+    public String withText() {
+        return "Hello,This is mind-framework.";
+    }
+
+    // Json response
+    @Mapping("/request/json")
+    public String withJson() {
+        return new Response<String>(HttpStatus.SC_OK, "OK").toJson();
+    }
+
+    // Json body response
+    @Mapping("/request/json01")
+    public String withJsonResult() {
+        return new Response<Map<String, Object>>(HttpStatus.SC_OK, "OK")
+                .setBody(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
+                .toJson();
+    }
+
+    // redirect
+    @Mapping("/request/redirect")
+    public String redirect() {
+        return "redirect:https://github.com/dilldong";
+    }
+
+    // forward
+    @Mapping("/request/forward")
+    public String forward() {
+        return "forward:https://github.com/dilldong";
+    }
+
+    // javascript response
+    @Mapping("/request/js")
+    public String js() {
+        return "script:alert('This is JS window.');";
+    }
+
+    // velocity template engine
+    @Mapping("/request/velocity")
+    public Render velocity() {
+        return new TemplateRender("/template/index.htm");
     }
 }
 ```
