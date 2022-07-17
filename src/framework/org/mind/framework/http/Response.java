@@ -6,7 +6,12 @@ import com.google.gson.FieldAttributes;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.http.HttpStatus;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ReflectionUtils;
 
@@ -14,51 +19,41 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
 
+@Getter
+@NoArgsConstructor
 public class Response<T> {
 
     @Expose
-    private int state;
+    private int code;
 
     @Expose
     private String msg;
 
     @Expose
-    private T body;
+    private boolean success;
 
-    public Response() {
+    @Expose
+    private T result;
 
-    }
-
-    public Response(int state, String msg) {
-        this.state = state;
+    public Response(int code, String msg) {
+        this.code = code;
         this.msg = msg;
+        this.success = this.code == HttpStatus.SC_OK;
     }
 
-    public Response(int state, String msg, T body) {
-        this(state, msg);
-        this.body = body;
+    public Response(int code, String msg, T result) {
+        this(code, msg);
+        this.result = result;
     }
 
-    public T getBody() {
-        return body;
-    }
-
-    public Response<T> setBody(T body) {
-        this.body = body;
+    public Response<T> setResult(T result) {
+        this.result = result;
         return this;
     }
 
-    public int getState() {
-        return state;
-    }
-
-    public Response<T> setState(int state) {
-        this.state = state;
+    public Response<T> setCode(int code) {
+        this.code = code;
         return this;
-    }
-
-    public String getMsg() {
-        return msg;
     }
 
     public Response<T> setMsg(String msg) {
@@ -92,14 +87,13 @@ public class Response<T> {
 
     @Override
     public String toString() {
-        return
-                new StringBuilder()
-                        .append(this.getState())
-                        .append(":")
-                        .append(this.getMsg())
-                        .toString();
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append("code", code)
+                .append("msg", msg)
+                .append("success", success)
+                .append("result", result)
+                .toString();
     }
-
 
     /**
      * 设置需要跳过的字段
@@ -144,6 +138,8 @@ public class Response<T> {
 
         if (excludesFieldsWithoutExpose)
             gsonBuilder.excludeFieldsWithoutExposeAnnotation();
+
+        gsonBuilder.disableHtmlEscaping();// 禁止转义Unicode字符
 
         return JsonUtils.toJson(this,
                 new TypeToken<Response<T>>() {
