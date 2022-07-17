@@ -112,8 +112,6 @@ public class ResponseUtils {
                 output.write(buffer, 0, length);
 
             output.flush();
-        } catch (IOException e) {
-            throw e;
         }
     }
 

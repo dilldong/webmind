@@ -26,13 +26,13 @@ import java.util.Set;
  */
 @Slf4j
 public abstract class ServerContext {
-    public static final String SERVLET_NAME = "mindDispatcher";
+    public static final String SERVLET_NAME = "webmindServlet";
     public static final String SERVLET_CLASS = "org.mind.framework.dispatcher.DispatcherServlet";
 
     private transient Set<String> springFileSet;
     private transient Set<String> resourceSet;
 
-    private final transient WebServerConfig serverConfig;
+    private final WebServerConfig serverConfig;
 
     private final Object monitor = new Object();
 
