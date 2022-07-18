@@ -15,6 +15,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
+/**
+ * HttpClient response wrapper
+ * @param <T> result type
+ * @author marcus
+ */
 public class HttpResponse<T> {
 
     protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
