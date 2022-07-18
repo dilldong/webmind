@@ -1,5 +1,9 @@
 package org.mind.framework.http;
 
+import org.mind.framework.container.Destroyable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -9,10 +13,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import org.mind.framework.container.Destroyable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * CookieManager is a simple utilty for handling cookies when working with
@@ -96,8 +96,7 @@ public class LiteCookieManager implements Destroyable {
                 if (st.hasMoreTokens()) {
                     String token = st.nextToken();
                     String name = token.substring(0, token.indexOf(NAME_VALUE_SEPARATOR));
-                    String value = token.substring(token.indexOf(NAME_VALUE_SEPARATOR) + 1
-                    );
+                    String value = token.substring(token.indexOf(NAME_VALUE_SEPARATOR) + 1);
                     domainStore.put(name, cookie);
                     cookie.put(name, value);
                 }
@@ -156,7 +155,7 @@ public class LiteCookieManager implements Destroyable {
             }
         }
         try {
-            log.info("set-cookie: {}", cookieStringBuffer.toString());
+            log.info("set-cookie: {}", cookieStringBuffer);
             conn.setRequestProperty(COOKIE, cookieStringBuffer.toString());
         } catch (java.lang.IllegalStateException ise) {
             IOException ioe = new IOException(
