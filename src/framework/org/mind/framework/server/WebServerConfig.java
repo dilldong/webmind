@@ -47,7 +47,7 @@ public class WebServerConfig {
 
     private int sessionTimeout = 30;
 
-    private String staticSuffix = "css|js|jpg|png|gif|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
+    private String staticSuffix = "css|js|jpg|png|gif|ico|svg|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
 
     private String resourceExpires = "-1";
 
