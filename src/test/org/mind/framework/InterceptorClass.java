@@ -19,17 +19,17 @@ public class InterceptorClass extends AbstractHandlerInterceptor {
 
     @Override
     public boolean doBefore(HttpServletRequest request, HttpServletResponse response) {
-        log.info("Interceptor doBefore ....");
+        log.debug("Interceptor doBefore ....");
         return super.doBefore(request, response);
     }
 
     @Override
     public void doAfter(HttpServletRequest request, HttpServletResponse response) {
-        log.info("Interceptor doAfter ....");
+        log.debug("Interceptor doAfter ....");
     }
 
     @Override
     public void renderCompletion(HttpServletRequest request, HttpServletResponse response) {
-        log.info("Interceptor render complete ....");
+        log.debug("Interceptor render complete ....");
     }
 }

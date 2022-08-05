@@ -1,5 +1,6 @@
 package org.mind.framework.dispatcher.support;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.renderer.template.JspTemplateFactory;
 import org.mind.framework.renderer.template.TemplateFactory;
@@ -7,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
+import java.util.Objects;
 
 public final class WebContainerGenerator {
     private static final Logger log = LoggerFactory.getLogger(WebContainerGenerator.class);
@@ -55,9 +57,9 @@ public final class WebContainerGenerator {
      */
     public static TemplateFactory initTemplateFactory(ServletConfig config) {
         String templateName = config.getInitParameter("template");
-        if (templateName == null) {
+        if (Objects.isNull(templateName) || StringUtils.equalsIgnoreCase(templateName, "JspTemplate")) {
             templateName = JspTemplateFactory.class.getName();
-            log.info("No template factory specified. Default to '{}'.", templateName);
+            log.info("Default template factory to '{}'.", templateName);
         }
 
         Object obj = null;

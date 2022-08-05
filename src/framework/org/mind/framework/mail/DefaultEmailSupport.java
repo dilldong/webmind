@@ -1,11 +1,11 @@
 package org.mind.framework.mail;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.NotSupportedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.ui.velocity.VelocityEngineUtils;
+import org.apache.velocity.spring.VelocityEngineUtils;
 
 import java.util.Map;
 

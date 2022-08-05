@@ -7,7 +7,7 @@ import org.apache.catalina.core.JreMemoryLeakPreventionListener;
 import org.apache.catalina.core.ThreadLocalLeakPreventionListener;
 import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.tomcat.TomcatServer;

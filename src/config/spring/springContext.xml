@@ -25,14 +25,13 @@
     </bean>
 
     <!-- velocity config -->
-    <bean id="velocityEngine" class="org.springframework.ui.velocity.VelocityEngineFactoryBean" scope="singleton">
-        <property name="resourceLoaderPath" value="/WEB-INF/templates"/>
+    <bean id="velocityEngine" class="org.apache.velocity.spring.VelocityEngineFactoryBean">
+        <property name="resourceLoaderPath" value="classpath:templates/"/>
         <property name="configLocation" value="classpath:velocity.properties"/>
     </bean>
 
     <!-- MQ config -->
-    <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle"
-          destroy-method="destroy">
+    <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
         <property name="queueInstance">
             <bean class="java.util.concurrent.LinkedBlockingQueue"/>
         </property>

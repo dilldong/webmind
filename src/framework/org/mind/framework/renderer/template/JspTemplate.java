@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Template using JSP which forward to specific JSP page.
@@ -19,7 +18,7 @@ public class JspTemplate implements Template {
 
     private static final Logger log = LoggerFactory.getLogger(JspTemplate.class);
 
-    private String path;
+    private final String path;
 
     public JspTemplate(String path) {
         this.path = path;
@@ -36,11 +35,7 @@ public class JspTemplate implements Template {
             HttpServletResponse response,
             Map<String, Object> model) throws IOException, ServletException {
 
-        Set<String> keys = model.keySet();
-        for (String key : keys) {
-            request.setAttribute(key, model.get(key));
-        }
-
+        model.forEach((k, v) -> request.setAttribute(k, v));
         request.getRequestDispatcher(path).forward(request, response);
     }
 

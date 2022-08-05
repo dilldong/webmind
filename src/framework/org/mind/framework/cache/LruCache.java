@@ -27,7 +27,7 @@
 
 package org.mind.framework.cache;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +77,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     private static class CacheHolder {
-        private static Cacheable cacheInstance = new LruCache();
+        private static final Cacheable cacheInstance = new LruCache();
     }
 
     private LruCache() {

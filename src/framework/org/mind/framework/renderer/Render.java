@@ -39,7 +39,7 @@ public abstract class Render {
      *
      * @param request  HttpServletRequest.
      * @param response HttpServletResponse.
-     * @throws any Exception.
+     * @throws IOException, ServletException.
      */
     public abstract void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 

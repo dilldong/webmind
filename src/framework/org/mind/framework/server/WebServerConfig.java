@@ -3,7 +3,7 @@ package org.mind.framework.server;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.util.PropertiesUtils;
 

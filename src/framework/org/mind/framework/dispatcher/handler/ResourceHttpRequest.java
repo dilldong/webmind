@@ -1,6 +1,6 @@
 package org.mind.framework.dispatcher.handler;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.ResponseUtils;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ public class ResourceHttpRequest implements HandlerResult {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceHttpRequest.class);
 
-    private ServletContext servletContext;
+    private final ServletContext servletContext;
 
     /**
      * response cache header.

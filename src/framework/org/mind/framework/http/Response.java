@@ -8,9 +8,9 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.http.HttpStatus;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ReflectionUtils;
@@ -118,7 +118,7 @@ public class Response<T> {
     public String toJson(boolean excludesFieldsWithoutExpose, final boolean isShowField, final String... fieldName) {
         // 过滤json中的children字段
         GsonBuilder gsonBuilder = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
-            Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
+            final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
 
             @Override
             public boolean shouldSkipField(FieldAttributes field) {

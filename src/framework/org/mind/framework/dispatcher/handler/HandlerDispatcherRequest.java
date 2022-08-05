@@ -1,6 +1,6 @@
 package org.mind.framework.dispatcher.handler;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.Action;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
