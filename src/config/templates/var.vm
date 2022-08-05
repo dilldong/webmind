@@ -1,0 +1,3 @@
+#set($cPath = "${contextPath}" )
+#set($sPath = "/" )#*静态文件如：js,css,html或file等*#
+#set($imgPath = "/img")#*图片地址*#
