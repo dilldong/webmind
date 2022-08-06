@@ -20,7 +20,6 @@ public class VelocityTemplateFactory extends TemplateFactory {
 
     public Template loadTemplate(String path) {
         log.debug("Load Velocity template '{}'", path);
-
         return new VelocityTemplate(velocityEngine.getTemplate(path));
     }
 
