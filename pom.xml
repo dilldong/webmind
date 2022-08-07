@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>4.2.5</version>
+    <version>4.0.0</version>
 
     <licenses>
         <license>
@@ -50,7 +50,6 @@
 
     <properties>
         <spring.version>5.2.22.RELEASE</spring.version>
-        <retrofit2.version>2.9.0</retrofit2.version>
         <tomcat.version>9.0.59</tomcat.version>
     </properties>
 
@@ -73,6 +72,7 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -86,6 +86,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -235,13 +236,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-            <version>1.9.9.1</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>
@@ -255,20 +249,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
-        </dependency>
-
-        <!--Okhttp3 retrofit2-->
-        <dependency>
-            <groupId>com.squareup.retrofit2</groupId>
-            <artifactId>retrofit</artifactId>
-            <version>${retrofit2.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.retrofit2</groupId>
-            <artifactId>converter-gson</artifactId>
-            <version>${retrofit2.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <!--tomcat-embed-->
@@ -286,20 +266,6 @@
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
             <version>${tomcat.version}</version>
-        </dependency>
-
-        <!--Test-->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
         </dependency>
 
     </dependencies>
