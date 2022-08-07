@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.http.HttpStatus;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ReflectionUtils;
 
+import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
@@ -22,6 +22,8 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 public class Response<T> {
+    public static final String SUCCESS = "success";
+    public static final String FAILED = "failed";
 
     @Expose
     private int code;
@@ -30,7 +32,7 @@ public class Response<T> {
     private String msg;
 
     @Expose
-    private boolean success;
+    private String status;
 
     @Expose
     private T result;
@@ -38,7 +40,7 @@ public class Response<T> {
     public Response(int code, String msg) {
         this.code = code;
         this.msg = msg;
-        this.success = this.code == HttpStatus.SC_OK;
+        this.status = this.code == HttpServletResponse.SC_OK ? SUCCESS : FAILED;
     }
 
     public Response(int code, String msg, T result) {
@@ -90,7 +92,7 @@ public class Response<T> {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                 .append("code", code)
                 .append("msg", msg)
-                .append("success", success)
+                .append("status", status)
                 .append("result", result)
                 .toString();
     }

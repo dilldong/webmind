@@ -2,7 +2,6 @@ package org.mind.framework;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpStatus;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
 import org.mind.framework.renderer.Render;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -43,12 +43,12 @@ public class TestAction {
 
     @Mapping("/request/json")
     public String withJson() {
-        return new Response<String>(HttpStatus.SC_OK, "OK").toJson();
+        return new Response<String>(HttpServletResponse.SC_OK, "OK").toJson();
     }
 
     @Mapping("/request/json01")
     public String withJsonResult() {
-        return new Response<Map<String, Object>>(HttpStatus.SC_OK, "OK")
+        return new Response<Map<String, Object>>(HttpServletResponse.SC_OK, "OK")
                 .setResult(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
                 .toJson();
     }
