@@ -30,7 +30,7 @@ public class TemplateResourceLoader extends ClasspathResourceLoader {
     public void init(ExtProperties configuration) {
         templatePath = configuration.getString("path", "/");
     }
-
+    
     @Override
     public Reader getResourceReader(String templateName, String encoding) throws ResourceNotFoundException {
         if (StringUtils.isEmpty(templateName))
