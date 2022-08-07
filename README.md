@@ -1,8 +1,7 @@
 
 # Webmind Framework
 
-[![License](https://img.shields.io/github/license/dilldong/webmind)](https://raw.githubusercontent.com/dilldong/webmind/master/LICENSE)
-[![Maven2.0](https://img.shields.io/badge/maven-build-blue)](https://mvnrepository.com/artifact/io.github.dilldong/webmind-framework)
+[![License](https://img.shields.io/badge/License-Apache-green)](https://raw.githubusercontent.com/dilldong/webmind/master/LICENSE)
 
 Webmind is a lightweight web service framework that integrates with SpringFramework. Realize the embedded startup of Tomcat, which is easy to use, occupies less memory, responds quickly, and has stable service. Suitable for Java microservices and web projects.
 ## Add maven dependency
@@ -11,7 +10,7 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>4.2.5</version>
+    <version>4.0.1</version>
 </dependency>
 ```
 ## Example
@@ -41,7 +40,7 @@ public class HelloController {
     @Mapping("/request/json01")
     public String withJsonResult() {
         return new Response<Map<String, Object>>(HttpStatus.SC_OK, "OK")
-                .setResult(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
+                .setBody(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
                 .toJson();
     }
 
