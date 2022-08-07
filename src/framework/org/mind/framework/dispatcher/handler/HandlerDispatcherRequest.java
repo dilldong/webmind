@@ -13,6 +13,7 @@ import org.mind.framework.renderer.JavaScriptRender;
 import org.mind.framework.renderer.NullRender;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
+import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.UriPath;
@@ -118,7 +119,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          * detect multipart support:
          */
         try {
-            Class.forName("org.apache.commons.fileupload.servlet.ServletFileUpload");
+            ClassUtils.getClass("org.apache.commons.fileupload.servlet.ServletFileUpload");
             if (log.isInfoEnabled())
                 log.info("Using MultipartRequest to handle multipart http request.");
 

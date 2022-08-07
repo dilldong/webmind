@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.util.PropertiesUtils;
 
@@ -63,11 +64,11 @@ public class WebServerConfig {
 
     private WebServerConfig() {
         InputStream in;
-        URL url = WebServer.class.getResource(SERVER_PROPERTIES);
+        URL url = ClassUtils.getResource(WebServer.class, SERVER_PROPERTIES);
 
         try {
             if (url != null)
-                in = WebServer.class.getResourceAsStream(SERVER_PROPERTIES);
+                in = ClassUtils.getResourceAsStream(WebServer.class, SERVER_PROPERTIES);
             else
                 in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
         } catch (Exception e) {
