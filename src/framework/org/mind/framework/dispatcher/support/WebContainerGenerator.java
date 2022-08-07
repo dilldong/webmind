@@ -2,8 +2,10 @@ package org.mind.framework.dispatcher.support;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.container.ContainerAware;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.renderer.template.JspTemplateFactory;
 import org.mind.framework.renderer.template.TemplateFactory;
+import org.mind.framework.util.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,26 +26,25 @@ public final class WebContainerGenerator {
         Object obj = null;
 
         try {
-            obj = Class.forName(containerName).newInstance();
+            obj = ClassUtils.newInstance(containerName);
         } catch (Exception e) {
         }
 
         try {
             if (obj == null) {
-                obj = Class.forName(
+                obj = ClassUtils.newInstance(
                         String.format("%s.%s.%s%s",
                                 ContainerAware.class.getPackage().getName(),
                                 containerName.toLowerCase(),
                                 containerName,
-                                ContainerAware.class.getSimpleName()))
-                        .newInstance();
+                                ContainerAware.class.getSimpleName()));
             }
 
             if (obj instanceof ContainerAware)
                 return (ContainerAware) obj;
 
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            ThrowProvider.doThrow(e);
         }
 
         throw new IllegalArgumentException("init param invalid.");
@@ -64,24 +65,24 @@ public final class WebContainerGenerator {
 
         Object obj = null;
         try {
-            obj = Class.forName(templateName).newInstance();
+            obj = ClassUtils.newInstance(templateName);
         } catch (Exception e) {
         }
 
         if (obj == null) {
             try {
-                obj = Class.forName(
+                obj = ClassUtils.newInstance(
                         String.format("%s.%s",
                                 TemplateFactory.class.getPackage().getName(),
-                                templateName + TemplateFactory.class.getSimpleName()))
-                        .newInstance();
+                                templateName + TemplateFactory.class.getSimpleName()));
             } catch (Exception e) {
+                log.warn("Init template failed: {}", e.getMessage());
             }
         }
 
         if (obj instanceof TemplateFactory)
             return (TemplateFactory) obj;
 
-        throw new IllegalArgumentException("Init template param invalid. Optional as Velocity");
+        throw new IllegalArgumentException("Init template name invalid. Optional as Velocity or JspTemplate.");
     }
 }

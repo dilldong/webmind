@@ -26,7 +26,6 @@
 
     <!-- velocity config -->
     <bean id="velocityEngine" class="org.apache.velocity.spring.VelocityEngineFactoryBean">
-        <property name="resourceLoaderPath" value="classpath:templates/"/>
         <property name="configLocation" value="classpath:velocity.properties"/>
     </bean>
 

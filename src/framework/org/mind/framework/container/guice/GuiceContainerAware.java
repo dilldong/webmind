@@ -9,6 +9,8 @@ import com.google.inject.Stage;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.container.Destroyable;
 import org.mind.framework.container.ServletContextAware;
+import org.mind.framework.exception.ThrowProvider;
+import org.mind.framework.util.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +78,7 @@ public class GuiceContainerAware implements ContainerAware {
             log.info("Initializing module '{}'....", name);
 
             try {
-                Object obj = Class.forName(name).newInstance();
+                Object obj = ClassUtils.newInstance(name);
                 if (obj instanceof Module) {
                     if (obj instanceof ServletContextAware) {
                         ((ServletContextAware) obj).setServletContext(servletContext);
@@ -87,12 +89,9 @@ public class GuiceContainerAware implements ContainerAware {
                 throw new IllegalArgumentException(
                         String.format("Class '%s' does not implement '%s'.", name, Module.class.getName()));
 
-            } catch (InstantiationException e) {
-                throw new IllegalArgumentException(String.format("Cannot instanciate class '%s'.", name), e);
-            } catch (IllegalAccessException e) {
-                throw new IllegalArgumentException(String.format("Cannot instanciate class '%s'.", name), e);
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException(String.format("Cannot instanciate class '%s'.", name), e);
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                log.error("Cannot instanciate class '{}'.", name);
+                ThrowProvider.doThrow(e);
             }
         }
         return null;

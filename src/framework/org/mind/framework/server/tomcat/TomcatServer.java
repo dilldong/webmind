@@ -22,6 +22,7 @@ import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.ServerContext;
 import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
+import org.mind.framework.util.ClassUtils;
 import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
@@ -233,7 +234,7 @@ public class TomcatServer extends Tomcat {
 
     private LifecycleListener getContextListener(Host host) {
         try {
-            Class<?> clazz = Class.forName(host.getConfigClass());
+            Class<?> clazz = ClassUtils.getClass(host.getConfigClass());
             return (LifecycleListener) clazz.getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
             ThrowProvider.doThrow(e);

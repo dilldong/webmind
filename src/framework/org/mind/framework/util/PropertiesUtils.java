@@ -32,10 +32,10 @@ public abstract class PropertiesUtils {
      */
     public static Properties getProperties() {
         InputStream in;
-        URL url = PropertiesUtils.class.getResource(DEFAULT_PROPERTIES);
+        URL url = ClassUtils.getResource(PropertiesUtils.class, DEFAULT_PROPERTIES);
 
         if (url != null)
-            in = PropertiesUtils.class.getResourceAsStream(DEFAULT_PROPERTIES);
+            in = ClassUtils.getResourceAsStream(PropertiesUtils.class, DEFAULT_PROPERTIES);
         else
             in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
 
