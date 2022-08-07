@@ -10,7 +10,7 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>3.0.4</version>
+    <version>4.0.2</version>
 </dependency>
 ```
 ## Example
