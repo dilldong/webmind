@@ -13,6 +13,9 @@ import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.tomcat.TomcatServer;
 import org.mind.framework.util.DateFormatUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,10 +119,34 @@ public abstract class ServerContext {
 
         // Copy web static resources
         if (StringUtils.isNotEmpty(serverConfig.getResourceDir())) {
+            ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+            String namePattern = String.format("classpath*:/%s/**/*.*", serverConfig.getResourceDir());
+
             try {
-                FileUtils.copyDirectory(new File(serverConfig.getResourceDir()), baseDir);
-            } catch (IOException e) {// Allow copy to fail
-                log.warn(e.getMessage());
+                Resource[] resources = patternResolver.getResources(namePattern);
+
+                if (resources != null) {
+                    String resourceBaseDir =
+                            String.format("%s/%s",
+                                    baseDir.getAbsolutePath(),
+                                    serverConfig.getResourceDir().startsWith("/") ?
+                                            serverConfig.getResourceDir().substring(1) :
+                                            serverConfig.getResourceDir());
+
+                    for (Resource resource : resources) {
+                        String name = StringUtils.substringAfter(
+                                resource.getURL().getPath(), serverConfig.getResourceDir());
+
+                        log.debug("Copy static resource: {}{}", serverConfig.getResourceDir(), name);
+                        FileUtils.copyInputStreamToFile(
+                                resource.getInputStream(),
+                                new File(String.format("%s%s", resourceBaseDir, name)));
+                    }
+                } else
+                    log.warn("Static resource directory does not exist: '{}'", serverConfig.getResourceDir());
+
+            } catch (IOException e) {
+                ThrowProvider.doThrow(e);
             }
         }
 
@@ -141,8 +168,7 @@ public abstract class ServerContext {
     protected final File createTempDir(String prefix) {
         try {
             File tempDir = Files.createTempDirectory(
-                            String.format("%s.%d.", prefix, serverConfig.getPort()))
-                            .toFile();
+                    String.format("%s.%d.", prefix, serverConfig.getPort())).toFile();
             tempDir.deleteOnExit();
             return tempDir;
         } catch (IOException e) {

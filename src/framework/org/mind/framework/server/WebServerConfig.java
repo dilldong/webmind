@@ -53,7 +53,7 @@ public class WebServerConfig {
 
     private int sessionTimeout = 30;
 
-    private String staticSuffix = "css|js|jpg|png|gif|ico|svg|html|htm|TTF|TOF|WOFF|WOFF2|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
+    private String staticSuffix = "css|js|jpg|png|gif|jpeg|webp|ico|svg|html|htm|rtf|ttf|tof|woff|woff2|csv|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt|xml|mov|mp3|aac|avi|mpeg|swf";
 
     private transient Map<String, String> mimeMapping;
 
@@ -98,7 +98,7 @@ public class WebServerConfig {
             this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
 
             this.sessionTimeout = Integer.parseInt(properties.getProperty("server.sessionTimeout", String.valueOf(sessionTimeout)));
-            this.staticSuffix = properties.getProperty("server.resourceValue", staticSuffix);
+            this.staticSuffix = properties.getProperty("server.resourceSuffix", staticSuffix);
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
             this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
         }
@@ -124,6 +124,8 @@ public class WebServerConfig {
 
                     put("mov", "video/quicktime");
                     put("mp3", "audio/mpeg");
+                    put("aac", "audio/aac");
+                    put("avi", "video/x-msvideo");
                     put("mpeg", "video/mpeg");
                     put("swf", "application/x-shockwave-flash");
 

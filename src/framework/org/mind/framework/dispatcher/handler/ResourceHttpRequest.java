@@ -61,6 +61,7 @@ public class ResourceHttpRequest implements HandlerResult {
                              HttpServletResponse response) throws IOException, ServletException {
 
         String uri = (String) result;
+        log.debug(uri);
         boolean startFlag = StringUtils.startsWithAny(uri.toUpperCase(), new String[]{"/BOOT-INF/", "/WEB-INF/", "/META-INF/"});
 
         if (startFlag) {
