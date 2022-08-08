@@ -76,7 +76,12 @@ public class TomcatServer extends Tomcat {
                 ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
             log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
-            this.createServlet(host, ctx);// create servlet
+
+            // create servlet
+            this.createServlet(host, ctx);
+
+            // set mime-type
+            this.serverConfig.getMimeMapping().forEach((k, v) -> ctx.addMimeMapping(k, v));
 
             // Add error | exception page
             ctx.addErrorPage(newErrorPage(400, "/error/400"));

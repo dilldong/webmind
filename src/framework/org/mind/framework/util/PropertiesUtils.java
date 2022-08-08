@@ -21,7 +21,7 @@ public abstract class PropertiesUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertiesUtils.class);
 
-    private static final String DEFAULT_PROPERTIES = "/frame.properties";
+    private static final String DEFAULT_PROPERTIES = "frame.properties";
     private static final String JAR_PROPERTIES = "BOOT-INF/classes/frame.properties";
 
     /**
