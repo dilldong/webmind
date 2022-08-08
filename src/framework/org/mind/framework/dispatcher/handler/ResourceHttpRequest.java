@@ -31,7 +31,7 @@ public class ResourceHttpRequest implements HandlerResult {
     /**
      * response cache header.
      */
-    private String maxAge = "";
+    private String maxAge = StringUtils.EMPTY;
 
     public ResourceHttpRequest(ServletConfig config) {
         this.servletContext = config.getServletContext();
@@ -61,6 +61,7 @@ public class ResourceHttpRequest implements HandlerResult {
                              HttpServletResponse response) throws IOException, ServletException {
 
         String uri = (String) result;
+        log.debug(uri);
         boolean startFlag = StringUtils.startsWithAny(uri.toUpperCase(), new String[]{"/BOOT-INF/", "/WEB-INF/", "/META-INF/"});
 
         if (startFlag) {
@@ -71,7 +72,7 @@ public class ResourceHttpRequest implements HandlerResult {
 
         File file = new File(this.servletContext.getRealPath(uri));
 
-        if (file == null || !file.isFile()) {
+        if (file == null || !file.exists() || !file.isFile()) {
             log.error("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
@@ -83,7 +84,7 @@ public class ResourceHttpRequest implements HandlerResult {
 
         // cache
         if (modifiedSince != -1 && modifiedSince >= lastModified) {
-            log.info("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
+            log.debug("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             return;
         }
@@ -108,7 +109,7 @@ public class ResourceHttpRequest implements HandlerResult {
 //      }
 
         String mime = servletContext.getMimeType(file.getName());
-        response.setContentType(mime == null ? "application/octet-stream" : mime);
+        response.setContentType(StringUtils.isEmpty(mime) ? "application/octet-stream" : mime);
 
         // write stream
         ResponseUtils.write(response.getOutputStream(), file);

@@ -7,11 +7,15 @@ import org.apache.catalina.core.JreMemoryLeakPreventionListener;
 import org.apache.catalina.core.ThreadLocalLeakPreventionListener;
 import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.tomcat.TomcatServer;
 import org.mind.framework.util.DateFormatUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,9 +109,48 @@ public abstract class ServerContext {
         serverConfig.setResourceSet(resourceSet);
         serverConfig.setSpringFileSet(springFileSet);
 
-        if (StringUtils.isEmpty(serverConfig.getTomcatBaseDir()))
-            serverConfig.setTomcatBaseDir(createTempDir(serverConfig.getServerName()).getAbsolutePath());
+        // Set Tomcat base-work-direcotry
+        File baseDir =
+                StringUtils.isEmpty(serverConfig.getTomcatBaseDir()) ?
+                        createTempDir(serverConfig.getServerName()) :
+                        new File(serverConfig.getTomcatBaseDir());// Not recommended
 
+        serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
+
+        // Copy web static resources
+        if (StringUtils.isNotEmpty(serverConfig.getResourceDir())) {
+            ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+            String namePattern = String.format("classpath*:/%s/**/*.*", serverConfig.getResourceDir());
+
+            try {
+                Resource[] resources = patternResolver.getResources(namePattern);
+
+                if (resources != null) {
+                    String resourceBaseDir =
+                            String.format("%s/%s",
+                                    baseDir.getAbsolutePath(),
+                                    serverConfig.getResourceDir().startsWith("/") ?
+                                            serverConfig.getResourceDir().substring(1) :
+                                            serverConfig.getResourceDir());
+
+                    for (Resource resource : resources) {
+                        String name = StringUtils.substringAfter(
+                                resource.getURL().getPath(), serverConfig.getResourceDir());
+
+                        log.debug("Copy static resource: {}{}", serverConfig.getResourceDir(), name);
+                        FileUtils.copyInputStreamToFile(
+                                resource.getInputStream(),
+                                new File(String.format("%s%s", resourceBaseDir, name)));
+                    }
+                } else
+                    log.warn("Static resource directory does not exist: '{}'", serverConfig.getResourceDir());
+
+            } catch (IOException e) {
+                ThrowProvider.doThrow(e);
+            }
+        }
+
+        // Create Tomcat-Server
         TomcatServer tomcat = new TomcatServer(serverConfig);
 
         // logging server
@@ -124,7 +167,8 @@ public abstract class ServerContext {
      */
     protected final File createTempDir(String prefix) {
         try {
-            File tempDir = Files.createTempDirectory(prefix + "." + serverConfig.getPort() + ".").toFile();
+            File tempDir = Files.createTempDirectory(
+                    String.format("%s.%d.", prefix, serverConfig.getPort())).toFile();
             tempDir.deleteOnExit();
             return tempDir;
         } catch (IOException e) {

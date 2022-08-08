@@ -10,6 +10,9 @@ import org.mind.framework.util.PropertiesUtils;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -22,15 +25,17 @@ import java.util.Set;
 @Slf4j
 public class WebServerConfig {
     public static final String JAR_IN_CLASSES = "BOOT-INF/classes";
-    private static final String SERVER_PROPERTIES = "/server.properties";
-    private static final String JAR_PROPERTIES = String.format("%s%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
+    private static final String SERVER_PROPERTIES = "server.properties";
+    private static final String JAR_PROPERTIES = String.format("%s/%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
 
     private String contextPath = StringUtils.EMPTY;
 
     @Setter
-    private String tomcatBaseDir;
+    private String tomcatBaseDir = StringUtils.EMPTY;
 
-    private String webXml;
+    private String resourceDir = StringUtils.EMPTY;
+
+    private String webXml = StringUtils.EMPTY;
 
     private String serverName = "Tomcat";
 
@@ -48,13 +53,15 @@ public class WebServerConfig {
 
     private int sessionTimeout = 30;
 
-    private String staticSuffix = "css|js|jpg|png|gif|ico|svg|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
+    private String staticSuffix = "css|js|jpg|png|gif|jpeg|webp|ico|svg|html|htm|rtf|ttf|tof|woff|woff2|csv|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt|xml|mov|mp3|aac|avi|mpeg|swf";
+
+    private transient Map<String, String> mimeMapping;
 
     private String resourceExpires = "-1";
 
     private final String containerAware = "Spring";
 
-    private String templateEngine;
+    private String templateEngine = StringUtils.EMPTY;
 
     @Setter
     private transient Set<String> springFileSet;
@@ -80,7 +87,8 @@ public class WebServerConfig {
         if (properties != null) {
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
-            this.webXml = properties.getProperty("server.webXml", StringUtils.EMPTY);
+            this.resourceDir = properties.getProperty("server.resourceDirectory", resourceDir);
+            this.webXml = properties.getProperty("server.webXml", webXml);
             this.serverName = properties.getProperty("server", serverName);
             this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));
             this.connectionTimeout = Integer.parseInt(properties.getProperty("server.connectionTimeout", String.valueOf(connectionTimeout)));
@@ -90,13 +98,61 @@ public class WebServerConfig {
             this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
 
             this.sessionTimeout = Integer.parseInt(properties.getProperty("server.sessionTimeout", String.valueOf(sessionTimeout)));
-            this.staticSuffix = properties.getProperty("server.resourceValue", staticSuffix);
+            this.staticSuffix = properties.getProperty("server.resourceSuffix", staticSuffix);
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
-            this.templateEngine = properties.getProperty("server.templateEngine", StringUtils.EMPTY);
+            this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
         }
     }
 
     public static WebServerConfig init() {
-        return new WebServerConfig();
+        return new WebServerConfig().initMimeMapping();
+    }
+
+    private WebServerConfig initMimeMapping() {
+        mimeMapping = Collections.unmodifiableMap(
+                new HashMap<String, String>() {{
+                    put("css", "text/css; charset=UTF-8");
+                    put("js", "text/javascript; charset=UTF-8");
+
+                    put("png", "image/png");
+                    put("jpg", "image/jpeg");
+                    put("jpeg", "image/jpeg");
+                    put("webp", "image/webp");
+                    put("svg", "image/svg+xml");
+                    put("ico", "image/vnd.microsoft.icon");
+                    put("gif", "image/gif");
+
+                    put("mov", "video/quicktime");
+                    put("mp3", "audio/mpeg");
+                    put("aac", "audio/aac");
+                    put("avi", "video/x-msvideo");
+                    put("mpeg", "video/mpeg");
+                    put("swf", "application/x-shockwave-flash");
+
+                    put("html", "text/html; charset=UTF-8");
+                    put("htm", "text/html; charset=UTF-8");
+
+                    put("rtf", "application/rtf");
+                    put("ttf", "font/ttf");
+                    put("tof", "font/tof");
+                    put("woff", "font/woff");
+                    put("woff2", "font/woff2");
+
+                    put("doc", "application/msword");
+                    put("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+                    put("ppt", "application/vnd.ms-powerpoint");
+                    put("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+                    put("xls", "application/vnd.ms-excel");
+                    put("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+                    put("csv", "text/csv");
+                    put("pdf", "application/pdf");
+                    put("txt", "text/plain");
+                    put("xml", "text/xml");
+
+                    put("rar", "application/x-rar-compressed");
+                    put("zip", "application/zip");
+                }});
+        return this;
     }
 }
