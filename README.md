@@ -40,7 +40,7 @@ public class HelloController {
     @Mapping("/request/json01")
     public String withJsonResult() {
         return new Response<Map<String, Object>>(HttpStatus.SC_OK, "OK")
-                .setBody(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
+                .setResult(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
                 .toJson();
     }
 
