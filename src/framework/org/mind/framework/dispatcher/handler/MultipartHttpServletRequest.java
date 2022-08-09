@@ -1,5 +1,17 @@
 package org.mind.framework.dispatcher.handler;
 
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.util.Streams;
+import org.mind.framework.util.PropertiesUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,19 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.fileupload.util.Streams;
-import org.mind.framework.util.PropertiesUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Wrapper class for multipart HTTP request which usually used to upload file.
@@ -45,7 +44,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
     private int defaultSize;
 
-    private Properties property;
+    private final Properties property;
 
     // multipart fileds
     private Map<String, List<String>> formParams;
@@ -55,22 +54,21 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
     private boolean requestFailed;
 
-    private int requestContentLength;
+    private final int requestContentLength;
 
-    private HttpServletRequest request;
+    private final HttpServletRequest request;
 
     private static final String ATTRIBUTE_NAME = MultipartHttpServletRequest.class.getName();
 
     public static MultipartHttpServletRequest getInstance(HttpServletRequest request) throws IOException, ServletException {
         Object obj = request.getAttribute(ATTRIBUTE_NAME);
-        if (obj != null && obj instanceof MultipartHttpServletRequest) {
+        if (obj != null && obj instanceof MultipartHttpServletRequest)
             return (MultipartHttpServletRequest) obj;
-        } else {
-            MultipartHttpServletRequest multipart =
-                    new MultipartHttpServletRequest(request).requestMultipart();
-            request.setAttribute(ATTRIBUTE_NAME, multipart);
-            return multipart;
-        }
+
+        MultipartHttpServletRequest multipart =
+                new MultipartHttpServletRequest(request).requestMultipart();
+        request.setAttribute(ATTRIBUTE_NAME, multipart);
+        return multipart;
     }
 
 
