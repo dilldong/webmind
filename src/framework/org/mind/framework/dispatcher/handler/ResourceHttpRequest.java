@@ -61,19 +61,19 @@ public class ResourceHttpRequest implements HandlerResult {
                              HttpServletResponse response) throws IOException, ServletException {
 
         String uri = (String) result;
-        log.debug(uri);
+        log.debug("Access resource: {}", uri);
         boolean startFlag = StringUtils.startsWithAny(uri.toUpperCase(), new String[]{"/BOOT-INF/", "/WEB-INF/", "/META-INF/"});
 
         if (startFlag) {
-            log.error("{} - Not Author access.", HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION);
-            response.sendError(HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION, "Not Author access.");
+            log.warn("{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN);
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access.");
             return;
         }
 
         File file = new File(this.servletContext.getRealPath(uri));
 
         if (file == null || !file.exists() || !file.isFile()) {
-            log.error("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
+            log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
