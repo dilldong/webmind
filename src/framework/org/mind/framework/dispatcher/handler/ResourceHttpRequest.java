@@ -13,6 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * @author dp
@@ -20,6 +26,21 @@ import java.io.IOException;
 public class ResourceHttpRequest implements HandlerResult {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceHttpRequest.class);
+
+    private static final List<String> SAFE_METHODS = Arrays.asList("GET", "HEAD");
+
+    /**
+     * Date formats as specified in the HTTP RFC.
+     *
+     * @see <a href="https://tools.ietf.org/html/rfc7231#section-7.1.1.1">Section 7.1.1.1 of RFC 7231</a>
+     */
+    private static final String[] DATE_FORMATS = new String[]{
+            "EEE, dd MMM yyyy HH:mm:ss zzz",
+            "EEE, dd-MMM-yy HH:mm:ss zzz",
+            "EEE MMM dd HH:mm:ss yyyy"
+    };
+
+    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
     private final ServletContext servletContext;
 
@@ -78,9 +99,11 @@ public class ResourceHttpRequest implements HandlerResult {
             return;
         }
 
-        // set request data header
-        long lastModified = file.lastModified();
-        long modifiedSince = request.getDateHeader(HEADER_IFMODSINCE);
+        // Convert to seconds
+        long lastModified = file.lastModified() / 1_000L * 1_000L;
+
+        // Get 'If-Modified-Since' from request header
+        long modifiedSince = parseDateHeader(request, HEADER_IFMODSINCE);
 
         // cache
         if (modifiedSince != -1 && modifiedSince >= lastModified) {
@@ -98,6 +121,7 @@ public class ResourceHttpRequest implements HandlerResult {
             response.setHeader("Cache-Control", "no-cache");
         } else if (this.expires > 0) {
             response.setHeader("Cache-Control", maxAge);
+            // Reset HTTP 1.0 Expires header if present
             response.setDateHeader("Expires", DateFormatUtils.getTimeMillis() + this.expires);
         }
 
@@ -114,5 +138,44 @@ public class ResourceHttpRequest implements HandlerResult {
         // write stream
         ResponseUtils.write(response.getOutputStream(), file);
     }
+
+    private long parseDateHeader(HttpServletRequest request, String headerName) {
+        try {
+            return request.getDateHeader(headerName);
+        } catch (IllegalArgumentException ex) {
+            String headerValue = request.getHeader(headerName);
+            // Possibly an IE 10 style value: "Wed, 09 Apr 2014 09:57:42 GMT; length=13774"
+            if (StringUtils.isNotEmpty(headerValue)) {
+                int separatorIndex = headerValue.indexOf(';');
+                if (separatorIndex != -1) {
+                    String datePart = headerValue.substring(0, separatorIndex);
+                    return parseDateValue(datePart);
+                }
+            }
+        }
+        return -1;
+    }
+
+    private long parseDateValue(String headerValue) {
+        if (StringUtils.isEmpty(headerValue))
+            return -1;// No header value sent at all
+
+        if (headerValue.length() >= 3) {
+            // Short "0" or "-1" like values are never valid HTTP date headers...
+            // Let's only bother with SimpleDateFormat parsing for long enough values.
+            for (String dateFormat : DATE_FORMATS) {
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
+                simpleDateFormat.setTimeZone(GMT);
+                try {
+                    return simpleDateFormat.parse(headerValue).getTime();
+                } catch (ParseException ex) {
+                    simpleDateFormat = null;
+                    // ignore exception
+                }
+            }
+        }
+        return -1;
+    }
+
 
 }
