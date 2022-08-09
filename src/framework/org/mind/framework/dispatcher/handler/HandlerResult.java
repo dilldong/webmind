@@ -10,9 +10,9 @@ import java.io.IOException;
  */
 public interface HandlerResult {
 
-    String HEADER_IFMODSINCE = "If-Modified-Since";
+    String IF_MODIFIED_SINCE = "If-Modified-Since";
 
-    String HEADER_LASTMOD = "Last-Modified";
+    String LAST_MODIFIED = "Last-Modified";
 
     void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 

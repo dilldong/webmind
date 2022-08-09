@@ -99,22 +99,25 @@ public class ResourceHttpRequest implements HandlerResult {
             return;
         }
 
-        // Convert to seconds
-        long lastModified = file.lastModified() / 1_000L * 1_000L;
-
+        long lastModified = file.lastModified();
         // Get 'If-Modified-Since' from request header
-        long modifiedSince = parseDateHeader(request, HEADER_IFMODSINCE);
+        long modifiedSince = parseDateHeader(request, IF_MODIFIED_SINCE);
 
-        // cache
-        if (modifiedSince != -1 && modifiedSince >= lastModified) {
+        // not modified
+        if (modifiedSince != -1 && modifiedSince >= (lastModified / 1_000L * 1_000L)) {
             log.debug("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             return;
         }
 
-        // no cache.
-        response.setDateHeader(HEADER_LASTMOD, lastModified);
-        response.setContentLength((int) file.length());
+        // Set last modified time in response
+        response.setDateHeader(LAST_MODIFIED, lastModified);
+
+        long length = file.length();
+        if (length > Integer.MAX_VALUE)
+            response.setContentLengthLong(length);
+        else
+            response.setContentLength((int) length);
 
         // set cache:
         if (this.expires < 0) {// -1
