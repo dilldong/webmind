@@ -77,10 +77,10 @@ public class UploadProperty {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                 .append("filedName", filedName)
-                .append("fileName", fileName)
-                .append("filePath", filePath)
-                .append("fileSize", fileSize)
-                .append("fileType", fileType)
+                .append(" fileName", fileName)
+                .append(" path", filePath)
+                .append(" size", fileSize)
+                .append(" type", fileType)
                 .toString();
     }
 }

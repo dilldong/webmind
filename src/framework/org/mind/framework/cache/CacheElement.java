@@ -72,9 +72,9 @@ public class CacheElement {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                 .append("value", value)
-                .append("time", time)
-                .append("firstTime", firstTime)
-                .append("visited", visited)
+                .append(" time", time)
+                .append(" firstTime", firstTime)
+                .append(" visited", visited)
                 .toString();
     }
 }

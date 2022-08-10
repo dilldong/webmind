@@ -2,8 +2,6 @@ package org.mind.framework.dispatcher.support;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.util.MatcherUtils;
@@ -75,10 +73,11 @@ public class Catcher implements Comparable<Catcher>, Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-                .append("order", annotation.order())
-                .append("interceptor", Arrays.toString(annotation.value()))
-                .append("excludes", Arrays.toString(annotation.excludes()))
+        return new StringBuilder()
+                .append("order = ").append(annotation.order())
+                .append(", interceptor = ").append(Arrays.toString(annotation.value()))
+                .append(", excludes = ").append(Arrays.toString(annotation.excludes()))
                 .toString();
     }
+
 }
