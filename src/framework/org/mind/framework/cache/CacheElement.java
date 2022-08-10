@@ -1,5 +1,7 @@
 package org.mind.framework.cache;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.util.DateFormatUtils;
 
 public class CacheElement {
@@ -68,12 +70,11 @@ public class CacheElement {
 
     @Override
     public String toString() {
-        return new StringBuilder("CacheElement{")
-                .append("value=").append(value)
-                .append(", time=").append(time)
-                .append(", firstTime=").append(firstTime)
-                .append(", visited=").append(visited)
-                .append('}')
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append("value", value)
+                .append("time", time)
+                .append("firstTime", firstTime)
+                .append("visited", visited)
                 .toString();
     }
 }
