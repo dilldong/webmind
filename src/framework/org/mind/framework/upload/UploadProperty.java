@@ -1,5 +1,8 @@
 package org.mind.framework.upload;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
 /**
  * 上传文件成功后的属性值。
  * 包括前段filed的name值，上传后的文件名称、文件路径、文件大小。
@@ -72,14 +75,12 @@ public class UploadProperty {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append("[filedName]").append(this.filedName)
-                .append(";[fileName]").append(this.fileName)
-                .append(";[filePath]").append(this.filePath)
-                .append(";[fileSize]").append(this.fileSize)
-                .append(";[fileType]").append(this.fileType)
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append("filedName", filedName)
+                .append(" fileName", fileName)
+                .append(" path", filePath)
+                .append(" size", fileSize)
+                .append(" type", fileType)
                 .toString();
     }
-
-
 }

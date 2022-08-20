@@ -1,7 +1,4 @@
-package org.mind.framework.dispatcher.support;/**
- * @author dp
- * @date 2021-02-14
- */
+package org.mind.framework.dispatcher.support;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -78,8 +75,8 @@ public class Catcher implements Comparable<Catcher>, Serializable {
     public String toString() {
         return new StringBuilder()
                 .append("order = ").append(annotation.order())
-                .append(", ").append(" interceptor = ").append(Arrays.toString(annotation.value()))
-                .append(", ").append(" excludes = ").append(Arrays.toString(annotation.excludes()))
+                .append(", interceptor = ").append(Arrays.toString(annotation.value()))
+                .append(", excludes = ").append(Arrays.toString(annotation.excludes()))
                 .toString();
     }
 
