@@ -26,8 +26,7 @@ public final class Action {
     private static final Logger log = LoggerFactory.getLogger(Action.class);
     private static final String BODY_PARAMS = "body_input_param";
 
-    private static final ThreadLocal<Action> actionContext =
-            new ThreadLocal<Action>();
+    private static final ThreadLocal<Action> actionContext = new ThreadLocal<>();
 
     private ServletContext context;
     private HttpServletRequest request;
@@ -83,11 +82,10 @@ public final class Action {
     /**
      * Get the byte[] content of the post request
      *
-     * @param request
      * @return
      * @throws IOException
      */
-    public byte[] getPostBytes(HttpServletRequest request) throws IOException {
+    public byte[] getPostBytes() throws IOException {
         int contentLength = request.getContentLength();
         if (contentLength <= 0)
             return null;
@@ -103,12 +101,11 @@ public final class Action {
     /**
      * Get the content of the post request
      *
-     * @param request
      * @return
      * @throws IOException
      */
     public String getPostString() throws IOException {
-        byte[] data = getPostBytes(request);
+        byte[] data = getPostBytes();
         if (data != null) {
             String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
             String body = new String(data, encoding);
