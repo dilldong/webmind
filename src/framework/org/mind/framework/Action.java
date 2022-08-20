@@ -87,7 +87,7 @@ public final class Action {
      * @return
      * @throws IOException
      */
-    public byte[] getRequestPostBytes(HttpServletRequest request) throws IOException {
+    public byte[] getPostBytes(HttpServletRequest request) throws IOException {
         int contentLength = request.getContentLength();
         if (contentLength <= 0)
             return null;
@@ -107,8 +107,8 @@ public final class Action {
      * @return
      * @throws IOException
      */
-    public String getRequestPostString(HttpServletRequest request) throws IOException {
-        byte[] data = getRequestPostBytes(request);
+    public String getPostString() throws IOException {
+        byte[] data = getPostBytes(request);
         if (data != null) {
             String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
             String body = new String(data, encoding);
@@ -123,29 +123,62 @@ public final class Action {
         return (String) request.getAttribute(BODY_PARAMS);
     }
 
-    public String requestJson(HttpServletRequest request) {
+    public String getJson() {
         try {
-            return this.getRequestPostString(request);
+            String json = this.getPostString();
+            if (JsonUtils.isJson(json))
+                return json;
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
         return null;
     }
 
-    public Map<String, JsonObject> requestJsonMap(HttpServletRequest request) {
+    public Map<String, JsonObject> getJsonMap() {
         return JsonUtils.fromJson(
-                requestJson(request),
+                getJson(),
                 new TypeToken<Map<String, JsonObject>>() {
                 });
     }
 
-    public List<JsonObject> requestJsonList(HttpServletRequest request) {
+    public List<JsonObject> getJsonList() {
         return JsonUtils.fromJson(
-                requestJson(request),
+                getJson(),
                 new TypeToken<List<JsonObject>>() {
                 });
     }
 
+    public String getString(String name) {
+        return request.getParameter(name);
+    }
+
+    public String getString(String name, String defaultValue) {
+        return StringUtils.defaultIfEmpty(getString(name), defaultValue);
+    }
+
+    public long getLong(String name) {
+        return Long.parseLong(getString(name));
+    }
+
+    public long getLong(String name, long defaultValue) {
+        String value = getString(name);
+        if(StringUtils.isEmpty(value))
+            return defaultValue;
+
+        return Long.parseLong(value);
+    }
+
+    public int getInt(String name) {
+        return Integer.parseInt(getString(name));
+    }
+
+    public int getInt(String name, int defaultValue) {
+        String value = getString(name);
+        if(StringUtils.isEmpty(value))
+            return defaultValue;
+
+        return Integer.parseInt(value);
+    }
 
     /**
      * Return current response object.
