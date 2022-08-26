@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
@@ -159,7 +160,7 @@ public final class Action {
 
     public long getLong(String name, long defaultValue) {
         String value = getString(name);
-        if(StringUtils.isEmpty(value))
+        if (StringUtils.isEmpty(value))
             return defaultValue;
 
         return Long.parseLong(value);
@@ -171,10 +172,39 @@ public final class Action {
 
     public int getInt(String name, int defaultValue) {
         String value = getString(name);
-        if(StringUtils.isEmpty(value))
+        if (StringUtils.isEmpty(value))
             return defaultValue;
 
         return Integer.parseInt(value);
+    }
+
+    public String getHeader(String name) {
+        return request.getHeader(name);
+    }
+
+    public String getHeader(String name, String defaultValue) {
+        return StringUtils.defaultIfEmpty(getHeader(name), defaultValue);
+    }
+
+    public int getIntHeader(String name) {
+        return request.getIntHeader(name);
+    }
+
+    public int getIntHeader(String name, int defaultValue) {
+        int value = request.getIntHeader(name);
+        return value == -1 ? defaultValue : value;
+    }
+
+    public long getDateHeader(String name) {
+        return request.getDateHeader(name);
+    }
+
+    public Enumeration<String> getHeaderNames() {
+        return request.getHeaderNames();
+    }
+
+    public Enumeration<String> getHeaders(String name) {
+        return request.getHeaders(name);
     }
 
     /**
