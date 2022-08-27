@@ -110,10 +110,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         // Interceptor forward sorting
         Collections.sort(interceptorsCatcher);
 
-        if (log.isInfoEnabled()) {
-            for (Catcher catcher : interceptorsCatcher)
-                log.info("Interceptors: {}", catcher.toString());
-        }
+        if (log.isInfoEnabled())
+            interceptorsCatcher.forEach(catcher -> log.info("Interceptors: {}", catcher.toString()));
 
         /*
          * detect multipart support:
