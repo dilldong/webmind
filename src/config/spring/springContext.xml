@@ -37,7 +37,7 @@
     </bean>
 
     <!-- start MQ service -->
-    <bean id="startQueueService" class="org.mind.framework.service.UpdateCacheService">
+    <bean id="startQueueService" class="org.mind.framework.service.UpdateLoopService">
         <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
         <property name="updaters">
             <list>
