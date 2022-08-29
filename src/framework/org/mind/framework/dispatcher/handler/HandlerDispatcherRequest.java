@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 
 
@@ -176,7 +177,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         // set default character encoding to "utf-8" if encoding is not set:
-        if (request.getCharacterEncoding() == null)
+        if (StringUtils.isEmpty(request.getCharacterEncoding()))
             request.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         // static resource
@@ -196,7 +197,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         log.info("From path: {}", path);
-
         this.processNoCache(request, response);
 
         /*
@@ -233,7 +233,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          * Status code (404) indicating that the requested resource is not
          * available.
          */
-        if (execution == null) {
+        if (Objects.isNull(execution)) {
             log.warn("The requested URI (404) Not found");
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             this.handleResult(
@@ -281,6 +281,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                     interceptor.doAfter(request, response);
                 }
             }
+
+            // resolver result
             this.handleResult(result, request, response);
 
             // Interceptor renderCompletion
