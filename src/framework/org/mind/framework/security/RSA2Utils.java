@@ -43,6 +43,7 @@ public class RSA2Utils {
 
     /**
      * 公钥加密
+     *
      * @param content
      * @param publicKey
      * @return
@@ -61,6 +62,7 @@ public class RSA2Utils {
 
     /**
      * 私钥解密
+     *
      * @param content
      * @param privateKey
      * @return
@@ -98,6 +100,7 @@ public class RSA2Utils {
 
     /**
      * 公钥进行签名验签
+     *
      * @param encryptedContent
      * @param publicKey
      * @param signStr
@@ -116,20 +119,20 @@ public class RSA2Utils {
         return signature.verify(Base64.decodeBase64(signStr));
     }
 
-    public static void main(String[] args) {
-        RSA2 rsa = RSA2Utils.generateKey();
-        String orig = "dsakldfhkj*^=~圣诞节";
-        String encdata = RSA2Utils.encrypt(orig, rsa.getPublicByBase64());
-        String decdata = RSA2Utils.decrypt(encdata, rsa.getPrivateByBase64());
-        System.out.println(rsa);
-        System.out.println(encdata);
-        System.out.println(decdata);
-
-        String signStr = RSA2Utils.sign(encdata, rsa.getPrivateByBase64());
-        System.out.println("签名: " + signStr);
-
-        System.out.println("签名验证: " + RSA2Utils.verify(encdata, rsa.getPublicByBase64(), signStr));
-    }
+//    public static void main(String[] args) {
+//        RSA2 rsa = RSA2Utils.generateKey();
+//        String orig = "dsakldfhkj*^=~圣诞节";
+//        String encdata = RSA2Utils.encrypt(orig, rsa.getPublicByBase64());
+//        String decdata = RSA2Utils.decrypt(encdata, rsa.getPrivateByBase64());
+//        System.out.println(rsa);
+//        System.out.println(encdata);
+//        System.out.println(decdata);
+//
+//        String signStr = RSA2Utils.sign(encdata, rsa.getPrivateByBase64());
+//        System.out.println("签名: " + signStr);
+//
+//        System.out.println("签名验证: " + RSA2Utils.verify(encdata, rsa.getPublicByBase64(), signStr));
+//    }
 
 
     @Builder

@@ -1,6 +1,5 @@
 package org.mind.framework.server.tomcat;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
@@ -23,6 +22,8 @@ import org.mind.framework.server.ServerContext;
 import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
 import org.mind.framework.util.ClassUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
@@ -39,9 +40,8 @@ import java.lang.management.ManagementFactory;
  * @author Marcus
  * @version 1.0
  */
-@Slf4j
 public class TomcatServer extends Tomcat {
-
+    private static final Logger log = LoggerFactory.getLogger(TomcatServer.class);
     private final WebServerConfig serverConfig;
 
     public TomcatServer(WebServerConfig serverConfig) {
@@ -87,9 +87,9 @@ public class TomcatServer extends Tomcat {
             ctx.addErrorPage(newErrorPage(400, "/error/400"));
             ctx.addErrorPage(newErrorPage(404, "/error/404"));
             ctx.addErrorPage(newErrorPage(500, "/error/500"));
-            ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/199"));
-            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/199"));
-            ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/199"));
+            ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/500"));
+            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/500"));
+            ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/500"));
         }
 
         host.addChild(ctx);

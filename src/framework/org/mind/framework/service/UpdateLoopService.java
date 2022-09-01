@@ -9,27 +9,26 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author dongping
  */
-public class UpdateCacheService extends LoopWorkerService {
+public class UpdateLoopService extends LoopWorkerService {
 
-    static final Logger log = LoggerFactory.getLogger(UpdateCacheService.class);
+    static final Logger log = LoggerFactory.getLogger(UpdateLoopService.class);
 
     private List<Updateable> updaters;
 
     @Override
     protected void doLoopWork() {
         if (updaters != null && !updaters.isEmpty()) {
-            for (Updateable update : updaters) {
-                if (update != null) {
+            updaters.forEach(updateable -> {
+                if (updateable != null) {
                     try {
-                        update.doUpate();
+                        updateable.doUpate();
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }
                 }
-            }
+            });
         }
     }
-
 
     public List<Updateable> getUpdaters() {
         return updaters;
@@ -40,19 +39,18 @@ public class UpdateCacheService extends LoopWorkerService {
     }
 
     public void addUpdater(Updateable updater) {
-        if (updaters == null) {
-            updaters = new CopyOnWriteArrayList<Updateable>();
-        }
+        if (updaters == null)
+            updaters = new CopyOnWriteArrayList<>();
 
-        if (updater != null && !updaters.contains(updater)) {
-            updaters.add(updater);
-        }
+        updaters.add(updater);
     }
 
     public boolean removeUpdater(Updateable updater) {
         if (updaters == null) {
-            updaters = new CopyOnWriteArrayList<Updateable>();
+            updaters = new CopyOnWriteArrayList<>();
+            return false;
         }
+
         return updaters.remove(updater);
     }
 }

@@ -23,15 +23,12 @@ public class WebMainService extends AbstractService {
         if (childServices != null) {
             for (final Service serv : childServices) {
                 if (serv != null) {
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            logger.info("Service [{}@{}] to start ....",
-                                    serv.getClass().getName(),
-                                    Integer.toHexString(serv.hashCode()));
+                    Thread t = new Thread(() -> {
+                        logger.info("Service [{}@{}] to starting ....",
+                                serv.getClass().getName(),
+                                Integer.toHexString(serv.hashCode()));
 
-                            serv.start();
-                        }
+                        serv.start();
                     });
                     t.start();
                 }
@@ -43,17 +40,13 @@ public class WebMainService extends AbstractService {
         if (childServices != null) {
             for (final Service serv : childServices) {
                 if (serv != null) {
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            logger.info("Service [{}@{}] to stop ....",
-                                    serv.getClass().getName(),
-                                    Integer.toHexString(serv.hashCode()));
+                    Thread t = new Thread(() -> {
+                        logger.info("Service [{}@{}] to stoping ....",
+                                serv.getClass().getName(),
+                                Integer.toHexString(serv.hashCode()));
 
-                            serv.stop();
-                        }
+                        serv.stop();
                     });
-
                     t.start();
                 }
             }

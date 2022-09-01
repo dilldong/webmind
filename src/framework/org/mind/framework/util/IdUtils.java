@@ -20,7 +20,7 @@ public class IdUtils {
      *
      * @return
      */
-    public static Long getUniqueId() {
+    public static long getUniqueId() {
         try {
             // 16进制，4位时间码，3位机器码，2位进程id，3位自增计数器
             ObjectId objId = new ObjectId();
@@ -49,11 +49,11 @@ public class IdUtils {
     }
 
 
-    public static void main(String[] args) {
-        System.out.println(getUniqueId());
-        System.out.println(generateId());
-
-        ObjectId objId = new ObjectId();
-        System.out.println("d: " + DateFormatUtils.format(objId.getDate(), "yyyy-MM-dd HH:mm:ss") + "\tcounter: " + objId.getCounter() + "\tMid : " + objId.getMachineIdentifier() + "\tPID: " + objId.getProcessIdentifier());
-    }
+//    public static void main(String[] args) {
+//        System.out.println(getUniqueId());
+//        System.out.println(generateId());
+//
+//        ObjectId objId = new ObjectId();
+//        System.out.println("d: " + DateFormatUtils.format(objId.getDate(), "yyyy-MM-dd HH:mm:ss") + "\tcounter: " + objId.getCounter() + "\tMid : " + objId.getMachineIdentifier() + "\tPID: " + objId.getProcessIdentifier());
+//    }
 }

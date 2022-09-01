@@ -1,6 +1,5 @@
 package org.mind.framework.server;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Server;
 import org.apache.catalina.core.JreMemoryLeakPreventionListener;
@@ -9,10 +8,12 @@ import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.tomcat.TomcatServer;
-import org.mind.framework.util.DateFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -28,8 +29,8 @@ import java.util.Set;
  * @author Marcus
  * @version 1.0
  */
-@Slf4j
 public abstract class ServerContext {
+    static final Logger log = LoggerFactory.getLogger(ServerContext.class);
     public static final String SERVLET_NAME = "webmindServlet";
     public static final String SERVLET_CLASS = "org.mind.framework.dispatcher.DispatcherServlet";
 
@@ -54,8 +55,8 @@ public abstract class ServerContext {
 
     public void startup() throws WebServerException {
         synchronized (this.monitor) {
+            StopWatch stopWatch = StopWatch.createStarted();
             try {
-                final long begin = DateFormatUtils.getTimeMillis();
                 Tomcat tomcat = creationServer();
                 this.registerServer(tomcat, serverConfig);
 
@@ -76,9 +77,12 @@ public abstract class ServerContext {
                         serverConfig.getPort(),
                         StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
 
-                log.info("{} startup time: {}ms", serverConfig.getServerName(), (DateFormatUtils.getTimeMillis() - begin));
+                log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatch.getTime());
             } catch (Exception e) {
                 throw new WebServerException("Unable to start embedded Tomcat", e);
+            } finally {
+                stopWatch.stop();
+                stopWatch = null;
             }
         }
     }
