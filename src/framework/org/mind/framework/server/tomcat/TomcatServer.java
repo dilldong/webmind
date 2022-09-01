@@ -87,9 +87,9 @@ public class TomcatServer extends Tomcat {
             ctx.addErrorPage(newErrorPage(400, "/error/400"));
             ctx.addErrorPage(newErrorPage(404, "/error/404"));
             ctx.addErrorPage(newErrorPage(500, "/error/500"));
-            ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/199"));
-            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/199"));
-            ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/199"));
+            ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/500"));
+            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/500"));
+            ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/500"));
         }
 
         host.addChild(ctx);
