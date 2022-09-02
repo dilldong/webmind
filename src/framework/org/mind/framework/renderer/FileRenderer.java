@@ -1,5 +1,6 @@
 package org.mind.framework.renderer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.Action;
 import org.mind.framework.util.ResponseUtils;
 
@@ -8,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Render http response as binary stream. This is usually used to render PDF,
@@ -40,7 +42,7 @@ public class FileRenderer extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        if (file == null || !file.isFile()) {
+        if (Objects.isNull(file) || !file.isFile()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
@@ -48,13 +50,12 @@ public class FileRenderer extends Render {
         if (file.length() > Integer.MAX_VALUE)
             throw new IOException(String.format("Resource content too long (beyond Integer.MAX_VALUE): %s", file.getName()));
 
-
         String mime = contentType;
-        if (mime == null) {
+        if (StringUtils.isEmpty(mime)) {
             ServletContext context = Action.getActionContext().getServletContext();
             mime = context.getMimeType(file.getName());
-            if (mime == null)
-                mime = "application/octet-stream";
+            if (StringUtils.isEmpty(mime))
+                mime = MIME_OCTET_STREAM;
         }
 
         response.setContentType(mime);

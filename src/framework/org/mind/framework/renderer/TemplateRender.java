@@ -36,7 +36,7 @@ public class TemplateRender extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        log.info("Render path: {}", path);
+        log.debug("Render path: {}", path);
 
         TemplateFactory.getTemplateFactory()
                 .loadTemplate(path)

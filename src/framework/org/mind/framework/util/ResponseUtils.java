@@ -1,5 +1,7 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,7 +28,7 @@ public class ResponseUtils {
      * @param value The string to be filtered and returned
      */
     public static String filter(String value) {
-        if (value == null)
+        if (StringUtils.isEmpty(value))
             return null;
 
         char[] content = new char[value.length()];

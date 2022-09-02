@@ -20,11 +20,11 @@ public abstract class MailAbstract implements DelegateMessage {
     private Object model;
 
     private JavaMailSender sender;
-    private SendMailType mailType = SendMailType.HTML;
+    private MailType mailType = MailType.HTML;
 
     protected String defaultCharset = "UTF-8";
 
-    public enum SendMailType {
+    public enum MailType {
         TEXT,
         HTML
     }
@@ -45,7 +45,7 @@ public abstract class MailAbstract implements DelegateMessage {
 
     public abstract void after();
 
-    public abstract String loadContent(SendMailType mailType) throws Exception;
+    public abstract String loadContent(MailType mailType) throws Exception;
 
     protected void send(String content) throws Exception {
         MimeMessage msg = this.sender.createMimeMessage();
@@ -101,7 +101,7 @@ public abstract class MailAbstract implements DelegateMessage {
         this.model = model;
     }
 
-    public void setMailType(SendMailType mailType) {
+    public void setMailType(MailType mailType) {
         this.mailType = mailType;
     }
 

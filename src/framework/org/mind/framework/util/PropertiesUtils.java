@@ -13,9 +13,9 @@ import java.net.URL;
 import java.util.Properties;
 
 /**
- * 读取*.properies文件。
+ * Read the .properties file.
  *
- * @author dongping
+ * @author dp
  */
 public abstract class PropertiesUtils {
 
@@ -25,10 +25,9 @@ public abstract class PropertiesUtils {
     private static final String JAR_PROPERTIES = "BOOT-INF/classes/frame.properties";
 
     /**
-     * 默认参数为frame.properties
+     * The default parameter is frame.properties
      *
      * @return Properties
-     * @throws IOException
      */
     public static Properties getProperties() {
         InputStream in;
@@ -43,9 +42,9 @@ public abstract class PropertiesUtils {
     }
 
     /**
-     * 需要指定properties属性文件的绝对路径
+     * Specify the absolute path of the properties file
      *
-     * @param resPath properties绝对文件路径
+     * @param resPath properties file absolute path
      * @return Properties
      * @throws IOException
      */
@@ -59,11 +58,10 @@ public abstract class PropertiesUtils {
     }
 
     /**
-     * 需要指定properties输入流
+     * Specify properties input stream
      *
-     * @param in 可以是BufferedInputStream或InputStream
+     * @param in BufferedInputStream or InputStream
      * @return Properties
-     * @throws IOException
      */
     public static Properties getProperties(InputStream in) {
         Properties props = new Properties();

@@ -11,10 +11,11 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 
 public class JsonUtils {
 
-    static final Logger log = LoggerFactory.getLogger(JsonUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(JsonUtils.class);
 
     /**
      * 空的 {@code JSON} 数据 - <code>"{}"</code>。
@@ -132,7 +133,7 @@ public class JsonUtils {
     public static String toJson(Object target, Type targetType,
                                 boolean isSerializeNulls, Double version, String datePattern,
                                 boolean excludesFieldsWithoutExpose) {
-        if (target == null)
+        if (Objects.isNull(target))
             return EMPTY_JSON;
 
         GsonBuilder builder = new GsonBuilder();
@@ -140,14 +141,14 @@ public class JsonUtils {
         if (isSerializeNulls)
             builder.serializeNulls();
 
-        if (version != null)
+        if (Objects.nonNull(version))
             builder.setVersion(version.doubleValue());
 
-        if (datePattern == null || "".equals(datePattern.trim()))
+        if (StringUtils.isEmpty(datePattern))
             datePattern = DEFAULT_DATE_PATTERN;
 
         builder.setDateFormat(datePattern);
-        builder.disableHtmlEscaping();// 禁止转义Unicode字符
+        builder.disableHtmlEscaping();// Suppress escape of Unicode characters
 
         if (excludesFieldsWithoutExpose)
             builder.excludeFieldsWithoutExposeAnnotation();

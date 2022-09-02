@@ -1,5 +1,6 @@
 package org.mind.framework.upload;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
 import org.mind.framework.exception.NotSupportedException;
@@ -32,9 +33,9 @@ public class UploadFile {
 
     private String regexType;
 
-    private Properties property;
+    private final Properties property;
 
-    private MultipartHttpServletRequest request;
+    private final MultipartHttpServletRequest request;
 
 
     public UploadFile(HttpServletRequest request) {
@@ -111,7 +112,7 @@ public class UploadFile {
 
         for (FileItem item : list) {
             String fileName = item.getFileName();
-            if (fileName == null)
+            if (StringUtils.isEmpty(fileName))
                 continue;
 
             /*
@@ -119,7 +120,7 @@ public class UploadFile {
              */
             String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
             if (!MatcherUtils.matcher(suffix, regexType, MatcherUtils.IGNORECASE_EQ).matches())
-                throw new NotSupportedException(String.format("%s类型文件格式不匹配，允许格式有：%s", suffix, regexType));
+                throw new NotSupportedException(String.format("%s file suffix mismatch, allowed suffix: %s", suffix, regexType));
 
             fileName = sb
                     .append(this.directory).append(File.separator).append(currentTime)
@@ -154,9 +155,6 @@ public class UploadFile {
                     item.getSize(),
                     item.getContentType()));
         }
-
-        if (props.isEmpty())
-            props = null;
 
         return props;
     }

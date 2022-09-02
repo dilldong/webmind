@@ -309,7 +309,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        if (result == null)
+        if (Objects.isNull(null))
             return;
 
         if (result instanceof Render) {
@@ -322,12 +322,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             String str = (String) result;
 
             if (str.startsWith("forward:")) {
-                new NullRender(str.substring("forward:".length()), NullRender.NullRenderType.FORWARD).render(request, response);
+                new NullRender(str.substring("forward:".length()), NullRender.RenderType.FORWARD).render(request, response);
                 return;
             }
 
             if (str.startsWith("redirect:")) {
-                new NullRender(str.substring("redirect:".length()), NullRender.NullRenderType.REDIRECT).render(request, response);
+                new NullRender(str.substring("redirect:".length()), NullRender.RenderType.REDIRECT).render(request, response);
                 return;
             }
 

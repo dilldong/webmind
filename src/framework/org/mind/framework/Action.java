@@ -41,7 +41,7 @@ public final class Action {
 
     public String getRemoteIp() {
         String ip = this.request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
-        if (ip != null && ip.trim().length() > 0)
+        if (StringUtils.isNotEmpty(ip))
             return this.getRemoteIpFromForward(ip);
 
         ip = this.request.getHeader(PROXY_REMOTE_IP_ADDRESS[1]);

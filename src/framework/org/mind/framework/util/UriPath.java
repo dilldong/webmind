@@ -1,8 +1,12 @@
 package org.mind.framework.util;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
+/**
+ * Get the uri path in the request
+ *
+ * @author marcus
+ */
 public class UriPath {
 
     /**
@@ -12,7 +16,6 @@ public class UriPath {
      * <code>null</code>.
      *
      * @param request The servlet request we are processing
-     * @throws IOException if an input/output error occurs
      */
     public static String get(HttpServletRequest request) {
         String uri = request.getRequestURI();
