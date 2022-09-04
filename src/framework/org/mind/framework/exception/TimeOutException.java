@@ -6,14 +6,14 @@ package org.mind.framework.exception;
  * 告诉用户重新登录。
  * <br><b>注意:该异常是非受检异常</b>
  *
- * @author dongping
+ * @author dp
  */
 public class TimeOutException extends RuntimeException {
 
     private static final long serialVersionUID = -7510369355196638420L;
 
     /**
-     * @author dongping
+     * @author dp
      */
     public TimeOutException() {
         super();
@@ -22,7 +22,7 @@ public class TimeOutException extends RuntimeException {
     /**
      * @param message
      * @param cause
-     * @author dongping
+     * @author dp
      */
     public TimeOutException(String message, Throwable cause) {
         super(message, cause);
@@ -30,7 +30,7 @@ public class TimeOutException extends RuntimeException {
 
     /**
      * @param message
-     * @author dongping
+     * @author dp
      */
     public TimeOutException(String message) {
         super(message);
@@ -38,7 +38,7 @@ public class TimeOutException extends RuntimeException {
 
     /**
      * @param cause
-     * @author dongping
+     * @author dp
      */
     public TimeOutException(Throwable cause) {
         super(cause);

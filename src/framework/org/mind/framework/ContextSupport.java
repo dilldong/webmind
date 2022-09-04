@@ -33,7 +33,7 @@ public final class ContextSupport {
      * Initialize Spring WebContext when the web server container starts
      *
      * @param sc ServletContext
-     * @author dongping
+     * @author dp
      */
     public static void initWebContext(ServletContext sc) {
         Objects.requireNonNull(sc, "HttpServlet ServletContext is null");
@@ -46,7 +46,7 @@ public final class ContextSupport {
      *
      * @param name
      * @return
-     * @author dongping
+     * @author dp
      */
     public static Object getBean(String name) {
         return getBean(name, null);
@@ -58,7 +58,7 @@ public final class ContextSupport {
      * @param name
      * @param requiredType interface or an implementation class
      * @return
-     * @author dongping
+     * @author dp
      */
     public static Object getBean(String name, Class<?> requiredType) {
         Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");

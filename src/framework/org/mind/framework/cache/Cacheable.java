@@ -1,21 +1,25 @@
 package org.mind.framework.cache;
 
+import org.mind.framework.service.Cloneable;
+
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 
 /**
- * 缓存能力接口
+ * Cache Capability Interface
  *
- * @author dongping
+ * @author dp
  * @date Nov 27, 2010
  */
 public interface Cacheable extends Serializable {
 
-    int EQ_FULL = 1;
-    int EQ_PART = 2;
+    enum CompareType {
+        EQ_FULL, EQ_PART
+    }
 
     /**
      * 指定新的LinkedHashMap<String, Object>
+     *
      * @param newMap
      * @return
      */
@@ -40,6 +44,8 @@ public interface Cacheable extends Serializable {
      * @return
      */
     Cacheable addCache(String key, Object value, boolean check);
+
+    Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type);
 
     /**
      * 删除缓存
@@ -71,9 +77,9 @@ public interface Cacheable extends Serializable {
      *
      * @param searchStr
      * @param excludes     排除的key
-     * @param excludesRule 排除对象的匹配规则, Cacheable.EQ_FULL 精确匹配, Cacheable.EQ_PART 包含匹配
+     * @param excludesRule 排除对象的匹配规则, CompareType.EQ_FULL 精确匹配, CompareType.EQ_PART 包含匹配
      */
-    void removeCacheContains(String searchStr, String[] excludes, int excludesRule);
+    void removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule);
 
     /**
      * 获得缓存对象

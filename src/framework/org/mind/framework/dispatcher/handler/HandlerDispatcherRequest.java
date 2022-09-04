@@ -249,7 +249,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          */
         if (!execution.isSupportMethod(request.getMethod())) {
             log.warn("HTTP method {} is not supported by this URI, specified as: {}",
-                    request.getMethod(), execution.requestMethodsString());
+                    request.getMethod(), execution.methodString());
 
             response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             this.handleResult(

@@ -7,7 +7,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * 上传文件成功后的属性值。
  * 包括前段filed的name值，上传后的文件名称、文件路径、文件大小。
  *
- * @author dongping
+ * @author dp
  */
 public class UploadProperty {
 

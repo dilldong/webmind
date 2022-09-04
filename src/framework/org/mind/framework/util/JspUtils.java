@@ -80,7 +80,7 @@ public final class JspUtils extends ResponseUtils {
 	/**
 	 * PrintWriter输出
 	 * @param out PrintWriter
-	 * @author dongping
+	 * @author dp
 	 */
 	public void print(PrintWriter out){
 		final Lock lock = this.lock;
@@ -98,7 +98,7 @@ public final class JspUtils extends ResponseUtils {
 	 * 
 	 * @param pageContext
 	 * @param text
-	 * @author dongping
+	 * @author dp
 	 * @date Jun 13, 2010
 	 */
 	public static void writeln(PageContext pageContext, String text) {
@@ -114,7 +114,7 @@ public final class JspUtils extends ResponseUtils {
 	 * 使用HttpServletResponse中的PrintWriter输出
 	 * @param response
 	 * @param text
-	 * @author dongping
+	 * @author dp
 	 */
 	public static void print(HttpServletResponse response, String text){
 		try {
@@ -128,7 +128,7 @@ public final class JspUtils extends ResponseUtils {
 	 * PrintWriter输出
 	 * @param out
 	 * @param text
-	 * @author dongping
+	 * @author dp
 	 * @date Jun 13, 2010
 	 */
 	public static void print(PrintWriter out, String text){

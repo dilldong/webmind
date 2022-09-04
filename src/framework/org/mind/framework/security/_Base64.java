@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
  * 是一个标准的Base64编码和转换的工具，为了迎合js的需要，
  * 故在此重复工作；当然，我们可以使用JDK API 自带的BASE64Decoder和BASE64Encoder
  * 进行编码和解码，但是就不能随意调整Base64的主要参数。
- * @author dongping
+ * @author dp
  * @date May 2, 2010
  */
 final class _Base64 {
@@ -30,7 +30,7 @@ final class _Base64 {
 	 * 获得_Base64对象
 	 * 
 	 * @return com.jike.framework.security.encrypt._Base64
-	 * @author dongping
+	 * @author dp
 	 * @date May 2, 2010
 	 */
 	public static _Base64 getInstance(){

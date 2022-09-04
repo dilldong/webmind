@@ -31,7 +31,7 @@ public class DefaultEmailSupport extends MailAbstract {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public String loadContent(SendMailType mailType) throws Exception {
+    public String loadContent(MailType mailType) throws Exception {
 
         switch (mailType) {
             case HTML:

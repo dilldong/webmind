@@ -22,33 +22,21 @@ public abstract class AbstractCache {
         this.cacheName = cacheName;
     }
 
-    protected void init() {
-
-    }
-
-    protected void process() {
-
-    }
-
     protected String realKey(Object key) {
         return realKey(null, key);
     }
 
     protected String realKey(String prefix, Object key) {
-        if (StringUtils.isBlank(prefix))
+        if (StringUtils.isEmpty(prefix))
             return key.toString();
 
-        return new StringBuffer()
-                .append(prefix)
-                .append(".")
-                .append(key)
-                .toString();
+        return String.join("_", prefix, key.toString());
     }
 
     /**
-     * 关闭Cache
+     * Destroy cache
      *
-     * @author dongping
+     * @author dp
      * @date Nov 26, 2010
      */
     protected void destroy() {

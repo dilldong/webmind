@@ -3,7 +3,7 @@ package org.mind.framework.exception;
 /**
  * 拦截检查每个到达受保护的资源,接受用户名和密码，通过用户的资格系统验证用户
  *
- * @author dongping
+ * @author dp
  */
 public class AuthenticatorException extends BaseException {
 
@@ -11,7 +11,7 @@ public class AuthenticatorException extends BaseException {
 
     /**
      * @param msg
-     * @author dongping
+     * @author dp
      */
     public AuthenticatorException(String msg) {
         super(msg);
@@ -21,7 +21,7 @@ public class AuthenticatorException extends BaseException {
     /**
      * @param msg
      * @param e
-     * @author dongping
+     * @author dp
      */
     public AuthenticatorException(String msg, Throwable e) {
         super(msg, e);

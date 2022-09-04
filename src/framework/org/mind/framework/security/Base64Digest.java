@@ -3,7 +3,7 @@ package org.mind.framework.security;
 /**
  * 提供base64的编码和解码工具类
  *
- * @author dongping
+ * @author dp
  * @date May 2, 2010
  */
 public class Base64Digest {
@@ -11,7 +11,7 @@ public class Base64Digest {
     /**
      * @param input String type
      * @return
-     * @author dongping
+     * @author dp
      * @date May 2, 2010
      */
     public static String encode(String input) {
@@ -21,7 +21,7 @@ public class Base64Digest {
     /**
      * @param input byte array
      * @return
-     * @author dongping
+     * @author dp
      * @date May 2, 2010
      */
     public static String encode(byte[] input) {
@@ -41,7 +41,7 @@ public class Base64Digest {
      * 测试
      *
      * @param args
-     * @author dongping
+     * @author dp
      * @date May 2, 2010
      */
 //    public static void main(String[] args) {

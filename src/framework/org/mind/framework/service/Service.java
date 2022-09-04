@@ -3,21 +3,21 @@ package org.mind.framework.service;
 /**
  * 服务接口
  * 
- * @author dongping
+ * @author dp
  */
 public interface Service {
 
 	/**
 	 * 开始服务
 	 * 
-	 * @author dongping
+	 * @author dp
 	 */
 	void start();
 	
 	/**
 	 * 停止服务
 	 * 
-	 * @author dongping
+	 * @author dp
 	 */
 	void stop();
 	

@@ -1,14 +1,14 @@
 package org.mind.framework.exception;
 
 /**
- * @author dongping
+ * @author dp
  */
 public class NotSupportedException extends RuntimeException {
 
     private static final long serialVersionUID = -3149250570670823885L;
 
     /**
-     * @author dongping
+     * @author dp
      */
     public NotSupportedException() {
         super();
@@ -17,7 +17,7 @@ public class NotSupportedException extends RuntimeException {
     /**
      * @param message
      * @param cause
-     * @author dongping
+     * @author dp
      */
     public NotSupportedException(String message, Throwable cause) {
         super(message, cause);
@@ -25,7 +25,7 @@ public class NotSupportedException extends RuntimeException {
 
     /**
      * @param message
-     * @author dongping
+     * @author dp
      */
     public NotSupportedException(String message) {
         super(message);
@@ -33,7 +33,7 @@ public class NotSupportedException extends RuntimeException {
 
     /**
      * @param cause
-     * @author dongping
+     * @author dp
      */
     public NotSupportedException(Throwable cause) {
         super(cause);

@@ -28,6 +28,7 @@
 package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +41,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * 默认基于LRU(Least Recently Used)的缓存实现
+ * Cache implementation of LRU(Least Recently Used)
  *
- * @author dongping
+ * @author dp
  * @date Sep 17, 2011
  */
 public class LruCache extends AbstractCache implements Cacheable {
@@ -104,7 +105,7 @@ public class LruCache extends AbstractCache implements Cacheable {
      *
      * @param key
      * @param value
-     * @author dongping
+     * @author dp
      */
     public Cacheable addCache(String key, Object value) {
         return addCache(key, value, false);
@@ -116,9 +117,13 @@ public class LruCache extends AbstractCache implements Cacheable {
      * @param key
      * @param value
      * @param check false:若条目存在，不做任何操作。 true:先移除存在的条目，再重新装入;
-     * @author dongping
+     * @author dp
      */
     public Cacheable addCache(String key, Object value, boolean check) {
+        return addCache(key, value, check, Cloneable.CloneType.ORIGINAL);
+    }
+
+    public Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type) {
         // 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
         // Runtime.getRuntime().freeMemory()
         write.lock();
@@ -139,7 +144,7 @@ public class LruCache extends AbstractCache implements Cacheable {
                 this.removeCache(key);
             }
 
-            itemsMap.put(super.realKey(key), new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
+            itemsMap.put(super.realKey(key), new CacheElement(value, key, type));
             return this;
         } finally {
             write.unlock();
@@ -192,7 +197,6 @@ public class LruCache extends AbstractCache implements Cacheable {
         }
     }
 
-
     @Override
     public void removeCacheContains(String searchStr) {
         removeCacheContains(searchStr, null);
@@ -200,11 +204,11 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public void removeCacheContains(String searchStr, String[] excludes) {
-        removeCacheContains(searchStr, excludes, Cacheable.EQ_FULL);
+        removeCacheContains(searchStr, excludes, Cacheable.CompareType.EQ_FULL);
     }
 
     @Override
-    public void removeCacheContains(String searchStr, String[] excludes, int exclidesRule) {
+    public void removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType exclidesRule) {
         String[] keys = this.getKeys();
         if (keys == null || keys.length == 0)
             return;
@@ -216,7 +220,9 @@ public class LruCache extends AbstractCache implements Cacheable {
                     if (excludes != null && excludes.length > 0) {// Exclude
                         boolean flag = false;
                         for (String exKey : excludes) {
-                            flag = Cacheable.EQ_FULL == exclidesRule ? StringUtils.equals(key, exKey) : StringUtils.contains(key, exKey);
+                            flag = Cacheable.CompareType.EQ_FULL == exclidesRule ?
+                                    StringUtils.equals(key, exKey) :
+                                    StringUtils.contains(key, exKey);
                             if (flag)
                                 break;
                         }

@@ -31,7 +31,7 @@ public class MatcherUtils {
      * @param value 匹配内容
      * @param regex 给定的正则表达式
      * @return 相等返回true，反之false
-     * @author dongping
+     * @author dp
      */
     public static boolean matcher(String value, String regex) {
         Matcher matcher = matcher(value, regex, DEFAULT_EQ);
@@ -46,7 +46,7 @@ public class MatcherUtils {
      * @param regex 如：SQL---\\?+
      * @param flags 匹配模式，PatternUtil.IGNORECASE_EQ（忽略大小写的匹配）| PatternUtil.DEFAULT_EQ(默认等价匹配)
      * @return
-     * @author dongping
+     * @author dp
      */
     public static int checkCount(String value, String regex, int... flags) {
         Matcher matcher = matcher(value, regex, DEFAULT_EQ);
