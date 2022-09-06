@@ -5,6 +5,8 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContext;
+import java.util.Arrays;
+import java.util.Objects;
 
 public final class ContextSupport {
 
@@ -17,11 +19,11 @@ public final class ContextSupport {
      * @return
      */
     public static ApplicationContext initContext(String[] configLocations) {
-        for (int i = 0; i < configLocations.length; i++) {
-            if (!configLocations[i].startsWith("file:")) {
-                configLocations[i] = String.format("file:%s", configLocations[i]);
-            }
-        }
+        Arrays.stream(configLocations)
+                .forEach(config -> {
+                    if (!config.startsWith("file:"))
+                        config = String.format("file:%s", config);
+                });
 
         wctx = new FileSystemXmlApplicationContext(configLocations);
         return wctx;
@@ -31,15 +33,11 @@ public final class ContextSupport {
      * Initialize Spring WebContext when the web server container starts
      *
      * @param sc ServletContext
-     * @author dongping
+     * @author dp
      */
     public static void initWebContext(ServletContext sc) {
-        if (sc == null)
-            throw new NullPointerException("HttpServlet ServletContext is null");
-
-        /*
-         * ContextLoaderListener配置
-         */
+        Objects.requireNonNull(sc, "HttpServlet ServletContext is null");
+        // ContextLoaderListener
         wctx = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
     }
 
@@ -48,7 +46,7 @@ public final class ContextSupport {
      *
      * @param name
      * @return
-     * @author dongping
+     * @author dp
      */
     public static Object getBean(String name) {
         return getBean(name, null);
@@ -60,13 +58,11 @@ public final class ContextSupport {
      * @param name
      * @param requiredType interface or an implementation class
      * @return
-     * @author dongping
+     * @author dp
      */
     public static Object getBean(String name, Class<?> requiredType) {
-        if (wctx == null)
-            throw new NullPointerException("Spring ApplicationContext is null.");
-
-        if (requiredType == null)
+        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
+        if (Objects.isNull(requiredType))
             return wctx.getBean(name);
 
         return wctx.getBean(name, requiredType);

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -91,7 +92,7 @@ public abstract class ServerContext {
         if (filePath == null || filePath.length == 0)
             return this;
 
-        if (this.springFileSet == null)
+        if (Objects.isNull(this.springFileSet))
             this.springFileSet = new HashSet<>();
 
         this.springFileSet.addAll(Arrays.asList(filePath));
@@ -102,7 +103,7 @@ public abstract class ServerContext {
         if (resPath == null || resPath.length == 0)
             return this;
 
-        if (this.resourceSet == null)
+        if (Objects.isNull(this.resourceSet))
             this.resourceSet = new HashSet<>();
 
         this.resourceSet.addAll(Arrays.asList(resPath));
@@ -178,7 +179,8 @@ public abstract class ServerContext {
         } catch (IOException e) {
             log.error("Unable to create tempDir, {}", e.getMessage());
             ThrowProvider.doThrow(e);
-            return null;
         }
+
+        return null;
     }
 }

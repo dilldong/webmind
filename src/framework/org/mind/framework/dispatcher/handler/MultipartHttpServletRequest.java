@@ -28,7 +28,7 @@ import java.util.Set;
 /**
  * Wrapper class for multipart HTTP request which usually used to upload file.
  *
- * @author dongping
+ * @author dp
  */
 public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 

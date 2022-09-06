@@ -3,24 +3,23 @@ package org.mind.framework.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.Tag;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 
- * @author dongping
+ * @author dp
  */
 public final class JspUtils extends ResponseUtils {
 
-	private static Logger logger = LoggerFactory.getLogger(JspUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(JspUtils.class);
 	
 	private static final ThreadLocal<JspUtils> responseInstance = 
 		new ThreadLocal<JspUtils>();
@@ -81,7 +80,7 @@ public final class JspUtils extends ResponseUtils {
 	/**
 	 * PrintWriter输出
 	 * @param out PrintWriter
-	 * @author dongping
+	 * @author dp
 	 */
 	public void print(PrintWriter out){
 		final Lock lock = this.lock;
@@ -99,7 +98,7 @@ public final class JspUtils extends ResponseUtils {
 	 * 
 	 * @param pageContext
 	 * @param text
-	 * @author dongping
+	 * @author dp
 	 * @date Jun 13, 2010
 	 */
 	public static void writeln(PageContext pageContext, String text) {
@@ -115,7 +114,7 @@ public final class JspUtils extends ResponseUtils {
 	 * 使用HttpServletResponse中的PrintWriter输出
 	 * @param response
 	 * @param text
-	 * @author dongping
+	 * @author dp
 	 */
 	public static void print(HttpServletResponse response, String text){
 		try {
@@ -129,7 +128,7 @@ public final class JspUtils extends ResponseUtils {
 	 * PrintWriter输出
 	 * @param out
 	 * @param text
-	 * @author dongping
+	 * @author dp
 	 * @date Jun 13, 2010
 	 */
 	public static void print(PrintWriter out, String text){
@@ -156,8 +155,7 @@ public final class JspUtils extends ResponseUtils {
 		while (!(clazz.isAssignableFrom(tag.getClass()))) {
 			tag = tag.getParent();
 			if (tag == null) {
-				final String message = String.format("Parent tag of class %s of the tag's class %s was not found.", clazz.getClass().getName(), self.getClass().getName());
-				logger.error(message);
+				String message = String.format("Parent tag of class %s of the tag's class %s was not found.", clazz.getClass().getName(), self.getClass().getName());
 				throw new JspException(message);
 			}
 		}

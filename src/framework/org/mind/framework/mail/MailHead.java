@@ -1,6 +1,5 @@
 package org.mind.framework.mail;
 
-import org.mind.framework.mail.MailAbstract.SendMailType;
 import org.mind.framework.util.PropertiesUtils;
 
 public class MailHead {
@@ -16,7 +15,7 @@ public class MailHead {
     private String address;
     private String subject;
     private Object body;
-    private SendMailType mailType = SendMailType.HTML;
+    private MailAbstract.MailType mailType = MailAbstract.MailType.HTML;
     private String templateName;
 
 
@@ -47,11 +46,11 @@ public class MailHead {
         this.address = address;
     }
 
-    public MailAbstract.SendMailType getMailType() {
+    public MailAbstract.MailType getMailType() {
         return mailType;
     }
 
-    public void setMailType(MailAbstract.SendMailType mailType) {
+    public void setMailType(MailAbstract.MailType mailType) {
         this.mailType = mailType;
     }
 

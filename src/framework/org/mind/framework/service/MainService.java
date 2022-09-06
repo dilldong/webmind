@@ -3,6 +3,7 @@ package org.mind.framework.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -22,42 +23,39 @@ public class MainService extends AbstractService {
 
     @SuppressWarnings("Duplicates")
     protected void startChildServices() {
-        if (childServices != null) {
-            for (final Service serv : childServices) {
-                if (serv != null) {
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-
-                            logger.info("Service [{}@{}] to start ....",
+        if (Objects.nonNull(childServices)) {
+            childServices.forEach(serv -> {
+                if (Objects.nonNull(serv)) {
+                    Thread t = new Thread(() -> {
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Service [{}@{}] to starting ....",
                                     serv.getClass().getName(),
                                     Integer.toHexString(serv.hashCode()));
-                            serv.start();
                         }
+                        serv.start();
                     });
                     t.start();
                 }
-            }
+            });
         }
     }
 
     @SuppressWarnings("Duplicates")
     protected void stopChildServices() {
-        if (childServices != null) {
-            for (final Service serv : childServices) {
-                if (serv != null) {
-                    Thread t = new Thread(new Runnable() {
-                        public void run() {
+        if (Objects.nonNull(childServices)) {
+            childServices.forEach(serv -> {
+                if (Objects.nonNull(serv)) {
+                    Thread t = new Thread(() -> {
+                        if (logger.isInfoEnabled()) {
                             logger.info("Service [{}@{}] to stop ....",
                                     serv.getClass().getName(),
                                     Integer.toHexString(serv.hashCode()));
-                            serv.stop();
                         }
+                        serv.stop();
                     });
-
                     t.start();
                 }
-            }
+            });
         }
     }
 

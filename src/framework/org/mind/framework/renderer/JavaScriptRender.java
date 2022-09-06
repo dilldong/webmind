@@ -7,8 +7,6 @@ package org.mind.framework.renderer;
  */
 public class JavaScriptRender extends TextRender {
 
-    private static final String MIME_JAVASCRIPT = "application/x-javascript";
-
     public JavaScriptRender() {
         setContentType(MIME_JAVASCRIPT);
     }

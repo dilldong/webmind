@@ -28,21 +28,27 @@
 package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * 默认基于LRU(Least Recently Used)的缓存实现
+ * Cache implementation of LRU(Least Recently Used)
  *
- * @author dongping
+ * @author dp
  * @date Sep 17, 2011
  */
 public class LruCache extends AbstractCache implements Cacheable {
@@ -50,9 +56,9 @@ public class LruCache extends AbstractCache implements Cacheable {
     private static final Logger log = LoggerFactory.getLogger(LruCache.class);
 
     /*
-     * 保持活跃的缓存条目最大数,默认大小1024
+     * 保持活跃的缓存条目最大数,默认容量1024
      */
-    private int cacheSize = 1024;
+    private int capacity = 1024;
 
     /*
      * jvm 当前可用的内存大小
@@ -81,10 +87,10 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     private LruCache() {
-        itemsMap = new LinkedHashMap<String, CacheElement>(cacheSize, 0.75F, true) {
+        itemsMap = new LinkedHashMap<String, CacheElement>(capacity, 0.75F, true) {
             @Override
             protected boolean removeEldestEntry(Entry<String, CacheElement> eldest) {
-                boolean tooBig = this.size() > LruCache.this.cacheSize;
+                boolean tooBig = this.size() > LruCache.this.capacity;
                 if (tooBig) {
                     log.debug("Remove the last entry key: {}", eldest.getKey());
                 }
@@ -104,7 +110,7 @@ public class LruCache extends AbstractCache implements Cacheable {
      *
      * @param key
      * @param value
-     * @author dongping
+     * @author dp
      */
     public Cacheable addCache(String key, Object value) {
         return addCache(key, value, false);
@@ -116,36 +122,44 @@ public class LruCache extends AbstractCache implements Cacheable {
      * @param key
      * @param value
      * @param check false:若条目存在，不做任何操作。 true:先移除存在的条目，再重新装入;
-     * @author dongping
+     * @author dp
      */
     public Cacheable addCache(String key, Object value, boolean check) {
-        // 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
-        // Runtime.getRuntime().freeMemory()
-        write.lock();
-        try {
-            if (freeMemory > 0 && freeMemory > Runtime.getRuntime().freeMemory()) {
-                if (log.isDebugEnabled())
-                    log.debug("At present there is insufficient space, a clear java.util.Map of all objects");
-
-                this.destroy();
-                return this;
-
-            } else if (!check && this.containsKey(key)) {
-                if (log.isDebugEnabled())
-                    log.debug("The Cache key already exists.");
-                return this;
-
-            } else if (check) {
-                this.removeCache(key);
-            }
-
-            itemsMap.put(super.realKey(key), new CacheElement(value, DateFormatUtils.getTimeMillis(), 0));
-            return this;
-        } finally {
-            write.unlock();
-        }
+        return addCache(key, value, check, Cloneable.CloneType.ORIGINAL);
     }
 
+    public Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type) {
+        // 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
+        // Runtime.getRuntime().freeMemory()
+
+        if (freeMemory > 0 && freeMemory > Runtime.getRuntime().freeMemory()) {
+            if (log.isDebugEnabled())
+                log.debug("At present there is insufficient space, a clear java.util.Map of all objects");
+
+            this.destroy();
+            return this;
+
+        } else if (!check && this.containsKey(key)) {
+            if (log.isDebugEnabled())
+                log.debug("The Cache key already exists.");
+            return this;
+
+        } else if (check) {
+            this.removeCache(key);
+        }
+
+        while (true) {
+            if (write.tryLock()) {
+                try {
+                    itemsMap.put(super.realKey(key), new CacheElement(value, key, type));
+                    return this;
+                } finally {
+                    write.unlock();
+                }
+            }
+            Thread.yield();
+        }
+    }
 
     @Override
     public CacheElement getCache(String key) {
@@ -166,71 +180,80 @@ public class LruCache extends AbstractCache implements Cacheable {
 
         if (interval > 0 && (DateFormatUtils.getTimeMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
-            element = null;
             log.warn("Remove Cache key, The access time interval expires. key = {}", key);
-            return element;
+            element = null;
+            return null;
         }
 
-        write.lock();
-        try {
-            element.recordVisited();// 记录访问次数
-            element.recordTime(DateFormatUtils.getTimeMillis()); // 记录本次访问时间
-            return element;
-        } finally {
-            write.unlock();
-        }
-    }
-
-    @Override
-    public void removeCache(String key) {
-        write.lock();
-        try {
-            if (this.containsKey(key))
-                itemsMap.remove(super.realKey(key));
-        } finally {
-            write.unlock();
-        }
-    }
-
-
-    @Override
-    public void removeCacheContains(String searchStr) {
-        removeCacheContains(searchStr, null);
-    }
-
-    @Override
-    public void removeCacheContains(String searchStr, String[] excludes) {
-        removeCacheContains(searchStr, excludes, Cacheable.EQ_FULL);
-    }
-
-    @Override
-    public void removeCacheContains(String searchStr, String[] excludes, int exclidesRule) {
-        String[] keys = this.getKeys();
-        if (keys == null || keys.length == 0)
-            return;
-
-        write.lock();
-        try {
-            for (String key : keys) {
-                if (StringUtils.contains(key, searchStr)) {
-                    if (excludes != null && excludes.length > 0) {// Exclude
-                        boolean flag = false;
-                        for (String exKey : excludes) {
-                            flag = Cacheable.EQ_FULL == exclidesRule ? StringUtils.equals(key, exKey) : StringUtils.contains(key, exKey);
-                            if (flag)
-                                break;
-                        }
-
-                        if (flag)
-                            continue;
-                    }
-
-                    itemsMap.remove(key);
+        while (true) {
+            if (write.tryLock()) {
+                try {
+                    element.recordVisited();// 记录访问次数
+                    element.recordTime(DateFormatUtils.getTimeMillis()); // 记录本次访问时间
+                    return element;
+                } finally {
+                    write.unlock();
                 }
             }
-        } finally {
-            write.unlock();
+            Thread.yield();
         }
+    }
+
+    @Override
+    public CacheElement removeCache(String key) {
+        if (this.containsKey(key)) {
+            while (true) {
+                if (write.tryLock()) {
+                    try {
+                        return itemsMap.remove(super.realKey(key));
+                    } finally {
+                        write.unlock();
+                    }
+                }
+                Thread.yield();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<CacheElement> removeCacheContains(String searchStr) {
+        return removeCacheContains(searchStr, null);
+    }
+
+    @Override
+    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes) {
+        return removeCacheContains(searchStr, excludes, Cacheable.CompareType.EQ_FULL);
+    }
+
+    @Override
+    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType exclidesRule) {
+        if (this.isEmpty())
+            return Collections.EMPTY_LIST;
+
+        List<CacheElement> removeList = new ArrayList<>();
+        Set<Entry<String, CacheElement>> entries = this.getEntries();
+        for (Entry<String, CacheElement> entry : entries) {
+            if (StringUtils.contains(entry.getKey(), searchStr)) {
+                if (excludes != null && excludes.length > 0) {// Exclude
+                    boolean flag = false;
+                    for (String exKey : excludes) {
+                        flag = Cacheable.CompareType.EQ_FULL == exclidesRule ?
+                                StringUtils.equals(entry.getKey(), exKey) :
+                                StringUtils.contains(entry.getKey(), exKey);
+                        if (flag)
+                            break;
+                    }
+
+                    if (flag)
+                        continue;
+                }
+
+                removeList.add(this.removeCache(entry.getKey()));
+            }
+        }
+
+        return removeList;
     }
 
 
@@ -245,24 +268,17 @@ public class LruCache extends AbstractCache implements Cacheable {
         }
     }
 
+    @Override
     public boolean isEmpty() {
-        return this.itemsMap == null || this.itemsMap.isEmpty();
+        return Objects.isNull(this.itemsMap) || this.itemsMap.isEmpty();
     }
 
     @Override
-    public CacheElement[] getCaches() {
+    public Set<Entry<String, CacheElement>> getEntries() {
         if (this.isEmpty())
-            return null;
+            return Collections.EMPTY_SET;
 
-        return itemsMap.values().toArray(new CacheElement[]{});
-    }
-
-    @Override
-    public String[] getKeys() {
-        if (this.isEmpty())
-            return null;
-
-        return itemsMap.keySet().toArray(new String[]{});
+        return itemsMap.entrySet();
     }
 
     @Override
@@ -276,8 +292,8 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public void setCacheSize(int cacheSize) {
-        this.cacheSize = cacheSize;
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
     }
 
     public void setFreeMemory(long freeMemory) {

@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 利用独立线程执行循环处理工作服务类
  *
- * @author dongping
+ * @author dp
  */
 public abstract class LoopWorkerService extends AbstractService {
 

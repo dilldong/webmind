@@ -41,7 +41,7 @@ public final class Action {
 
     public String getRemoteIp() {
         String ip = this.request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
-        if (ip != null && ip.trim().length() > 0)
+        if (StringUtils.isNotEmpty(ip))
             return this.getRemoteIpFromForward(ip);
 
         ip = this.request.getHeader(PROXY_REMOTE_IP_ADDRESS[1]);
@@ -229,14 +229,18 @@ public final class Action {
     }
 
     public static void setActionContext(ServletContext context, HttpServletRequest request, HttpServletResponse response) {
-        Action ctx = new Action();
-        ctx.context = context;
-        ctx.request = request;
-        ctx.response = response;
-        actionContext.set(ctx);
+        Action action = new Action();
+        action.context = context;
+        action.request = request;
+        action.response = response;
+        actionContext.set(action);
     }
 
     public static void removeActionContext() {
+        Action action = getActionContext();
+        action.context = null;
+        action.request = null;
+        action.response = null;
         actionContext.remove();
     }
 }

@@ -7,7 +7,7 @@ import java.util.concurrent.BlockingQueue;
 /**
  * 轻量级的消息队列接口
  *
- * @author dongping
+ * @author dp
  * @date Jun 11, 2012
  */
 public interface QueueService extends Destroyable {
@@ -17,7 +17,7 @@ public interface QueueService extends Destroyable {
      *
      * @param message
      * @throws InterruptedException
-     * @author dongping
+     * @author dp
      */
     void producer(DelegateMessage message);
 
@@ -26,7 +26,7 @@ public interface QueueService extends Destroyable {
      *
      * @return
      * @throws InterruptedException
-     * @author dongping
+     * @author dp
      */
     DelegateMessage consumer() throws InterruptedException;
 

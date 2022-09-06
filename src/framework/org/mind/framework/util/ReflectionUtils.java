@@ -474,7 +474,7 @@ public abstract class ReflectionUtils {
      *
      * @param targetClass class to start looking at
      * @param mc          the callback to invoke for each method
-     * @see #doWithMethods(Class<?>, MethodCallback, MethodFilter)
+     * @see doWithMethods(Class<?>, MethodCallback, MethodFilter)
      */
     public static void doWithMethods(Class<?> targetClass, MethodCallback mc) throws IllegalArgumentException {
         doWithMethods(targetClass, mc, null);

@@ -1,7 +1,10 @@
 package org.mind.framework.dispatcher.support;
 
+import org.apache.commons.lang3.CharUtils;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Factory for all converters.
@@ -10,15 +13,16 @@ import java.util.Map;
  */
 public class ConverterFactory {
 
-    private Converter<Boolean> booleanConvert;
-    private Converter<Long> longConvert;
-    private Converter<Integer> intConvert;
-    private Converter<Float> floatConvert;
-    private Converter<Double> doubleConvert;
-    private Converter<Short> shortConvert;
-    private Converter<Byte> byteConvert;
+    private final Converter<Boolean> booleanConvert;
+    private final Converter<Long> longConvert;
+    private final Converter<Integer> intConvert;
+    private final Converter<Float> floatConvert;
+    private final Converter<Double> doubleConvert;
+    private final Converter<Short> shortConvert;
+    private final Converter<Byte> byteConvert;
+    private final Converter<Character> charConvert;
 
-    private Map<Class<?>, Converter<?>> mapHolder;
+    private final Map<Class<?>, Converter<?>> mapHolder;
 
     private ConverterFactory() {
 
@@ -71,7 +75,14 @@ public class ConverterFactory {
             }
         };
 
-        this.mapHolder = new HashMap<Class<?>, Converter<?>>(14);
+        this.charConvert = new Converter<Character>() {
+            @Override
+            public Character convert(String value) {
+                return CharUtils.toChar(value);
+            }
+        };
+
+        this.mapHolder = new HashMap<>(16);
         this.mapHolder.put(boolean.class, this.booleanConvert);
         this.mapHolder.put(Boolean.class, this.booleanConvert);
 
@@ -92,10 +103,13 @@ public class ConverterFactory {
 
         this.mapHolder.put(double.class, this.doubleConvert);
         this.mapHolder.put(Double.class, this.doubleConvert);
+
+        this.mapHolder.put(char.class, this.charConvert);
+        this.mapHolder.put(Character.class, this.charConvert);
     }
 
     public static class ConverterHolder {
-        private static ConverterFactory factory = new ConverterFactory();
+        private static final ConverterFactory factory = new ConverterFactory();
     }
 
     public static ConverterFactory getInstance() {
@@ -110,6 +124,7 @@ public class ConverterFactory {
 
     public Object convert(Class<?> clazz, String value) {
         Converter<?> convert = this.mapHolder.get(clazz);
+        Objects.requireNonNull(convert, "The parameter conversion type failed, Only supports basic data types.");
         return convert.convert(value);
     }
 }

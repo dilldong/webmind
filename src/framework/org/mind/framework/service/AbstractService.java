@@ -3,7 +3,7 @@ package org.mind.framework.service;
 /**
  * 服务模板类
  *
- * @author dongping
+ * @author dp
  */
 public abstract class AbstractService implements Service {
 

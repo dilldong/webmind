@@ -9,6 +9,12 @@
     <context:component-scan base-package="org.mind.framework"/>
     <context:property-placeholder location="classpath:frame.properties"/>
 
+    <bean id="cacheManager" class="org.mind.framework.cache.LruCache" factory-method="initCache" destroy-method="destroy">
+        <property name="capacity" value="100"/><!-- 活跃缓存条目大小 -->
+        <property name="freeMemory" value="0"/><!-- 当前JVM可用内存大小，0表示忽略该参数 -->
+        <property name="timeout" value="0"/><!-- 缓存条目超时设置，0表示忽略该参数 -->
+    </bean>
+
     <!-- Email service -->
     <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl"
           scope="singleton">

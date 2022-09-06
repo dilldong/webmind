@@ -1,5 +1,6 @@
 package org.mind.framework.renderer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ResponseUtils;
 
@@ -47,18 +48,17 @@ public class TextRender extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        StringBuilder sb = new StringBuilder(64);
         // json
         boolean isJson = JsonUtils.isJson(text);
+        String charset = StringUtils.isEmpty(characterEncoding) ? "UTF-8" : characterEncoding;
 
-        sb.append(contentType == null ? isJson ? "application/json" : "text/html" : contentType)
+        StringBuilder sb = new StringBuilder(64)
+                .append(StringUtils.isEmpty(contentType) ? (isJson ? MIME_JSON : MIME_TEXT_HTML) : contentType)
                 .append(";charset=")
-                .append(characterEncoding == null ? "UTF-8" : characterEncoding);
+                .append(charset);
 
         response.setContentType(sb.toString());
-        ResponseUtils.write(
-                response.getOutputStream(),
-                text.getBytes(characterEncoding == null ? "UTF-8" : characterEncoding));
+        ResponseUtils.write(response.getOutputStream(), text.getBytes(charset));
     }
 
 }

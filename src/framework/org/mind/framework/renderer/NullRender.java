@@ -5,6 +5,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * No need to render, goto directly
@@ -15,9 +16,9 @@ import java.io.IOException;
 public class NullRender extends Render {
 
     private String uri;
-    private NullRenderType type = NullRenderType.FORWARD;
+    private RenderType type = RenderType.FORWARD;
 
-    public enum NullRenderType {
+    public enum RenderType {
         REDIRECT,
         FORWARD
     }
@@ -26,7 +27,7 @@ public class NullRender extends Render {
         this.uri = uri;
     }
 
-    public NullRender(String uri, NullRenderType type) {
+    public NullRender(String uri, RenderType type) {
         this.uri = uri;
         this.type = type;
     }
@@ -38,13 +39,12 @@ public class NullRender extends Render {
                 if (uri.startsWith("/"))
                     uri = String.format("%s%s", request.getContextPath(), uri);
 
-                log.info("Redirect path: {}", uri);
-
+                log.debug("Redirect path: {}", uri);
                 response.sendRedirect(response.encodeRedirectURL(uri));
                 break;
 
             case FORWARD:
-                log.info("Forward path: {}", uri);
+                log.debug("Forward path: {}", uri);
 
                 // 	Unwrap the multipart request, if there is one.
 //	        if (request instanceof MultipartRequestWrapper) {
@@ -52,7 +52,7 @@ public class NullRender extends Render {
 //	        }
 
                 RequestDispatcher rd = request.getRequestDispatcher(uri);
-                if (rd == null) {
+                if (Objects.isNull(rd)) {
                     response.sendError(
                             HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                             String.format("Not forward path: %s", uri));

@@ -55,7 +55,7 @@ public class MD5Digest {
      *
      * @param input
      * @return
-     * @author dongping
+     * @author dp
      */
     public static String md5Crypt(String input) {
         return _MD5.getInstance().md5Encrypt(input);
@@ -65,7 +65,7 @@ public class MD5Digest {
      * 把一个byte数组转换成十六进制的ASCII表示，
      * java中byte的toString无法实现这一点
      *
-     * @author dongping
+     * @author dp
      */
     public static String b2Hex(byte[] bytes) {
         StringBuffer sb = new StringBuffer(bytes.length << 1);
@@ -79,7 +79,7 @@ public class MD5Digest {
      * 把一个byte类型的数转换成十六进制的ASCII表示，
      * java中byte的toString无法实现这一点
      *
-     * @author dongping
+     * @author dp
      */
     public static String b2Hex(byte b) {
         return _MD5.getInstance().byteHEX(b);
@@ -90,7 +90,7 @@ public class MD5Digest {
      *
      * @param bytes
      * @return String
-     * @author dongping
+     * @author dp
      */
     public static String b2iu(byte[] bytes) {
         StringBuffer sb = new StringBuffer(bytes.length * 3);
@@ -105,7 +105,7 @@ public class MD5Digest {
      *
      * @param b
      * @return long
-     * @author dongping
+     * @author dp
      */
     public static long b2iu(byte b) {
         return _MD5.getInstance().b2iu(b);

@@ -7,7 +7,7 @@ import java.io.StringWriter;
 /**
  * checked 异常基类，用于描述一种异常情况的发生，并且这种异常情况是需要捕获进行处理
  *
- * @author dongping
+ * @author dp
  */
 public class BaseException extends Exception {
 

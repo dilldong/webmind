@@ -1,5 +1,6 @@
 package org.mind.framework.renderer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.ResponseUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +36,7 @@ public class BinaryRender extends Render {
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType(
-                contentType == null ? "application/octet-stream" : contentType);
+                StringUtils.isEmpty(contentType) ? MIME_OCTET_STREAM : contentType);
 
         response.setContentLength(data.length);
         ResponseUtils.write(response.getOutputStream(), data);

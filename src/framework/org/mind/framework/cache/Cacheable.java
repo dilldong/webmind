@@ -1,21 +1,28 @@
 package org.mind.framework.cache;
 
+import org.mind.framework.service.Cloneable;
+
 import java.io.Serializable;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * 缓存能力接口
+ * Cache Capability Interface
  *
- * @author dongping
+ * @author dp
  * @date Nov 27, 2010
  */
 public interface Cacheable extends Serializable {
 
-    int EQ_FULL = 1;
-    int EQ_PART = 2;
+    enum CompareType {
+        EQ_FULL, EQ_PART
+    }
 
     /**
      * 指定新的LinkedHashMap<String, Object>
+     *
      * @param newMap
      * @return
      */
@@ -41,12 +48,14 @@ public interface Cacheable extends Serializable {
      */
     Cacheable addCache(String key, Object value, boolean check);
 
+    Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type);
+
     /**
      * 删除缓存
      *
      * @param key
      */
-    void removeCache(String key);
+    CacheElement removeCache(String key);
 
 
     /**
@@ -56,7 +65,7 @@ public interface Cacheable extends Serializable {
      * @return
      * @date July 8, 2021
      */
-    void removeCacheContains(String searchStr);
+    List<CacheElement> removeCacheContains(String searchStr);
 
     /**
      * 删除包含的searchStr缓存, 排除excludes的key值
@@ -64,16 +73,16 @@ public interface Cacheable extends Serializable {
      * @param searchStr
      * @param excludes  排除的key
      */
-    void removeCacheContains(String searchStr, String[] excludes);
+    List<CacheElement> removeCacheContains(String searchStr, String[] excludes);
 
     /**
      * 删除包含的searchStr缓存, 排除excludes的key值
      *
      * @param searchStr
      * @param excludes     排除的key
-     * @param excludesRule 排除对象的匹配规则, Cacheable.EQ_FULL 精确匹配, Cacheable.EQ_PART 包含匹配
+     * @param excludesRule 排除对象的匹配规则, CompareType.EQ_FULL 精确匹配, CompareType.EQ_PART 包含匹配
      */
-    void removeCacheContains(String searchStr, String[] excludes, int excludesRule);
+    List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule);
 
     /**
      * 获得缓存对象
@@ -111,24 +120,17 @@ public interface Cacheable extends Serializable {
     boolean containsKey(String key);
 
     /**
-     * 获得所有的缓存对象
-     *
-     * @return
-     */
-    CacheElement[] getCaches();
-
-    /**
      * 获得所有缓存对象的名称
      *
      * @return
      * @date July 8, 2021
      */
-    String[] getKeys();
+    Set<Map.Entry<String, CacheElement>> getEntries();
 
     /**
-     * 指定有效的缓存数量
+     * 指定有效的缓存容量
      *
-     * @param size
+     * @param capacity
      */
-    void setCacheSize(int size);
+    void setCapacity(int capacity);
 }

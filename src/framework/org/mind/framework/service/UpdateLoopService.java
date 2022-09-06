@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * @author dongping
+ * @author dp
  */
 public class UpdateLoopService extends LoopWorkerService {
 

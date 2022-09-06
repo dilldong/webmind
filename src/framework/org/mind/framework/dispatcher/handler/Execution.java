@@ -23,7 +23,7 @@ public class Execution {
     // Http request method
     private RequestMethod[] requestMethods;
 
-    private final RequestMethod[] noneDefaultMethods = {RequestMethod.GET, RequestMethod.POST};
+    private final static RequestMethod[] nonMethods = {RequestMethod.GET, RequestMethod.POST};
 
     // Method's arguments types
     private final Class<?>[] parameterTypes;
@@ -47,13 +47,11 @@ public class Execution {
     }
 
     public Object execute() {
-        return
-                ReflectionUtils.invokeMethod(method, actionInstance, arguments);
+        return ReflectionUtils.invokeMethod(method, actionInstance, arguments);
     }
 
     public Object execute(Object[] arguments) {
-        return
-                ReflectionUtils.invokeMethod(method, actionInstance, arguments);
+        return ReflectionUtils.invokeMethod(method, actionInstance, arguments);
     }
 
     protected Object getActionInstance() {
@@ -99,9 +97,9 @@ public class Execution {
         return false;
     }
 
-    public String requestMethodsString() {
+    public String methodString() {
         return requestMethods == null || requestMethods.length == 0 ?
-                Arrays.toString(noneDefaultMethods) :
+                Arrays.toString(nonMethods) :
                 Arrays.toString(requestMethods);
     }
 }

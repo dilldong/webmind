@@ -11,7 +11,7 @@ import java.util.Date;
 /**
  * 对日期、时间格式化工具类
  *
- * @author dongping
+ * @author dp
  */
 public class DateFormatUtils {
 
@@ -21,7 +21,7 @@ public class DateFormatUtils {
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
      *
      * @return
-     * @author dongping
+     * @author dp
      */
     public static long getTimeMillis() {
         return System.currentTimeMillis();
@@ -34,7 +34,7 @@ public class DateFormatUtils {
      * @param date
      * @param format
      * @return
-     * @author dongping
+     * @author dp
      */
     public static String format(Date date, String format) {
         if (date == null)
@@ -52,7 +52,7 @@ public class DateFormatUtils {
      *
      * @param date
      * @return
-     * @author dongping
+     * @author dp
      */
     public static String format(Date date) {
         return format(date, null);
