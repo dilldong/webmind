@@ -1,5 +1,6 @@
 package org.mind.framework.util;
 
+import lombok.SneakyThrows;
 import org.mind.framework.annotation.Mapping;
 
 import java.util.regex.Matcher;
@@ -13,6 +14,8 @@ public class MatcherUtils {
     public static final int DEFAULT_EQ = Pattern.CANON_EQ;
 
     public static final String URI_PARAM_MATCH = "(\\$\\{)[A-Za-z_]+\\}";
+
+    public static final String PARAM_MATCH = "(\\#\\{)[A-Za-z_.]+\\}";
 
     /**
      * 忽略大小写模式
@@ -66,7 +69,7 @@ public class MatcherUtils {
         StringBuilder sb = new StringBuilder();
         sb.append("^");
         sb.append(
-                uri.replaceAll("(\\$\\{)[A-Za-z_]+\\}", "([^\\/]+)")
+                uri.replaceAll(URI_PARAM_MATCH, "([^\\/]+)")
                         .replaceAll("\\*", "\\\\S*")
                         .replaceAll("\\/", "\\\\/"));
         sb.append("$");
@@ -74,13 +77,25 @@ public class MatcherUtils {
         return sb.toString();
     }
 
-//    public static void main(String[] args) {
+    public static String convertParam(String uri) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("^");
+        sb.append(
+                uri.replaceAll(PARAM_MATCH, "([^\\/]+)")
+                        .replaceAll("\\*", "\\\\S*")
+                        .replaceAll("\\/", "\\\\/"));
+        sb.append("$");
+
+        return sb.toString();
+    }
+
+    @SneakyThrows
+    public static void main(String[] args) {
 //        String v = "/user/${id}";
 //
 //        String regex = convertURI(v);
 //        System.out.println(regex);
-//
-//        int count = MatcherUtils.checkCount(v, "(\\$\\{)[A-Za-z_]+\\}");
+//        int count = MatcherUtils.checkCount(v, URI_PARAM_MATCH);
 //        System.out.println("count:" + count);
 //
 //        String uri = "/user/1332?id=13&path=http://www.c.cs/user/idja/tt";
@@ -92,7 +107,6 @@ public class MatcherUtils {
 //
 //        f = MatcherUtils.matcher("TXT", res, IGNORECASE_EQ).matches();
 //        System.out.println("=====" + f);
-//
-//    }
+    }
 
 }

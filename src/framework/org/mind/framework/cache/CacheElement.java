@@ -66,8 +66,8 @@ public class CacheElement {
         return visited;
     }
 
-    public void setVisited(int visited) {
-        this.visited = visited;
+    public String getKey() {
+        return key;
     }
 
     public Object getValue() {
@@ -97,13 +97,7 @@ public class CacheElement {
                 return data;
 
             Map copierMap = new HashMap(map.size());
-            map.forEach((k, v) -> {
-                if (Cloneable.class.isAssignableFrom(v.getClass())) {
-                    Object obj = ((Cloneable) v).clone();
-                    copierMap.put(k, obj);
-                } else
-                    ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
-            });
+            this.push(copierMap, map);
             return copierMap;
         } else if (Cloneable.class.isAssignableFrom(clazz)) {
             return ((Cloneable) data).clone();
@@ -126,6 +120,16 @@ public class CacheElement {
             if (Cloneable.class.isAssignableFrom(item.getClass())) {
                 Object obj = ((Cloneable) item).clone();
                 copier.add(obj);
+            } else
+                ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
+        });
+    }
+
+    private void push(Map copier, Map source) {
+        source.forEach((k, v) -> {
+            if (Cloneable.class.isAssignableFrom(v.getClass())) {
+                Object obj = ((Cloneable) v).clone();
+                copier.put(k, obj);
             } else
                 ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
         });

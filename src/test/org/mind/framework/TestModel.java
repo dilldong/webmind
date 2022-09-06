@@ -6,12 +6,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.RandomCodeUtil;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,34 +25,24 @@ import java.util.List;
  * @auther Marcus
  */
 @Slf4j
-//@RunWith(SpringJUnit4ClassRunner.class)
-//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml", "classpath:spring/mybatis-plus.xml"})
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
 public class TestModel {
 
-    @Test
-    public void test01() {
-        System.out.println(RandomCodeUtil.getRandomString(10, false, true));
-    }
+    @Resource
+    private TestService testService;
 
     @Test
-    public void test02() {
-        Cacheable cacheable = LruCache.initCache();
-        String key = "1232131";
-        A a = A.builder().build();
-        cacheable.addCache(key, a, true);
-        System.out.println("new: " + a);
+    public void test04() {
+        List<Object> list = testService.get("first", 832834L);
+        list.forEach(obj -> System.out.println(obj));
 
-        CacheElement element = cacheable.getCache(key);
-        A a1 = (A) element.getValue(true);
-        a1.setField01("这是一个clone后的setting");
-        System.out.println("clone Set: " + a1);
+        testService.get("second", 23784234).forEach(obj -> System.out.println(obj));
+        testService.get("first", 832834L).forEach(obj -> System.out.println(obj));
 
-        System.out.println("clone Get: " + element.getValue());
-
-        A a2 = (A) element.getValue();
-        a2.setField01("not clone后的setting");
-
-        System.out.println("再次Get: " + element.getValue());
+        System.out.println(testService.byCache(32342));
+        System.out.println(testService.byCache(32342));
+        System.out.println(testService.getClass().getName());
     }
 
     @Test
@@ -77,6 +71,32 @@ public class TestModel {
         list2.get(1).setField01("not clone后的setting");
 
         System.out.println("再次Get: " + Arrays.toString(((List<A>) element.getValue()).toArray()));
+    }
+
+    @Test
+    public void test02() {
+        Cacheable cacheable = LruCache.initCache();
+        String key = "1232131";
+        A a = A.builder().build();
+        cacheable.addCache(key, a, true);
+        System.out.println("new: " + a);
+
+        CacheElement element = cacheable.getCache(key);
+        A a1 = (A) element.getValue(true);
+        a1.setField01("这是一个clone后的setting");
+        System.out.println("clone Set: " + a1);
+
+        System.out.println("clone Get: " + element.getValue());
+
+        A a2 = (A) element.getValue();
+        a2.setField01("not clone后的setting");
+
+        System.out.println("再次Get: " + element.getValue());
+    }
+
+    @Test
+    public void test01() {
+        System.out.println(RandomCodeUtil.getRandomString(10, false, true));
     }
 }
 

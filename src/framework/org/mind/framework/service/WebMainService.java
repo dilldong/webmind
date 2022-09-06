@@ -3,6 +3,8 @@ package org.mind.framework.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
  * 提供WEB应用服务，允许使用多个相同Service对象构建服务
  *
@@ -20,14 +22,15 @@ public class WebMainService extends AbstractService {
 
     @SuppressWarnings("Duplicates")
     protected void startChildServices() {
-        if (childServices != null) {
+        if (Objects.nonNull(childServices)) {
             for (final Service serv : childServices) {
-                if (serv != null) {
+                if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
-                        logger.info("Service [{}@{}] to starting ....",
-                                serv.getClass().getName(),
-                                Integer.toHexString(serv.hashCode()));
-
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Service [{}@{}] to starting ....",
+                                    serv.getClass().getName(),
+                                    Integer.toHexString(serv.hashCode()));
+                        }
                         serv.start();
                     });
                     t.start();
@@ -37,14 +40,15 @@ public class WebMainService extends AbstractService {
     }
 
     protected void stopChildServices() {
-        if (childServices != null) {
+        if (Objects.nonNull(childServices)) {
             for (final Service serv : childServices) {
-                if (serv != null) {
+                if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
-                        logger.info("Service [{}@{}] to stoping ....",
-                                serv.getClass().getName(),
-                                Integer.toHexString(serv.hashCode()));
-
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Service [{}@{}] to stoping ....",
+                                    serv.getClass().getName(),
+                                    Integer.toHexString(serv.hashCode()));
+                        }
                         serv.stop();
                     });
                     t.start();
