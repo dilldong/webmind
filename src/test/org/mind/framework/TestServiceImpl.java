@@ -15,12 +15,13 @@ import java.util.List;
  * @date 2022/9/5
  */
 @Slf4j
-@Service
 @EnableCache
-public class TestServiceComponent {
+@Service("testService")
+public class TestServiceImpl implements TestService {
 
     private static final String CACHE_KEY = "user_by_id";
 
+    @Override
     @Cachein(cacheable = "cacheManager", prefix = CACHE_KEY, suffix = "#{userId}_#{vars}", strategy = Cloneable.CloneType.ORIGINAL)
     public List<Object> get(String vars, long userId){
         log.debug("--------------执行方法: get");
@@ -28,6 +29,7 @@ public class TestServiceComponent {
     }
 
 
+    @Override
     @Cachein(cacheable = "cacheManager", suffix = "#{userId}")
     public String byCache(long userId){
         log.debug("--------------执行方法: byCache");

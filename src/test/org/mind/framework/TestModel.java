@@ -32,6 +32,9 @@ public class TestModel {
     @Resource
     private TestService testService;
 
+    @Resource
+    private TestServiceComponent testServiceComponent;
+
     @Test
     public void test04() {
         List<Object> list = testService.get("first", 832834L);
@@ -43,6 +46,10 @@ public class TestModel {
         System.out.println(testService.byCache(32342));
         System.out.println(testService.byCache(32342));
         System.out.println(testService.getClass().getName());
+
+        System.out.println("testServiceComponent: ");
+        System.out.println(testServiceComponent.byCache(22222));
+        System.out.println(testServiceComponent.getClass().getName());
     }
 
     @Test
