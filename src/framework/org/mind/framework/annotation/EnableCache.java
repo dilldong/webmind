@@ -25,10 +25,10 @@ import java.lang.annotation.Target;
 public @interface EnableCache {
     /**
      * Default force cglib proxy.
-     * JDK dynamic proxy: when the proxyTargetClass is false and the proxy target implements the interface.
-     * CGLIB dynamic proxy: when the proxy target doesn't implement the interface, whether proxyTargetClass is true or false.
+     * <br/>1.JDK dynamic proxy: when the proxyTargetClass is false and the proxy target implements the interface.
+     * <br/>2.CGLIB dynamic proxy: when the proxy target doesn't implement the interface, whether proxyTargetClass is true or false.
      * @return
      */
-    boolean proxyTargetClass() default true;
+    boolean proxyTargetClass() default false;
 
 }
