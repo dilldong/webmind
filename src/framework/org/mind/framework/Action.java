@@ -238,11 +238,6 @@ public final class Action {
     }
 
     public static void removeActionContext() {
-        Action action = getActionContext();
-        action.context = null;
-        action.request = null;
-        action.response = null;
-        action = null;
         actionContext.remove();
     }
 }
