@@ -68,7 +68,7 @@ public class TestModel {
         System.out.println("new: " + Arrays.toString(list.toArray()));
 
         CacheElement element = cacheable.getCache(key);
-        List<A> list1 = (List<A>) element.getValue(true);
+        List<A> list1 = (List<A>) element.getValue(Cloneable.CloneType.CLONE);
         list1.get(0).setField01("这是一个clone后的setting");
         System.out.println("clone Set: " + Arrays.toString(list1.toArray()));
 
@@ -89,7 +89,7 @@ public class TestModel {
         System.out.println("new: " + a);
 
         CacheElement element = cacheable.getCache(key);
-        A a1 = (A) element.getValue(true);
+        A a1 = (A) element.getValue(Cloneable.CloneType.CLONE);
         a1.setField01("这是一个clone后的setting");
         System.out.println("clone Set: " + a1);
 
