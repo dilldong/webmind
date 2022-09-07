@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -107,7 +108,7 @@ public final class Action {
      */
     public String getPostString() throws IOException {
         byte[] data = getPostBytes();
-        if (data != null) {
+        if (Objects.nonNull(data)) {
             String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
             String body = new String(data, encoding);
             /*
@@ -241,6 +242,7 @@ public final class Action {
         action.context = null;
         action.request = null;
         action.response = null;
+        action = null;
         actionContext.remove();
     }
 }
