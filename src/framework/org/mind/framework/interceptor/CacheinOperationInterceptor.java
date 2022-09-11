@@ -48,12 +48,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             if (log.isDebugEnabled())
                 log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
 
-            switch (cloneType) {
-                case CLONE:
-                    return element.getValue(true);
-                default:
-                    return element.getValue();
-            }
+            return element.getValue(cloneType);
         }
 
         Object result = this.callback(invocation);

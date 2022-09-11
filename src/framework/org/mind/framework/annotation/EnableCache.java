@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
 @Import({EanbleCacheConfiguration.class})
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@EnableAspectJAutoProxy(proxyTargetClass = false)
+@EnableAspectJAutoProxy
 @Documented
 public @interface EnableCache {
     /**
@@ -30,5 +30,7 @@ public @interface EnableCache {
      * @return
      */
     boolean proxyTargetClass() default false;
+
+    boolean exposeProxy() default false;
 
 }

@@ -25,7 +25,7 @@ public class HttpResponse<T> {
     protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
 
     protected int responseCode;
-    protected String responseAsString = null;
+    protected String responseAsString;
     protected InputStream inStream;
     protected HttpURLConnection con;
     protected boolean streamConsumed = false;

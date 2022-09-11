@@ -1,11 +1,11 @@
 package org.mind.framework.interceptor;
 
+import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
-import org.mind.framework.dispatcher.support.ConverterFactory;
 import org.springframework.aop.IntroductionInterceptor;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -30,7 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor, BeanFactoryAware {
     private final Map<Object, Map<Method, MethodInterceptor>> delegates = new ConcurrentReferenceHashMap<>();
     private BeanFactory beanFactory;
-    private ConverterFactory converter;
+    @Setter
+    private Cacheable defaultCache;
 
     @Override
     public boolean implementsInterface(Class<?> clazz) {
@@ -40,20 +41,20 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
-        this.converter = ConverterFactory.getInstance();
     }
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
         Object target = invocation.getThis();
         Map<Method, MethodInterceptor> cachedMethods = this.delegates.get(target);
-        if (Objects.isNull(cachedMethods))
+        if (Objects.isNull(cachedMethods)) {
             cachedMethods = new ConcurrentHashMap<>();
+            this.delegates.putIfAbsent(target, cachedMethods);
+        }
 
         Method method = invocation.getMethod();
         MethodInterceptor delegate = cachedMethods.get(method);
         if (Objects.isNull(delegate)) {
-            MethodInterceptor interceptor = null;
             Cachein cachein = AnnotatedElementUtils.findMergedAnnotation(method, Cachein.class);
 
             if (Objects.isNull(cachein)) {
@@ -65,24 +66,17 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
             }
 
             if (Objects.nonNull(cachein)) {
-                interceptor = this.getDefaultInterceptor(invocation.getArguments(), method, cachein);
+                delegate = this.getDefaultInterceptor(invocation.getArguments(), method, cachein);
 
                 // Customizable implementation of interceptor
 //                if (StringUtils.isNotEmpty(cachein.interceptor()))
-//                    interceptor = this.beanFactory.getBean(cachein.interceptor(), MethodInterceptor.class);
-            }
+//                    delegate = this.beanFactory.getBean(cachein.interceptor(), MethodInterceptor.class);
 
-            if (Objects.nonNull(interceptor)) {
-                cachedMethods.putIfAbsent(method, interceptor);
-                delegate = cachedMethods.get(method);
-                this.delegates.putIfAbsent(target, cachedMethods);
+                if (Objects.nonNull(delegate))
+                    cachedMethods.putIfAbsent(method, delegate);
             }
         }
-
-        if (Objects.nonNull(delegate))
-            return delegate.invoke(invocation);
-
-        return invocation.proceed();
+        return Objects.nonNull(delegate) ? delegate.invoke(invocation) : invocation.proceed();
     }
 
     private <V extends Annotation> V findAnnotationOnTarget(Object target, Method method, Class<V> annotation) {
@@ -103,7 +97,11 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
     }
 
     private MethodInterceptor getDefaultInterceptor(Object[] params, Method method, Cachein cachein) {
-        Cacheable cacheable = this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
+        Cacheable cacheable = defaultCache;
+
+        if (StringUtils.isNotEmpty(cachein.cacheable()))
+            cacheable = this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
+
         CacheinOperationInterceptor opInterceptor =
                 new CacheinOperationInterceptor(cacheable, cachein.strategy(), cachein.expire());
 

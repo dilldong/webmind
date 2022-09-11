@@ -309,7 +309,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        if (Objects.isNull(null))
+        if (Objects.isNull(result))
             return;
 
         if (result instanceof Render) {

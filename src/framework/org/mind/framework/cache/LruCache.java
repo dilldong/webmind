@@ -172,7 +172,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         CacheElement element;
         try {
             element = itemsMap.get(super.realKey(key));
-            if (element == null)
+            if (Objects.isNull(element))
                 return null;
         } finally {
             read.unlock();

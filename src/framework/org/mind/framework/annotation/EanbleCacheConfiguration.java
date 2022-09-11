@@ -1,6 +1,7 @@
 package org.mind.framework.annotation;
 
 import org.aopalliance.aop.Advice;
+import org.mind.framework.cache.Cacheable;
 import org.mind.framework.interceptor.CacheinAnnotationAwareInterceptor;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.aop.ClassFilter;
@@ -44,6 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
     private Pointcut pointcut;
     private Advice advice;
+    private Cacheable cacheable;
     private BeanFactory beanFactory;
 
     @Override
@@ -77,6 +79,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        this.cacheable = this.findBean(Cacheable.class);
         this.pointcut = buildPointcut(Cachein.class);
         this.advice = buildAdvice();
         if (this.advice instanceof BeanFactoryAware)
@@ -128,6 +131,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
 
     private CacheinAnnotationAwareInterceptor buildAdvice() {
         CacheinAnnotationAwareInterceptor interceptor = new CacheinAnnotationAwareInterceptor();
+        interceptor.setDefaultCache(cacheable);
         return interceptor;
     }
 
