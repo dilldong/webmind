@@ -5,10 +5,15 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
- * @author Ping
- * @version 1.0
+ * BigDecimal tools
+ * <br/> add, subtract, multiply, divide
+ * <br/> format, formatCurrency, formatNumberSymbol, formatPercent
+ *
+ * @author dp
+ * @version 1.1
  * @date 2021-05-21
  */
 public class CalculateUtils {
@@ -24,22 +29,35 @@ public class CalculateUtils {
     public static String format(String number, int mode, int scale) {
         String afterPart = StringUtils.substringAfter(number, ".");
         if (afterPart.length() > scale)
-            return new BigDecimal(number).setScale(scale, mode).stripTrailingZeros().toPlainString();
+            return format(new BigDecimal(number), mode, scale);
 
         return number;
     }
 
+    public static String format(BigDecimal number, int mode, int scale) {
+        return number.setScale(scale, mode).stripTrailingZeros().toPlainString();
+    }
+
     public static String add(String... augends) {
-        final int size = augends.length;
-        if (augends == null || size == 0)
+        if (Objects.isNull(augends) || augends.length == 0)
             return "0";
 
         BigDecimal total = BigDecimal.ZERO;
-        for (int i = 0; i < size; i++) {
-            total = add(total, new BigDecimal(augends[i]));
-        }
+        for (String augend : augends)
+            total = add(total, new BigDecimal(augend));
 
         return total.stripTrailingZeros().toPlainString();
+    }
+
+    public static BigDecimal add(BigDecimal... augends) {
+        if (Objects.isNull(augends) || augends.length == 0)
+            return BigDecimal.ZERO;
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (BigDecimal augend : augends)
+            total = add(total, augend);
+
+        return total;
     }
 
 
@@ -110,20 +128,34 @@ public class CalculateUtils {
         return multiply(multiplicand, multiplier, 8);
     }
 
+    public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier) {
+        return multiply(multiplicand, multiplier, 8);
+    }
+
     public static BigDecimal multiply(String multiplicand, String multiplier, int scale) {
         return multiply(multiplicand, multiplier, BigDecimal.ROUND_HALF_UP, scale);
     }
 
+    public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier, int scale) {
+        return multiply(multiplicand, multiplier, BigDecimal.ROUND_HALF_UP, scale);
+    }
+
     public static BigDecimal multiply(String multiplicand, String multiplier, int mode, int scale) {
-        BigDecimal multidDecimal = new BigDecimal(multiplicand);
-        BigDecimal multirDecimal = new BigDecimal(multiplier);
-        if (multidDecimal.compareTo(BigDecimal.ZERO) == 0 || multirDecimal.compareTo(BigDecimal.ZERO) == 0)
+        return multiply(new BigDecimal(multiplicand), new BigDecimal(multiplier), scale, mode);
+    }
+
+    public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier, int mode, int scale) {
+        if (multiplicand.compareTo(BigDecimal.ZERO) == 0 || multiplier.compareTo(BigDecimal.ZERO) == 0)
             return BigDecimal.ZERO;
 
-        return multidDecimal.multiply(multirDecimal).setScale(scale, mode);
+        return multiplicand.multiply(multiplier).setScale(scale, mode);
     }
 
     public static BigDecimal divide(String dividend, String divisor) {
+        return divide(dividend, divisor, 8);
+    }
+
+    public static BigDecimal divide(BigDecimal dividend, BigDecimal divisor) {
         return divide(dividend, divisor, 8);
     }
 
@@ -131,14 +163,19 @@ public class CalculateUtils {
         return divide(dividend, divisor, BigDecimal.ROUND_HALF_UP, scale);
     }
 
+    public static BigDecimal divide(BigDecimal dividend, BigDecimal divisor, int scale) {
+        return divide(dividend, divisor, BigDecimal.ROUND_HALF_UP, scale);
+    }
+
     public static BigDecimal divide(String dividend, String divisor, int mode, int scale) {
-        BigDecimal dividendDecimal = new BigDecimal(dividend);
-        BigDecimal divisorDecimal = new BigDecimal(divisor);
-        if (divisorDecimal.compareTo(BigDecimal.ZERO) == 0)
+        return divide(new BigDecimal(dividend), new BigDecimal(divisor), mode, scale);
+    }
+
+    public static BigDecimal divide(BigDecimal dividend, BigDecimal divisor, int mode, int scale) {
+        if (divisor.compareTo(BigDecimal.ZERO) == 0)
             return BigDecimal.ZERO;
 
-        BigDecimal result = dividendDecimal.divide(divisorDecimal, scale, mode);
-        return result;
+        return dividend.divide(divisor, scale, mode);
     }
 
     public static String formatCurrency(String amount) {
@@ -188,12 +225,17 @@ public class CalculateUtils {
     }
 
     public static String formatCurrency(String amount, Locale locale, boolean symbol) {
-        // 建立货币格式化引用
         return formatCurrency(new BigDecimal(amount), locale, symbol);
     }
 
+    /**
+     * Create currency formatting
+     * @param amount
+     * @param locale
+     * @param symbol
+     * @return
+     */
     public static String formatCurrency(BigDecimal amount, Locale locale, boolean symbol) {
-        // 建立货币格式化引用
         NumberFormat currency = NumberFormat.getCurrencyInstance(locale);
         String result = currency.format(amount);
         if (symbol)
@@ -233,10 +275,17 @@ public class CalculateUtils {
         return formatPercent(new BigDecimal(amount), scale, locale, symbol);
     }
 
+    /**
+     * Create percent-formatted
+     * @param amount
+     * @param scale
+     * @param locale
+     * @param symbol
+     * @return
+     */
     public static String formatPercent(BigDecimal amount, int scale, Locale locale, boolean symbol) {
-        // 建立百分比格式化引用
         NumberFormat percent = NumberFormat.getPercentInstance(locale);
-        percent.setMaximumFractionDigits(scale); //百分比小数点最多位数
+        percent.setMaximumFractionDigits(scale); //Maximum decimals
         String result = percent.format(amount);
         return symbol ? result : StringUtils.substringBeforeLast(result, "%");
     }
