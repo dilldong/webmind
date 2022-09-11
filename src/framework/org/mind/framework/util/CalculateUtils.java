@@ -119,17 +119,26 @@ public class CalculateUtils {
         return result.setScale(scale, mode);
     }
 
-    public static String multiply(String... augends) {
-        final int size = augends.length;
-        if (augends == null || size == 0)
+    public static String multiply(String... multiplicands) {
+        if (Objects.isNull(multiplicands) || multiplicands.length == 0)
             return "0";
 
-        BigDecimal total = BigDecimal.ONE;
-        for (int i = 0; i < size; i++) {
-            total = multiply(total.toPlainString(), augends[i]);
-        }
+        BigDecimal total = BigDecimal.ZERO;
+        for (String multiplicand : multiplicands)
+            total = multiply(total, new BigDecimal(multiplicand));
 
         return total.stripTrailingZeros().toPlainString();
+    }
+
+    public static BigDecimal multiply(BigDecimal... multiplicands) {
+        if (Objects.isNull(multiplicands) || multiplicands.length == 0)
+            return BigDecimal.ZERO;
+
+        BigDecimal total = BigDecimal.ONE;
+        for (BigDecimal multiplicand : multiplicands)
+            total = multiply(total, multiplicand);
+
+        return total;
     }
 
     public static BigDecimal multiply(String multiplicand, String multiplier) {
