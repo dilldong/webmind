@@ -6,14 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.service.Cloneable;
+import org.mind.framework.util.CalculateUtils;
 import org.mind.framework.util.RandomCodeUtil;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -25,8 +23,8 @@ import java.util.List;
  * @auther Marcus
  */
 @Slf4j
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+//@RunWith(SpringJUnit4ClassRunner.class)
+//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
 public class TestModel {
 
     @Resource
@@ -34,6 +32,11 @@ public class TestModel {
 
     @Resource
     private TestServiceComponent testServiceComponent;
+
+    @Test
+    public void test05(){
+        System.out.println(CalculateUtils.formatNumberSymbol("1002"));
+    }
 
     @Test
     public void test04() {

@@ -22,7 +22,15 @@ public class CalculateUtils {
         return format(number, BigDecimal.ROUND_HALF_UP, 2);
     }
 
+    public static String format(BigDecimal number) {
+        return format(number, BigDecimal.ROUND_HALF_UP, 2);
+    }
+
     public static String format(String number, int scale) {
+        return format(number, BigDecimal.ROUND_HALF_UP, scale);
+    }
+
+    public static String format(BigDecimal number, int scale) {
         return format(number, BigDecimal.ROUND_HALF_UP, scale);
     }
 
@@ -200,7 +208,10 @@ public class CalculateUtils {
                 index++;
             }
 
-            return str.append(newChars).append(".").append(StringUtils.substringAfter(amount, ".")).toString();
+            String decimals = StringUtils.substringAfter(amount, ".");
+            return StringUtils.isEmpty(decimals) ?
+                    str.append(newChars).toString() :
+                    str.append(newChars).append(".").append(decimals).toString();
         }
 
 //        DecimalFormat formatter = (DecimalFormat) NumberFormat.getNumberInstance(Locale.getDefault());
@@ -230,6 +241,7 @@ public class CalculateUtils {
 
     /**
      * Create currency formatting
+     *
      * @param amount
      * @param locale
      * @param symbol
@@ -277,6 +289,7 @@ public class CalculateUtils {
 
     /**
      * Create percent-formatted
+     *
      * @param amount
      * @param scale
      * @param locale
