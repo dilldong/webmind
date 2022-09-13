@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>4.2.1</version>
+    <version>4.2.2</version>
 
     <licenses>
         <license>
@@ -50,6 +50,7 @@
 
     <properties>
         <spring.version>5.2.22.RELEASE</spring.version>
+        <retrofit2.version>2.9.0</retrofit2.version>
         <tomcat.version>9.0.59</tomcat.version>
     </properties>
 
@@ -237,7 +238,7 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
             <version>1.9.9.1</version>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -254,6 +255,20 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
+        </dependency>
+
+        <!--Okhttp3 retrofit2-->
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>retrofit</artifactId>
+            <version>${retrofit2.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>converter-gson</artifactId>
+            <version>${retrofit2.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!--tomcat-embed-->

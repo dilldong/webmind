@@ -1,4 +1,4 @@
-package org.mind.framework.util;
+package org.mind.framework.http.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.RequestConfig;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 @Slf4j
-public class HttpClientUtlis {
+public class HttpClientFactory {
     private static final CloseableHttpClient httpClient;
     private static HttpClientBuilder httpClientBuilder;
 
