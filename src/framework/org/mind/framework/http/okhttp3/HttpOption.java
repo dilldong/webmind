@@ -1,7 +1,5 @@
 package org.mind.framework.http.okhttp3;
 
-import okhttp3.Interceptor;
-
 public interface HttpOption {
 
   String getApiKey();
@@ -16,5 +14,5 @@ public interface HttpOption {
 
   boolean isSignature();
 
-  Interceptor getInterceptor();
+  AbstractRequestInterceptor getInterceptor();
 }

@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import okhttp3.Interceptor;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
@@ -33,7 +32,7 @@ public class DefaultHttpOption implements HttpOption {
     private boolean websocketAutoConnect = true;
 
     // Need extend: AbstractRequestInterceptor
-    private Interceptor defaultInterceptor;
+    private AbstractRequestInterceptor defaultInterceptor;
 
     @Override
     public String getApiKey() {
@@ -66,7 +65,7 @@ public class DefaultHttpOption implements HttpOption {
     }
 
     @Override
-    public Interceptor getInterceptor() {
+    public AbstractRequestInterceptor getInterceptor() {
         return this.defaultInterceptor;
     }
 }
