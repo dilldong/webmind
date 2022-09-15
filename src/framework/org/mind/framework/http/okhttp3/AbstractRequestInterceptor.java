@@ -18,6 +18,10 @@ import java.util.Objects;
 public abstract class AbstractRequestInterceptor implements Interceptor {
     protected HttpOption option;
 
+    public AbstractRequestInterceptor(){
+
+    }
+
     public AbstractRequestInterceptor(HttpOption option) {
         this.option = option;
     }
