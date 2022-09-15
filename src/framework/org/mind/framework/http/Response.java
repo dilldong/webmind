@@ -40,7 +40,7 @@ public class Response<T> {
     public Response(int code, String msg) {
         this.code = code;
         this.msg = msg;
-        this.status = this.code == HttpServletResponse.SC_OK ? SUCCESS : FAILED;
+        this.status = isSuccessful() ? SUCCESS : FAILED;
     }
 
     public Response(int code, String msg, T result) {
@@ -61,6 +61,10 @@ public class Response<T> {
     public Response<T> setMsg(String msg) {
         this.msg = msg;
         return this;
+    }
+
+    public boolean isSuccessful() {
+        return this.code == HttpServletResponse.SC_OK;
     }
 
     /**
