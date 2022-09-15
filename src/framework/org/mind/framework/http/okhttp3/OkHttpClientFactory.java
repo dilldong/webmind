@@ -92,12 +92,11 @@ public class OkHttpClientFactory {
     public static <V> V execute(Call<V> call) {
         try {
             Response<V> response = call.execute();
-            if (response.isSuccessful()) {
+            if (response.isSuccessful())
                 return response.body();
-            } else {
-                RequestError apiError = getError(response);
-                throw new RequestException(apiError);
-            }
+
+            RequestError apiError = getError(response);
+            throw new RequestException(apiError);
         } catch (IOException e) {
             throw new RequestException(e);
         }
