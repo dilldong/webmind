@@ -83,6 +83,9 @@ public class Response<T> {
      * @return
      */
     public String toJson(boolean excludesFieldsWithoutExpose) {
+        if (StringUtils.isEmpty(status))
+            this.status = isSuccessful() ? SUCCESS : FAILED;
+
         return
                 JsonUtils.toJson(
                         this,
@@ -122,6 +125,9 @@ public class Response<T> {
      * @return
      */
     public String toJson(boolean excludesFieldsWithoutExpose, final boolean isShowField, final String... fieldName) {
+        if (StringUtils.isEmpty(status))
+            this.status = isSuccessful() ? SUCCESS : FAILED;
+
         // 过滤json中的children字段
         GsonBuilder gsonBuilder = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
             final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
