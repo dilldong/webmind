@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import okhttp3.Interceptor;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
@@ -30,6 +31,9 @@ public class DefaultHttpOption implements HttpOption {
 
     @Builder.Default
     private boolean websocketAutoConnect = true;
+
+    // Need extend: AbstractRequestInterceptor
+    private Interceptor defaultInterceptor;
 
     @Override
     public String getApiKey() {
@@ -59,5 +63,10 @@ public class DefaultHttpOption implements HttpOption {
     @Override
     public boolean isSignature() {
         return signature;
+    }
+
+    @Override
+    public Interceptor getInterceptor() {
+        return this.defaultInterceptor;
     }
 }

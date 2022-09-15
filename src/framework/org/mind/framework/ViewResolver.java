@@ -17,8 +17,8 @@ import java.util.Map;
 /**
  *
  */
-public final class ViewResolver {
-    private ViewResolver() {
+public class ViewResolver {
+    protected ViewResolver() {
     }
 
     public static <V> Response<V> response() {

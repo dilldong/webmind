@@ -58,7 +58,10 @@ public class OkHttpClientFactory {
     }
 
     public static <V> V createService(Class<V> serviceClass, HttpOption option) {
-        return createService(serviceClass, option, null);
+        return createService(
+                serviceClass,
+                option,
+                option.isSignature() ? option.getInterceptor() : null);
     }
 
     public static <V> V createService(Class<V> serviceClass, HttpOption option, Interceptor newInterceptor) {
