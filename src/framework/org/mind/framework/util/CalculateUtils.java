@@ -158,7 +158,7 @@ public class CalculateUtils {
     }
 
     public static BigDecimal multiply(String multiplicand, String multiplier, int mode, int scale) {
-        return multiply(new BigDecimal(multiplicand), new BigDecimal(multiplier), scale, mode);
+        return multiply(new BigDecimal(multiplicand), new BigDecimal(multiplier), mode, scale);
     }
 
     public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier, int mode, int scale) {
