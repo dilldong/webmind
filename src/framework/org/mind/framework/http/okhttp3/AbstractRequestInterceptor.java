@@ -1,5 +1,7 @@
 package org.mind.framework.http.okhttp3;
 
+import lombok.Getter;
+import lombok.Setter;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -16,7 +18,13 @@ import java.util.Objects;
  * @auther Marcus
  */
 public abstract class AbstractRequestInterceptor implements Interceptor {
-    protected HttpOption option;
+    @Setter
+    @Getter
+    private HttpOption option;
+
+    public AbstractRequestInterceptor(){
+
+    }
 
     public AbstractRequestInterceptor(HttpOption option) {
         this.option = option;

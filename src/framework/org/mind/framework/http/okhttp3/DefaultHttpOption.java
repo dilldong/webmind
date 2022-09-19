@@ -3,6 +3,7 @@ package org.mind.framework.http.okhttp3;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
@@ -10,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@Setter
 public class DefaultHttpOption implements HttpOption {
 
     @Builder.Default
@@ -28,6 +30,9 @@ public class DefaultHttpOption implements HttpOption {
 
     @Builder.Default
     private boolean websocketAutoConnect = true;
+
+    // Need extend: AbstractRequestInterceptor
+    private AbstractRequestInterceptor defaultInterceptor;
 
     @Override
     public String getApiKey() {
@@ -57,5 +62,10 @@ public class DefaultHttpOption implements HttpOption {
     @Override
     public boolean isSignature() {
         return signature;
+    }
+
+    @Override
+    public AbstractRequestInterceptor getInterceptor() {
+        return this.defaultInterceptor;
     }
 }

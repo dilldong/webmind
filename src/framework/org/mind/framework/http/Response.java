@@ -40,7 +40,7 @@ public class Response<T> {
     public Response(int code, String msg) {
         this.code = code;
         this.msg = msg;
-        this.status = this.code == HttpServletResponse.SC_OK ? SUCCESS : FAILED;
+        this.status = isSuccessful() ? SUCCESS : FAILED;
     }
 
     public Response(int code, String msg, T result) {
@@ -63,6 +63,10 @@ public class Response<T> {
         return this;
     }
 
+    public boolean isSuccessful() {
+        return this.code == HttpServletResponse.SC_OK;
+    }
+
     /**
      * 默认不排除未标注 @Expose 注解的字段.
      *
@@ -79,6 +83,9 @@ public class Response<T> {
      * @return
      */
     public String toJson(boolean excludesFieldsWithoutExpose) {
+        if (StringUtils.isEmpty(status))
+            this.status = isSuccessful() ? SUCCESS : FAILED;
+
         return
                 JsonUtils.toJson(
                         this,
@@ -118,6 +125,9 @@ public class Response<T> {
      * @return
      */
     public String toJson(boolean excludesFieldsWithoutExpose, final boolean isShowField, final String... fieldName) {
+        if (StringUtils.isEmpty(status))
+            this.status = isSuccessful() ? SUCCESS : FAILED;
+
         // 过滤json中的children字段
         GsonBuilder gsonBuilder = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
             final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);

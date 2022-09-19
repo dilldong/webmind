@@ -14,4 +14,5 @@ public interface HttpOption {
 
   boolean isSignature();
 
+  AbstractRequestInterceptor getInterceptor();
 }

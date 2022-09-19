@@ -58,7 +58,14 @@ public class OkHttpClientFactory {
     }
 
     public static <V> V createService(Class<V> serviceClass, HttpOption option) {
-        return createService(serviceClass, option, null);
+        AbstractRequestInterceptor interceptor = null;
+        if (option.isSignature()) {
+            interceptor = option.getInterceptor();
+            if (Objects.nonNull(interceptor))
+                interceptor.setOption(option);
+        }
+
+        return createService(serviceClass, option, interceptor);
     }
 
     public static <V> V createService(Class<V> serviceClass, HttpOption option, Interceptor newInterceptor) {
@@ -85,12 +92,11 @@ public class OkHttpClientFactory {
     public static <V> V execute(Call<V> call) {
         try {
             Response<V> response = call.execute();
-            if (response.isSuccessful()) {
+            if (response.isSuccessful())
                 return response.body();
-            } else {
-                RequestError apiError = getError(response);
-                throw new RequestException(apiError);
-            }
+
+            RequestError apiError = getError(response);
+            throw new RequestException(apiError);
         } catch (IOException e) {
             throw new RequestException(e);
         }
