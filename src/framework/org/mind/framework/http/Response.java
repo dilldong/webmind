@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 @Getter
 @NoArgsConstructor
@@ -89,8 +90,7 @@ public class Response<T> {
         return
                 JsonUtils.toJson(
                         this,
-                        new TypeToken<Response<T>>() {
-                        }.getType(),
+                        new TypeToken<Response<T>>(){},
                         excludesFieldsWithoutExpose);
     }
 
@@ -112,7 +112,10 @@ public class Response<T> {
      * @return
      */
     public String toJson(boolean excludesFieldsWithoutExpose, final String... skipField) {
-        return toJson(excludesFieldsWithoutExpose, false, skipField);
+        if (Objects.nonNull(skipField) && skipField.length > 0)
+            return toJson(excludesFieldsWithoutExpose, false, skipField);
+
+        return toJson(excludesFieldsWithoutExpose);
     }
 
 
@@ -129,7 +132,7 @@ public class Response<T> {
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
         // 过滤json中的children字段
-        GsonBuilder gsonBuilder = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
+        GsonBuilder gsonBuilder = JsonUtils.getSingleton().newBuilder().setExclusionStrategies(new ExclusionStrategy() {
             final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
 
             @Override
@@ -138,7 +141,6 @@ public class Response<T> {
                     return false;
 
                 boolean isSkip = StringUtils.contains(Arrays.toString(fieldName), field.getName());
-
                 return isShowField != isSkip;
             }
 
@@ -146,17 +148,12 @@ public class Response<T> {
             public boolean shouldSkipClass(Class<?> aClass) {
                 return false;
             }
-        }).setDateFormat("yyyy-MM-dd HH:mm:ss");
+        });
 
         if (excludesFieldsWithoutExpose)
             gsonBuilder.excludeFieldsWithoutExposeAnnotation();
 
-        gsonBuilder.disableHtmlEscaping();// 禁止转义Unicode字符
-
-        return JsonUtils.toJson(this,
-                new TypeToken<Response<T>>() {
-                }.getType(),
-                gsonBuilder);
+        return gsonBuilder.create().toJson(this, new TypeToken<Response<T>>(){}.getType());
     }
 
 
