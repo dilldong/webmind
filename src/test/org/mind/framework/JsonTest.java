@@ -4,7 +4,6 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.mind.framework.http.Response;
 import org.mind.framework.util.JsonUtils;
@@ -18,7 +17,6 @@ import java.util.Map;
  * @version 1.0
  * @auther Marcus
  */
-@Slf4j
 public class JsonTest {
 
     @Test

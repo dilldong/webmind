@@ -141,6 +141,10 @@ public class HttpResponse<T> {
         return this.asJson(StandardCharsets.UTF_8);
     }
 
+    public T asJson(TypeToken<T> typeToken) {
+        return this.asJson(StandardCharsets.UTF_8, typeToken);
+    }
+
     /**
      * Returns the response body as json.<br>
      * Disconnects the internal HttpURLConnection silently. @return response
@@ -151,8 +155,12 @@ public class HttpResponse<T> {
     }
 
     public T asJson(Charset charset) {
+        return this.asJson(charset, new TypeToken<T>(){});
+    }
+
+    public T asJson(Charset charset, TypeToken<T> typeToken){
         String result = this.asString(charset);
-        return JsonUtils.fromJson(result, new TypeToken<T>(){});
+        return JsonUtils.fromJson(result, typeToken);
     }
 
     public void disconnect() {

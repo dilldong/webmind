@@ -71,7 +71,7 @@ public class JsonUtils {
     }
 
     public static String toJson(Object target, boolean excludesFieldsWithoutExpose) {
-        return toJson(target, null, excludesFieldsWithoutExpose);
+        return toJson(target, target.getClass(), excludesFieldsWithoutExpose);
     }
 
     public static String toJson(Object target, TypeToken typeToken) {
@@ -95,10 +95,10 @@ public class JsonUtils {
     }
 
     public static String toJson(Object target, Class<? extends Object> targetType) {
-        return toJson(false, target, targetType);
+        return toJson(target, targetType, false);
     }
 
-    public static String toJson(boolean excludesFieldsWithoutExpose, Object target, Class<? extends Object> targetType) {
+    public static String toJson(Object target, Class<? extends Object> targetType, boolean excludesFieldsWithoutExpose) {
         if (Objects.isNull(target))
             return defaultEmpty(target);
 
