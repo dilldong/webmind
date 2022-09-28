@@ -7,6 +7,8 @@ package org.mind.framework.service;
  */
 public interface Service {
 
+	String SVC_REPLICA_NAME = "svc.replica";
+
 	/**
 	 * 开始服务
 	 * 
