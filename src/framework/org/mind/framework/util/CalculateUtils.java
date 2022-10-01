@@ -284,16 +284,24 @@ public class CalculateUtils {
         return formatPercent(amount, scale, Locale.getDefault());
     }
 
+    public static String formatPercent(String amount, int scale, boolean symbol) {
+        return formatPercent(amount, scale, symbol, Locale.getDefault());
+    }
+
+    public static String formatPercent(BigDecimal amount, int scale, boolean symbol) {
+        return formatPercent(amount, scale, symbol, Locale.getDefault());
+    }
+
     public static String formatPercent(String amount, int scale, Locale locale) {
-        return formatPercent(amount, scale, locale, false);
+        return formatPercent(amount, scale, false, locale);
     }
 
     public static String formatPercent(BigDecimal amount, int scale, Locale locale) {
-        return formatPercent(amount, scale, locale, false);
+        return formatPercent(amount, scale, false, locale);
     }
 
-    public static String formatPercent(String amount, int scale, Locale locale, boolean symbol) {
-        return formatPercent(new BigDecimal(amount), scale, locale, symbol);
+    public static String formatPercent(String amount, int scale, boolean symbol, Locale locale) {
+        return formatPercent(new BigDecimal(amount), scale, symbol, locale);
     }
 
     /**
@@ -301,11 +309,11 @@ public class CalculateUtils {
      *
      * @param amount
      * @param scale
+     * @param symbol true: contain the '%', otherwise doesn't contain the '%'
      * @param locale
-     * @param symbol
      * @return
      */
-    public static String formatPercent(BigDecimal amount, int scale, Locale locale, boolean symbol) {
+    public static String formatPercent(BigDecimal amount, int scale, boolean symbol, Locale locale) {
         NumberFormat percent = NumberFormat.getPercentInstance(locale);
         percent.setMaximumFractionDigits(scale); //Maximum decimals
         String result = percent.format(amount);
