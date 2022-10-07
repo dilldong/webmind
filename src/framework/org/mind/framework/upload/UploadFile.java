@@ -97,7 +97,7 @@ public class UploadFile {
                     String.format("上传的文件大小: %d, 限制大小: %d",
                             this.request.getRequestContentLength(), this.request.getDefaultSize()));
 
-        long currentTime = DateFormatUtils.getTimeMillis();
+        long currentTime = DateFormatUtils.getMillis();
 
         /*
          * 默认初始化6个上传文件大小

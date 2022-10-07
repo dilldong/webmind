@@ -1,10 +1,8 @@
 package org.mind.framework;
 
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.util.JsonUtils;
+import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,11 +11,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -26,45 +22,14 @@ import java.util.Objects;
  */
 public final class Action {
     private static final Logger log = LoggerFactory.getLogger(Action.class);
-    private static final String BODY_PARAMS = "body_input_param";
-
     private static final ThreadLocal<Action> actionContext = new ThreadLocal<>();
 
     private ServletContext context;
     private HttpServletRequest request;
     private HttpServletResponse response;
 
-    /**
-     * Web 服务器反向代理中用于存放客户端原始 IP 地址的 Http header 名字，
-     * 若新增其他的需要增加或者修改其中的值。
-     */
-    private static final String[] PROXY_REMOTE_IP_ADDRESS = {"X-Forwarded-For", "X-Real-IP"};
-
     public String getRemoteIp() {
-        String ip = this.request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
-        if (StringUtils.isNotEmpty(ip))
-            return this.getRemoteIpFromForward(ip);
-
-        ip = this.request.getHeader(PROXY_REMOTE_IP_ADDRESS[1]);
-        if (ip != null && ip.trim().length() > 0)
-            return ip;
-
-        return this.request.getRemoteAddr();
-    }
-
-    /**
-     * 从 HTTP Header 中截取客户端连接 IP 地址。如果经过多次反向代理，
-     * 在请求头中获得的是以“,&lt;SP&gt;”分隔 IP 地址链，第一段为客户端 IP 地址。
-     *
-     * @return 客户端源 IP 地址
-     */
-    private String getRemoteIpFromForward(String xforwardIp) {
-        //从 HTTP 请求头中获取转发过来的 IP 地址链
-        int commaOffset = xforwardIp.indexOf(',');
-        if (commaOffset < 0)
-            return xforwardIp;
-
-        return xforwardIp.substring(0, commaOffset);
+        return HttpUtils.getRequestIP(request);
     }
 
     /**
@@ -88,16 +53,7 @@ public final class Action {
      * @throws IOException
      */
     public byte[] getPostBytes() throws IOException {
-        int contentLength = request.getContentLength();
-        if (contentLength <= 0)
-            return null;
-
-        byte[] buffer = new byte[contentLength];
-        int actualLen = IOUtils.read(request.getInputStream(), buffer, 0, contentLength);
-        if (actualLen != contentLength)
-            return null;
-
-        return buffer;
+        return HttpUtils.getPostBytes(request);
     }
 
     /**
@@ -107,44 +63,19 @@ public final class Action {
      * @throws IOException
      */
     public String getPostString() throws IOException {
-        byte[] data = getPostBytes();
-        if (Objects.nonNull(data)) {
-            String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
-            String body = new String(data, encoding);
-            /*
-             * servlet规范:
-             * 一个InputStream对象在被读取完成后，将无法被再次读取，始终返回-1；
-             * InputStream并没有实现reset方法（可以重置首次读取的位置），无法实现重置操作；
-             */
-            request.setAttribute(BODY_PARAMS, body);
-        }
-
-        return (String) request.getAttribute(BODY_PARAMS);
+        return HttpUtils.getPostString(request);
     }
 
     public String getJson() {
-        try {
-            String json = this.getPostString();
-            if (JsonUtils.isJson(json))
-                return json;
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-        return null;
+        return HttpUtils.getJson(request);
     }
 
     public Map<String, JsonObject> getJsonMap() {
-        return JsonUtils.fromJson(
-                getJson(),
-                new TypeToken<Map<String, JsonObject>>() {
-                });
+        return HttpUtils.getJsonMap(request);
     }
 
     public List<JsonObject> getJsonList() {
-        return JsonUtils.fromJson(
-                getJson(),
-                new TypeToken<List<JsonObject>>() {
-                });
+        return HttpUtils.getJsonList(request);
     }
 
     public String getString(String name) {

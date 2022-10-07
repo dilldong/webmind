@@ -1,12 +1,18 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * 对日期、时间格式化工具类
@@ -17,13 +23,17 @@ public class DateFormatUtils {
 
     static final Logger log = LoggerFactory.getLogger(DateFormatUtils.class);
 
+    public static final ZoneId ZONE_DEFAULT = ZoneId.systemDefault();
+    public static final ZoneId UTC = ZoneId.of("UTC");
+    public static final ZoneId UTC8 = ZoneId.of("UTC+8");
+
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
      *
      * @return
      * @author dp
      */
-    public static long getTimeMillis() {
+    public static long getMillis() {
         return System.currentTimeMillis();
     }
 
@@ -37,10 +47,10 @@ public class DateFormatUtils {
      * @author dp
      */
     public static String format(Date date, String format) {
-        if (date == null)
-            date = Calendar.getInstance().getTime();
+        if (Objects.isNull(date))
+            date = currentDate();
 
-        if (format == null || format.isEmpty())
+        if (StringUtils.isEmpty(format))
             return getDateTime(date);
 
         return new SimpleDateFormat(format).format(date);
@@ -59,7 +69,7 @@ public class DateFormatUtils {
     }
 
     public static String getDate() {
-        return getDate(Calendar.getInstance().getTime());
+        return getDate(currentDate());
     }
 
     public static String getDate(Date date) {
@@ -67,7 +77,7 @@ public class DateFormatUtils {
     }
 
     public static String getDateTime() {
-        return getDateTime(Calendar.getInstance().getTime());
+        return getDateTime(currentDate());
     }
 
     public static String getDateTime(Date date) {
@@ -75,7 +85,7 @@ public class DateFormatUtils {
     }
 
     public static String getTime() {
-        return getTime(Calendar.getInstance().getTime());
+        return getTime(currentDate());
     }
 
     public static String getTime(Date date) {
@@ -83,18 +93,73 @@ public class DateFormatUtils {
     }
 
     public static String getFullDate() {
-        return getFullDate(Calendar.getInstance().getTime());
+        return getFullDate(currentDate());
     }
 
     public static String getFullDate(Date date) {
         return java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(date);
     }
 
-    //----------------------------------------------------------------------------
-
-    public static Date getCurrentDate() {
-        return Calendar.getInstance().getTime();
+    public static Date currentDate() {
+        return new Date(getMillis());
     }
+
+    public static Timestamp currentTimestamp() {
+        return new Timestamp(getMillis());
+    }
+
+    public static Timestamp currentTimestamp(Date date) {
+        return new Timestamp(date.getTime());
+    }
+
+    public static LocalDate dateNow() {
+        return dateNow(ZONE_DEFAULT);
+    }
+
+    public static LocalDate utcDateNow() {
+        return dateNow(UTC);
+    }
+
+    public static LocalDate dateNow(ZoneId zoneId) {
+        return LocalDate.now(zoneId);
+    }
+
+    public static LocalDate dateNow(long mills) {
+        return dateNow(mills, ZONE_DEFAULT);
+    }
+
+    public static LocalDate utcDateNow(long mills) {
+        return dateNow(mills, UTC);
+    }
+
+    public static LocalDate dateNow(long mills, ZoneId zoneId) {
+        return dateTimeNow(mills, zoneId).toLocalDate();
+    }
+
+    public static LocalDateTime dateTimeNow() {
+        return LocalDateTime.now(ZONE_DEFAULT);
+    }
+
+    public static LocalDateTime utcDateTimeNow() {
+        return dateTimeNow(UTC);
+    }
+
+    public static LocalDateTime dateTimeNow(ZoneId zoneId) {
+        return LocalDateTime.now(zoneId);
+    }
+
+    public static LocalDateTime dateTimeNow(long mills) {
+        return dateTimeNow(mills, ZONE_DEFAULT);
+    }
+
+    public static LocalDateTime utcDateTimeNow(long mills) {
+        return dateTimeNow(mills, UTC);
+    }
+
+    public static LocalDateTime dateTimeNow(long mills, ZoneId zoneId) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(mills), zoneId);
+    }
+
 
     /**
      * 将指定的字符串日期转化成java.util.Date类型<br>
@@ -126,7 +191,7 @@ public class DateFormatUtils {
      * 将指定的字符串日期转化成java.util.Date类型，
      * 这里的字符日期格式必须可以是pattern参数指定的任何格式
      */
-    public static Date toSimple(String source, String pattern) {
+    public static Date toDateTime(String source, String pattern) {
         java.text.DateFormat df = new SimpleDateFormat(pattern);
         try {
             return df.parse(source);
