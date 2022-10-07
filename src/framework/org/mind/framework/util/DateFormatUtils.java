@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
@@ -162,6 +163,44 @@ public class DateFormatUtils {
 
     public static LocalDateTime dateTimeAt(long timeMillis, ZoneId zoneId) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), zoneId);
+    }
+
+    /**
+     * 获取某一天开始的毫秒数.
+     * <br/>2022-12-12 16:32:00 -> 2022-12-12 00:00:00,000 的毫秒数
+     *
+     * @param localDate
+     * @return
+     */
+    public static long utcStartOfDaysMillis(LocalDate localDate) {
+        return startOfDaysMillis(localDate, UTC);
+    }
+
+    public static long startOfDaysMillis(LocalDate localDate) {
+        return startOfDaysMillis(localDate, ZONE_DEFAULT);
+    }
+
+    public static long startOfDaysMillis(LocalDate localDate, ZoneId zoneId) {
+        return localDate.atStartOfDay(zoneId).toEpochSecond() * 1_000L;
+    }
+
+    /**
+     * 获取某一天结束的毫秒数.
+     * <br/>2022-12-12 16:32:00 -> 2022-12-12 23:59:59,999 的毫秒数
+     *
+     * @param localDate
+     * @return
+     */
+    public static long utcEndOfDaysMillis(LocalDate localDate) {
+        return endOfDaysMillis(localDate, UTC);
+    }
+
+    public static long endOfDaysMillis(LocalDate localDate) {
+        return endOfDaysMillis(localDate, ZONE_DEFAULT);
+    }
+
+    public static long endOfDaysMillis(LocalDate localDate, ZoneId zoneId) {
+        return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1_000L;
     }
 
 
