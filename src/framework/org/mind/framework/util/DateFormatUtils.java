@@ -105,11 +105,15 @@ public class DateFormatUtils {
     }
 
     public static Timestamp currentTimestamp() {
-        return new Timestamp(getMillis());
+        return currentTimestamp(getMillis());
     }
 
     public static Timestamp currentTimestamp(Date date) {
-        return new Timestamp(date.getTime());
+        return currentTimestamp(date.getTime());
+    }
+
+    public static Timestamp currentTimestamp(long timeMillis) {
+        return new Timestamp(timeMillis);
     }
 
     public static LocalDate dateNow() {
@@ -124,16 +128,16 @@ public class DateFormatUtils {
         return LocalDate.now(zoneId);
     }
 
-    public static LocalDate dateNow(long mills) {
-        return dateNow(mills, ZONE_DEFAULT);
+    public static LocalDate dateAt(long timeMillis) {
+        return dateAt(timeMillis, ZONE_DEFAULT);
     }
 
-    public static LocalDate utcDateNow(long mills) {
-        return dateNow(mills, UTC);
+    public static LocalDate utcDateAt(long timeMillis) {
+        return dateAt(timeMillis, UTC);
     }
 
-    public static LocalDate dateNow(long mills, ZoneId zoneId) {
-        return dateTimeNow(mills, zoneId).toLocalDate();
+    public static LocalDate dateAt(long timeMillis, ZoneId zoneId) {
+        return dateTimeAt(timeMillis, zoneId).toLocalDate();
     }
 
     public static LocalDateTime dateTimeNow() {
@@ -148,16 +152,16 @@ public class DateFormatUtils {
         return LocalDateTime.now(zoneId);
     }
 
-    public static LocalDateTime dateTimeNow(long mills) {
-        return dateTimeNow(mills, ZONE_DEFAULT);
+    public static LocalDateTime dateTimeAt(long timeMillis) {
+        return dateTimeAt(timeMillis, ZONE_DEFAULT);
     }
 
-    public static LocalDateTime utcDateTimeNow(long mills) {
-        return dateTimeNow(mills, UTC);
+    public static LocalDateTime utcDateTimeAt(long timeMillis) {
+        return dateTimeAt(timeMillis, UTC);
     }
 
-    public static LocalDateTime dateTimeNow(long mills, ZoneId zoneId) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(mills), zoneId);
+    public static LocalDateTime dateTimeAt(long timeMillis, ZoneId zoneId) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), zoneId);
     }
 
 
