@@ -27,8 +27,8 @@ public class DefaultEmailSupport extends MailAbstract {
     }
 
     public DefaultEmailSupport(JavaMailSender sender, Object velocityEngine) {
+        super.setSender(sender);
         this.velocityEngine = velocityEngine;
-        this.setSender(sender);
     }
 
 

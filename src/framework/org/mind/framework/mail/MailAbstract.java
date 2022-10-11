@@ -37,7 +37,6 @@ public abstract class MailAbstract implements DelegateMessage {
             String content = this.loadContent(mailType);
             this.send(content);
             this.after();
-
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
