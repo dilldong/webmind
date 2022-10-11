@@ -1,6 +1,7 @@
 package org.mind.framework.http;
 
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +14,12 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 
 /**
  * HttpClient response wrapper
+ *
  * @param <T> result type
  * @author marcus
  */
@@ -63,7 +66,7 @@ public class HttpResponse<T> {
             inStream = new GZIPInputStream(inStream);
     }
 
-    public String getResponseHeader(String name) {
+    public String getHeader(String name) {
         if (con != null)
             return con.getHeaderField(name);
 
@@ -91,11 +94,9 @@ public class HttpResponse<T> {
         return this.asString(StandardCharsets.UTF_8);
     }
 
-
     public String asString(String charset) {
         return this.asString(Charset.forName(charset));
     }
-
 
     /**
      * Returns the response body as string.<br>
@@ -103,14 +104,13 @@ public class HttpResponse<T> {
      * body as string @throws
      */
     public String asString(Charset charset) {
-        if (this.responseAsString != null)
+        if (StringUtils.isNotEmpty(this.responseAsString))
             return this.responseAsString;
 
-        InputStream stream = asStream();
-        if (stream == null)
-            return null;
+        try (InputStream stream = asStream()) {
+            if (Objects.isNull(stream))
+                return null;
 
-        try {
             BufferedReader br = new BufferedReader(new InputStreamReader(stream, charset));
             StringBuffer buf = new StringBuffer();
             String line;
@@ -119,16 +119,17 @@ public class HttpResponse<T> {
                 buf.append(line);
 
             this.responseAsString = buf.toString();
-
-            stream.close();
-            this.disconnect();
             streamConsumed = true;
-
+            this.disconnect();
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
 
         return responseAsString;
+    }
+
+    public boolean isSuccessful() {
+        return this.responseCode == HttpURLConnection.HTTP_OK;
     }
 
     /**
@@ -138,6 +139,10 @@ public class HttpResponse<T> {
      */
     public T asJson() {
         return this.asJson(StandardCharsets.UTF_8);
+    }
+
+    public T asJson(TypeToken<T> typeToken) {
+        return this.asJson(StandardCharsets.UTF_8, typeToken);
     }
 
     /**
@@ -150,9 +155,12 @@ public class HttpResponse<T> {
     }
 
     public T asJson(Charset charset) {
+        return this.asJson(charset, new TypeToken<T>(){});
+    }
+
+    public T asJson(Charset charset, TypeToken<T> typeToken){
         String result = this.asString(charset);
-        return JsonUtils.fromJson(result, new TypeToken<T>() {
-        });
+        return JsonUtils.fromJson(result, typeToken);
     }
 
     public void disconnect() {
@@ -160,12 +168,8 @@ public class HttpResponse<T> {
             con.disconnect();
     }
 
-    public int getResponseCode() {
+    public int getStatusCode() {
         return responseCode;
-    }
-
-    public String getResponseAsString() {
-        return responseAsString;
     }
 
 }

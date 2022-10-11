@@ -125,7 +125,7 @@ public class ResourceHttpRequest implements HandlerResult {
         } else if (this.expires > 0) {
             response.setHeader("Cache-Control", maxAge);
             // Reset HTTP 1.0 Expires header if present
-            response.setDateHeader("Expires", DateFormatUtils.getTimeMillis() + this.expires);
+            response.setDateHeader("Expires", DateFormatUtils.getMillis() + this.expires);
         }
 
         // should download?

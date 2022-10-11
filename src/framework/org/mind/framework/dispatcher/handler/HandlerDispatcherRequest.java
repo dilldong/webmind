@@ -16,7 +16,7 @@ import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.MatcherUtils;
-import org.mind.framework.util.UriPath;
+import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,8 +146,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        long begin = DateFormatUtils.getTimeMillis();
-        final String path = UriPath.get(request);
+        long begin = DateFormatUtils.getMillis();
+        final String path = HttpUtils.getURI(request);
 
         /*
          * Global interceptors for application containers
@@ -302,7 +302,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
             Action.removeActionContext();
-            log.info("Used time(ms): {}", DateFormatUtils.getTimeMillis() - begin);
+            log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
             log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
         }
     }

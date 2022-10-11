@@ -17,9 +17,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Slf4j
 public abstract class AbstractBucket {
-    private int duration;
-    private int bucketSize;
-    private int intervalInMills;
+    private final int duration;
+    private final int bucketSize;
+    private final int intervalInMills;
     private final AtomicReferenceArray<Indicator> indicatorArray;
 
     private transient final Lock lock = new ReentrantLock();
@@ -36,7 +36,7 @@ public abstract class AbstractBucket {
     }
 
     public Indicator current() {
-        return current(DateFormatUtils.getTimeMillis());
+        return current(DateFormatUtils.getMillis());
     }
 
     public Indicator current(long currTimeMills) {
@@ -75,7 +75,7 @@ public abstract class AbstractBucket {
 
 
     public List<Indicator> getValuesByPeriod() {
-        return getValuesByPeriod(DateFormatUtils.getTimeMillis());
+        return getValuesByPeriod(DateFormatUtils.getMillis());
     }
 
     public List<Indicator> getValuesByPeriod(long timeMills) {

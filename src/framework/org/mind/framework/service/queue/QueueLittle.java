@@ -3,9 +3,10 @@ package org.mind.framework.service.queue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 
-public final class QueueLittle implements QueueService {
+public class QueueLittle implements QueueService {
 
     private static final Logger log = LoggerFactory.getLogger(QueueLittle.class);
 
@@ -31,8 +32,7 @@ public final class QueueLittle implements QueueService {
     @Override
     public DelegateMessage consumer() throws InterruptedException {
         // BlockingQueue.take() is thread safety
-        DelegateMessage message = queueInstance.take();
-        return message;
+        return queueInstance.take();
     }
 
     @Override
@@ -42,18 +42,17 @@ public final class QueueLittle implements QueueService {
 
     @Override
     public int size() {
-        return queueInstance == null ? 0 : queueInstance.size();
+        return Objects.isNull(queueInstance) ? 0 : queueInstance.size();
     }
 
 
     @Override
     public void destroy() {
         log.info("Destroy QueueLittle elements....");
-
-        if (this.queueInstance == null || this.queueInstance.isEmpty())
+        if (Objects.isNull(queueInstance) || queueInstance.isEmpty())
             return;
 
-        int size = size();
+        int size = this.size();
         log.info("QueueService size: {}", size);
         if (size > 0)
             this.queueInstance.clear();
