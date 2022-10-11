@@ -1,30 +1,33 @@
 package org.mind.framework.mail;
 
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.velocity.spring.VelocityEngineUtils;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.NotSupportedException;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.apache.velocity.spring.VelocityEngineUtils;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class DefaultEmailSupport extends MailAbstract {
 
+    @Setter
     private String templateName;
+
+    @Setter
     protected Object velocityEngine;
 
     public DefaultEmailSupport() {
-        JavaMailSender sender =
-                (JavaMailSender)
-                        ContextSupport.getBean("mailSender", JavaMailSender.class);
+        this((JavaMailSender) ContextSupport.getBean("mailSender", JavaMailSender.class));
+    }
 
-        try {
-            this.velocityEngine = ContextSupport.getBean("velocityEngine");
-        } catch (NoSuchBeanDefinitionException e) {
-            logger.warn(e.getMessage());
-        }
+    public DefaultEmailSupport(JavaMailSender sender) {
+        this(sender, null);
+    }
 
+    public DefaultEmailSupport(JavaMailSender sender, Object velocityEngine) {
+        this.velocityEngine = velocityEngine;
         this.setSender(sender);
     }
 
@@ -38,8 +41,11 @@ public class DefaultEmailSupport extends MailAbstract {
                 if (logger.isDebugEnabled())
                     logger.debug("Loading email template...");
 
-                if (this.velocityEngine == null)
-                    throw new NotSupportedException("VelocityEngine spring bean is not defined");
+                if (Objects.isNull(this.velocityEngine)) {
+                    this.velocityEngine = ContextSupport.getBean("velocityEngine");
+                    if (Objects.isNull(this.velocityEngine))
+                        throw new NotSupportedException("VelocityEngine spring bean is not defined");
+                }
 
                 return
                         VelocityEngineUtils.mergeTemplateIntoString(
@@ -57,21 +63,10 @@ public class DefaultEmailSupport extends MailAbstract {
         return StringUtils.EMPTY;
     }
 
-    public void setTemplateName(String templateName) {
-        this.templateName = templateName;
-    }
-
     @Override
     public void after() {
         this.templateName = null;
         this.setSubject(null);
         this.setAddress(null);
     }
-
-
-    public void setVelocityEngine(Object velocityEngine) {
-        this.velocityEngine = velocityEngine;
-    }
-
-
 }
