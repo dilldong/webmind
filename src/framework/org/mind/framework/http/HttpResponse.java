@@ -112,7 +112,7 @@ public class HttpResponse<T> {
                 return null;
 
             BufferedReader br = new BufferedReader(new InputStreamReader(stream, charset));
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             String line;
 
             while ((line = br.readLine()) != null)

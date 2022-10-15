@@ -94,7 +94,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
         if (this.beanFactory instanceof ListableBeanFactory) {
             ListableBeanFactory listable = (ListableBeanFactory) this.beanFactory;
             if (listable.getBeanNamesForType(type).length > 0) {
-                List<T> list = new ArrayList(listable.getBeansOfType(type, false, false).values());
+                List<T> list = new ArrayList<>(listable.getBeansOfType(type, false, false).values());
                 OrderComparator.sort(list);
                 return list;
             }
@@ -136,7 +136,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
 
-    private final class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {
+    private static class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {
         private final MethodMatcher methodResolver;
 
         AnnotationClassOrMethodPointcut(Class<? extends Annotation> annotationType) {
@@ -162,7 +162,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
         }
     }
 
-    private final class AnnotationClassOrMethodFilter extends AnnotationClassFilter {
+    private static class AnnotationClassOrMethodFilter extends AnnotationClassFilter {
         private final AnnotationMethodsResolver methodResolver;
 
         AnnotationClassOrMethodFilter(Class<? extends Annotation> annotationType) {

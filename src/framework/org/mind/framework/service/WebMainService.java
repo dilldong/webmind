@@ -20,7 +20,6 @@ public class WebMainService extends AbstractService {
         this.setServiceName(getClass().getSimpleName());
     }
 
-    @SuppressWarnings("Duplicates")
     protected void startChildServices() {
         if (Objects.nonNull(childServices)) {
             for (final Service serv : childServices) {
@@ -45,7 +44,7 @@ public class WebMainService extends AbstractService {
                 if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to stoping ....",
+                            logger.info("Service [{}@{}] to stopping ....",
                                     serv.getClass().getName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
@@ -60,13 +59,13 @@ public class WebMainService extends AbstractService {
     @Override
     public final void start() {
         startChildServices();
-        serviceState = STATE_STARTED;
+        serviceState = STARTED;
     }
 
     @Override
     public final void stop() {
         stopChildServices();
-        serviceState = STATE_STOPED;
+        serviceState = STOPPED;
         System.gc();
     }
 

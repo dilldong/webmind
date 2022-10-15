@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class GracefulShutdown extends Thread {
     private static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
-    private Thread mainThread;
+    private final Thread mainThread;
     private volatile Tomcat tomcat;
     private volatile Executor executor;
     private long waitTime = 30L;// await 30s

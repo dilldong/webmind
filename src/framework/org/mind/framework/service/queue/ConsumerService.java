@@ -11,7 +11,7 @@ public class ConsumerService implements Updateable {
     private QueueService queueService;
 
     @Override
-    public void doUpate() {
+    public void doUpdate() {
         log.info("Listening queue message....");
         try {
             DelegateMessage delegate = queueService.consumer();

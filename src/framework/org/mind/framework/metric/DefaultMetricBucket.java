@@ -7,8 +7,8 @@ package org.mind.framework.metric;
  */
 public class DefaultMetricBucket extends AbstractBucket {
 
-    public DefaultMetricBucket(int bucketSizem, int intervalInMills) {
-        super(bucketSizem, intervalInMills);
+    public DefaultMetricBucket(int bucketSize, int intervalInMills) {
+        super(bucketSize, intervalInMills);
     }
 
     @Override

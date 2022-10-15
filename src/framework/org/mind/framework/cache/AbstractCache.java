@@ -8,14 +8,9 @@ public abstract class AbstractCache {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCache.class);
 
-//	public abstract int getSize();
-
-//	public abstract String[] names();
-
     private String cacheName = "MY-Cache";
 
     protected AbstractCache() {
-
     }
 
     protected AbstractCache(String cacheName) {

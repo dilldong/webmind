@@ -59,7 +59,7 @@ public class HttpUtils {
         int port = request.getServerPort();
         String urlPath = request.getRequestURI();
 
-        StringBuffer url = new StringBuffer();
+        StringBuilder url = new StringBuilder();
         url.append(scheme);
         url.append("://");
         url.append(request.getServerName());

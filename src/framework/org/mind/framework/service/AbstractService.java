@@ -11,11 +11,11 @@ public abstract class AbstractService implements Service {
 
     protected int serviceState;
 
-    public static final int STATE_NEW = 0;
+    public static final int NEW = 0;
 
-    public static final int STATE_STARTED = 1;
+    public static final int STARTED = 1;
 
-    public static final int STATE_STOPED = 2;
+    public static final int STOPPED = 2;
 
     public AbstractService() {
     }
@@ -34,11 +34,11 @@ public abstract class AbstractService implements Service {
     }
 
     public boolean isStart() {
-        return serviceState == STATE_STARTED;
+        return serviceState == STARTED;
     }
 
     public boolean isStop() {
-        return serviceState == STATE_STOPED;
+        return serviceState == STOPPED;
     }
 
     public int getServiceState() {

@@ -5,6 +5,7 @@ import org.mind.framework.container.ContainerAware;
 
 import javax.servlet.ServletConfig;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -14,20 +15,11 @@ import java.util.List;
  */
 public class SpringContainerAware implements ContainerAware {
 
-
     public List<Object> loadBeans() {
         //get defined name by spring
         String[] names = ContextSupport.getBeanNames();
-        List<Object> beans = new ArrayList<Object>(names.length);
-
-        for (String name : names) {
-//        	BeanModel model = new BeanModel(
-//        			this.wctx.getBean(name), 
-//        			this.wctx.isSingleton(name));
-
-            beans.add(ContextSupport.getBean(name));
-        }
-
+        List<Object> beans = new ArrayList<>(names.length);
+        Arrays.stream(names).parallel().forEach(name -> beans.add(ContextSupport.getBean(name)));
         return beans;
     }
 

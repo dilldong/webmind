@@ -5,7 +5,7 @@ package org.mind.framework.metric;
  * @version 1.0
  */
 public class BaseTraffic {
-    protected transient Metric metric;
+    protected final transient Metric metric;
 
     public BaseTraffic(Metric metric) {
         this.metric = metric;

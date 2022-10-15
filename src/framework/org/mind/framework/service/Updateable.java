@@ -4,7 +4,7 @@ import org.apache.commons.lang3.BooleanUtils;
 
 public interface Updateable {
 
-    void doUpate();
+    void doUpdate();
 
     /**
      * Read the startup command parameter: -Dsvc.replica=yes,

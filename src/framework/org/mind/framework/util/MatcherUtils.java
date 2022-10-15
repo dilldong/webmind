@@ -1,8 +1,8 @@
 package org.mind.framework.util;
 
-import lombok.SneakyThrows;
 import org.mind.framework.annotation.Mapping;
 
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,8 +24,7 @@ public class MatcherUtils {
 
     public static Matcher matcher(String value, String regex, int... flags) {
         Pattern pattern = Pattern.compile(regex, flags.length == 0 ? DEFAULT_EQ : flags[0]);
-        Matcher matcher = pattern.matcher(value);
-        return matcher;
+        return pattern.matcher(value);
     }
 
     /**
@@ -66,47 +65,20 @@ public class MatcherUtils {
      * @return
      */
     public static String convertURI(String uri) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("^");
-        sb.append(
-                uri.replaceAll(URI_PARAM_MATCH, "([^\\/]+)")
-                        .replaceAll("\\*", "\\\\S*")
-                        .replaceAll("\\/", "\\\\/"));
-        sb.append("$");
-
-        return sb.toString();
+        return toPattern(uri, URI_PARAM_MATCH);
     }
 
     public static String convertParam(String uri) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("^");
-        sb.append(
-                uri.replaceAll(PARAM_MATCH, "([^\\/]+)")
-                        .replaceAll("\\*", "\\\\S*")
-                        .replaceAll("\\/", "\\\\/"));
-        sb.append("$");
-
-        return sb.toString();
+        return toPattern(uri, PARAM_MATCH);
     }
 
-    @SneakyThrows
-    public static void main(String[] args) {
-//        String v = "/user/${id}";
-//
-//        String regex = convertURI(v);
-//        System.out.println(regex);
-//        int count = MatcherUtils.checkCount(v, URI_PARAM_MATCH);
-//        System.out.println("count:" + count);
-//
-//        String uri = "/user/1332?id=13&path=http://www.c.cs/user/idja/tt";
-//        boolean f = MatcherUtils.matcher(uri, regex);
-//        System.out.println(f);
-//
-//
-//        String res = "css|js|jpg|png|gif|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
-//
-//        f = MatcherUtils.matcher("TXT", res, IGNORECASE_EQ).matches();
-//        System.out.println("=====" + f);
+    private static String toPattern(String param, String pattern) {
+        StringJoiner joiner = new StringJoiner("");
+        joiner.add("^");
+        joiner.add(param.replaceAll(pattern, "([^\\/]+)")
+                .replaceAll("\\*", "\\\\S*")
+                .replaceAll("\\/", "\\\\/"));
+        joiner.add("$");
+        return joiner.toString();
     }
-
 }

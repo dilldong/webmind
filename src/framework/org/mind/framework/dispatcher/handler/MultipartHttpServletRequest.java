@@ -44,9 +44,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
     private int defaultSize;
 
-    private final Properties property;
-
-    // multipart fileds
+    // multipart fields
     private Map<String, List<String>> formParams;
 
     // multipart files
@@ -62,7 +60,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
     public static MultipartHttpServletRequest getInstance(HttpServletRequest request) throws IOException, ServletException {
         Object obj = request.getAttribute(ATTRIBUTE_NAME);
-        if (obj != null && obj instanceof MultipartHttpServletRequest)
+        if (obj instanceof MultipartHttpServletRequest)
             return (MultipartHttpServletRequest) obj;
 
         MultipartHttpServletRequest multipart =
@@ -75,7 +73,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
     private MultipartHttpServletRequest(HttpServletRequest request) {
         super(request);
         this.request = request;
-        this.property = PropertiesUtils.getProperties();
+        Properties property = PropertiesUtils.getProperties();
 
         defaultSize = PropertiesUtils.getInteger(property, "upload.size");
         defaultSize = (defaultSize <= MIN_SIZE || defaultSize > MAX_SIZE) ? SIZE : defaultSize;
@@ -104,7 +102,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
             type = type1;
 
             // If neither value is null, choose the longer value
-        else if (type1 != null && type2 != null)
+        else if (type1 != null)
             type = (type1.length() > type2.length() ? type1 : type2);
 
         if (type == null)
@@ -122,8 +120,8 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
             return this;
         }
 
-        this.formParams = new HashMap<String, List<String>>();
-        this.multiPartFiles = new ArrayList<FileItem>(6);
+        this.formParams = new HashMap<>();
+        this.multiPartFiles = new ArrayList<>(6);
 
         if (request.getQueryString() != null) {
             this.queryString();
@@ -164,7 +162,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
         int read = -1;
         byte[] buf = new byte[8 * 1024];
 
-        ByteArrayOutputStream byteStream = null;
+        ByteArrayOutputStream byteStream;
         try {
             byteStream = new ByteArrayOutputStream();
             try {
@@ -196,12 +194,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
     }
 
     private void addFiled(String name, String value) {
-        List<String> list = this.formParams.get(name);
-        if (list == null) {
-            list = new ArrayList<String>(5);
-            this.formParams.put(name, list);
-        }
-
+        List<String> list = this.formParams.computeIfAbsent(name, k -> new ArrayList<>(5));
         list.add(value);
     }
 
@@ -234,12 +227,12 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
         if (this.formParams == null)
             return null;
 
-        Map<String, String[]> map = new HashMap<String, String[]>(this.formParams.size());
+        Map<String, String[]> map = new HashMap<>(this.formParams.size());
 
         Set<Entry<String, List<String>>> entries = this.formParams.entrySet();
         for (Entry<String, List<String>> en : entries) {
             List<String> list = en.getValue();
-            map.put(en.getKey(), list.toArray(new String[list.size()]));
+            map.put(en.getKey(), list.toArray(new String[0]));
         }
         return map;
     }
@@ -258,7 +251,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
             return null;
 
         List<String> list = this.formParams.get(name);
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     public boolean isRequestFailed() {
@@ -273,7 +266,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
         return this.requestContentLength;
     }
 
-    public class FileItem {
+    public static class FileItem {
         private String filedName;
         private String fileName;
         private String contentType;

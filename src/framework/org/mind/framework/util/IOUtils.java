@@ -1,5 +1,7 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.nio.charset.StandardCharsets;
 
 public class IOUtils {
@@ -7,17 +9,17 @@ public class IOUtils {
     public IOUtils() {
     }
 
-    public static final int byte2int(byte[] b, int offset) {
+    public static int byte2int(byte[] b, int offset) {
         return b[offset + 3] & 0xff | (b[offset + 2] & 0xff) << 8
                 | (b[offset + 1] & 0xff) << 16 | (b[offset] & 0xff) << 24;
     }
 
-    public static final int byte2int(byte[] b) {
+    public static int byte2int(byte[] b) {
         return b[3] & 0xff | (b[2] & 0xff) << 8 | (b[1] & 0xff) << 16
                 | (b[0] & 0xff) << 24;
     }
 
-    public static final long byte2long(byte[] b) {
+    public static long byte2long(byte[] b) {
         return (long) b[7] & (long) 255 | ((long) b[6] & (long) 255) << 8
                 | ((long) b[5] & (long) 255) << 16
                 | ((long) b[4] & (long) 255) << 24
@@ -26,7 +28,7 @@ public class IOUtils {
                 | ((long) b[1] & (long) 255) << 48 | (long) b[0] << 56;
     }
 
-    public static final long byte2long(byte[] b, int offset) {
+    public static long byte2long(byte[] b, int offset) {
         return (long) b[offset + 7] & (long) 255
                 | ((long) b[offset + 6] & (long) 255) << 8
                 | ((long) b[offset + 5] & (long) 255) << 16
@@ -37,7 +39,7 @@ public class IOUtils {
                 | (long) b[offset] << 56;
     }
 
-    public static final byte[] int2byte(int n) {
+    public static byte[] int2byte(int n) {
         byte[] b = new byte[4];
         b[0] = (byte) (n >> 24);
         b[1] = (byte) (n >> 16);
@@ -46,26 +48,26 @@ public class IOUtils {
         return b;
     }
 
-    public static final void int2byte(int n, byte[] buf, int offset) {
+    public static void int2byte(int n, byte[] buf, int offset) {
         buf[offset] = (byte) (n >> 24);
         buf[offset + 1] = (byte) (n >> 16);
         buf[offset + 2] = (byte) (n >> 8);
         buf[offset + 3] = (byte) n;
     }
 
-    public static final byte[] short2byte(int n) {
+    public static byte[] short2byte(int n) {
         byte[] b = new byte[2];
         b[0] = (byte) (n >> 8);
         b[1] = (byte) n;
         return b;
     }
 
-    public static final void short2byte(int n, byte[] buf, int offset) {
+    public static void short2byte(int n, byte[] buf, int offset) {
         buf[offset] = (byte) (n >> 8);
         buf[offset + 1] = (byte) n;
     }
 
-    public static final byte[] long2byte(long n) {
+    public static byte[] long2byte(long n) {
         byte[] b = new byte[8];
         b[0] = (byte) (int) (n >> 56);
         b[1] = (byte) (int) (n >> 48);
@@ -78,7 +80,7 @@ public class IOUtils {
         return b;
     }
 
-    public static final void long2byte(long n, byte[] buf, int offset) {
+    public static void long2byte(long n, byte[] buf, int offset) {
         buf[offset] = (byte) (int) (n >> 56);
         buf[offset + 1] = (byte) (int) (n >> 48);
         buf[offset + 2] = (byte) (int) (n >> 40);
@@ -89,14 +91,14 @@ public class IOUtils {
         buf[offset + 7] = (byte) (int) n;
     }
 
-    public static final long getLong(byte[] b, int off) {
+    public static long getLong(byte[] b, int off) {
         return ((b[off + 7] & 0xFFL) << 0) + ((b[off + 6] & 0xFFL) << 8)
                 + ((b[off + 5] & 0xFFL) << 16) + ((b[off + 4] & 0xFFL) << 24)
                 + ((b[off + 3] & 0xFFL) << 32) + ((b[off + 2] & 0xFFL) << 40)
-                + ((b[off + 1] & 0xFFL) << 48) + ((b[off + 0] & 0xFFL) << 56);
+                + ((b[off + 1] & 0xFFL) << 48) + ((b[off] & 0xFFL) << 56);
     }
 
-    public static final String readString(byte[] b, int offset, int len) {
+    public static String readString(byte[] b, int offset, int len) {
         if (len > 0)
             return (new String(b, offset, len, StandardCharsets.US_ASCII));
         else
@@ -110,7 +112,7 @@ public class IOUtils {
      * @param len The length of the integer to convert
      * @return An array of length len containing the byte representation of num.
      */
-    public static final byte[] intToBytes(int num, int len) {
+    public static byte[] intToBytes(int num, int len) {
         return (intToBytes(num, len, null, 0));
     }
 
@@ -130,7 +132,7 @@ public class IOUtils {
      * @param offset the offset in <code>b</code> to write the integer to.
      * @return An array of length len containing the byte representation of num.
      */
-    public static final byte[] intToBytes(int num, int len, byte[] b, int offset) {
+    public static byte[] intToBytes(int num, int len, byte[] b, int offset) {
         if (b == null) {
             b = new byte[len];
             offset = 0;
@@ -156,7 +158,7 @@ public class IOUtils {
      *            bytes to generate).
      * @return An array of length len containing the byte representation of num.
      */
-    public static final byte[] longToBytes(long num, int len) {
+    public static byte[] longToBytes(long num, int len) {
         return (longToBytes(num, len, null, 0));
     }
 
@@ -170,14 +172,14 @@ public class IOUtils {
      * @param offset the offset in <code>b</code> to write the integer to.
      * @return An array of length len containing the byte representation of num.
      */
-    public static final byte[] longToBytes(long num, int len, byte[] b,
-                                           int offset) {
+    public static byte[] longToBytes(long num, int len, byte[] b,
+                                     int offset) {
 
         if (b == null) {
             b = new byte[len];
             offset = 0;
         }
-        long sw = ((len - 1) * 8);
+        long sw = ((len - 1) * 8L);
         long mask = (0xffL << sw);
 
         for (int l = 0; l < len; l++) {
@@ -200,7 +202,7 @@ public class IOUtils {
      * @param size   The number of bytes to convert into the integer
      * @return An integer value represented by the specified bytes.
      */
-    public static final int bytesToInt(byte[] b, int offset, int size) {
+    public static int bytesToInt(byte[] b, int offset, int size) {
         int num = 0;
         int sw = 8 * (size - 1);
 
@@ -222,7 +224,7 @@ public class IOUtils {
      * @param size   The number of bytes to convert into the long
      * @return An long value represented by the specified bytes.
      */
-    public static final long bytesToLong(byte[] b, int offset, int size) {
+    public static long bytesToLong(byte[] b, int offset, int size) {
         long num = 0;
         long sw = 8L * ((long) size - 1L);
 
@@ -235,17 +237,16 @@ public class IOUtils {
     }
 
     public static String encodeHex(byte[] data) {
-        if (data == null)
+        if (ArrayUtils.isEmpty(data))
             return "";
 
-        int len = data.length;
-        StringBuffer buf = new StringBuffer(len << 1);
+        StringBuilder buf = new StringBuilder(data.length << 1);
 
-        for (int i = 0; i < len; i++) {
-            if (((int) data[i] & 0xff) < 0x10) {
+        for (byte datum : data) {
+            if (((int) datum & 0xff) < 0x10) {
                 buf.append("0");
             }
-            buf.append(Long.toString((int) data[i] & 0xff, 16));
+            buf.append(Long.toString((int) datum & 0xff, 16));
         }
         return buf.toString();
     }
@@ -302,14 +303,4 @@ public class IOUtils {
         }
         return 0x00;
     }
-
-
-//    public static void main(String[] arg) {
-//        int i = 132;
-//        byte b = IOUtils.int2byte(i)[3];
-//        int k = IOUtils.bytesToInt(new byte[]{b}, 0, 1);
-//        System.out.println(b);
-//        System.out.println(k);
-//    }
-
 }

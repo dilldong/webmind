@@ -13,103 +13,55 @@ import java.util.Objects;
  */
 public class ConverterFactory {
 
-    private final Converter<Boolean> booleanConvert;
-    private final Converter<Long> longConvert;
-    private final Converter<Integer> intConvert;
-    private final Converter<Float> floatConvert;
-    private final Converter<Double> doubleConvert;
-    private final Converter<Short> shortConvert;
-    private final Converter<Byte> byteConvert;
-    private final Converter<Character> charConvert;
-
     private final Map<Class<?>, Converter<?>> mapHolder;
 
     private ConverterFactory() {
+        Converter<Boolean> booleanConvert = value -> Boolean.parseBoolean(value);
 
-        this.booleanConvert = new Converter<Boolean>() {
-            @Override
-            public Boolean convert(String value) {
-                return Boolean.parseBoolean(value);
-            }
-        };
+        Converter<Long> longConvert = value -> Long.parseLong(value);
 
-        this.longConvert = new Converter<Long>() {
-            @Override
-            public Long convert(String value) {
-                return Long.parseLong(value);
-            }
-        };
+        Converter<Integer> intConvert = value -> Integer.parseInt(value);
 
-        this.intConvert = new Converter<Integer>() {
-            @Override
-            public Integer convert(String value) {
-                return Integer.parseInt(value);
-            }
-        };
+        Converter<Float> floatConvert = value -> Float.parseFloat(value);
 
-        this.floatConvert = new Converter<Float>() {
-            @Override
-            public Float convert(String value) {
-                return Float.parseFloat(value);
-            }
-        };
+        Converter<Double> doubleConvert = value -> Double.parseDouble(value);
 
-        this.doubleConvert = new Converter<Double>() {
-            @Override
-            public Double convert(String value) {
-                return Double.parseDouble(value);
-            }
-        };
+        Converter<Short> shortConvert = value -> Short.parseShort(value);
 
-        this.shortConvert = new Converter<Short>() {
-            @Override
-            public Short convert(String value) {
-                return Short.parseShort(value);
-            }
-        };
+        Converter<Byte> byteConvert = value -> Byte.parseByte(value);
 
-        this.byteConvert = new Converter<Byte>() {
-            @Override
-            public Byte convert(String value) {
-                return Byte.parseByte(value);
-            }
-        };
-
-        this.charConvert = new Converter<Character>() {
-            @Override
-            public Character convert(String value) {
-                return CharUtils.toChar(value);
-            }
-        };
+        Converter<Character> charConvert = value -> CharUtils.toChar(value);
 
         this.mapHolder = new HashMap<>(16);
-        this.mapHolder.put(boolean.class, this.booleanConvert);
-        this.mapHolder.put(Boolean.class, this.booleanConvert);
+        this.mapHolder.put(boolean.class, booleanConvert);
+        this.mapHolder.put(Boolean.class, booleanConvert);
 
-        this.mapHolder.put(int.class, this.intConvert);
-        this.mapHolder.put(Integer.class, this.intConvert);
+        this.mapHolder.put(int.class, intConvert);
+        this.mapHolder.put(Integer.class, intConvert);
 
-        this.mapHolder.put(long.class, this.longConvert);
-        this.mapHolder.put(Long.class, this.longConvert);
+        this.mapHolder.put(long.class, longConvert);
+        this.mapHolder.put(Long.class, longConvert);
 
-        this.mapHolder.put(short.class, this.shortConvert);
-        this.mapHolder.put(Short.class, this.shortConvert);
+        this.mapHolder.put(short.class, shortConvert);
+        this.mapHolder.put(Short.class, shortConvert);
 
-        this.mapHolder.put(byte.class, this.byteConvert);
-        this.mapHolder.put(Byte.class, this.byteConvert);
+        this.mapHolder.put(byte.class, byteConvert);
+        this.mapHolder.put(Byte.class, byteConvert);
 
-        this.mapHolder.put(float.class, this.floatConvert);
-        this.mapHolder.put(Float.class, this.floatConvert);
+        this.mapHolder.put(float.class, floatConvert);
+        this.mapHolder.put(Float.class, floatConvert);
 
-        this.mapHolder.put(double.class, this.doubleConvert);
-        this.mapHolder.put(Double.class, this.doubleConvert);
+        this.mapHolder.put(double.class, doubleConvert);
+        this.mapHolder.put(Double.class, doubleConvert);
 
-        this.mapHolder.put(char.class, this.charConvert);
-        this.mapHolder.put(Character.class, this.charConvert);
+        this.mapHolder.put(char.class, charConvert);
+        this.mapHolder.put(Character.class, charConvert);
     }
 
-    public static class ConverterHolder {
+    private static class ConverterHolder {
         private static final ConverterFactory factory = new ConverterFactory();
+        private ConverterHolder() {
+        }
     }
 
     public static ConverterFactory getInstance() {

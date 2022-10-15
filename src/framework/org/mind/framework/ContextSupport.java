@@ -5,7 +5,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContext;
-import java.util.Arrays;
 import java.util.Objects;
 
 public final class ContextSupport {
@@ -19,11 +18,9 @@ public final class ContextSupport {
      * @return
      */
     public static ApplicationContext initContext(String[] configLocations) {
-        Arrays.stream(configLocations)
-                .forEach(config -> {
-                    if (!config.startsWith("file:"))
-                        config = String.format("file:%s", config);
-                });
+        for (int i = 0; i < configLocations.length; ++i)
+            if (!configLocations[i].startsWith("file:"))
+                configLocations[i] = String.format("file:%s", configLocations[i]);
 
         wctx = new FileSystemXmlApplicationContext(configLocations);
         return wctx;

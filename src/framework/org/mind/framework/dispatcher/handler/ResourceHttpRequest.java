@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -92,14 +94,16 @@ public class ResourceHttpRequest implements HandlerResult {
         }
 
         File file = new File(this.servletContext.getRealPath(uri));
+        BasicFileAttributes readAttributes =
+                Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
-        if (file == null || !file.exists() || !file.isFile()) {
+        if (file == null || !file.exists() || !readAttributes.isRegularFile()) {
             log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
 
-        long lastModified = file.lastModified();
+        long lastModified = readAttributes.lastModifiedTime().toMillis();
         // Get 'If-Modified-Since' from request header
         long modifiedSince = parseDateHeader(request, IF_MODIFIED_SINCE);
 
@@ -113,7 +117,7 @@ public class ResourceHttpRequest implements HandlerResult {
         // Set last modified time in response
         response.setDateHeader(LAST_MODIFIED, lastModified);
 
-        long length = file.length();
+        long length = readAttributes.size();
         if (length > Integer.MAX_VALUE)
             response.setContentLengthLong(length);
         else
@@ -172,7 +176,6 @@ public class ResourceHttpRequest implements HandlerResult {
                 try {
                     return simpleDateFormat.parse(headerValue).getTime();
                 } catch (ParseException ex) {
-                    simpleDateFormat = null;
                     // ignore exception
                 }
             }

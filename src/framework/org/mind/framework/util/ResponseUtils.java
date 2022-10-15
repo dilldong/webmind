@@ -4,11 +4,11 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 
 /**
  * General purpose utility methods related to generating a servlet response in
@@ -33,7 +33,7 @@ public class ResponseUtils {
 
         char[] content = new char[value.length()];
         value.getChars(0, value.length(), content, 0);
-        StringBuffer result = new StringBuffer(content.length + 50);
+        StringBuilder result = new StringBuilder(content.length + 50);
 
         for (char ch : content) {
             switch (ch) {
@@ -99,14 +99,14 @@ public class ResponseUtils {
 
 
     /**
-     * Output {@link File} stram.
+     * Output {@link File} stream IO.
      *
      * @param output
      * @param file
      * @throws IOException
      */
     public static void write(OutputStream output, File file) throws IOException {
-        try (InputStream input = new BufferedInputStream(new FileInputStream(file))) {
+        try (InputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
             byte[] buffer = new byte[MAX_BUFFER_SIZE];
 
             int length;

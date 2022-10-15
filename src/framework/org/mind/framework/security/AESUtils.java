@@ -50,7 +50,7 @@ public class AESUtils {
         return null;
     }
 
-    public static String decrpyt(String content, String key, String iv) {
+    public static String descrypt(String content, String key, String iv) {
         byte[] contentData = Base64.decodeBase64(content);
         byte[] keyData = Base64.decodeBase64(key);
         byte[] ivData = Base64.decodeBase64(iv);

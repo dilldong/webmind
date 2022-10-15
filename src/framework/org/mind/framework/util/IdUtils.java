@@ -47,13 +47,4 @@ public class IdUtils {
         String value = StringUtils.substring(String.valueOf(timeMillis + atomic), 5);
         return Integer.parseInt(value);
     }
-
-
-//    public static void main(String[] args) {
-//        System.out.println(getUniqueId());
-//        System.out.println(generateId());
-//
-//        ObjectId objId = new ObjectId();
-//        System.out.println("d: " + DateFormatUtils.format(objId.getDate(), "yyyy-MM-dd HH:mm:ss") + "\tcounter: " + objId.getCounter() + "\tMid : " + objId.getMachineIdentifier() + "\tPID: " + objId.getProcessIdentifier());
-//    }
 }

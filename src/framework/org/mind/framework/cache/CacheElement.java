@@ -75,12 +75,9 @@ public class CacheElement {
     }
 
     public Object getValue(Cloneable.CloneType cloneType) {
-        switch (cloneType) {
-            case CLONE:
-                return cloneValue(this.value);
-            default:
-                return value;
-        }
+        if (cloneType == Cloneable.CloneType.CLONE)
+            return cloneValue(this.value);
+        return value;
     }
 
     private Object cloneValue(Object data) {

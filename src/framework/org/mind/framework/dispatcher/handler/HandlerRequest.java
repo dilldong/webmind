@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Handler dispatch request processer.
+ * Handler dispatch request processor.
  *
  * @author dp
  */

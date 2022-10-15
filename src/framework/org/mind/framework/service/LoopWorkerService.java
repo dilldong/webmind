@@ -32,7 +32,7 @@ public abstract class LoopWorkerService extends AbstractService {
 
     @Override
     public final void start() {
-        serviceState = STATE_STARTED;
+        serviceState = STARTED;
         prepareStart();
 
         if (workerThread == null) {
@@ -51,7 +51,7 @@ public abstract class LoopWorkerService extends AbstractService {
 
     @Override
     public final void stop() {
-        serviceState = STATE_STOPED;
+        serviceState = STOPPED;
         prepareStop();
         isLoop = false;
 

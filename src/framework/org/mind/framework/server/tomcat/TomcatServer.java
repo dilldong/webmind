@@ -81,7 +81,7 @@ public class TomcatServer extends Tomcat {
             this.createServlet(host, ctx);
 
             // set mime-type
-            this.serverConfig.getMimeMapping().forEach((k, v) -> ctx.addMimeMapping(k, v));
+            this.serverConfig.getMimeMapping().forEach(ctx::addMimeMapping);
 
             // Add error | exception page
             ctx.addErrorPage(newErrorPage(400, "/error/400"));
@@ -162,7 +162,7 @@ public class TomcatServer extends Tomcat {
     }
 
     /**
-     * Destory Quietly
+     * Destroy Quietly
      */
     @Override
     public void destroy() {
@@ -205,7 +205,7 @@ public class TomcatServer extends Tomcat {
             XmlWebApplicationContext xmas = new XmlLoad4SpringContext();
 
             // load spring config
-            xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[serverConfig.getSpringFileSet().size()]));
+            xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[0]));
 
             // load properties
             loadResource(xmas.getEnvironment());

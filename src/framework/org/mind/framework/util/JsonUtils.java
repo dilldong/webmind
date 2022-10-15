@@ -80,7 +80,7 @@ public class JsonUtils {
 
     public static String toJson(Object target, TypeToken targetType, boolean excludesFieldsWithoutExpose) {
         if (Objects.isNull(target))
-            return defaultEmpty(target);
+            return EMPTY_JSON_OBJECT;
 
         final Gson gson = excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton();
 
@@ -100,10 +100,9 @@ public class JsonUtils {
 
     public static String toJson(Object target, Class<? extends Object> targetType, boolean excludesFieldsWithoutExpose) {
         if (Objects.isNull(target))
-            return defaultEmpty(target);
+            return EMPTY_JSON_OBJECT;
 
         final Gson gson = excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton();
-
         try {
             return Objects.isNull(targetType) ?
                     gson.toJson(target) :

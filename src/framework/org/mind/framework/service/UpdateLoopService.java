@@ -21,7 +21,7 @@ public class UpdateLoopService extends LoopWorkerService {
             updaters.forEach(updateable -> {
                 if (updateable != null) {
                     try {
-                        updateable.doUpate();
+                        updateable.doUpdate();
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
                     }

@@ -35,7 +35,7 @@ public class JspTemplate implements Template {
             HttpServletResponse response,
             Map<String, Object> model) throws IOException, ServletException {
 
-        model.forEach((k, v) -> request.setAttribute(k, v));
+        model.forEach(request::setAttribute);
         request.getRequestDispatcher(path).forward(request, response);
     }
 
