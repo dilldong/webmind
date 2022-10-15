@@ -1,5 +1,6 @@
 package org.mind.framework.service.queue;
 
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,17 +9,10 @@ import java.util.concurrent.BlockingQueue;
 
 public class QueueLittle implements QueueService {
 
-    private static final Logger log = LoggerFactory.getLogger(QueueLittle.class);
+    private static final Logger log = LoggerFactory.getLogger(QueueService.class);
 
+    @Setter
     private BlockingQueue<DelegateMessage> queueInstance;
-
-    private QueueLittle() {
-
-    }
-
-    public void setQueueInstance(BlockingQueue<DelegateMessage> queueInstance) {
-        this.queueInstance = queueInstance;
-    }
 
     @Override
     public void producer(DelegateMessage message) {
@@ -31,8 +25,9 @@ public class QueueLittle implements QueueService {
 
     @Override
     public DelegateMessage consumer() throws InterruptedException {
-        // BlockingQueue.take() is thread safety
-        return queueInstance.take();
+        // LinkedBlockingQueue is thread safety
+        // current thread await: take()
+        return queueInstance.poll();
     }
 
     @Override

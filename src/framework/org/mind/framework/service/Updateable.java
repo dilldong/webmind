@@ -1,8 +1,9 @@
 package org.mind.framework.service;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.mind.framework.container.Destroyable;
 
-public interface Updateable {
+public interface Updateable extends Destroyable {
 
     void doUpdate();
 

@@ -1,5 +1,7 @@
 package org.mind.framework.service;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,13 +14,16 @@ public abstract class LoopWorkerService extends AbstractService {
 
     static final Logger logger = LoggerFactory.getLogger(LoopWorkerService.class);
 
-    private boolean isLoop = true;
+    private volatile boolean isLoop = true;
 
-    private Thread workerThread;
+    private Thread workerMainThread;
 
-    /*sleep 时长*/
+    @Getter
+    @Setter
     private long spaceTime;
 
+    @Getter
+    @Setter
     private boolean daemon;
 
     public LoopWorkerService() {
@@ -35,18 +40,16 @@ public abstract class LoopWorkerService extends AbstractService {
         serviceState = STARTED;
         prepareStart();
 
-        if (workerThread == null) {
-            workerThread = new Thread(new Worker(), this.serviceName);
-            workerThread.setDaemon(this.daemon);
+        if (workerMainThread == null) {
+            workerMainThread = new Thread(new Worker(), this.serviceName);
+            workerMainThread.setDaemon(this.daemon);
         }
 
-        if (spaceTime <= 0) {
+        if (spaceTime <= 0)
             logger.warn("The space time is {}(ms)", spaceTime);
-        }
 
-        if (!workerThread.isAlive()) {
-            workerThread.start();
-        }
+        if (!workerMainThread.isAlive())
+            workerMainThread.start();
     }
 
     @Override
@@ -55,8 +58,8 @@ public abstract class LoopWorkerService extends AbstractService {
         prepareStop();
         isLoop = false;
 
-        if (workerThread != null)
-            workerThread.interrupt();
+        if (workerMainThread != null)
+            workerMainThread.interrupt();
     }
 
     protected void prepareStart() {
@@ -81,12 +84,7 @@ public abstract class LoopWorkerService extends AbstractService {
 
     @Override
     public boolean isStart() {
-        return workerThread != null && workerThread.isAlive();
-    }
-
-    @Override
-    public boolean isStop() {
-        return isLoop;
+        return workerMainThread != null && workerMainThread.isAlive();
     }
 
     /*
@@ -115,28 +113,14 @@ public abstract class LoopWorkerService extends AbstractService {
         }
     }
 
-    public long getSpaceTime() {
-        return spaceTime;
-    }
-
-    public void setSpaceTime(long spaceTime) {
-        this.spaceTime = spaceTime;
-    }
-
-    public boolean isDaemon() {
-        return daemon;
-    }
-
     public void setDaemon(boolean on) {
         this.daemon = on;
-        if (workerThread != null) {
-            workerThread.setDaemon(on);
-        }
+        if (workerMainThread != null)
+            workerMainThread.setDaemon(on);
     }
 
-    protected void interruptSleep() {
-        if (workerThread != null && workerThread.isAlive()) {
-            workerThread.interrupt();
-        }
+    protected void interrupt() {
+        if (workerMainThread != null && workerMainThread.isAlive())
+            workerMainThread.interrupt();
     }
 }

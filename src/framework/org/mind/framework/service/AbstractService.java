@@ -9,7 +9,7 @@ public abstract class AbstractService implements Service {
 
     protected String serviceName = getClass().getSimpleName();
 
-    protected int serviceState;
+    protected volatile int serviceState;
 
     public static final int NEW = 0;
 
