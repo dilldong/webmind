@@ -24,6 +24,7 @@ public class FileRenderer extends Render {
     private File file;
 
     public FileRenderer() {
+
     }
 
     public FileRenderer(File file) {
@@ -44,8 +45,13 @@ public class FileRenderer extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (Objects.isNull(file) || !file.exists()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
         BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-        if (Objects.isNull(file) || !basicFileAttributes.isRegularFile()) {
+        if (!basicFileAttributes.isRegularFile()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }

@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 
 /**
@@ -94,10 +95,16 @@ public class ResourceHttpRequest implements HandlerResult {
         }
 
         File file = new File(this.servletContext.getRealPath(uri));
+        if(Objects.isNull(file) || !file.exists()){
+            log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
+            return;
+        }
+
         BasicFileAttributes readAttributes =
                 Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
-        if (file == null || !file.exists() || !readAttributes.isRegularFile()) {
+        if (!readAttributes.isRegularFile()) {
             log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
