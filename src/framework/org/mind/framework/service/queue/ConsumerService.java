@@ -1,9 +1,11 @@
 package org.mind.framework.service.queue;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.tomcat.util.threads.TaskThreadFactory;
+import org.mind.framework.container.Destroyable;
 import org.mind.framework.service.Updateable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +17,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class ConsumerService implements Updateable {
+public class ConsumerService implements Updateable, Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
@@ -35,8 +37,10 @@ public class ConsumerService implements Updateable {
     private int submitTaskCount = 5;
 
     @Setter
+    @Getter
     private boolean useThreadPool = false;
 
+    @Getter
     private volatile boolean running = false;
 
     @Setter
@@ -116,6 +120,9 @@ public class ConsumerService implements Updateable {
                     .append("taskCapacity", taskCapacity)
                     .append("submitTaskCount", submitTaskCount)
                     .append("running", running)
+                    .append("activeWorker", executor.getActiveCount())
+                    .append("completedTask", executor.getCompletedTaskCount())
+                    .append("uncompletedTask", executor.getQueue().size())
                     .toString();
         }
 

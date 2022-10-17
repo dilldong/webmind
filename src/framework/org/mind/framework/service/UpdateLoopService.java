@@ -2,6 +2,7 @@ package org.mind.framework.service;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.mind.framework.container.Destroyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,10 @@ public class UpdateLoopService extends LoopWorkerService {
         if (Objects.isNull(updaters) || updaters.isEmpty())
             return;
 
-        updaters.forEach(updater -> updater.destroy());
+        updaters.forEach(updater -> {
+            if (Destroyable.class.isAssignableFrom(updater.getClass()))
+                ((Destroyable) updater).destroy();
+        });
         updaters.clear();
     }
 

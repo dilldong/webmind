@@ -59,7 +59,8 @@ public class TestModel extends AbstractJUnit4SpringContextTests {
         }
 
         service.start();
-        System.in.read();
+        Thread.sleep(2000L);
+        service.stop();
     }
 
     @Test

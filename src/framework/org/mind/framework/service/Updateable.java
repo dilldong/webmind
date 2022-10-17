@@ -1,15 +1,15 @@
 package org.mind.framework.service;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.mind.framework.container.Destroyable;
 
-public interface Updateable extends Destroyable {
+public interface Updateable {
 
     void doUpdate();
 
     /**
      * Read the startup command parameter: -Dsvc.replica=yes,
      * <br/>Can be used to on/off work under multiple instances.
+     *
      * @return
      */
     static boolean getEnvReplica() {
