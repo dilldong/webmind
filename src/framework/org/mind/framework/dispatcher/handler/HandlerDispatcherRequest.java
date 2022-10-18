@@ -47,7 +47,7 @@ import java.util.regex.Matcher;
  */
 public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger(HandlerDispatcherRequest.class);
+    private static final Logger log = LoggerFactory.getLogger("HandlerRequest");
 
     private ConverterFactory converter;
     private final ServletContext servletContext;

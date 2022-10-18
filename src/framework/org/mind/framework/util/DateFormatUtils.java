@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
+import java.util.TimeZone;
 
 /**
  * 对日期、时间格式化工具类
@@ -27,6 +28,8 @@ public class DateFormatUtils {
     public static final ZoneId ZONE_DEFAULT = ZoneId.systemDefault();
     public static final ZoneId UTC = ZoneId.of("UTC");
     public static final ZoneId UTC8 = ZoneId.of("UTC+8");
+    public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
+    public static final TimeZone UTC8_TIMEZONE = TimeZone.getTimeZone(UTC8);
     public static final long ONE_DAY_MILLIS = 86_400_000L;
     public static final long ONE_HOUR_MILLIS = 3_600_000L;
 

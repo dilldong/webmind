@@ -17,20 +17,15 @@ import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.TimeZone;
 
 /**
  * @author dp
  */
 public class ResourceHttpRequest implements HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger(ResourceHttpRequest.class);
-
-    private static final List<String> SAFE_METHODS = Arrays.asList("GET", "HEAD");
+    private static final Logger log = LoggerFactory.getLogger("HandlerResult");
 
     /**
      * Date formats as specified in the HTTP RFC.
@@ -42,8 +37,6 @@ public class ResourceHttpRequest implements HandlerResult {
             "EEE, dd-MMM-yy HH:mm:ss zzz",
             "EEE MMM dd HH:mm:ss yyyy"
     };
-
-    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
     private final ServletContext servletContext;
 
@@ -68,7 +61,7 @@ public class ResourceHttpRequest implements HandlerResult {
 
         int t = Integer.parseInt(expSec);
         if (t > 0) {
-            this.expires = t * 1000L;// ms
+            this.expires = t * 1_000L;// ms
             this.maxAge = String.format("max-age=%d", t);
             log.info("Static file's cache time is set to {} seconds.", t);
         } else if (t < 0) {
@@ -179,7 +172,7 @@ public class ResourceHttpRequest implements HandlerResult {
             // Let's only bother with SimpleDateFormat parsing for long enough values.
             for (String dateFormat : DATE_FORMATS) {
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
-                simpleDateFormat.setTimeZone(GMT);
+                simpleDateFormat.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
                 try {
                     return simpleDateFormat.parse(headerValue).getTime();
                 } catch (ParseException ex) {
