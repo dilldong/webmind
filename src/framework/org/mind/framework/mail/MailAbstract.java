@@ -56,6 +56,8 @@ public abstract class MailAbstract implements DelegateMessage {
         helper.setText(content, true);
 
         try {
+            // javax.activation.UnsupportedDataTypeException: no object DCH for MIME type multipart/mixed;
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
             sender.send(msg);
         } catch (MailException e) {
             logger.error(e.getMessage(), e);
