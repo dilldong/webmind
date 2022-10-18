@@ -2,8 +2,6 @@ package org.mind.framework.renderer.template;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.mind.framework.ContextSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 
@@ -13,8 +11,6 @@ import javax.servlet.ServletContext;
  * @author dp
  */
 public class VelocityTemplateFactory extends TemplateFactory {
-
-    private static final Logger log = LoggerFactory.getLogger(VelocityTemplateFactory.class);
 
     private VelocityEngine velocityEngine;
 

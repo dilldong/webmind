@@ -15,9 +15,11 @@ public class ClassUtils {
 
     public static Class<?> getClass(String clazz) throws ClassNotFoundException {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (Objects.nonNull(loader))
-            return Class.forName(clazz, true, loader);
-
+        if (Objects.nonNull(loader)) {
+            try {
+                return Class.forName(clazz, true, loader);
+            } catch (ClassNotFoundException e) {}
+        }
         return Class.forName(clazz);
     }
 
