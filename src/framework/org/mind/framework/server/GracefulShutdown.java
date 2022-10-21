@@ -92,11 +92,13 @@ public class GracefulShutdown extends Thread {
                 threadPoolExecutor.shutdown();
 
                 log.info("Request active thread processing, waiting ....");
-                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit))
+                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit)) {
                     log.warn("{} thread pool did not shutdown gracefully within [{}] {}. Proceeding with forceful shutdown",
                             this.getName(),
                             waitTime,
                             waitTimeUnit.name());
+                    threadPoolExecutor.shutdownNow();
+                }
             } catch (InterruptedException ex) {
             }
         }
