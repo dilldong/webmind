@@ -1,6 +1,5 @@
 package org.mind.framework.util;
 
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -108,16 +107,16 @@ public class HttpUtils {
         return null;
     }
 
-    public static Map<String, JsonObject> getJsonMap(HttpServletRequest request) {
+    public static <K, V> Map<K, V> getJsonMap(HttpServletRequest request) {
         return JsonUtils.fromJson(
                 getJson(request),
-                new TypeToken<Map<String, JsonObject>>(){});
+                new TypeToken<Map<K, V>>(){});
     }
 
-    public static List<JsonObject> getJsonList(HttpServletRequest request) {
+    public static <T> List<T> getJsonList(HttpServletRequest request) {
         return JsonUtils.fromJson(
                 getJson(request),
-                new TypeToken<List<JsonObject>>(){});
+                new TypeToken<List<T>>(){});
     }
 
     /**

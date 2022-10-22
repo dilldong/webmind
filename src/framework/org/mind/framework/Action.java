@@ -71,11 +71,11 @@ public final class Action {
     }
 
     public Map<String, JsonObject> getJsonMap() {
-        return HttpUtils.getJsonMap(request);
+        return HttpUtils.<String, JsonObject>getJsonMap(request);
     }
 
     public List<JsonObject> getJsonList() {
-        return HttpUtils.getJsonList(request);
+        return HttpUtils.<JsonObject>getJsonList(request);
     }
 
     public String getString(String name) {
