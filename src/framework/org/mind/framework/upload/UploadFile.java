@@ -1,5 +1,6 @@
 package org.mind.framework.upload;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
@@ -66,8 +67,13 @@ public class UploadFile {
     private void setDirectory(String directory) {
         File file = new File(directory);
 
-        if (!file.exists())
-            file.mkdirs();
+        if (!file.exists()) {
+            try {
+                FileUtils.forceMkdir(file);
+            } catch (IOException e) {
+                log.warn("Creating file-directory error: {}", e.getMessage());
+            }
+        }
 
         // check directory
         if (!file.isDirectory())
@@ -78,7 +84,6 @@ public class UploadFile {
             throw new IllegalArgumentException(String.format("Not writable: %s", directory));
 
         this.directory = directory;
-
         regexType = PropertiesUtils.getString(property, "upload.type");
     }
 
