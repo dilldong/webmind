@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 利用独立线程执行循环处理工作服务类
  *
@@ -93,6 +95,7 @@ public abstract class LoopWorkerService extends AbstractService {
     protected abstract void doLoopWork();
 
     private class Worker implements Runnable {
+        @Override
         public void run() {
             toStart();
             while (isLoop) {
@@ -102,9 +105,8 @@ public abstract class LoopWorkerService extends AbstractService {
                 // sleep
                 if (spaceTime > 0) {
                     try {
-                        Thread.sleep(spaceTime);
-                    } catch (InterruptedException e) {
-                    }
+                        TimeUnit.MILLISECONDS.sleep(spaceTime);
+                    } catch (InterruptedException e) {}
                     Thread.yield();
                 } else // 通过spaceTime<=0跳出for循环
                     break;
