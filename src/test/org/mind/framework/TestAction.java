@@ -35,6 +35,16 @@ public class TestAction {
         return "Hello,This is mind-framework.";
     }
 
+    @Mapping(value = "/request/value/${type}", method = RequestMethod.GET)
+    public String withText(String type) {
+        return String.format("Hello,This is mind-framework. %s", type);
+    }
+
+    @Mapping(value = "/request/int/${type}", method = RequestMethod.GET)
+    public String withText(int type) {
+        return String.format("Hello,This is mind-framework. %d", type);
+    }
+
     @Mapping("/request/json")
     public String withJson() {
         return new Response<String>(HttpServletResponse.SC_OK, "OK").toJson();

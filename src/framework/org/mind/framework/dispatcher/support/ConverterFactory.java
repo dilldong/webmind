@@ -1,6 +1,7 @@
 package org.mind.framework.dispatcher.support;
 
 import org.apache.commons.lang3.CharUtils;
+import org.mind.framework.exception.NotSupportedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.Objects;
  */
 public class ConverterFactory {
 
-    private final Map<Class<?>, Converter<?>> mapHolder;
+    private final Map<String, Converter<?>> converterMap;
 
     private ConverterFactory() {
         Converter<Boolean> booleanConvert = value -> Boolean.parseBoolean(value);
@@ -32,51 +33,55 @@ public class ConverterFactory {
 
         Converter<Character> charConvert = value -> CharUtils.toChar(value);
 
-        this.mapHolder = new HashMap<>(16);
-        this.mapHolder.put(boolean.class, booleanConvert);
-        this.mapHolder.put(Boolean.class, booleanConvert);
+        this.converterMap = new HashMap<>(16);
+        this.converterMap.put(boolean.class.getName(), booleanConvert);
+        this.converterMap.put(Boolean.class.getName(), booleanConvert);
 
-        this.mapHolder.put(int.class, intConvert);
-        this.mapHolder.put(Integer.class, intConvert);
+        this.converterMap.put(int.class.getName(), intConvert);
+        this.converterMap.put(Integer.class.getName(), intConvert);
 
-        this.mapHolder.put(long.class, longConvert);
-        this.mapHolder.put(Long.class, longConvert);
+        this.converterMap.put(long.class.getName(), longConvert);
+        this.converterMap.put(Long.class.getName(), longConvert);
 
-        this.mapHolder.put(short.class, shortConvert);
-        this.mapHolder.put(Short.class, shortConvert);
+        this.converterMap.put(short.class.getName(), shortConvert);
+        this.converterMap.put(Short.class.getName(), shortConvert);
 
-        this.mapHolder.put(byte.class, byteConvert);
-        this.mapHolder.put(Byte.class, byteConvert);
+        this.converterMap.put(byte.class.getName(), byteConvert);
+        this.converterMap.put(Byte.class.getName(), byteConvert);
 
-        this.mapHolder.put(float.class, floatConvert);
-        this.mapHolder.put(Float.class, floatConvert);
+        this.converterMap.put(float.class.getName(), floatConvert);
+        this.converterMap.put(Float.class.getName(), floatConvert);
 
-        this.mapHolder.put(double.class, doubleConvert);
-        this.mapHolder.put(Double.class, doubleConvert);
+        this.converterMap.put(double.class.getName(), doubleConvert);
+        this.converterMap.put(Double.class.getName(), doubleConvert);
 
-        this.mapHolder.put(char.class, charConvert);
-        this.mapHolder.put(Character.class, charConvert);
+        this.converterMap.put(char.class.getName(), charConvert);
+        this.converterMap.put(Character.class.getName(), charConvert);
     }
 
     private static class ConverterHolder {
-        private static final ConverterFactory factory = new ConverterFactory();
+        private static final ConverterFactory CONVERTER_FACTORY = new ConverterFactory();
         private ConverterHolder() {
         }
     }
 
     public static ConverterFactory getInstance() {
-        return ConverterHolder.factory;
+        return ConverterHolder.CONVERTER_FACTORY;
     }
 
     public boolean isConvert(Class<?> clazz) {
         return
-                String.class.equals(clazz)
-                        || this.mapHolder.get(clazz) != null;
+                String.class.getName().equals(clazz.getName())
+                        || this.converterMap.containsKey(clazz.getName());
     }
 
     public Object convert(Class<?> clazz, String value) {
-        Converter<?> convert = this.mapHolder.get(clazz);
-        Objects.requireNonNull(convert, "The parameter conversion type failed, Only supports basic data types.");
-        return convert.convert(value);
+        if (this.converterMap.containsKey(clazz.getName())) {
+            Converter<?> convert = this.converterMap.get(clazz.getName());
+            if (Objects.isNull(convert))
+                throw new NotSupportedException("The parameter conversion type failed, Only supports basic data types.");
+            return convert.convert(value);
+        }
+        throw new NotSupportedException("The parameter conversion type failed, Only supports basic data types.");
     }
 }
