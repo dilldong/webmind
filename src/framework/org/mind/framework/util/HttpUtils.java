@@ -1,6 +1,5 @@
 package org.mind.framework.util;
 
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -8,8 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -105,18 +102,6 @@ public class HttpUtils {
             return json;
 
         return null;
-    }
-
-    public static <K, V> Map<K, V> getJsonMap(HttpServletRequest request) {
-        return JsonUtils.fromJson(
-                getJson(request),
-                new TypeToken<Map<K, V>>(){});
-    }
-
-    public static <T> List<T> getJsonList(HttpServletRequest request) {
-        return JsonUtils.fromJson(
-                getJson(request),
-                new TypeToken<List<T>>(){});
     }
 
     /**

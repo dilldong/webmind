@@ -113,11 +113,11 @@ public class JsonUtils {
         return defaultEmpty(target);
     }
 
-    public static <T> T fromJson(String json, Class<T> clazz) {
+    public static <V> V fromJson(String json, Class<V> clazz) {
         return fromJson(json, TypeToken.get(clazz));
     }
 
-    public static <T> T fromJson(String json, TypeToken<T> typeToken) {
+    public static <V> V fromJson(String json, TypeToken<V> typeToken) {
         if (StringUtils.isBlank(json))
             return null;
 

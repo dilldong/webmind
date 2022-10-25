@@ -1,8 +1,11 @@
 package org.mind.framework;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.HttpUtils;
+import org.mind.framework.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,8 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -70,12 +71,11 @@ public final class Action {
         return HttpUtils.getJson(request);
     }
 
-    public Map<String, JsonObject> getJsonMap() {
-        return HttpUtils.<String, JsonObject>getJsonMap(request);
+    public JsonObject getJsonObject() {
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>(){});
     }
-
-    public List<JsonObject> getJsonList() {
-        return HttpUtils.<JsonObject>getJsonList(request);
+    public JsonArray getJsonArray(){
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>(){});
     }
 
     public String getString(String name) {
