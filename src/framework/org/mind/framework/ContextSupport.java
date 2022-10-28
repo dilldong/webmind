@@ -46,7 +46,8 @@ public final class ContextSupport {
      * @author dp
      */
     public static Object getBean(String name) {
-        return getBean(name, null);
+        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
+        return wctx.getBean(name);
     }
 
     /**
@@ -57,12 +58,22 @@ public final class ContextSupport {
      * @return
      * @author dp
      */
-    public static Object getBean(String name, Class<?> requiredType) {
+    public static <T> T getBean(String name, Class<T> requiredType) {
         Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
         if (Objects.isNull(requiredType))
-            return wctx.getBean(name);
+            return (T) getBean(name);
 
-        return wctx.getBean(name, requiredType);
+        return wctx.<T>getBean(name, requiredType);
+    }
+
+    public <T> T getBean(Class<T> requiredType) {
+        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
+        return wctx.<T>getBean(requiredType);
+    }
+
+    public <T> T getBean(Class<T> requiredType, Object... args) {
+        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
+        return wctx.<T>getBean(requiredType, args);
     }
 
     public static String[] getBeanNames() {
