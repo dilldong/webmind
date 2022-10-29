@@ -262,8 +262,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (!this.isEmpty()) {
             itemsMap.clear();
             itemsMap = null;
-            if (log.isInfoEnabled())
-                log.info("Destroy CacheManager, Clear all items");
+            log.info("Destroy CacheManager, Clear all items");
         }
     }
 

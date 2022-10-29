@@ -43,12 +43,11 @@ public class QueueLittle implements QueueService {
 
     @Override
     public void destroy() {
-        log.info("Destroy QueueLittle elements....");
         if (Objects.isNull(queueInstance) || queueInstance.isEmpty())
             return;
 
         int size = this.size();
-        log.info("QueueService size: {}", size);
+        log.info("Destroy QueueLittle@{} elements: [{}]", Integer.toHexString(hashCode()), size);
         if (size > 0)
             this.queueInstance.clear();
     }

@@ -38,6 +38,10 @@ public final class ContextSupport {
         wctx = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
     }
 
+    public static void setApplicationContext(ApplicationContext applicationContext){
+        wctx = applicationContext;
+    }
+
     /**
      * Get the Spring context
      *

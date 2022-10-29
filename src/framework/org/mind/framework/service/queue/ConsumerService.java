@@ -81,7 +81,7 @@ public class ConsumerService implements Updateable, Destroyable {
 
         executor.prestartAllCoreThreads();// 预启动所有核心线程
         running = true;
-        log.info("Init QueueService exec-pool-executor: {}", this);
+        log.info("Init ConsumerService@{} exec-pool-executor: {}", Integer.toHexString(hashCode()), this);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ConsumerService implements Updateable, Destroyable {
         if (this.useThreadPool && this.running) {
             this.running = false;
             this.executor.shutdown();
-            log.info("Destroy QueueService exec-pool-executor: {}", this);
+            log.info("Destroy ConsumerService@{} exec-pool-executor: {}", Integer.toHexString(hashCode()), this);
         }
     }
 
@@ -115,14 +115,14 @@ public class ConsumerService implements Updateable, Destroyable {
         if (this.useThreadPool) {
             return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                     .append("maxPoolSize", maxPoolSize)
-                    .append("corePoolSize", corePoolSize)
-                    .append("keepAliveTime", keepAliveTime)
-                    .append("taskCapacity", taskCapacity)
-                    .append("submitTaskCount", submitTaskCount)
-                    .append("running", running)
-                    .append("activeWorker", executor.getActiveCount())
-                    .append("completedTask", executor.getCompletedTaskCount())
-                    .append("uncompletedTask", executor.getQueue().size())
+                    .append(" corePoolSize", corePoolSize)
+                    .append(" keepAliveTime", keepAliveTime)
+                    .append(" taskCapacity", taskCapacity)
+                    .append(" submitTaskCount", submitTaskCount)
+                    .append(" running", running)
+                    .append(" activeWorker", executor.getActiveCount())
+                    .append(" completedTask", executor.getCompletedTaskCount())
+                    .append(" uncompletedTask", executor.getQueue().size())
                     .toString();
         }
 
