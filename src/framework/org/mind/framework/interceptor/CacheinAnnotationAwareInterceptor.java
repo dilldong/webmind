@@ -110,9 +110,9 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
         if (isPrefix && isSuffix)
             opInterceptor.setKey(String.join(cachein.delimiter(), cachein.prefix(), cachein.suffix()));
-        else if (isPrefix && !isSuffix)
+        else if (isPrefix)
             opInterceptor.setKey(cachein.prefix());
-        else if (!isPrefix && isSuffix)
+        else if (isSuffix)
             opInterceptor.setKey(cachein.suffix());
         else
             throw new IllegalArgumentException("At least one of 'prefix' or 'suffix'.");

@@ -36,7 +36,7 @@ public class GuiceContainerAware implements ContainerAware {
     public List<Object> loadBeans() {
         Map<Key<?>, Binding<?>> map = injector.getBindings();
         Set<Map.Entry<Key<?>, Binding<?>>> set = map.entrySet();
-        List<Object> list = new ArrayList<Object>(set.size());
+        List<Object> list = new ArrayList<>(set.size());
 
         for (Map.Entry<Key<?>, Binding<?>> entry : set) {
 //			BeanModel model = new BeanModel(
@@ -55,7 +55,7 @@ public class GuiceContainerAware implements ContainerAware {
             throw new IllegalArgumentException("init Guice failed. missing parameter '<modules>' by web.xml.");
 
         String[] strs = value.split("\\,");
-        List<Module> moduleList = new ArrayList<Module>(strs.length);
+        List<Module> moduleList = new ArrayList<>(strs.length);
 
         for (String name : strs) {
             Module m = initModule(name.trim(), config.getServletContext());
@@ -90,7 +90,7 @@ public class GuiceContainerAware implements ContainerAware {
                         String.format("Class '%s' does not implement '%s'.", name, Module.class.getName()));
 
             } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-                log.error("Cannot instanciate class '{}'.", name);
+                log.error("Cannot instantiate class '{}'.", name);
                 ThrowProvider.doThrow(e);
             }
         }

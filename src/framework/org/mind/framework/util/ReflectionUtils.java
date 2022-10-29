@@ -1,5 +1,7 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -60,8 +62,7 @@ public abstract class ReflectionUtils {
         Class<?> searchType = clazz;
         while (!Object.class.equals(searchType) && searchType != null) {
             Field[] fields = searchType.getDeclaredFields();
-            for (int i = 0; i < fields.length; i++) {
-                Field field = fields[i];
+            for (Field field : fields) {
                 if ((name == null || name.equals(field.getName()))
                         && (type == null || type.equals(field.getType()))) {
                     return field;
@@ -76,14 +77,12 @@ public abstract class ReflectionUtils {
         if (clazz == null)
             throw new IllegalArgumentException("Class must not be null");
 
-        Class<?> searchType = clazz;
-        Field[] fields = searchType.getDeclaredFields();
-        return fields;
+        return clazz.getDeclaredFields();
     }
 
     public static Map<String, Field> getDeclaredFieldByMap(Class<?> clazz) {
         Field[] fields = getDeclaredFields(clazz);
-        if (fields == null || fields.length == 0)
+        if (ArrayUtils.isEmpty(fields))
             return Collections.emptyMap();
 
         Map<String, Field> fieldMap = new HashMap<>(fields.length);
@@ -173,8 +172,7 @@ public abstract class ReflectionUtils {
         Class<?> searchType = clazz;
         while (!Object.class.equals(searchType) && searchType != null) {
             Method[] methods = (searchType.isInterface() ? searchType.getMethods() : searchType.getDeclaredMethods());
-            for (int i = 0; i < methods.length; i++) {
-                Method method = methods[i];
+            for (Method method : methods) {
                 if (name.equals(method.getName()) &&
                         (paramTypes == null || Arrays.equals(paramTypes, method.getParameterTypes()))) {
                     return method;
@@ -347,8 +345,7 @@ public abstract class ReflectionUtils {
      */
     private static void handleUnexpectedException(Throwable ex) {
         // Needs to avoid the chained constructor for JDK 1.4 compatibility.
-        IllegalStateException isex = new IllegalStateException("Unexpected exception thrown", ex);
-        throw isex;
+        throw new IllegalStateException("Unexpected exception thrown", ex);
     }
 
     /**
@@ -366,8 +363,7 @@ public abstract class ReflectionUtils {
             throw new IllegalArgumentException("Method must not be null");
 
         Class<?>[] declaredExceptions = method.getExceptionTypes();
-        for (int i = 0; i < declaredExceptions.length; i++) {
-            Class<?> declaredException = declaredExceptions[i];
+        for (Class<?> declaredException : declaredExceptions) {
             if (declaredException.isAssignableFrom(exceptionType)) {
                 return true;
             }
@@ -474,7 +470,6 @@ public abstract class ReflectionUtils {
      *
      * @param targetClass class to start looking at
      * @param mc          the callback to invoke for each method
-     * @see doWithMethods(Class<?>, MethodCallback, MethodFilter)
      */
     public static void doWithMethods(Class<?> targetClass, MethodCallback mc) throws IllegalArgumentException {
         doWithMethods(targetClass, mc, null);
@@ -496,15 +491,15 @@ public abstract class ReflectionUtils {
         // Keep backing up the inheritance hierarchy.
         do {
             Method[] methods = targetClass.getDeclaredMethods();
-            for (int i = 0; i < methods.length; i++) {
-                if (mf != null && !mf.matches(methods[i])) {
+            for (Method method : methods) {
+                if (mf != null && !mf.matches(method)) {
                     continue;
                 }
                 try {
-                    mc.doWith(methods[i]);
+                    mc.doWith(method);
                 } catch (IllegalAccessException ex) {
                     throw new IllegalStateException(
-                            String.format("Shouldn't be illegal to access method '%s': %s", methods[i].getName(), ex));
+                            String.format("Shouldn't be illegal to access method '%s': %s", method.getName(), ex));
                 }
             }
             targetClass = targetClass.getSuperclass();
@@ -517,13 +512,9 @@ public abstract class ReflectionUtils {
      * Leaf class methods are included first.
      */
     public static Method[] getAllDeclaredMethods(Class<?> leafClass) throws IllegalArgumentException {
-        final List<Method> list = new ArrayList<Method>(32);
-        doWithMethods(leafClass, new MethodCallback() {
-            public void doWith(Method method) {
-                list.add(method);
-            }
-        });
-        return list.toArray(new Method[list.size()]);
+        final List<Method> list = new ArrayList<>(32);
+        doWithMethods(leafClass, method -> list.add(method));
+        return list.toArray(new Method[0]);
     }
 
 
@@ -553,16 +544,16 @@ public abstract class ReflectionUtils {
         do {
             // Copy each field declared on this class unless it's static or file.
             Field[] fields = targetClass.getDeclaredFields();
-            for (int i = 0; i < fields.length; i++) {
+            for (Field field : fields) {
                 // Skip static and final fields.
-                if (ff != null && !ff.matches(fields[i])) {
+                if (ff != null && !ff.matches(field)) {
                     continue;
                 }
                 try {
-                    fc.doWith(fields[i]);
+                    fc.doWith(field);
                 } catch (IllegalAccessException ex) {
                     throw new IllegalStateException(
-                            String.format("Shouldn't be illegal to access field '%s': %s", fields[i].getName(), ex));
+                            String.format("Shouldn't be illegal to access field '%s': %s", field.getName(), ex));
                 }
             }
             targetClass = targetClass.getSuperclass();
@@ -589,12 +580,10 @@ public abstract class ReflectionUtils {
                     String.format("Destination class [%s] must be same or subclass as source class [%s]",
                             dest.getClass().getName(), src.getClass().getName()));
         }
-        doWithFields(src.getClass(), new FieldCallback() {
-            public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
-                makeAccessible(field);
-                Object srcValue = field.get(src);
-                field.set(dest, srcValue);
-            }
+        doWithFields(src.getClass(), field -> {
+            makeAccessible(field);
+            Object srcValue = field.get(src);
+            field.set(dest, srcValue);
         }, COPYABLE_FIELDS);
     }
 
@@ -658,11 +647,8 @@ public abstract class ReflectionUtils {
     /**
      * Pre-built FieldFilter that matches all non-static, non-final fields.
      */
-    public static FieldFilter COPYABLE_FIELDS = new FieldFilter() {
-        public boolean matches(Field field) {
-            return !(Modifier.isStatic(field.getModifiers()) ||
-                    Modifier.isFinal(field.getModifiers()));
-        }
-    };
+    public static final FieldFilter COPYABLE_FIELDS =
+            field -> !(Modifier.isStatic(field.getModifiers())
+                    || Modifier.isFinal(field.getModifiers()));
 
 }

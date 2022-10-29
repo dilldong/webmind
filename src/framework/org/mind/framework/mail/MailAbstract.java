@@ -14,7 +14,7 @@ public abstract class MailAbstract implements DelegateMessage {
     protected static final Logger logger = LoggerFactory.getLogger(MailAbstract.class);
 
     private String from;
-    private String persoanl;
+    private String personal;
     private String subject;
     private String address;
     private Object model;
@@ -50,12 +50,14 @@ public abstract class MailAbstract implements DelegateMessage {
         MimeMessage msg = this.sender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(msg, true, defaultCharset);
 
-        helper.setFrom(from, persoanl);
+        helper.setFrom(from, personal);
         helper.setTo(address);
         helper.setSubject(subject);
         helper.setText(content, true);
 
         try {
+            // javax.activation.UnsupportedDataTypeException: no object DCH for MIME type multipart/mixed;
+            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
             sender.send(msg);
         } catch (MailException e) {
             logger.error(e.getMessage(), e);
@@ -70,9 +72,9 @@ public abstract class MailAbstract implements DelegateMessage {
         this.from = from;
     }
 
-    public void setFrom(String from, String persoanl) {
+    public void setFrom(String from, String personal) {
         setFrom(from);
-        this.persoanl = persoanl;
+        this.personal = personal;
     }
 
     public String getSubject() {

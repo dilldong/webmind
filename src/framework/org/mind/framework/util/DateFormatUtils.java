@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
+import java.util.TimeZone;
 
 /**
  * 对日期、时间格式化工具类
@@ -27,6 +28,11 @@ public class DateFormatUtils {
     public static final ZoneId ZONE_DEFAULT = ZoneId.systemDefault();
     public static final ZoneId UTC = ZoneId.of("UTC");
     public static final ZoneId UTC8 = ZoneId.of("UTC+8");
+    public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
+    public static final TimeZone UTC8_TIMEZONE = TimeZone.getTimeZone(UTC8);
+    public static final long ONE_DAY_MILLIS = 86_400_000L;
+    public static final long ONE_HOUR_MILLIS = 3_600_000L;
+
 
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
@@ -37,6 +43,44 @@ public class DateFormatUtils {
     public static long getMillis() {
         return System.currentTimeMillis();
     }
+
+
+    /**
+     * 返回某天之前的时间戳
+     *
+     * @param days
+     * @return
+     */
+    public static long before(int days) {
+        if (days < 1)
+            return -1L;
+        return getMillis() - days * ONE_DAY_MILLIS;
+    }
+
+    /**
+     * 返回某天之前的起始时间戳
+     *
+     * @param days
+     * @return
+     */
+    public static long beforeAtStartOfDay(int days) {
+        if (days < 1)
+            return -1L;
+        return beforeAtStartOfDay(days, ZONE_DEFAULT);
+    }
+
+    /**
+     * 指定时区, 返回某天之前的起始时间戳
+     *
+     * @param days
+     * @param zoneId
+     * @return
+     */
+    public static long beforeAtStartOfDay(int days, ZoneId zoneId) {
+        long timestamp = before(days);
+        return timestamp == -1 ? timestamp : startOfDayMillis(dateAt(timestamp, zoneId));
+    }
+
 
     /**
      * 将指定特殊的格式，返回格式化的时间；
@@ -172,15 +216,15 @@ public class DateFormatUtils {
      * @param localDate
      * @return
      */
-    public static long utcStartOfDaysMillis(LocalDate localDate) {
-        return startOfDaysMillis(localDate, UTC);
+    public static long utcStartOfDayMillis(LocalDate localDate) {
+        return startOfDayMillis(localDate, UTC);
     }
 
-    public static long startOfDaysMillis(LocalDate localDate) {
-        return startOfDaysMillis(localDate, ZONE_DEFAULT);
+    public static long startOfDayMillis(LocalDate localDate) {
+        return startOfDayMillis(localDate, ZONE_DEFAULT);
     }
 
-    public static long startOfDaysMillis(LocalDate localDate, ZoneId zoneId) {
+    public static long startOfDayMillis(LocalDate localDate, ZoneId zoneId) {
         return localDate.atStartOfDay(zoneId).toEpochSecond() * 1_000L;
     }
 

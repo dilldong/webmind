@@ -7,6 +7,7 @@ import org.apache.catalina.core.ThreadLocalLeakPreventionListener;
 import org.apache.catalina.mbeans.GlobalResourcesLifecycleListener;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.mind.framework.exception.ThrowProvider;
@@ -61,7 +62,7 @@ public abstract class ServerContext {
                 Tomcat tomcat = creationServer();
                 this.registerServer(tomcat, serverConfig);
 
-                // use JNDI sevice
+                // use JNDI service
                 tomcat.enableNaming();
 
                 // Prevent memory leaks due to use of particular java/javax APIs
@@ -114,7 +115,7 @@ public abstract class ServerContext {
         serverConfig.setResourceSet(resourceSet);
         serverConfig.setSpringFileSet(springFileSet);
 
-        // Set Tomcat base-work-direcotry
+        // Set Tomcat base-work-directory
         File baseDir =
                 StringUtils.isEmpty(serverConfig.getTomcatBaseDir()) ?
                         createTempDir(serverConfig.getServerName()) :
@@ -129,8 +130,7 @@ public abstract class ServerContext {
 
             try {
                 Resource[] resources = patternResolver.getResources(namePattern);
-
-                if (resources != null) {
+                if (ArrayUtils.isNotEmpty(resources)) {
                     String resourceBaseDir =
                             String.format("%s/%s",
                                     baseDir.getAbsolutePath(),

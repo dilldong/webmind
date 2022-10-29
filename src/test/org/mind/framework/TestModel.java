@@ -4,14 +4,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
+import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
+import org.mind.framework.service.WebMainService;
+import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.util.CalculateUtils;
+import org.mind.framework.util.IOUtils;
+import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -23,9 +33,9 @@ import java.util.List;
  * @auther Marcus
  */
 @Slf4j
-//@RunWith(SpringJUnit4ClassRunner.class)
-//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
-public class TestModel {
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+public class TestModel extends AbstractJUnit4SpringContextTests {
 
     @Resource
     private TestService testService;
@@ -33,8 +43,73 @@ public class TestModel {
     @Resource
     private TestServiceComponent testServiceComponent;
 
+    @Resource
+    private QueueService executorQueueService;
+
+    @SneakyThrows
     @Test
-    public void test05(){
+    public void test09() {
+        WebMainService service = this.applicationContext.getBean("mainService", WebMainService.class);
+        int i = 2;
+        while ((--i) >= 0) {
+            A a = A.builder().field01("" + i).build();
+            executorQueueService.producer(() -> {
+                System.out.println(a.field01);
+            });
+        }
+
+        service.start();
+        Thread.sleep(2000L);
+        service.stop();
+    }
+
+    @Test
+    public void test08() {
+        RSA2Utils.RSA2 rsa = RSA2Utils.generateKey();
+        String orig = "dsakldfhkj*^=~圣诞节";
+        String encdata = RSA2Utils.encrypt(orig, rsa.getPublicByBase64());
+        String decdata = RSA2Utils.decrypt(encdata, rsa.getPrivateByBase64());
+        System.out.println(rsa);
+        System.out.println(encdata);
+        System.out.println(decdata);
+
+        String signStr = RSA2Utils.sign(encdata, rsa.getPrivateByBase64());
+        System.out.println("签名: " + signStr);
+
+        System.out.println("签名验证: " + RSA2Utils.verify(encdata, rsa.getPublicByBase64(), signStr));
+    }
+
+    @Test
+    public void test07() {
+        String v = "/user/${id}";
+
+        String regex = MatcherUtils.convertURI(v);
+        System.out.println(regex);
+        int count = MatcherUtils.checkCount(v, MatcherUtils.URI_PARAM_MATCH);
+        System.out.println("count:" + count);
+
+        String uri = "/user/1332?id=13&path=http://www.c.cs/user/idja/tt";
+        boolean f = MatcherUtils.matcher(uri, regex);
+        System.out.println(f);
+
+
+        String res = "css|js|jpg|png|gif|html|htm|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt";
+
+        f = MatcherUtils.matcher("TXT", res, MatcherUtils.IGNORECASE_EQ).matches();
+        System.out.println("=====" + f);
+    }
+
+    @Test
+    public void test06() {
+        int i = 132;
+        byte b = IOUtils.int2byte(i)[3];
+        int k = IOUtils.bytesToInt(new byte[]{b}, 0, 1);
+        System.out.println(b);
+        System.out.println(k);
+    }
+
+    @Test
+    public void test05() {
         System.out.println(CalculateUtils.formatNumberSymbol("1002"));
     }
 
@@ -63,7 +138,7 @@ public class TestModel {
         List<A> list = new ArrayList<>(3);
         cacheable.addCache(key, list, true, Cloneable.CloneType.CLONE);
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; ++i) {
             A a = A.builder().build();
             list.add(a);
         }
@@ -125,7 +200,6 @@ class A implements Cloneable<A> {
     String field08;
     String field09;
     String field10;
-
 
     @Override
     public A clone() {

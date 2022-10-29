@@ -12,7 +12,7 @@ import javax.servlet.ServletContext;
  */
 public abstract class TemplateFactory {
 
-	private static final Logger log = LoggerFactory.getLogger(TemplateFactory.class);
+	protected static final Logger log = LoggerFactory.getLogger(TemplateFactory.class);
 	
 	private static TemplateFactory tf;
 	

@@ -15,6 +15,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -24,9 +25,7 @@ import java.util.zip.GZIPInputStream;
  * @author marcus
  */
 public class HttpResponse<T> {
-
     protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
-
     protected int responseCode;
     protected String responseAsString;
     protected InputStream inStream;
@@ -49,14 +48,13 @@ public class HttpResponse<T> {
             this.responseCode = con.getResponseCode();
         } catch (SocketTimeoutException e) {
             try {
-                Thread.sleep(100);
-            } catch (InterruptedException e1) {
-            }
+                TimeUnit.MILLISECONDS.sleep(100L);
+            } catch (InterruptedException e1) {}
 
             this.responseCode = con.getResponseCode();
         }
 
-        log.info("http response code: {}", this.responseCode);
+        log.debug("http response code: {}", this.responseCode);
 
         if ((inStream = con.getErrorStream()) == null)
             inStream = con.getInputStream();
@@ -112,7 +110,7 @@ public class HttpResponse<T> {
                 return null;
 
             BufferedReader br = new BufferedReader(new InputStreamReader(stream, charset));
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             String line;
 
             while ((line = br.readLine()) != null)

@@ -3,6 +3,7 @@ package org.mind.framework.util;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Objects;
@@ -19,22 +20,22 @@ import java.util.Objects;
 public class CalculateUtils {
 
     public static String format(String number) {
-        return format(number, BigDecimal.ROUND_HALF_UP, 2);
+        return format(number, RoundingMode.HALF_UP, 2);
     }
 
     public static String format(BigDecimal number) {
-        return format(number, BigDecimal.ROUND_HALF_UP, 2);
+        return format(number, RoundingMode.HALF_UP, 2);
     }
 
     public static String format(String number, int scale) {
-        return format(number, BigDecimal.ROUND_HALF_UP, scale);
+        return format(number, RoundingMode.HALF_UP, scale);
     }
 
     public static String format(BigDecimal number, int scale) {
-        return format(number, BigDecimal.ROUND_HALF_UP, scale);
+        return format(number, RoundingMode.HALF_UP, scale);
     }
 
-    public static String format(String number, int mode, int scale) {
+    public static String format(String number, RoundingMode mode, int scale) {
         String afterPart = StringUtils.substringAfter(number, ".");
         if (afterPart.length() > scale)
             return format(new BigDecimal(number), mode, scale);
@@ -42,7 +43,7 @@ public class CalculateUtils {
         return number;
     }
 
-    public static String format(BigDecimal number, int mode, int scale) {
+    public static String format(BigDecimal number, RoundingMode mode, int scale) {
         return number.setScale(scale, mode).stripTrailingZeros().toPlainString();
     }
 
@@ -78,18 +79,18 @@ public class CalculateUtils {
     }
 
     public static BigDecimal add(String augend, String augend1, int scale) {
-        return add(augend, augend1, BigDecimal.ROUND_HALF_UP, scale);
+        return add(augend, augend1, RoundingMode.HALF_UP, scale);
     }
 
     public static BigDecimal add(BigDecimal augend, BigDecimal augend1, int scale) {
-        return add(augend, augend1, BigDecimal.ROUND_HALF_UP, scale);
+        return add(augend, augend1, RoundingMode.HALF_UP, scale);
     }
 
-    public static BigDecimal add(String augend, String augend1, int mode, int scale) {
+    public static BigDecimal add(String augend, String augend1, RoundingMode mode, int scale) {
         return add(new BigDecimal(augend), new BigDecimal(augend1), mode, scale);
     }
 
-    public static BigDecimal add(BigDecimal augend, BigDecimal augend1, int mode, int scale) {
+    public static BigDecimal add(BigDecimal augend, BigDecimal augend1, RoundingMode mode, int scale) {
         BigDecimal result = augend.add(augend1);
         return result.setScale(scale, mode);
     }
@@ -103,18 +104,18 @@ public class CalculateUtils {
     }
 
     public static BigDecimal subtract(String subtrahend, String subtrahend1, int scale) {
-        return subtract(subtrahend, subtrahend1, BigDecimal.ROUND_HALF_UP, scale);
+        return subtract(subtrahend, subtrahend1, RoundingMode.HALF_UP, scale);
     }
 
     public static BigDecimal subtract(BigDecimal subtrahend, BigDecimal subtrahend1, int scale) {
-        return subtract(subtrahend, subtrahend1, BigDecimal.ROUND_HALF_UP, scale);
+        return subtract(subtrahend, subtrahend1, RoundingMode.HALF_UP, scale);
     }
 
-    public static BigDecimal subtract(String subtrahend, String subtrahend1, int mode, int scale) {
+    public static BigDecimal subtract(String subtrahend, String subtrahend1, RoundingMode mode, int scale) {
         return subtract(new BigDecimal(subtrahend), new BigDecimal(subtrahend1), mode, scale);
     }
 
-    public static BigDecimal subtract(BigDecimal subtrahend, BigDecimal subtrahend1, int mode, int scale) {
+    public static BigDecimal subtract(BigDecimal subtrahend, BigDecimal subtrahend1, RoundingMode mode, int scale) {
         BigDecimal result = subtrahend.subtract(subtrahend1);
         return result.setScale(scale, mode);
     }
@@ -150,18 +151,18 @@ public class CalculateUtils {
     }
 
     public static BigDecimal multiply(String multiplicand, String multiplier, int scale) {
-        return multiply(multiplicand, multiplier, BigDecimal.ROUND_HALF_UP, scale);
+        return multiply(multiplicand, multiplier, RoundingMode.HALF_UP, scale);
     }
 
     public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier, int scale) {
-        return multiply(multiplicand, multiplier, BigDecimal.ROUND_HALF_UP, scale);
+        return multiply(multiplicand, multiplier, RoundingMode.HALF_UP, scale);
     }
 
-    public static BigDecimal multiply(String multiplicand, String multiplier, int mode, int scale) {
+    public static BigDecimal multiply(String multiplicand, String multiplier, RoundingMode mode, int scale) {
         return multiply(new BigDecimal(multiplicand), new BigDecimal(multiplier), mode, scale);
     }
 
-    public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier, int mode, int scale) {
+    public static BigDecimal multiply(BigDecimal multiplicand, BigDecimal multiplier, RoundingMode mode, int scale) {
         if (multiplicand.compareTo(BigDecimal.ZERO) == 0 || multiplier.compareTo(BigDecimal.ZERO) == 0)
             return BigDecimal.ZERO;
 
@@ -177,18 +178,18 @@ public class CalculateUtils {
     }
 
     public static BigDecimal divide(String dividend, String divisor, int scale) {
-        return divide(dividend, divisor, BigDecimal.ROUND_HALF_UP, scale);
+        return divide(dividend, divisor, RoundingMode.HALF_UP, scale);
     }
 
     public static BigDecimal divide(BigDecimal dividend, BigDecimal divisor, int scale) {
-        return divide(dividend, divisor, BigDecimal.ROUND_HALF_UP, scale);
+        return divide(dividend, divisor, RoundingMode.HALF_UP, scale);
     }
 
-    public static BigDecimal divide(String dividend, String divisor, int mode, int scale) {
+    public static BigDecimal divide(String dividend, String divisor, RoundingMode mode, int scale) {
         return divide(new BigDecimal(dividend), new BigDecimal(divisor), mode, scale);
     }
 
-    public static BigDecimal divide(BigDecimal dividend, BigDecimal divisor, int mode, int scale) {
+    public static BigDecimal divide(BigDecimal dividend, BigDecimal divisor, RoundingMode mode, int scale) {
         if (divisor.compareTo(BigDecimal.ZERO) == 0)
             return BigDecimal.ZERO;
 
@@ -204,7 +205,7 @@ public class CalculateUtils {
         int size = intpart.length();
 
         if (size > 3) {
-            StringBuffer str = new StringBuffer();
+            StringBuilder str = new StringBuilder();
             int newSize = size + (int) Math.ceil(size / 3D - 1);
             char[] newChars = new char[newSize];
             char[] chars = intpart.toCharArray();

@@ -26,11 +26,4 @@ public class AuthenticatorException extends BaseException {
     public AuthenticatorException(String msg, Throwable e) {
         super(msg, e);
     }
-
-    @Override
-    public int getErrLevel() {
-        return super.getErrLevel();
-    }
-
-
 }

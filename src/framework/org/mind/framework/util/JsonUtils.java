@@ -80,7 +80,7 @@ public class JsonUtils {
 
     public static String toJson(Object target, TypeToken targetType, boolean excludesFieldsWithoutExpose) {
         if (Objects.isNull(target))
-            return defaultEmpty(target);
+            return EMPTY_JSON_OBJECT;
 
         final Gson gson = excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton();
 
@@ -100,10 +100,9 @@ public class JsonUtils {
 
     public static String toJson(Object target, Class<? extends Object> targetType, boolean excludesFieldsWithoutExpose) {
         if (Objects.isNull(target))
-            return defaultEmpty(target);
+            return EMPTY_JSON_OBJECT;
 
         final Gson gson = excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton();
-
         try {
             return Objects.isNull(targetType) ?
                     gson.toJson(target) :
@@ -114,11 +113,11 @@ public class JsonUtils {
         return defaultEmpty(target);
     }
 
-    public static <T> T fromJson(String json, Class<T> clazz) {
+    public static <V> V fromJson(String json, Class<V> clazz) {
         return fromJson(json, TypeToken.get(clazz));
     }
 
-    public static <T> T fromJson(String json, TypeToken<T> typeToken) {
+    public static <V> V fromJson(String json, TypeToken<V> typeToken) {
         if (StringUtils.isBlank(json))
             return null;
 

@@ -1,7 +1,5 @@
 package org.mind.framework.util;
 
-import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -9,8 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -59,7 +55,7 @@ public class HttpUtils {
         int port = request.getServerPort();
         String urlPath = request.getRequestURI();
 
-        StringBuffer url = new StringBuffer();
+        StringBuilder url = new StringBuilder();
         url.append(scheme);
         url.append("://");
         url.append(request.getServerName());
@@ -106,18 +102,6 @@ public class HttpUtils {
             return json;
 
         return null;
-    }
-
-    public static Map<String, JsonObject> getJsonMap(HttpServletRequest request) {
-        return JsonUtils.fromJson(
-                getJson(request),
-                new TypeToken<Map<String, JsonObject>>(){});
-    }
-
-    public static List<JsonObject> getJsonList(HttpServletRequest request) {
-        return JsonUtils.fromJson(
-                getJson(request),
-                new TypeToken<List<JsonObject>>(){});
     }
 
     /**

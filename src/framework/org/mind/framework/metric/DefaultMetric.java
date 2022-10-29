@@ -15,8 +15,8 @@ public class DefaultMetric implements Metric {
     @Getter
     private final AbstractBucket bucket;
 
-    public DefaultMetric(int bucketSizem, int intervalInMills) {
-        this.bucket = new DefaultMetricBucket(bucketSizem, intervalInMills);
+    public DefaultMetric(int bucketSize, int intervalInMills) {
+        this.bucket = new DefaultMetricBucket(bucketSize, intervalInMills);
     }
 
     @Override

@@ -39,8 +39,8 @@ public class MD5Digest {
         return null;
     }
 
-    public static final String encodeHex(byte[] bytes) {
-        StringBuffer sb = new StringBuffer(bytes.length << 1);
+    public static String encodeHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length << 1);
         for (byte b : bytes) {
             if ((b & 0xff) < 16)
                 sb.append("0");
@@ -68,7 +68,7 @@ public class MD5Digest {
      * @author dp
      */
     public static String b2Hex(byte[] bytes) {
-        StringBuffer sb = new StringBuffer(bytes.length << 1);
+        StringBuilder sb = new StringBuilder(bytes.length << 1);
         for (byte bt : bytes)
             sb.append(b2Hex(bt));
 
@@ -93,7 +93,7 @@ public class MD5Digest {
      * @author dp
      */
     public static String b2iu(byte[] bytes) {
-        StringBuffer sb = new StringBuffer(bytes.length * 3);
+        StringBuilder sb = new StringBuilder(bytes.length * 3);
         for (byte bt : bytes)
             sb.append(b2iu(bt));
 

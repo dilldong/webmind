@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class GracefulShutdown extends Thread {
     private static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
-    private Thread mainThread;
+    private final Thread mainThread;
     private volatile Tomcat tomcat;
     private volatile Executor executor;
     private long waitTime = 30L;// await 30s
@@ -92,11 +92,13 @@ public class GracefulShutdown extends Thread {
                 threadPoolExecutor.shutdown();
 
                 log.info("Request active thread processing, waiting ....");
-                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit))
+                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit)) {
                     log.warn("{} thread pool did not shutdown gracefully within [{}] {}. Proceeding with forceful shutdown",
                             this.getName(),
                             waitTime,
                             waitTimeUnit.name());
+                    threadPoolExecutor.shutdownNow();
+                }
             } catch (InterruptedException ex) {
             }
         }

@@ -95,12 +95,7 @@ public class HttpClientFactory {
         httpClient = httpClientBuilder.build();
 
         // JVM 停止或重启时，关闭连接池释放掉连接
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                close();
-            }
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
     }
 
     public static CloseableHttpClient client() {

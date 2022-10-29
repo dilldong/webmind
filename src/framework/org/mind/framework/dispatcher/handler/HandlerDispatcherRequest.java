@@ -47,7 +47,7 @@ import java.util.regex.Matcher;
  */
 public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger(HandlerDispatcherRequest.class);
+    private static final Logger log = LoggerFactory.getLogger("HandlerRequest");
 
     private ConverterFactory converter;
     private final ServletContext servletContext;
@@ -109,7 +109,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         // Interceptor forward sorting
-        Collections.sort(interceptorsCatcher);
+        if (interceptorsCatcher.size() > 1)
+            Collections.sort(interceptorsCatcher);
 
         if (log.isInfoEnabled())
             interceptorsCatcher.forEach(catcher -> log.info("Interceptors: {}", catcher.toString()));

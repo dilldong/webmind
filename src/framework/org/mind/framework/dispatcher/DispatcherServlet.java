@@ -31,7 +31,7 @@ public class DispatcherServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
     /**
-     * Request http processer
+     * Request http processor
      */
     private HandlerRequest dispatcher;
 
@@ -88,13 +88,6 @@ public class DispatcherServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-//        String method = request.getMethod();
-//        if (!METHOD_GET.equals(method) && !METHOD_POST.equals(method)) {
-//            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Unsupported http method.");
-//            return;
-//        }
-//
-//        this.process(request, response);
         super.service(request, response);
     }
 

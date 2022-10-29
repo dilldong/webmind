@@ -13,21 +13,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
+import java.util.Objects;
 
 /**
  * @author dp
  */
 public class ResourceHttpRequest implements HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger(ResourceHttpRequest.class);
-
-    private static final List<String> SAFE_METHODS = Arrays.asList("GET", "HEAD");
+    private static final Logger log = LoggerFactory.getLogger("HandlerResult");
 
     /**
      * Date formats as specified in the HTTP RFC.
@@ -39,8 +37,6 @@ public class ResourceHttpRequest implements HandlerResult {
             "EEE, dd-MMM-yy HH:mm:ss zzz",
             "EEE MMM dd HH:mm:ss yyyy"
     };
-
-    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
     private final ServletContext servletContext;
 
@@ -65,7 +61,7 @@ public class ResourceHttpRequest implements HandlerResult {
 
         int t = Integer.parseInt(expSec);
         if (t > 0) {
-            this.expires = t * 1000L;// ms
+            this.expires = t * 1_000L;// ms
             this.maxAge = String.format("max-age=%d", t);
             log.info("Static file's cache time is set to {} seconds.", t);
         } else if (t < 0) {
@@ -92,14 +88,22 @@ public class ResourceHttpRequest implements HandlerResult {
         }
 
         File file = new File(this.servletContext.getRealPath(uri));
-
-        if (file == null || !file.exists() || !file.isFile()) {
+        if(Objects.isNull(file) || !file.exists()){
             log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
 
-        long lastModified = file.lastModified();
+        BasicFileAttributes readAttributes =
+                Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+
+        if (!readAttributes.isRegularFile()) {
+            log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
+            return;
+        }
+
+        long lastModified = readAttributes.lastModifiedTime().toMillis();
         // Get 'If-Modified-Since' from request header
         long modifiedSince = parseDateHeader(request, IF_MODIFIED_SINCE);
 
@@ -113,7 +117,7 @@ public class ResourceHttpRequest implements HandlerResult {
         // Set last modified time in response
         response.setDateHeader(LAST_MODIFIED, lastModified);
 
-        long length = file.length();
+        long length = readAttributes.size();
         if (length > Integer.MAX_VALUE)
             response.setContentLengthLong(length);
         else
@@ -168,11 +172,10 @@ public class ResourceHttpRequest implements HandlerResult {
             // Let's only bother with SimpleDateFormat parsing for long enough values.
             for (String dateFormat : DATE_FORMATS) {
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
-                simpleDateFormat.setTimeZone(GMT);
+                simpleDateFormat.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
                 try {
                     return simpleDateFormat.parse(headerValue).getTime();
                 } catch (ParseException ex) {
-                    simpleDateFormat = null;
                     // ignore exception
                 }
             }

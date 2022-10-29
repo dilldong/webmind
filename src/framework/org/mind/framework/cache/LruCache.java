@@ -181,7 +181,6 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (interval > 0 && (DateFormatUtils.getMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
             log.warn("Remove Cache key, The access time interval expires. key = {}", key);
-            element = null;
             return null;
         }
 
@@ -227,7 +226,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType exclidesRule) {
+    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule) {
         if (this.isEmpty())
             return Collections.EMPTY_LIST;
 
@@ -238,7 +237,7 @@ public class LruCache extends AbstractCache implements Cacheable {
                 if (excludes != null && excludes.length > 0) {// Exclude
                     boolean flag = false;
                     for (String exKey : excludes) {
-                        flag = Cacheable.CompareType.EQ_FULL == exclidesRule ?
+                        flag = Cacheable.CompareType.EQ_FULL == excludesRule ?
                                 StringUtils.equals(entry.getKey(), exKey) :
                                 StringUtils.contains(entry.getKey(), exKey);
                         if (flag)
@@ -263,8 +262,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (!this.isEmpty()) {
             itemsMap.clear();
             itemsMap = null;
-            if (log.isInfoEnabled())
-                log.info("Destroy CacheManager, Clear all items");
+            log.info("Destroy CacheManager, Clear all items");
         }
     }
 

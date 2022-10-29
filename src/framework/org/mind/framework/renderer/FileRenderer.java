@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
 
 /**
@@ -22,6 +24,7 @@ public class FileRenderer extends Render {
     private File file;
 
     public FileRenderer() {
+
     }
 
     public FileRenderer(File file) {
@@ -42,12 +45,18 @@ public class FileRenderer extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        if (Objects.isNull(file) || !file.isFile()) {
+        if (Objects.isNull(file) || !file.exists()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        if (file.length() > Integer.MAX_VALUE)
+        BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+        if (!basicFileAttributes.isRegularFile()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        if (basicFileAttributes.size() > Integer.MAX_VALUE)
             throw new IOException(String.format("Resource content too long (beyond Integer.MAX_VALUE): %s", file.getName()));
 
         String mime = contentType;
@@ -59,7 +68,7 @@ public class FileRenderer extends Render {
         }
 
         response.setContentType(mime);
-        response.setContentLength((int) file.length());
+        response.setContentLength((int) basicFileAttributes.size());
 
         ResponseUtils.write(response.getOutputStream(), this.file);
     }

@@ -12,6 +12,7 @@ import org.mind.framework.util.JarFileUtils;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
+import java.util.Objects;
 
 /**
  * Compatible with reading in File and Jar modes.
@@ -40,12 +41,12 @@ public class TemplateResourceLoader extends ClasspathResourceLoader {
         URL url = ClassUtils.getResource(this.getClass(), resourceName);
 
         try {
-            if (url != null)
+            if (Objects.nonNull(url))
                 rawStream = ClassUtils.getResourceAsStream(this.getClass(), resourceName);
             else
                 rawStream = JarFileUtils.getJarEntryStream(WebServerConfig.JAR_IN_CLASSES + resourceName);
 
-            if (rawStream != null)
+            if (Objects.nonNull(rawStream ))
                 result = this.buildReader(rawStream, encoding);
         } catch (Exception e) {
             IOUtils.closeQuietly(rawStream);
@@ -55,7 +56,7 @@ public class TemplateResourceLoader extends ClasspathResourceLoader {
                     this.rsvc.getLogContext().getStackTrace());
         }
 
-        if (result == null) {
+        if (Objects.isNull(result)) {
             throw new ResourceNotFoundException(
                     "TemplateResourceLoader Error: cannot find resource " + resourceName,
                     null,

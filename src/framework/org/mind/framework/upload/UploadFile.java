@@ -1,5 +1,6 @@
 package org.mind.framework.upload;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
@@ -13,9 +14,9 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -52,7 +53,7 @@ public class UploadFile {
 
     /**
      * 需要设置文件的存放路径；
-     * 如果未设置该项，将使用frame.prperties文件的: upload.dir属性值。
+     * 如果未设置该项，将使用frame.properties文件的: upload.dir属性值。
      *
      * @throws IOException
      * @author Marcus
@@ -66,8 +67,13 @@ public class UploadFile {
     private void setDirectory(String directory) {
         File file = new File(directory);
 
-        if (!file.exists())
-            file.mkdirs();
+        if (!file.exists()) {
+            try {
+                FileUtils.forceMkdir(file);
+            } catch (IOException e) {
+                log.warn("Creating file-directory error: {}", e.getMessage());
+            }
+        }
 
         // check directory
         if (!file.isDirectory())
@@ -78,7 +84,6 @@ public class UploadFile {
             throw new IllegalArgumentException(String.format("Not writable: %s", directory));
 
         this.directory = directory;
-
         regexType = PropertiesUtils.getString(property, "upload.type");
     }
 
@@ -102,10 +107,10 @@ public class UploadFile {
         /*
          * 默认初始化6个上传文件大小
          */
-        List<UploadProperty> props = new ArrayList<UploadProperty>(6);
+        List<UploadProperty> props = new ArrayList<>(6);
 
         int i = 1;
-        StringBuffer sb = new StringBuffer(this.directory.length() + 20);
+        StringBuilder sb = new StringBuilder(this.directory.length() + 20);
 
         // Parse the incoming multipart.
         List<FileItem> list = this.request.getMultipartFiles();
@@ -131,7 +136,7 @@ public class UploadFile {
 
             File file = new File(fileName);
             OutputStream out =
-                    new BufferedOutputStream(new FileOutputStream(file));
+                    new BufferedOutputStream(Files.newOutputStream(file.toPath()));
 
             try {
                 out.write(item.getStream());
@@ -139,12 +144,6 @@ public class UploadFile {
                 out.flush();
                 out.close();
             }
-
-//			if(size == 0L){
-//				file.delete();
-//				logger.warn("上传文件失败，已删除大小为0字节的文件："+ fileName);
-//				continue;
-//			}
 
             log.debug("upload files: {}", fileName);
 

@@ -23,7 +23,7 @@ public class BaseException extends Exception {
 
     protected int errLevel = ERR_INF;
 
-    protected StringBuffer backStacks = new StringBuffer();
+    protected final StringBuffer backStacks = new StringBuffer();
 
     public BaseException() {
         super();
@@ -72,14 +72,14 @@ public class BaseException extends Exception {
         return backStacks.toString();
     }
 
-    public final static String getStackTrace(Throwable e) {
+    public static String getStackTrace(Throwable e) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
         e.printStackTrace(out);
         return sw.toString();
     }
 
-    public final static String getStackTrace(BaseException e) {
+    public static String getStackTrace(BaseException e) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
         if (e.backStacks != null)

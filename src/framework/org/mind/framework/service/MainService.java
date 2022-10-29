@@ -21,7 +21,6 @@ public class MainService extends AbstractService {
         setServiceName(getClass().getSimpleName());
     }
 
-    @SuppressWarnings("Duplicates")
     protected void startChildServices() {
         if (Objects.nonNull(childServices)) {
             childServices.forEach(serv -> {
@@ -40,7 +39,6 @@ public class MainService extends AbstractService {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     protected void stopChildServices() {
         if (Objects.nonNull(childServices)) {
             childServices.forEach(serv -> {
@@ -61,12 +59,12 @@ public class MainService extends AbstractService {
 
     public final void start() {
         startChildServices();
-        serviceState = STATE_STARTED;
+        serviceState = STARTED;
     }
 
     public final void stop() {
         stopChildServices();
-        serviceState = STATE_STOPED;
+        serviceState = STOPPED;
         System.gc();
     }
 

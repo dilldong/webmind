@@ -20,7 +20,7 @@ import java.util.StringTokenizer;
  * <p>
  * <p>
  * Cookiemanager cm = new CookieManager(); URL url = new
- * URL("http://www.hccp.org/test/cookieTest.jsp");
+ * URL("<a href="http://www.hccp.org/test/cookieTest.jsp">...</a>");
  * <p>
  * . . .
  * <p>
@@ -48,7 +48,7 @@ public class LiteCookieManager implements Destroyable {
     private static final char DOT = '.';
 
     public LiteCookieManager() {
-        store = new HashMap<String, Map<String, Map<String, String>>>();
+        store = new HashMap<>();
     }
 
 
@@ -76,16 +76,16 @@ public class LiteCookieManager implements Destroyable {
             domainStore = store.get(domain);
         } else {
             // we don't, so let's create it and put it in the store
-            domainStore = new HashMap<String, Map<String, String>>();
+            domainStore = new HashMap<>();
             store.put(domain, domainStore);
         }
 
         // OK, now we are ready to get the cookies out of the URLConnection
 
-        String headerName = null;
+        String headerName;
         for (int i = 1; (headerName = conn.getHeaderFieldKey(i)) != null; i++) {
             if (headerName.equalsIgnoreCase(SET_COOKIE)) {
-                Map<String, String> cookie = new HashMap<String, String>();
+                Map<String, String> cookie = new HashMap<>();
                 StringTokenizer st = new StringTokenizer(
                         conn.getHeaderField(i), COOKIE_VALUE_DELIMITER);
 
@@ -158,9 +158,8 @@ public class LiteCookieManager implements Destroyable {
             log.info("set-cookie: {}", cookieStringBuffer);
             conn.setRequestProperty(COOKIE, cookieStringBuffer.toString());
         } catch (java.lang.IllegalStateException ise) {
-            IOException ioe = new IOException(
+            throw new IOException(
                     "Illegal State! Cookies cannot be set on a URLConnection that is already connected. Only call setCookies(java.net.URLConnection) AFTER calling java.net.URLConnection.connect().");
-            throw ioe;
         }
     }
 

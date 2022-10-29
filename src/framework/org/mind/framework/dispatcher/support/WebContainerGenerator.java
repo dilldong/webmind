@@ -31,7 +31,7 @@ public final class WebContainerGenerator {
         }
 
         try {
-            if (obj == null) {
+            if (Objects.isNull(obj)) {
                 obj = ClassUtils.newInstance(
                         String.format("%s.%s.%s%s",
                                 ContainerAware.class.getPackage().getName(),
@@ -69,12 +69,13 @@ public final class WebContainerGenerator {
         } catch (Exception e) {
         }
 
-        if (obj == null) {
+        if (Objects.isNull(obj)) {
             try {
                 obj = ClassUtils.newInstance(
-                        String.format("%s.%s",
+                        String.format("%s.%s%s",
                                 TemplateFactory.class.getPackage().getName(),
-                                templateName + TemplateFactory.class.getSimpleName()));
+                                templateName,
+                                TemplateFactory.class.getSimpleName()));
             } catch (Exception e) {
                 log.warn("Init template failed: {}", e.getMessage());
             }
