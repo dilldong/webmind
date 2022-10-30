@@ -26,8 +26,8 @@ public class WebMainService extends AbstractService {
                 if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to starting ....",
-                                    serv.getClass().getName(),
+                            logger.info("Service {}@{} to starting ....",
+                                    serv.getClass().getSimpleName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
                         serv.start();
@@ -44,8 +44,8 @@ public class WebMainService extends AbstractService {
                 if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to stopping ....",
-                                    serv.getClass().getName(),
+                            logger.info("Service {}@{} to stopping ....",
+                                    serv.getClass().getSimpleName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
                         serv.stop();

@@ -27,8 +27,8 @@ public class MainService extends AbstractService {
                 if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to starting ....",
-                                    serv.getClass().getName(),
+                            logger.info("Service {}@{} to starting ....",
+                                    serv.getClass().getSimpleName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
                         serv.start();
@@ -45,8 +45,8 @@ public class MainService extends AbstractService {
                 if (Objects.nonNull(serv)) {
                     Thread t = new Thread(() -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to stop ....",
-                                    serv.getClass().getName(),
+                            logger.info("Service {}@{} to stop ....",
+                                    serv.getClass().getSimpleName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
                         serv.stop();
