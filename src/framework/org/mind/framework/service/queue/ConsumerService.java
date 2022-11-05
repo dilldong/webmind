@@ -4,16 +4,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.tomcat.util.threads.TaskThreadFactory;
 import org.mind.framework.container.Destroyable;
+import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.service.Updateable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -69,27 +67,27 @@ public class ConsumerService implements Updateable, Destroyable {
         if (!this.useThreadPool || this.running)
             return;
 
-        BlockingQueue<Runnable> taskqueue = new LinkedBlockingQueue<>(taskCapacity);
-        ThreadFactory tf = new TaskThreadFactory("exec-", true, Thread.NORM_PRIORITY);
-        executor = new ThreadPoolExecutor(
+        executor = ExecutorFactory.newThreadPoolExecutor(
                 corePoolSize,
                 Math.max(maxPoolSize, corePoolSize),
                 keepAliveTime,
                 TimeUnit.SECONDS,
-                taskqueue,
-                tf);
-
-        executor.prestartAllCoreThreads();// 预启动所有核心线程
+                new LinkedBlockingQueue<>(taskCapacity));
         running = true;
-        log.info("Init ConsumerService@{} exec-pool-executor: {}", Integer.toHexString(hashCode()), this);
+        log.info("Init ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (this.useThreadPool && this.running) {
             this.running = false;
+            log.info("Consumer-service active count: [{}]", executor.getActiveCount());
             this.executor.shutdown();
-            log.info("Destroy ConsumerService@{} exec-pool-executor: {}", Integer.toHexString(hashCode()), this);
+            try {
+                if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
+                    executor.shutdownNow();
+            } catch (InterruptedException e) {}
+            log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
         }
     }
 
@@ -113,7 +111,7 @@ public class ConsumerService implements Updateable, Destroyable {
     @Override
     public String toString() {
         if (this.useThreadPool) {
-            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                     .append("maxPoolSize", maxPoolSize)
                     .append(" corePoolSize", corePoolSize)
                     .append(" keepAliveTime", keepAliveTime)
@@ -126,7 +124,7 @@ public class ConsumerService implements Updateable, Destroyable {
                     .toString();
         }
 
-        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("queueService", queueService.toString())
                 .toString();
     }

@@ -224,7 +224,7 @@ public class LiteCookieManager implements Destroyable {
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (this.store == null || this.store.isEmpty())
             return;
 

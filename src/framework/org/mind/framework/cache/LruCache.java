@@ -257,7 +257,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         super.destroy();
         if (!this.isEmpty()) {
             itemsMap.clear();

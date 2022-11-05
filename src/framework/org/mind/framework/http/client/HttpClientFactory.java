@@ -24,7 +24,9 @@ import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.impl.io.DefaultHttpRequestWriterFactory;
+import org.mind.framework.service.ExecutorFactory;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class HttpClientFactory {
     private static final CloseableHttpClient httpClient;
     private static HttpClientBuilder httpClientBuilder;
+    private static Thread shutdownThread;
 
     static {
         log.info("Init CloseableHttpClient ....");
@@ -94,8 +97,9 @@ public class HttpClientFactory {
 
         httpClient = httpClientBuilder.build();
 
-        // JVM 停止或重启时，关闭连接池释放掉连接
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
+        // When the JVM stops or restarts, closing the connection-pool releases the connection
+        shutdownThread = ExecutorFactory.newThread(() -> close());
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
     public static CloseableHttpClient client() {
@@ -110,5 +114,11 @@ public class HttpClientFactory {
         log.info("Close HttpClient ....");
         HttpClientUtils.closeQuietly(httpClient);
         httpClientBuilder = null;
+
+        if(Objects.nonNull(shutdownThread)){
+            try {
+                Runtime.getRuntime().removeShutdownHook(shutdownThread);
+            }catch (IllegalStateException e){}
+        }
     }
 }

@@ -28,4 +28,6 @@ public interface Service {
 	boolean isStop();
 	
 	int getServiceState();
+
+	String getServiceName();
 }

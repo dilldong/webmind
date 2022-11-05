@@ -70,8 +70,8 @@ public class GracefulShutdown extends Thread {
 
                 //当收到停止信号时，等待mainThread的执行完成
                 mainThread.join();
-            } catch (InterruptedException e) {
-            }
+                Runtime.getRuntime().removeShutdownHook(this);
+            } catch (InterruptedException | IllegalStateException e) {}
             log.info("Shutdown {} server completed.", this.getName());
         }
     }

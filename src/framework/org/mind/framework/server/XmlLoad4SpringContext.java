@@ -55,4 +55,10 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
             log.info("Loading spring XML: {}", Arrays.toString(configLocations));
     }
 
+    @Override
+    protected void doClose() {
+        super.doClose();
+        if (log.isInfoEnabled())
+            log.info(super.toString());
+    }
 }

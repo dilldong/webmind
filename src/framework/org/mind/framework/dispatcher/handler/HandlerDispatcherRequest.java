@@ -130,7 +130,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (!actions.isEmpty())
             actions.clear();
 

@@ -24,17 +24,15 @@ public class MainService extends AbstractService {
     protected void startChildServices() {
         if (Objects.nonNull(childServices)) {
             childServices.forEach(serv -> {
-                if (Objects.nonNull(serv)) {
-                    Thread t = new Thread(() -> {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Service {}@{} to starting ....",
-                                    serv.getClass().getSimpleName(),
-                                    Integer.toHexString(serv.hashCode()));
-                        }
-                        serv.start();
-                    });
-                    t.start();
-                }
+                Thread t = ExecutorFactory.newThread(serv.getServiceName(), () -> {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Service {}@{} to starting ....",
+                                serv.getClass().getSimpleName(),
+                                Integer.toHexString(serv.hashCode()));
+                    }
+                    serv.start();
+                });
+                t.start();
             });
         }
     }
@@ -42,17 +40,15 @@ public class MainService extends AbstractService {
     protected void stopChildServices() {
         if (Objects.nonNull(childServices)) {
             childServices.forEach(serv -> {
-                if (Objects.nonNull(serv)) {
-                    Thread t = new Thread(() -> {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Service {}@{} to stop ....",
-                                    serv.getClass().getSimpleName(),
-                                    Integer.toHexString(serv.hashCode()));
-                        }
-                        serv.stop();
-                    });
-                    t.start();
-                }
+                Thread t = ExecutorFactory.newThread(serv.getServiceName(), () -> {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Service {}@{} to stopping ....",
+                                serv.getClass().getSimpleName(),
+                                Integer.toHexString(serv.hashCode()));
+                    }
+                    serv.stop();
+                });
+                t.start();
             });
         }
     }
