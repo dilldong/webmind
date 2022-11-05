@@ -62,7 +62,7 @@ public class GracefulShutdown extends Thread {
     @Override
     public void run() {
         synchronized (shutdownMonitor) {
-            log.info("Stopping the {} server ....", this.getName());
+            log.info("Stopping the {} service ....", this.getName());
             this.shutDownSignalReceived = true;
             this.onStoppingEvent();
             try {
