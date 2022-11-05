@@ -58,7 +58,7 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
     @Override
     protected void doClose() {
         super.doClose();
-        if (log.isInfoEnabled())
-            log.info(super.toString());
+        if (log.isInfoEnabled() && !log.isDebugEnabled())
+            log.info("Closing {}", super.toString());
     }
 }
