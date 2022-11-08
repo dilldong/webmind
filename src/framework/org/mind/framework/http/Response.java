@@ -1,9 +1,6 @@
 package org.mind.framework.http;
 
 
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
@@ -12,12 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.util.JsonUtils;
-import org.mind.framework.util.ReflectionUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
 
 @Getter
@@ -90,7 +83,7 @@ public class Response<T> {
         return
                 JsonUtils.toJson(
                         this,
-                        new TypeToken<Response<T>>(){},
+                        new TypeToken<Response<T>>(){}.getType(),
                         excludesFieldsWithoutExpose);
     }
 
@@ -98,9 +91,9 @@ public class Response<T> {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                 .append("code", code)
-                .append("msg", msg)
-                .append("status", status)
-                .append("result", result)
+                .append(" msg", msg)
+                .append(" status", status)
+                .append(" result", result)
                 .toString();
     }
 
@@ -131,29 +124,11 @@ public class Response<T> {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
-        // 过滤json中的children字段
-        GsonBuilder gsonBuilder = JsonUtils.getSingleton().newBuilder().setExclusionStrategies(new ExclusionStrategy() {
-            final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
-
-            @Override
-            public boolean shouldSkipField(FieldAttributes field) {
-                if (fieldMap.containsKey(field.getName()))
-                    return false;
-
-                boolean isSkip = StringUtils.contains(Arrays.toString(fieldName), field.getName());
-                return isShowField != isSkip;
-            }
-
-            @Override
-            public boolean shouldSkipClass(Class<?> aClass) {
-                return false;
-            }
-        });
-
-        if (excludesFieldsWithoutExpose)
-            gsonBuilder.excludeFieldsWithoutExposeAnnotation();
-
-        return gsonBuilder.create().toJson(this, new TypeToken<Response<T>>(){}.getType());
+        return JsonUtils.toJson(this,
+                new TypeToken<Response<T>>(){}.getType(),
+                excludesFieldsWithoutExpose,
+                isShowField,
+                fieldName);
     }
 
 
