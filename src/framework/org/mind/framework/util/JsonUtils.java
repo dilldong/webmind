@@ -1,13 +1,20 @@
 package org.mind.framework.util;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 
 public class JsonUtils {
@@ -55,13 +62,15 @@ public class JsonUtils {
     }
 
     public static boolean isJsonArray(String text) {
-        if (StringUtils.isBlank(text)) return false;
+        if (StringUtils.isBlank(text))
+            return false;
 
         return text.startsWith("[") && text.endsWith("]");
     }
 
     public static boolean isJsonObject(String text) {
-        if (StringUtils.isBlank(text)) return false;
+        if (StringUtils.isBlank(text))
+            return false;
 
         return text.startsWith("{") && text.endsWith("}");
     }
@@ -74,31 +83,11 @@ public class JsonUtils {
         return toJson(target, target.getClass(), excludesFieldsWithoutExpose);
     }
 
-    public static String toJson(Object target, TypeToken typeToken) {
-        return toJson(target, typeToken, false);
-    }
-
-    public static String toJson(Object target, TypeToken targetType, boolean excludesFieldsWithoutExpose) {
-        if (Objects.isNull(target))
-            return EMPTY_JSON_OBJECT;
-
-        final Gson gson = excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton();
-
-        try {
-            return Objects.isNull(targetType) ?
-                    gson.toJson(target) :
-                    gson.toJson(target, targetType.getType());
-        } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
-        }
-        return defaultEmpty(target);
-    }
-
-    public static String toJson(Object target, Class<? extends Object> targetType) {
+    public static String toJson(Object target, Type targetType) {
         return toJson(target, targetType, false);
     }
 
-    public static String toJson(Object target, Class<? extends Object> targetType, boolean excludesFieldsWithoutExpose) {
+    public static String toJson(Object target, Type targetType, boolean excludesFieldsWithoutExpose) {
         if (Objects.isNull(target))
             return EMPTY_JSON_OBJECT;
 
@@ -111,6 +100,45 @@ public class JsonUtils {
             log.error(ex.getMessage(), ex);
         }
         return defaultEmpty(target);
+    }
+
+    public static String toJson(Object target, boolean isShowField, String... fieldName) {
+        return toJson(target,false, isShowField, fieldName);
+    }
+
+    public static String toJson(Object target, boolean excludesFieldsWithoutExpose, boolean isShowField, String... fieldName) {
+        return toJson(target, target.getClass(), excludesFieldsWithoutExpose, isShowField, fieldName);
+    }
+
+    public static String toJson(Object target, Type type, boolean excludesFieldsWithoutExpose, boolean isShowField, String... fieldName) {
+        final String fieldNameString = StringUtils.substringBetween(Arrays.toString(fieldName), "[", "]");
+        if (StringUtils.isEmpty(fieldNameString))
+            return toJson(target, type, excludesFieldsWithoutExpose);
+
+
+        // filter children field
+        GsonBuilder gsonBuilder = (excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton())
+                .newBuilder()
+                .setExclusionStrategies(
+                        new ExclusionStrategy() {
+                            Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
+
+                            @Override
+                            public boolean shouldSkipField(FieldAttributes field) {
+                                if (fieldMap.containsKey(field.getName()))
+                                    return false;
+
+                                boolean isSkip = StringUtils.contains(fieldNameString, field.getName());
+                                return isShowField != isSkip;
+                            }
+
+                            @Override
+                            public boolean shouldSkipClass(Class<?> aClass) {
+                                return false;
+                            }
+                        });
+
+        return gsonBuilder.create().toJson(target, type);
     }
 
     public static <V> V fromJson(String json, Class<V> clazz) {

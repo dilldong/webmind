@@ -49,7 +49,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Cache implementation of LRU(Least Recently Used)
  *
  * @author dp
- * @date Sep 17, 2011
+ * @date Nov 26, 2010
  */
 public class LruCache extends AbstractCache implements Cacheable {
 
@@ -257,12 +257,12 @@ public class LruCache extends AbstractCache implements Cacheable {
 
 
     @Override
-    protected void destroy() {
+    public synchronized void destroy() {
         super.destroy();
         if (!this.isEmpty()) {
             itemsMap.clear();
             itemsMap = null;
-            log.info("Destroy CacheManager, Clear all items");
+            log.info("Destroy Cacheable@{}, clear all items.", Integer.toHexString(hashCode()));
         }
     }
 

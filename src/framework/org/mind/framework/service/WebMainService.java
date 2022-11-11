@@ -24,10 +24,10 @@ public class WebMainService extends AbstractService {
         if (Objects.nonNull(childServices)) {
             for (final Service serv : childServices) {
                 if (Objects.nonNull(serv)) {
-                    Thread t = new Thread(() -> {
+                    Thread t = ExecutorFactory.newThread(serv.getServiceName(), () -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to starting ....",
-                                    serv.getClass().getName(),
+                            logger.info("Service {}@{} to starting ....",
+                                    serv.getServiceName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
                         serv.start();
@@ -42,10 +42,10 @@ public class WebMainService extends AbstractService {
         if (Objects.nonNull(childServices)) {
             for (final Service serv : childServices) {
                 if (Objects.nonNull(serv)) {
-                    Thread t = new Thread(() -> {
+                    Thread t = ExecutorFactory.newThread(serv.getServiceName(), () -> {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Service [{}@{}] to stopping ....",
-                                    serv.getClass().getName(),
+                            logger.info("Service {}@{} to stopping ....",
+                                    serv.getServiceName(),
                                     Integer.toHexString(serv.hashCode()));
                         }
                         serv.stop();

@@ -21,6 +21,7 @@ import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.ServerContext;
 import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
+import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,10 +130,10 @@ public class TomcatServer extends Tomcat {
     public void start() {
         try {
             super.start();
-            Thread awaitThread = new Thread(() -> TomcatServer.this.getServer().await());
-            awaitThread.setName("web-container-" + serverConfig.getPort());
+            Thread awaitThread = ExecutorFactory.newThread(
+                    "web-container-".concat(String.valueOf(serverConfig.getPort())),
+                    () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
-            awaitThread.setDaemon(false);
             awaitThread.start();
         } catch (Exception e) {
             stop();

@@ -27,7 +27,7 @@ public class SpringContainerAware implements ContainerAware {
         ContextSupport.initWebContext(config.getServletContext());
     }
 
-    public void destroy() {
+    public synchronized void destroy() {
         // nothing to do, let spring destroy all beans.
     }
 

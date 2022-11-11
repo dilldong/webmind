@@ -25,22 +25,26 @@ public abstract class AbstractService implements Service {
         this.serviceName = serviceName;
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
 
+    @Override
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    @Override
     public boolean isStart() {
         return serviceState == STARTED;
     }
 
+    @Override
     public boolean isStop() {
         return serviceState == STOPPED;
     }
 
+    @Override
     public int getServiceState() {
         return serviceState;
     }

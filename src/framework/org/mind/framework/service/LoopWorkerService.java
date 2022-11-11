@@ -43,7 +43,7 @@ public abstract class LoopWorkerService extends AbstractService {
         prepareStart();
 
         if (workerMainThread == null) {
-            workerMainThread = new Thread(new Worker(), this.serviceName);
+            workerMainThread = ExecutorFactory.newThread(serviceName, new Worker());
             workerMainThread.setDaemon(this.daemon);
         }
 
@@ -60,7 +60,7 @@ public abstract class LoopWorkerService extends AbstractService {
         prepareStop();
         isLoop = false;
 
-        if (workerMainThread != null)
+        if (workerMainThread != null && workerMainThread.isAlive())
             workerMainThread.interrupt();
     }
 
@@ -74,14 +74,14 @@ public abstract class LoopWorkerService extends AbstractService {
      * 服务线程刚开始时调用的方法，若需做一些初始化操作可覆盖此方法来添加
      */
     protected void toStart() {
-        logger.info("service [{}] is to start ....", serviceName);
+        logger.info("service [{}@{}] is to start ....", serviceName, Integer.toHexString(hashCode()));
     }
 
     /**
      * 服务线程将要结束时调用的方法，若需做一些清理操作可覆盖此方法来添加
      */
     protected void toEnd() {
-        logger.info("service [{}] is to end ....", serviceName);
+        logger.info("service [{}@{}] is to end ....", serviceName, Integer.toHexString(hashCode()));
     }
 
     @Override
@@ -89,9 +89,6 @@ public abstract class LoopWorkerService extends AbstractService {
         return workerMainThread != null && workerMainThread.isAlive();
     }
 
-    /*
-     * 循环处理内容
-     */
     protected abstract void doLoopWork();
 
     private class Worker implements Runnable {
@@ -108,21 +105,10 @@ public abstract class LoopWorkerService extends AbstractService {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
                     } catch (InterruptedException e) {}
                     Thread.yield();
-                } else // 通过spaceTime<=0跳出for循环
+                } else // jump out of the while loop with spaceTime<=0
                     break;
             }
             toEnd();
         }
-    }
-
-    public void setDaemon(boolean on) {
-        this.daemon = on;
-        if (workerMainThread != null)
-            workerMainThread.setDaemon(on);
-    }
-
-    protected void interrupt() {
-        if (workerMainThread != null && workerMainThread.isAlive())
-            workerMainThread.interrupt();
     }
 }

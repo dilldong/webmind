@@ -1,14 +1,21 @@
 package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.container.Destroyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractCache {
+/**
+ * Destroy cache
+ *
+ * @author dp
+ * @date Nov 26, 2010
+ */
+public abstract class AbstractCache implements Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCache.class);
 
-    private String cacheName = "MY-Cache";
+    private String cacheName = "Webmind-Cache";
 
     protected AbstractCache() {
     }
@@ -28,14 +35,8 @@ public abstract class AbstractCache {
         return String.join("_", prefix, key.toString());
     }
 
-    /**
-     * Destroy cache
-     *
-     * @author dp
-     * @date Nov 26, 2010
-     */
-    protected void destroy() {
-        log.info("Destroy {} manager.", cacheName);
+    public void destroy() {
+        log.debug("Destroy {} manager.", cacheName);
     }
 
     public String getCacheName() {

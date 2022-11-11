@@ -42,7 +42,7 @@ public class QueueLittle implements QueueService {
 
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (Objects.isNull(queueInstance) || queueInstance.isEmpty())
             return;
 
