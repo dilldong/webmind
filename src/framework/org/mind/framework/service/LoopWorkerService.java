@@ -89,9 +89,6 @@ public abstract class LoopWorkerService extends AbstractService {
         return workerMainThread != null && workerMainThread.isAlive();
     }
 
-    /*
-     * 循环处理内容
-     */
     protected abstract void doLoopWork();
 
     private class Worker implements Runnable {
@@ -108,7 +105,7 @@ public abstract class LoopWorkerService extends AbstractService {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
                     } catch (InterruptedException e) {}
                     Thread.yield();
-                } else // 通过spaceTime<=0跳出for循环
+                } else // jump out of the while loop with spaceTime<=0
                     break;
             }
             toEnd();
