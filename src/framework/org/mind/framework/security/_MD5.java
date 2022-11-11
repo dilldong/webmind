@@ -54,8 +54,7 @@ final class _MD5 {
      */
     private final long[] state = new long[4]; // state (ABCD)
 
-    private final long[] count = new long[2]; // number of bits, modulo 2^64 (lsb
-    // first)
+    private final long[] count = new long[2]; // number of bits, modulo 2^64 (lsb first)
 
     private final byte[] buffer = new byte[64]; // input buffer
 
@@ -102,7 +101,7 @@ final class _MD5 {
     private void md5Init() {
         count[0] = 0L;
         count[1] = 0L;
-        // /* Load magic initialization constants.
+        // Load magic initialization constants.
 
         state[0] = 0x67452301L;
         state[1] = 0xefcdab89L;
