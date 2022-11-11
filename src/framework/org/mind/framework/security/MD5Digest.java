@@ -1,9 +1,14 @@
 package org.mind.framework.security;
 
+import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.ThrowProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * MD5Digest用来进行密码加密的md5公用参数
@@ -22,22 +27,27 @@ public class MD5Digest {
      * 基于jdk原生的md5加密方法
      *
      * @param input
-     * @param charset
+     * @param charsetName
      * @return
      */
-    public static byte[] md5Crypt(String input, String charset) {
-        if (charset == null || "".equals(charset))
-            charset = "utf-8";
-
-        try {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            digest.update(input.getBytes(charset));
-            return digest.digest();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-        return null;
+    public static byte[] md5Crypt(String input, String charsetName) {
+        Charset charset = StringUtils.isEmpty(charsetName) ?
+                StandardCharsets.UTF_8 : Charset.forName(charsetName);
+        return md5Crypt(input, charset);
     }
+
+    public static byte[] md5Crypt(String input, Charset charset) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            ThrowProvider.doThrow(e);
+        }
+
+        digest.update(input.getBytes(charset));
+        return digest.digest();
+    }
+
 
     public static String encodeHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length << 1);
@@ -58,7 +68,7 @@ public class MD5Digest {
      * @author dp
      */
     public static String md5Crypt(String input) {
-        return _MD5.getInstance().md5Encrypt(input);
+        return _MD5.getInstance().md5Encrypt(input, StandardCharsets.UTF_8);
     }
 
     /**

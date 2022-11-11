@@ -1,5 +1,7 @@
 package org.mind.framework.security;
 
+import java.nio.charset.Charset;
+
 /**
  * _md5 类实现了RSA Data Security, Inc.在提交给IETF 的RFC1321中的MD5 message-digest 算法。
  */
@@ -66,9 +68,9 @@ final class _MD5 {
      * md5Encrypt是类MD5最主要的公共方法，入口参数是你想要进行MD5变换的字符串
      * 返回的是变换完的结果，这个结果是从公共成员digestHexStr取得的．
      */
-    public String md5Encrypt(String input) {
+    public String md5Encrypt(String input, Charset charset) {
         md5Init();
-        md5Update(input.getBytes(), input.length());
+        md5Update(input.getBytes(charset), input.length());
         md5Final();
 
         /*
