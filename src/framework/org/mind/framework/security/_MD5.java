@@ -1,5 +1,7 @@
 package org.mind.framework.security;
 
+import java.nio.charset.Charset;
+
 /**
  * _md5 类实现了RSA Data Security, Inc.在提交给IETF 的RFC1321中的MD5 message-digest 算法。
  */
@@ -52,8 +54,7 @@ final class _MD5 {
      */
     private final long[] state = new long[4]; // state (ABCD)
 
-    private final long[] count = new long[2]; // number of bits, modulo 2^64 (lsb
-    // first)
+    private final long[] count = new long[2]; // number of bits, modulo 2^64 (lsb first)
 
     private final byte[] buffer = new byte[64]; // input buffer
 
@@ -66,19 +67,11 @@ final class _MD5 {
      * md5Encrypt是类MD5最主要的公共方法，入口参数是你想要进行MD5变换的字符串
      * 返回的是变换完的结果，这个结果是从公共成员digestHexStr取得的．
      */
-    public String md5Encrypt(String input) {
+    public byte[] md5Encrypt(String input, Charset charset) {
         md5Init();
-        md5Update(input.getBytes(), input.length());
+        md5Update(input.getBytes(charset), input.length());
         md5Final();
-
-        /*
-         * digestHexStr是MD5的唯一一个公共成员，是最新一次计算结果的 16进制ASCII表示.
-         */
-        StringBuilder digestHexStr = new StringBuilder(32);
-        for (int i = 0; i < 16; i++)
-            digestHexStr.append(byteHEX(digest[i]));
-
-        return digestHexStr.toString();
+        return digest;
     }
 
 
@@ -100,7 +93,7 @@ final class _MD5 {
     private void md5Init() {
         count[0] = 0L;
         count[1] = 0L;
-        // /* Load magic initialization constants.
+        // Load magic initialization constants.
 
         state[0] = 0x67452301L;
         state[1] = 0xefcdab89L;
@@ -347,7 +340,7 @@ final class _MD5 {
     }
 
     /**
-     * b2iu是一个把byte按照不考虑正负号的原则的＂升位＂程序，因为java没有unsigned运算
+     * b2iu是一个把byte按照不考虑正负号的原则的＂升位＂运算，java没有unsigned运算
      */
     public long b2iu(byte b) {
         return b < 0 ? b & 0x7F + 128 : b;
