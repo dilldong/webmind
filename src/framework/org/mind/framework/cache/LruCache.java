@@ -64,12 +64,12 @@ public class LruCache extends AbstractCache implements Cacheable {
      * jvm 当前可用的内存大小
      */
     @Deprecated
-    private long freeMemory = 0;
+    private long freeMemory = 0L;
 
     /*
      * 条目最大超时设置
      */
-    private long timeout = 0;
+    private long timeout = 0L;
 
     private Map<String, CacheElement> itemsMap;
 
