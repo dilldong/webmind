@@ -63,6 +63,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     /*
      * jvm 当前可用的内存大小
      */
+    @Deprecated
     private long freeMemory = 0;
 
     /*
@@ -78,12 +79,12 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     private transient final Lock write = readWriteLock.writeLock();
 
-    public static Cacheable initCache() {
-        return CacheHolder.cacheInstance;
+    public static LruCache initCache() {
+        return CacheHolder.CACHE_INSTANCE;
     }
 
     private static class CacheHolder {
-        private static final Cacheable cacheInstance = new LruCache();
+        private static final LruCache CACHE_INSTANCE = new LruCache();
     }
 
     private LruCache() {
@@ -91,9 +92,8 @@ public class LruCache extends AbstractCache implements Cacheable {
             @Override
             protected boolean removeEldestEntry(Entry<String, CacheElement> eldest) {
                 boolean tooBig = this.size() > LruCache.this.capacity;
-                if (tooBig) {
+                if (tooBig && log.isDebugEnabled())
                     log.debug("Remove the last entry key: {}", eldest.getKey());
-                }
                 return tooBig;
             }
         };
@@ -129,9 +129,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     public Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type) {
-        // 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
-        // Runtime.getRuntime().freeMemory()
-
+        /* Deprecated this condition, freeMemory() has no practical meaning.
         if (freeMemory > 0 && freeMemory > Runtime.getRuntime().freeMemory()) {
             if (log.isDebugEnabled())
                 log.debug("At present there is insufficient space, a clear java.util.Map of all objects");
@@ -139,7 +137,8 @@ public class LruCache extends AbstractCache implements Cacheable {
             this.destroy();
             return this;
 
-        } else if (!check && this.containsKey(key)) {
+        }*/
+        if (!check && this.containsKey(key)) {
             if (log.isDebugEnabled())
                 log.debug("The Cache key already exists.");
             return this;
@@ -294,6 +293,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         this.capacity = capacity;
     }
 
+    @Deprecated
     public void setFreeMemory(long freeMemory) {
         this.freeMemory = freeMemory;
     }
