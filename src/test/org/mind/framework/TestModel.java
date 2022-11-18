@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
@@ -32,7 +31,6 @@ import java.util.List;
  * @version 1.0
  * @auther Marcus
  */
-@Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
 public class TestModel extends AbstractJUnit4SpringContextTests {

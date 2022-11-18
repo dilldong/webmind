@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -230,8 +231,9 @@ public class LruCache extends AbstractCache implements Cacheable {
             return Collections.EMPTY_LIST;
 
         List<CacheElement> removeList = new ArrayList<>();
-        Set<Entry<String, CacheElement>> entries = this.getEntries();
-        for (Entry<String, CacheElement> entry : entries) {
+        Iterator<Entry<String, CacheElement>> iterator = this.getEntries().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, CacheElement> entry = iterator.next();
             if (StringUtils.contains(entry.getKey(), searchStr)) {
                 if (excludes != null && excludes.length > 0) {// Exclude
                     boolean flag = false;
@@ -247,7 +249,8 @@ public class LruCache extends AbstractCache implements Cacheable {
                         continue;
                 }
 
-                removeList.add(this.removeCache(entry.getKey()));
+                iterator.remove();
+                removeList.add(entry.getValue());
             }
         }
 
