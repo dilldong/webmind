@@ -132,6 +132,7 @@ public class TomcatServer extends Tomcat {
             super.start();
             Thread awaitThread = ExecutorFactory.newThread(
                     "web-container-".concat(String.valueOf(serverConfig.getPort())),
+                    true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
             awaitThread.start();

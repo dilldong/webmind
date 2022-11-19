@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,7 +27,7 @@ public abstract class LoopWorkerService extends AbstractService {
 
     @Getter
     @Setter
-    private boolean daemon;
+    private boolean daemon = false;
 
     public LoopWorkerService() {
         super();
@@ -42,10 +43,8 @@ public abstract class LoopWorkerService extends AbstractService {
         serviceState = STARTED;
         prepareStart();
 
-        if (workerMainThread == null) {
-            workerMainThread = ExecutorFactory.newThread(serviceName, new Worker());
-            workerMainThread.setDaemon(this.daemon);
-        }
+        if (Objects.isNull(workerMainThread))
+            workerMainThread = ExecutorFactory.newThread(serviceName, daemon, new Worker());
 
         if (spaceTime <= 0)
             logger.warn("The space time is {}(ms)", spaceTime);

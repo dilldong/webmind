@@ -11,13 +11,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class ConsumerService implements Updateable, Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
+
+    private final Object executObject = new Object();
 
     @Setter
     private int maxPoolSize = 10;
@@ -35,6 +40,9 @@ public class ConsumerService implements Updateable, Destroyable {
     private int submitTaskCount = 5;
 
     @Setter
+    private boolean coreThreadTimeOut = false;
+
+    @Setter
     @Getter
     private boolean useThreadPool = false;
 
@@ -44,18 +52,21 @@ public class ConsumerService implements Updateable, Destroyable {
     @Setter
     private QueueService queueService;
 
-    private ThreadPoolExecutor executor;
+    private transient volatile ThreadPoolExecutor executor;
 
     @Override
     public void doUpdate() {
-        int wholeCount = Math.min(queueService.size(), submitTaskCount);
-        if (wholeCount <= 0)
-            return;
-
         if (this.useThreadPool) {
+            if(executor.getQueue().size() >= queueService.size())
+                return;
+
+            int wholeCount = Math.min(queueService.size(), submitTaskCount);
+            if (wholeCount <= 0)
+                return;
+
             if (running) {
                 while ((--wholeCount) >= 0)
-                    executor.submit(() -> execute());
+                    this.submitTask(() -> execute());
             }
             return;
         }
@@ -63,31 +74,50 @@ public class ConsumerService implements Updateable, Destroyable {
         this.execute();
     }
 
-    public void initExecutorPool() {
+    protected void initExecutorPool() {
         if (!this.useThreadPool || this.running)
             return;
+
+        BlockingQueue<Runnable> runnables =
+                taskCapacity > 0 ?
+                        new LinkedBlockingQueue<>(taskCapacity) :
+                        new SynchronousQueue<>();
 
         executor = ExecutorFactory.newThreadPoolExecutor(
                 corePoolSize,
                 Math.max(maxPoolSize, corePoolSize),
-                keepAliveTime,
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(taskCapacity));
+                keepAliveTime, TimeUnit.SECONDS, runnables);
+
+        executor.allowCoreThreadTimeOut(coreThreadTimeOut);
         running = true;
         log.info("Init ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
     }
 
     @Override
-    public synchronized void destroy() {
-        if (this.useThreadPool && this.running) {
-            this.running = false;
-            log.info("Consumer-service active count: [{}]", executor.getActiveCount());
-            this.executor.shutdown();
-            try {
-                if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
-                    executor.shutdownNow();
-            } catch (InterruptedException e) {}
-            log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
+    public void destroy() {
+        synchronized (executObject) {
+            if (this.useThreadPool && this.running) {
+                this.running = false;
+                log.info("Consumer-service active count: [{}]", executor.getActiveCount());
+                this.executor.shutdown();
+                try {
+                    if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
+                        executor.shutdownNow();
+                } catch (InterruptedException e) {
+                }
+                log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
+            }
+        }
+    }
+
+    private void submitTask(Runnable task) {
+        if (Objects.isNull(task))
+            return;
+
+        try {
+            executor.submit(task);
+        } catch (RejectedExecutionException e) {
+            log.error("Executor [{}] rejected task from: {}", executor.toString(), task);
         }
     }
 

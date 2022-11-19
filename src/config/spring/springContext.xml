@@ -9,7 +9,8 @@
     <context:component-scan base-package="org.mind.framework"/>
     <context:property-placeholder location="classpath:frame.properties"/>
 
-    <bean id="cacheManager" class="org.mind.framework.cache.LruCache" factory-method="initCache" destroy-method="destroy">
+    <bean id="cacheManager" class="org.mind.framework.cache.LruCache" factory-method="initCache"
+          destroy-method="destroy">
         <property name="capacity" value="100"/><!-- 活跃缓存条目大小 -->
         <property name="timeout" value="0"/><!-- 缓存条目超时设置，0表示忽略该参数 -->
     </bean>
@@ -37,20 +38,25 @@
     <!-- MQ config -->
     <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
         <property name="queueInstance">
-            <bean class="java.util.concurrent.LinkedBlockingQueue"/>
+            <bean class="java.util.concurrent.LinkedBlockingQueue">
+                <constructor-arg name="capacity" type="int" value="1024"/>
+            </bean>
         </property>
     </bean>
 
     <!-- thread-pool processor MQ config -->
     <bean id="executorQueueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
         <property name="queueInstance">
-            <bean class="java.util.concurrent.LinkedBlockingQueue"/>
+            <bean class="java.util.concurrent.LinkedBlockingQueue">
+                <constructor-arg name="capacity" type="int" value="1024"/>
+            </bean>
         </property>
     </bean>
 
     <!-- start MQ service -->
     <bean id="startQueueService" class="org.mind.framework.service.UpdateLoopService">
         <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
+        <property name="daemon" value="true"/><!-- daemon thread -->
         <property name="updaters">
             <list>
                 <bean class="org.mind.framework.service.queue.ConsumerService">

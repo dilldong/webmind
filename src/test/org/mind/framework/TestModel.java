@@ -47,18 +47,17 @@ public class TestModel extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void test09() {
-        WebMainService service = this.applicationContext.getBean("mainService", WebMainService.class);
-        int i = 2;
+        this.applicationContext.getBean("mainService", WebMainService.class).start();
+
+        int i = 2000;
         while ((--i) >= 0) {
-            A a = A.builder().field01("" + i).build();
+            A a = A.builder().field01("" + (i + 1)).build();
             executorQueueService.producer(() -> {
                 System.out.println(a.field01);
             });
         }
 
-        service.start();
-        Thread.sleep(2000L);
-        service.stop();
+        System.in.read();
     }
 
     @Test
