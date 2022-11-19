@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,12 +25,12 @@ import java.util.zip.GZIPInputStream;
  * @param <T> result type
  * @author marcus
  */
-public class HttpResponse<T> {
+public class HttpResponse<T> implements Closeable {
     protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
     protected int responseCode;
     protected String responseAsString;
-    protected InputStream inStream;
-    protected HttpURLConnection con;
+    protected transient InputStream inStream;
+    protected transient HttpURLConnection con;
     protected boolean streamConsumed = false;
 
     public HttpResponse() {
@@ -74,12 +75,12 @@ public class HttpResponse<T> {
     /**
      * Returns the response stream.<br>
      * This method cannot be called after calling asString()<br>
-     * It is suggested to call disconnect() after consuming the stream.
+     * It is suggested to call close() after consuming the stream.
      * <p>
      * Disconnects the internal HttpURLConnection silently.
      *
      * @return response body stream
-     * @see #disconnect()
+     * @see #close()
      */
     public InputStream asStream() {
         if (this.streamConsumed)
@@ -118,7 +119,7 @@ public class HttpResponse<T> {
 
             this.responseAsString = buf.toString();
             streamConsumed = true;
-            this.disconnect();
+            this.close();
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }
@@ -161,9 +162,19 @@ public class HttpResponse<T> {
         return JsonUtils.fromJson(result, typeToken);
     }
 
-    public void disconnect() {
-        if (con != null)
+    @Override
+    public void close(){
+        if (Objects.nonNull(con)) {
             con.disconnect();
+            con = null;
+        }
+
+        if(Objects.nonNull(inStream)){
+            try {
+                inStream.close();
+            } catch (IOException e) {}
+            inStream = null;
+        }
     }
 
     public int getStatusCode() {
