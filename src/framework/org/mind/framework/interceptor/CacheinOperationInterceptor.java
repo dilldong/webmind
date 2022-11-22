@@ -90,7 +90,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         Objects.requireNonNull(methodVarNames);
         int size = params.length;
 
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             attrValue =
                     attrValue.replaceAll(
                             String.join("", "\\#\\{", methodVarNames[i], "\\}"),

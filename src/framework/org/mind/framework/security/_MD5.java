@@ -321,7 +321,7 @@ final class _MD5 {
      * Encode把long数组按顺序拆成byte数组，因为java的long类型是64bit的， 只拆低32bit，以适应原始C实现的用途
      */
     private void encode(byte[] output, long[] input, int len) {
-        for (int i = 0, j = 0; j < len; i++, j += 4) {
+        for (int i = 0, j = 0; j < len; ++i, j += 4) {
             output[j] = (byte) (input[i] & 0xffL);
             output[j + 1] = (byte) ((input[i] >>> 8) & 0xffL);
             output[j + 2] = (byte) ((input[i] >>> 16) & 0xffL);
@@ -334,7 +334,7 @@ final class _MD5 {
      * 只合成低32bit，高32bit清零，以适应原始C实现的用途
      */
     private void decode(long[] output, byte[] input, int len) {
-        for (int i = 0, j = 0; j < len; i++, j += 4)
+        for (int i = 0, j = 0; j < len; ++i, j += 4)
             output[i] = b2iu(input[j]) | (b2iu(input[j + 1]) << 8)
                     | (b2iu(input[j + 2]) << 16) | (b2iu(input[j + 3]) << 24);
     }

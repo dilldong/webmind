@@ -88,7 +88,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
             return false;
         }
 
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < len; ++i) {
             char c = hexString.charAt(i);
             if (c >= '0' && c <= '9') {
                 continue;
@@ -401,7 +401,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
 
         byte[] byteArray = toByteArray();
         byte[] otherByteArray = other.toByteArray();
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 12; ++i) {
             if (byteArray[i] != otherByteArray[i]) {
                 return ((byteArray[i] & 0xff) < (otherByteArray[i] & 0xff)) ? -1 : 1;
             }
@@ -514,7 +514,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
         }
 
         byte[] b = new byte[12];
-        for (int i = 0; i < b.length; i++) {
+        for (int i = 0; i < b.length; ++i) {
             b[i] = (byte) Integer.parseInt(s.substring(i * 2, i * 2 + 2), 16);
         }
         return b;

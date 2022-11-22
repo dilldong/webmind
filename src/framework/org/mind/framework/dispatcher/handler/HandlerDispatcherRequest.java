@@ -197,7 +197,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         }
 
-        log.info("From path: {}", path);
+        // set response no-cache
         this.processNoCache(request, response);
 
         /*
@@ -219,7 +219,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
                 // Fetch request parameters in the URI
                 Class<?> type;
-                for (int i = 0; i < number; i++) {
+                for (int i = 0; i < number; ++i) {
                     type = execution.getParameterTypes()[i];
                     if (String.class.equals(type))
                         args[i] = matcher.group(i + 1);// segmentation fetch
@@ -230,12 +230,15 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             break;
         }
 
+        if(execution.isRequestLog())
+            log.info("From path: {}", path);
+
         /*
          * Status code (404) indicating that the requested resource is not
          * available.
          */
         if (Objects.isNull(execution)) {
-            log.warn("The requested URI (404) Not found");
+            log.warn("The requested URI (404) Not found: {}", path);
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             this.handleResult(
                     new Response<String>(HttpServletResponse.SC_NOT_FOUND, "The request URI (404) Not found").toJson(),
@@ -263,7 +266,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        log.info("Action is: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+        if(execution.isRequestLog())
+            log.info("Action is: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
 
         // currently request is multipart request.
         if (this.supportMultipartRequest &&
@@ -304,8 +308,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         }finally {
             Action.removeActionContext();
-            log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
-            log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+            if (execution.isRequestLog()) {
+                log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
+                log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+            }
         }
     }
 
@@ -393,7 +399,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             Mapping mapping = method.getAnnotation(Mapping.class);
             this.actions.put(
                     mapping.value(),
-                    new Execution(bean, method, mapping.method()));
+                    new Execution(bean, method, mapping.method(), mapping.requestLog()));
 
             sb.append(mapping.value()).append(", ");
         }

@@ -83,7 +83,7 @@ public class LiteCookieManager implements Destroyable {
         // OK, now we are ready to get the cookies out of the URLConnection
 
         String headerName;
-        for (int i = 1; (headerName = conn.getHeaderFieldKey(i)) != null; i++) {
+        for (int i = 1; (headerName = conn.getHeaderFieldKey(i)) != null; ++i) {
             if (headerName.equalsIgnoreCase(SET_COOKIE)) {
                 Map<String, String> cookie = new HashMap<>();
                 StringTokenizer st = new StringTokenizer(

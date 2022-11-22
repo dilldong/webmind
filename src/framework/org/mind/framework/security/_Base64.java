@@ -135,7 +135,7 @@ final class _Base64 {
                 }
             } else {
                 e = 2;
-                i++;
+                ++i;
             }
 
             b[j + 2] = (byte) (tmp & 0xff);

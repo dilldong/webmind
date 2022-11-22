@@ -11,7 +11,7 @@ public class PropertyPlaceholderConfigurer extends
 		if (locations != null) {
 			FileSystemResource[] fs = new FileSystemResource[locations.length];
 
-			for (int i = 0; i < locations.length; i++) {
+			for (int i = 0; i < locations.length; ++i) {
 				fs[i] = new FileSystemResource(basePath + locations[i]);
 			}
 			super.setLocations(fs);

@@ -44,13 +44,13 @@ public class Catcher implements Comparable<Catcher>, Serializable {
         String[] values = annotation.value();
         interceptorRegex = new String[values.length];
 
-        for (int i = 0; i < values.length; i++)
+        for (int i = 0; i < values.length; ++i)
             interceptorRegex[i] = MatcherUtils.convertURI(values[i]);
 
         String[] excludes = annotation.excludes();
         if (excludes.length > 0) {
             excludesRegex = new String[excludes.length];
-            for (int i = 0; i < excludes.length; i++)
+            for (int i = 0; i < excludes.length; ++i)
                 excludesRegex[i] = MatcherUtils.convertURI(excludes[i]);
         }
     }
