@@ -293,15 +293,16 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 }
             }
 
-        } catch (Throwable e) {
+        } catch (IOException | ServletException e) {
             log.error(e.getMessage(), e);
-
-            Throwable c = e.getCause() == null ? e : e.getCause();
+            throw e;
+        } catch (Exception ex){
+            Throwable c = Objects.isNull(ex.getCause()) ? ex : ex.getCause();
             if (c instanceof IOException)
                 throw new IOException(c.getMessage(), c);
             else
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
-        } finally {
+        }finally {
             Action.removeActionContext();
             log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
             log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());

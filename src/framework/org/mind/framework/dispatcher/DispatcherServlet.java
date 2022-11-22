@@ -1,5 +1,6 @@
 package org.mind.framework.dispatcher;
 
+import com.google.gson.JsonObject;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.dispatcher.handler.HandlerDispatcherRequest;
@@ -9,6 +10,7 @@ import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
+import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -19,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * DispatcherServlet must be mapped to root URL "/". It handles ALL requests
@@ -136,14 +139,14 @@ public class DispatcherServlet extends HttpServlet {
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
             this.dispatcher.processor(request, response);
-        } catch (Throwable e) {
-            Object object = request.getAttribute(BaseException.SYS_EXCEPTION);
-
-            if (object == null) {
-                Throwable c = e.getCause() == null ? e : e.getCause();
-                request.setAttribute(BaseException.SYS_EXCEPTION, c);
-            }
-
+        } catch (Exception e) {
+            Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
+            request.setAttribute(BaseException.SYS_EXCEPTION, c);
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("URL", HttpUtils.getURL(request));
+            jsonObject.addProperty("Method", request.getMethod());
+            jsonObject.addProperty("Request IP", HttpUtils.getRequestIP(request));
+            request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
             ThrowProvider.doThrow(e);
         }
     }
