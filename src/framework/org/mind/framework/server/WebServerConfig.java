@@ -35,6 +35,8 @@ public class WebServerConfig {
 
     private String resourceDir = StringUtils.EMPTY;
 
+    private String resourceRootFiles = StringUtils.EMPTY;
+
     private String webXml = StringUtils.EMPTY;
 
     private String serverName = "Tomcat";
@@ -88,6 +90,7 @@ public class WebServerConfig {
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
             this.resourceDir = properties.getProperty("server.resourceDirectory", resourceDir);
+            this.resourceRootFiles = properties.getProperty("server.resourceRootFiles", resourceRootFiles);
             this.webXml = properties.getProperty("server.webXml", webXml);
             this.serverName = properties.getProperty("server", serverName);
             this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));

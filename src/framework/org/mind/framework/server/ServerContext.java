@@ -122,38 +122,62 @@ public abstract class ServerContext {
                         new File(serverConfig.getTomcatBaseDir());// Not recommended
 
         serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
+        ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+
+        // Copy root files
+        if(StringUtils.isNotEmpty(serverConfig.getResourceRootFiles())){
+            String[] paths = StringUtils.split(serverConfig.getResourceRootFiles(), ',');
+            for(String path : paths){
+                try {
+                    Resource[] resources =
+                            patternResolver.getResources(String.format("classpath*:/%s", path.trim()));
+                    if(ArrayUtils.isEmpty(resources))
+                        continue;
+
+                    for (Resource resource : resources) {
+                        log.debug("Copy resource to baseDir: {}", resource.getFilename());
+                        FileUtils.copyInputStreamToFile(
+                                resource.getInputStream(),
+                                new File(String.format("%s/%s", serverConfig.getTomcatBaseDir(), resource.getFilename())));
+                    }
+                } catch (IOException e) {
+                    ThrowProvider.doThrow(e);
+                }
+            }
+        }
 
         // Copy web static resources
         if (StringUtils.isNotEmpty(serverConfig.getResourceDir())) {
-            ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
-            String namePattern = String.format("classpath*:/%s/**/*.*", serverConfig.getResourceDir());
+            String resNamePattern = String.format("classpath*:/%s/**/*.*", serverConfig.getResourceDir());
 
             try {
-                Resource[] resources = patternResolver.getResources(namePattern);
+                Resource[] resources = patternResolver.getResources(resNamePattern);
                 if (ArrayUtils.isNotEmpty(resources)) {
                     String resourceBaseDir =
                             String.format("%s/%s",
-                                    baseDir.getAbsolutePath(),
+                                    serverConfig.getTomcatBaseDir(),
                                     serverConfig.getResourceDir().startsWith("/") ?
                                             serverConfig.getResourceDir().substring(1) :
                                             serverConfig.getResourceDir());
 
                     for (Resource resource : resources) {
-                        String name = StringUtils.substringAfter(
+                        String namePath = StringUtils.substringAfter(
                                 resource.getURL().getPath(), serverConfig.getResourceDir());
 
-                        log.debug("Copy static resource: {}{}", serverConfig.getResourceDir(), name);
+                        log.debug("Copy static resource: {}-{}", serverConfig.getResourceDir(), namePath);
                         FileUtils.copyInputStreamToFile(
                                 resource.getInputStream(),
-                                new File(String.format("%s%s", resourceBaseDir, name)));
+                                new File(String.format("%s%s", resourceBaseDir, namePath)));
                     }
                 } else
                     log.warn("Static resource directory does not exist: '{}'", serverConfig.getResourceDir());
-
             } catch (IOException e) {
                 ThrowProvider.doThrow(e);
             }
         }
+
+        if(Objects.nonNull(patternResolver))
+            patternResolver = null;
 
         // Create Tomcat-Server
         TomcatServer tomcat = new TomcatServer(serverConfig);
