@@ -88,18 +88,21 @@ public class ResourceHttpRequest implements HandlerResult {
                              HttpServletResponse response) throws IOException, ServletException {
 
         String uri = (String) result;
-        log.debug("Access resource: {}", uri);
+        if(log.isDebugEnabled())
+            log.debug("Access resource: {}", uri);
         boolean forbidden = StringUtils.startsWithAny(uri.toUpperCase(), FORBIDDEN_DIR);
 
         if (forbidden) {
-            log.warn("{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN);
+            log.warn("[{}]{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN, uri);
+            HandlerResult.setRequestAttribute(request);
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access.");
             return;
         }
 
         Path path = Paths.get(this.servletContext.getRealPath(uri));
         if (!Files.exists(path)) {
-            log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
+            log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, uri);
+            HandlerResult.setRequestAttribute(request);
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
@@ -108,7 +111,8 @@ public class ResourceHttpRequest implements HandlerResult {
                 Files.readAttributes(path, BasicFileAttributes.class);
 
         if (!readAttributes.isRegularFile()) {
-            log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
+            log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, uri);
+            HandlerResult.setRequestAttribute(request);
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }

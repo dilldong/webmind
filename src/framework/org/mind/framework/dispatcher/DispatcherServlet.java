@@ -1,16 +1,15 @@
 package org.mind.framework.dispatcher;
 
-import com.google.gson.JsonObject;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.dispatcher.handler.HandlerDispatcherRequest;
 import org.mind.framework.dispatcher.handler.HandlerRequest;
+import org.mind.framework.dispatcher.handler.HandlerResult;
 import org.mind.framework.dispatcher.support.WebContainerGenerator;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
-import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -142,11 +141,7 @@ public class DispatcherServlet extends HttpServlet {
         } catch (Exception e) {
             Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
             request.setAttribute(BaseException.SYS_EXCEPTION, c);
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("URL", HttpUtils.getURL(request));
-            jsonObject.addProperty("Method", request.getMethod());
-            jsonObject.addProperty("Request IP", HttpUtils.getRequestIP(request));
-            request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
+            HandlerResult.setRequestAttribute(request);
             ThrowProvider.doThrow(e);
         }
     }

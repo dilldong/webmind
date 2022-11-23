@@ -15,6 +15,7 @@ import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -223,8 +225,14 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                     type = execution.getParameterTypes()[i];
                     if (String.class.equals(type))
                         args[i] = matcher.group(i + 1);// segmentation fetch
-                    else
-                        args[i] = this.converter.convert(type, matcher.group(i + 1));
+                    else {
+                        try {
+                            args[i] = this.converter.convert(type, matcher.group(i + 1));
+                        }catch (NumberFormatException | NullPointerException e){
+                            log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
+                            throw e;
+                        }
+                    }
                 }
             }
             break;
@@ -320,14 +328,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         if (Objects.isNull(result))
             return;
 
-        if (result instanceof Render) {
-            Render render = (Render) result;
-            render.render(request, response);
-            return;
-        }
-
-        if (result instanceof String) {
-            String str = (String) result;
+        Class<? extends Object> clazz = result.getClass();
+        ConverterFactory converterFactory = ConverterFactory.getInstance();
+        if (converterFactory.isConvert(clazz)) {
+            String str = result.toString();
 
             if (str.startsWith("forward:")) {
                 new NullRender(str.substring("forward:".length()), NullRender.RenderType.FORWARD).render(request, response);
@@ -346,6 +350,18 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
 
             new TextRender(str).render(request, response);
+            return;
+        }
+
+        if (Render.class.isAssignableFrom(clazz)) {
+            ((Render) result).render(request, response);
+            return;
+        }
+
+        if(Collection.class.isAssignableFrom(clazz)
+                || Map.class.isAssignableFrom(clazz)
+                || Object.class.isAssignableFrom(clazz)){
+            new TextRender(JsonUtils.toJson(result)).render(request, response);
             return;
         }
 
@@ -410,7 +426,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
     private boolean isMappingMethod(Method method) {
         Mapping mapping = method.getAnnotation(Mapping.class);
-        if (mapping == null)
+        if (Objects.isNull(mapping))
             return false;
 
         if (StringUtils.trimToEmpty(mapping.value()).length() == 0) {
@@ -431,15 +447,14 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         }
 
-        Class<?> retType = method.getReturnType();
-        if (void.class.equals(retType)
-                || String.class.equals(retType)
-                || Render.class.isAssignableFrom(retType)) {
-            return true;
-        }
-
-        log.warn("Unsupported Action method '{}'.", method.toGenericString());
-        return false;
+//        Class<?> retType = method.getReturnType();
+//        if (void.class.equals(retType)
+//                || String.class.getName().equals(retType.getName())
+//                || Render.class.isAssignableFrom(retType)) {
+//            return true;
+//        }
+//        log.warn("Unsupported Action method '{}'.", method.toGenericString());
+        return true;
     }
 
 }

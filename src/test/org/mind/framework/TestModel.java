@@ -233,31 +233,35 @@ public class TestModel extends AbstractJUnit4SpringContextTests {
     public void test01() {
         System.out.println(RandomCodeUtil.getRandomString(10, false, true));
     }
-}
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-class A implements Cloneable<A> {
-    String field01;
-    String field02;
-    String field03;
-    String field04;
-    String field05;
-    String field06;
-    String field07;
-    String field08;
-    String field09;
-    String field10;
 
-    @Override
-    public A clone() {
-        try {
-            System.out.println("call clone....");
-            return (A) super.clone();
-        } catch (CloneNotSupportedException e) {
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class A implements Cloneable<A> {
+        String field01;
+        String field02;
+        String field03;
+        String field04;
+        String field05;
+        String field06;
+        String field07;
+        String field08;
+        String field09;
+        String field10;
+        int num01;
+        long num02;
+
+        @Override
+        public A clone() {
+            try {
+                System.out.println("call clone....");
+                return (A) super.clone();
+            } catch (CloneNotSupportedException e) {
+            }
+            return this;
         }
-        return this;
     }
 }
+
