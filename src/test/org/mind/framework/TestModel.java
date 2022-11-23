@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
@@ -15,6 +16,7 @@ import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.WebMainService;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.util.CalculateUtils;
+import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
@@ -23,9 +25,15 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @version 1.0
@@ -43,6 +51,51 @@ public class TestModel extends AbstractJUnit4SpringContextTests {
 
     @Resource
     private QueueService executorQueueService;
+
+    @Test
+    public void test10(){
+        parseDateValue("Sun, 06 Nov 1994 08:49:37 GMT");
+        System.out.println("------------------");
+        parseDateValue("Sunday, 06-Nov-94 08:49:37 GMT");
+        System.out.println("------------------");
+        parseDateValue("Sun Nov 6 08:49:37 1994");
+    }
+
+
+    private long parseDateValue(String headerValue) {
+        if (StringUtils.isEmpty(headerValue))
+            return -1;// No header value sent at all
+
+        String[] DATE_FORMATS = new String[]{
+                "EEE, dd MMM yyyy HH:mm:ss z",
+                "EEEEEE, dd-MMM-yy HH:mm:ss zzz",
+                "EEE MMMM d HH:mm:ss yyyy"
+        };
+
+        if (headerValue.length() >= 3) {
+            for (String dateFormat : DATE_FORMATS) {
+                System.out.println(dateFormat);
+                try {
+                    LocalDateTime localDateTime =
+                            LocalDateTime.parse(headerValue, DateTimeFormatter.ofPattern(dateFormat, Locale.US));
+                    long mills = localDateTime.atZone(DateFormatUtils.UTC).toEpochSecond() * 1000L;
+                    System.out.println("1: "+ mills);
+                    break;
+                } catch (DateTimeParseException | IllegalArgumentException e){
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
+                    simpleDateFormat.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
+                    try {
+                        long mills = simpleDateFormat.parse(headerValue).getTime();
+                        System.out.println("2: "+ mills);
+                        break;
+                    } catch (ParseException ex) {
+                        // ignore exception
+                    }
+                }
+            }
+        }
+        return -1;
+    }
 
     @SneakyThrows
     @Test

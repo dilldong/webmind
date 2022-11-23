@@ -11,21 +11,27 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * @author dp
  */
 public class ResourceHttpRequest implements HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger("HandlerResult");
+    private static final Logger log = LoggerFactory.getLogger("ResourceHandler");
+
+    // forbidden directories
+    private static final String[] FORBIDDEN_DIR = new String[]{"/BOOT-INF/", "/WEB-INF/", "/META-INF/"};
 
     /**
      * Date formats as specified in the HTTP RFC.
@@ -33,9 +39,12 @@ public class ResourceHttpRequest implements HandlerResult {
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-7.1.1.1">Section 7.1.1.1 of RFC 7231</a>
      */
     private static final String[] DATE_FORMATS = new String[]{
-            "EEE, dd MMM yyyy HH:mm:ss zzz",
-            "EEE, dd-MMM-yy HH:mm:ss zzz",
-            "EEE MMM dd HH:mm:ss yyyy"
+            //Sun, 06 Nov 1994 08:49:37 GMT
+            "EEE, dd MMM yyyy HH:mm:ss z",
+            // Sunday, 06-Nov-94 08:49:37 GMT
+            "EEEEEE, dd-MMM-yy HH:mm:ss zzz",
+            //Sun Nov 6 08:49:37 1994
+            "EEE MMMM d HH:mm:ss yyyy"
     };
 
     private final ServletContext servletContext;
@@ -54,7 +63,7 @@ public class ResourceHttpRequest implements HandlerResult {
         this.servletContext = config.getServletContext();
 
         String expSec = config.getInitParameter("expires");
-        if (expSec == null) {
+        if (StringUtils.isEmpty(expSec)) {
             this.expires = 0L;
             return;
         }
@@ -70,6 +79,7 @@ public class ResourceHttpRequest implements HandlerResult {
         }
     }
 
+
     /**
      * @param result request URI.
      */
@@ -79,23 +89,23 @@ public class ResourceHttpRequest implements HandlerResult {
 
         String uri = (String) result;
         log.debug("Access resource: {}", uri);
-        boolean startFlag = StringUtils.startsWithAny(uri.toUpperCase(), new String[]{"/BOOT-INF/", "/WEB-INF/", "/META-INF/"});
+        boolean forbidden = StringUtils.startsWithAny(uri.toUpperCase(), FORBIDDEN_DIR);
 
-        if (startFlag) {
+        if (forbidden) {
             log.warn("{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN);
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access.");
             return;
         }
 
-        File file = new File(this.servletContext.getRealPath(uri));
-        if(Objects.isNull(file) || !file.exists()){
-            log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
+        Path path = Paths.get(this.servletContext.getRealPath(uri));
+        if (!Files.exists(path)) {
+            log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
             return;
         }
 
         BasicFileAttributes readAttributes =
-                Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+                Files.readAttributes(path, BasicFileAttributes.class);
 
         if (!readAttributes.isRegularFile()) {
             log.warn("{} - {} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, request.getRequestURI());
@@ -108,7 +118,7 @@ public class ResourceHttpRequest implements HandlerResult {
         long modifiedSince = parseDateHeader(request, IF_MODIFIED_SINCE);
 
         // not modified
-        if (modifiedSince != -1 && modifiedSince >= (lastModified / 1_000L * 1_000L)) {
+        if (modifiedSince != -1 && modifiedSince >= lastModified) {
             log.debug("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             return;
@@ -139,11 +149,11 @@ public class ResourceHttpRequest implements HandlerResult {
 //          resp.setHeader(String.format("Content-disposition", "attachment; filename=%s", name));
 //      }
 
-        String mime = servletContext.getMimeType(file.getName());
+        String mime = servletContext.getMimeType(path.getFileName().toString());
         response.setContentType(StringUtils.isEmpty(mime) ? "application/octet-stream" : mime);
 
         // write stream
-        ResponseUtils.write(response.getOutputStream(), file);
+        ResponseUtils.write(response.getOutputStream(), path);
     }
 
     private long parseDateHeader(HttpServletRequest request, String headerName) {
@@ -154,7 +164,7 @@ public class ResourceHttpRequest implements HandlerResult {
             // Possibly an IE 10 style value: "Wed, 09 Apr 2014 09:57:42 GMT; length=13774"
             if (StringUtils.isNotEmpty(headerValue)) {
                 int separatorIndex = headerValue.indexOf(';');
-                if (separatorIndex != -1) {
+                if (separatorIndex > -1) {
                     String datePart = headerValue.substring(0, separatorIndex);
                     return parseDateValue(datePart);
                 }
@@ -169,14 +179,23 @@ public class ResourceHttpRequest implements HandlerResult {
 
         if (headerValue.length() >= 3) {
             // Short "0" or "-1" like values are never valid HTTP date headers...
-            // Let's only bother with SimpleDateFormat parsing for long enough values.
+            // Default with DateTimeFormatter parsing
             for (String dateFormat : DATE_FORMATS) {
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
-                simpleDateFormat.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
                 try {
-                    return simpleDateFormat.parse(headerValue).getTime();
-                } catch (ParseException ex) {
-                    // ignore exception
+                    return
+                            LocalDateTime
+                                    .parse(headerValue, DateTimeFormatter.ofPattern(dateFormat, Locale.US))
+                                    .atZone(DateFormatUtils.UTC)
+                                    .toEpochSecond() * 1_000L;
+                } catch (DateTimeParseException | IllegalArgumentException e){
+                    // parse exception, with SimpleDateFormat parsing
+                    SimpleDateFormat sdf = new SimpleDateFormat(dateFormat, Locale.US);
+                    sdf.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
+                    try {
+                       return sdf.parse(headerValue).getTime();
+                    } catch (ParseException ex) {
+                        // ignore exception
+                    }
                 }
             }
         }

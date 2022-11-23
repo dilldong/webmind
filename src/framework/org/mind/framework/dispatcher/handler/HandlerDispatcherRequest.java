@@ -230,9 +230,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             break;
         }
 
-        if(execution.isRequestLog())
-            log.info("From path: {}", path);
-
         /*
          * Status code (404) indicating that the requested resource is not
          * available.
@@ -247,6 +244,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             //response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
             return;
         }
+
+        if(execution.isRequestLog())
+            log.info("From path: {}", path);
 
         /*
          * validation request method

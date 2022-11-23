@@ -41,11 +41,13 @@ public class HttpUtils {
         uri = contextPath.length() > 0 ? uri.substring(contextPath.length()) : uri;
 
         // check is root path
-        if (uri.length() > 1) uri = uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
+        if (uri.length() > 1)
+            uri = uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
 
         // uri has sessionid
         int hasJsession = uri.indexOf(";jsessionid");
-        if (hasJsession != -1) uri = uri.substring(0, hasJsession);
+        if (hasJsession > -1)
+            uri = uri.substring(0, hasJsession);
 
         return uri;
     }
@@ -53,20 +55,16 @@ public class HttpUtils {
     public static String getURL(HttpServletRequest request) {
         String scheme = request.getScheme();
         int port = request.getServerPort();
-        String urlPath = request.getRequestURI();
 
         StringBuilder url = new StringBuilder();
-        url.append(scheme);
-        url.append("://");
-        url.append(request.getServerName());
+        url.append(scheme)
+                .append("://")
+                .append(request.getServerName());
 
-        if (scheme.equals("http") && port != 80 || scheme.equals("https") && port != 443) {
-            url.append(':');
-            url.append(request.getServerPort());
-        }
+        if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
+            url.append(':').append(request.getServerPort());
 
-        url.append(urlPath);
-        return url.toString();
+        return url.append(getURI(request)).toString();
     }
 
     public static String getRequestIP(HttpServletRequest request) {
@@ -108,14 +106,12 @@ public class HttpUtils {
      * Get the content of the post request
      *
      * @return
-     * @throws UnsupportedEncodingException
      */
     public static String getPostString(HttpServletRequest request) {
         byte[] data = null;
         try {
             data = getPostBytes(request);
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
 
         /*
          * servlet规范:

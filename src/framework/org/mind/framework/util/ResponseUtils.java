@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * General purpose utility methods related to generating a servlet response in
@@ -18,7 +19,7 @@ import java.nio.file.Files;
  */
 public class ResponseUtils {
 
-    private static final int MAX_BUFFER_SIZE = 4096;
+    private static final int MAX_BUFFER_SIZE = 1024;
 
     /**
      * Filter the specified string for characters that are senstive to HTML
@@ -106,7 +107,11 @@ public class ResponseUtils {
      * @throws IOException
      */
     public static void write(OutputStream output, File file) throws IOException {
-        try (InputStream input = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
+        write(output, file.toPath());
+    }
+
+    public static void write(OutputStream output, Path path) throws IOException {
+        try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
             byte[] buffer = new byte[MAX_BUFFER_SIZE];
 
             int length;
