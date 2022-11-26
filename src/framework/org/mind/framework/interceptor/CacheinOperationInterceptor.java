@@ -4,6 +4,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.annotation.EnumFace;
 import org.mind.framework.cache.CacheElement;
@@ -49,13 +50,13 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                                        long expire,
                                        TimeUnit timeUnit,
                                        boolean inRedis,
-                                       Class<? extends Object> redisType) {
+                                       Class<? extends Object>[] redisType) {
         this.cacheable = cacheable;
         this.cloneType = cloneType;
         this.expire = expire;
         this.timeUnit = timeUnit;
         this.inRedis = inRedis;
-        this.redisType = redisType;
+        this.redisType = ArrayUtils.isEmpty(redisType)? null : redisType[0];
     }
 
     @Override

@@ -109,7 +109,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                         cachein.expire(),
                         cachein.unit(),
                         cachein.inRedis(),
-                        cachein.redisType()[0]);
+                        cachein.redisType());
 
         boolean isPrefix = StringUtils.isNotEmpty(cachein.prefix());
         boolean isSuffix = StringUtils.isNotEmpty(cachein.suffix());
