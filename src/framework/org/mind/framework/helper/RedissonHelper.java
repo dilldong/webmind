@@ -174,6 +174,22 @@ public class RedissonHelper {
         return this.appendList(key, v, expire, unit, this.getWriteLock(key));
     }
 
+    public <V> void clearListAsync(String key) {
+        RList<V> rList = this.rList(key);
+        if (rList.isEmpty())
+            return;
+
+        rList.deleteAsync();
+    }
+
+    public <V> void clearList(String key) {
+        RList<V> rList = this.rList(key);
+        if (rList.isEmpty())
+            return;
+
+        rList.clear();
+    }
+
     public <V> void removeListAsync(String key, int index) {
         if (index < 0)
             return;
@@ -320,6 +336,22 @@ public class RedissonHelper {
         this.replaceMap(key, k, v, this.getWriteLock(key));
     }
 
+    public <K, V> void clearMapAsync(String key) {
+        RMap<K, V> rMap = this.rMap(key);
+        if (rMap.isEmpty())
+            return;
+
+        rMap.deleteAsync();
+    }
+
+    public <K, V> void clearMap(String key) {
+        RMap<K, V> rMap = this.rMap(key);
+        if (rMap.isEmpty())
+            return;
+
+        rMap.clear();
+    }
+
     public <K, V> void removeMapAsync(String key, K k) {
         if (Objects.isNull(k))
             return;
@@ -331,6 +363,7 @@ public class RedissonHelper {
         if (rMap.containsKey(k))
             rMap.removeAsync(k);
     }
+
 
     public <K, V> void removeMap(String key, K k) {
         if (Objects.isNull(k))
@@ -444,6 +477,22 @@ public class RedissonHelper {
 
     public <V> boolean appendSetByLock(String key,V v, long expire, TimeUnit unit) {
         return this.appendSet(key, v, expire, unit, this.getWriteLock(key));
+    }
+
+    public <V> void clearSetAsync(String key) {
+        RSet<V> rSet = this.rSet(key);
+        if (rSet.isEmpty())
+            return;
+
+        rSet.deleteAsync();
+    }
+
+    public <V> void clearSet(String key) {
+        RSet<V> rSet = this.rSet(key);
+        if (rSet.isEmpty())
+            return;
+
+        rSet.clear();
     }
 
     public <V> void removeSetAsync(String key, int index) {
