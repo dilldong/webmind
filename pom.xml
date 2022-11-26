@@ -52,6 +52,7 @@
         <spring.version>5.2.22.RELEASE</spring.version>
         <retrofit2.version>2.9.0</retrofit2.version>
         <tomcat.version>9.0.59</tomcat.version>
+        <redisson.version>3.18.0</redisson.version>
     </properties>
 
     <build>
@@ -269,6 +270,28 @@
             <artifactId>converter-gson</artifactId>
             <version>${retrofit2.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!--Redisson-->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>${redisson.version}</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!--Redisson Apple.M1-->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <version>4.1.85.Final</version>
+            <classifier>osx-aarch_64</classifier>
+            <optional>true</optional>
         </dependency>
 
         <!--tomcat-embed-->

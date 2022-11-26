@@ -26,7 +26,7 @@ import java.util.Locale;
 /**
  * @author dp
  */
-public class ResourceHttpRequest implements HandlerResult {
+public class HandlerResourceRequest implements HandlerResult {
 
     private static final Logger log = LoggerFactory.getLogger("ResourceHandler");
 
@@ -59,7 +59,7 @@ public class ResourceHttpRequest implements HandlerResult {
      */
     private String maxAge = StringUtils.EMPTY;
 
-    public ResourceHttpRequest(ServletConfig config) {
+    public HandlerResourceRequest(ServletConfig config) {
         this.servletContext = config.getServletContext();
 
         String expSec = config.getInitParameter("expires");

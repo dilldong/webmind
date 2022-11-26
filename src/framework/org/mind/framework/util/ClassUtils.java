@@ -2,7 +2,9 @@ package org.mind.framework.util;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @version 1.0
@@ -10,17 +12,28 @@ import java.util.Objects;
  * @date 2022/8/7
  */
 public class ClassUtils {
+    private static final Map<String, Class<?>> CLAZZ_MAP = new ConcurrentHashMap<>();
+
     private ClassUtils() {
     }
 
     public static Class<?> getClass(String clazz) throws ClassNotFoundException {
+        if(CLAZZ_MAP.containsKey(clazz))
+            return CLAZZ_MAP.get(clazz);
+
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        Class<?> c = null;
         if (Objects.nonNull(loader)) {
             try {
-                return Class.forName(clazz, true, loader);
+                c = Class.forName(clazz, true, loader);
             } catch (ClassNotFoundException e) {}
         }
-        return Class.forName(clazz);
+
+        if(Objects.isNull(c))
+            c = Class.forName(clazz);
+
+        CLAZZ_MAP.put(clazz, c);
+        return c;
     }
 
     public static Object newInstance(String clazz) throws ClassNotFoundException, IllegalAccessException, InstantiationException {

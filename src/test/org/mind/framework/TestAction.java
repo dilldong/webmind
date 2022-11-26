@@ -104,8 +104,8 @@ public class TestAction {
     }
 
     @Mapping("/object")
-    public TestModel.A object() {
-        TestModel.A a = TestModel.A.builder()
+    public TestModule.A object() {
+        TestModule.A a = TestModule.A.builder()
                 .field01("field01")
                 .num01(100)
                 .num02(99_100_200_000L)

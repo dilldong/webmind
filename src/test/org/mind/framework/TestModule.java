@@ -41,7 +41,7 @@ import java.util.Locale;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
-public class TestModel extends AbstractJUnit4SpringContextTests {
+public class TestModule extends AbstractJUnit4SpringContextTests {
 
     @Resource
     private TestService testService;

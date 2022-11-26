@@ -103,7 +103,13 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
             cacheable = this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
 
         CacheinOperationInterceptor opInterceptor =
-                new CacheinOperationInterceptor(cacheable, cachein.strategy(), cachein.expire());
+                new CacheinOperationInterceptor(
+                        cacheable,
+                        cachein.strategy(),
+                        cachein.expire(),
+                        cachein.unit(),
+                        cachein.inRedis(),
+                        cachein.returnType());
 
         boolean isPrefix = StringUtils.isNotEmpty(cachein.prefix());
         boolean isSuffix = StringUtils.isNotEmpty(cachein.suffix());

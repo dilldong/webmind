@@ -49,7 +49,7 @@ import java.util.regex.Matcher;
  */
 public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger("HandlerRequest");
+    private static final Logger log = LoggerFactory.getLogger("RequestHandler");
 
     private ConverterFactory converter;
     private final ServletContext servletContext;
@@ -80,7 +80,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         this.converter = ConverterFactory.getInstance();
         this.urisRegex = new ArrayList<>();
         this.interceptorsCatcher = new ArrayList<>();
-        this.resourceHandler = new ResourceHttpRequest(this.servletConfig);
+        this.resourceHandler = new HandlerResourceRequest(this.servletConfig);
 
         // load web application static resource strs.
         this.resStr = this.servletConfig.getInitParameter("resource");
