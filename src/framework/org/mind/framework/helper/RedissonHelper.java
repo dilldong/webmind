@@ -160,18 +160,18 @@ public class RedissonHelper {
         return flag;
     }
 
-    public <V> boolean appendList(String key, List<V> list, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean appendList(String key, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendList(key, list, expire, unit);
+            return this.appendList(key, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean appendListByLock(String key, List<V> list, long expire, TimeUnit unit) {
-        return this.appendList(key, list, expire, unit, this.getWriteLock(key));
+    public <V> boolean appendListByLock(String key, V v, long expire, TimeUnit unit) {
+        return this.appendList(key, v, expire, unit, this.getWriteLock(key));
     }
 
     public <V> void removeListAsync(String key, int index) {
