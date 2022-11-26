@@ -39,5 +39,5 @@ public @interface Cachein {
     boolean inRedis() default false;
 
     // When inRedis=true, should specify the returned java type
-    Class<? extends Object> returnType();
+    Class<? extends Object>[] redisType() default {};
 }

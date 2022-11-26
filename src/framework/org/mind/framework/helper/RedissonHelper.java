@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -72,7 +73,7 @@ public class RedissonHelper {
         redissonClient = Redisson.create(config);
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Redisson-Gracefully", true, () -> {
             if (!redissonClient.isShutdown()) {
-                log.info("Redisson-Gracefully is shutdowning ....");
+                log.info("Redisson-Gracefully is shutdown ....");
                 redissonClient.shutdown(3L, 5L, TimeUnit.SECONDS);// timeout should >= quietPeriod
             }
         }));
@@ -115,8 +116,8 @@ public class RedissonHelper {
             return false;
 
         RList<V> rList = this.rList(key);
-        if(!rList.isEmpty())
-            rList.removeAll(rList);
+        if (!rList.isEmpty())
+            rList.clear();
 
         boolean flag = rList.addAll(list);
         if (flag) {
@@ -139,6 +140,38 @@ public class RedissonHelper {
 
     public <V> boolean setByLock(String key, List<V> list, long expire, TimeUnit unit) {
         return this.set(key, list, expire, unit, this.getWriteLock(key));
+    }
+
+    public <V> boolean appendList(String key, V v, long expire, TimeUnit unit) {
+        if (Objects.isNull(v))
+            return false;
+
+        RList<V> rList = this.rList(key);
+        if (rList.isExists())
+            return rList.add(v);
+
+        boolean flag = rList.add(v);
+        if (flag) {
+            if (TimeUnit.MILLISECONDS != unit)
+                expire = unit.toMillis(expire);
+            rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        }
+
+        return flag;
+    }
+
+    public <V> boolean appendList(String key, List<V> list, long expire, TimeUnit unit, RLock lock) {
+        // activating watch-dog
+        lock.lock();
+        try {
+            return this.appendList(key, list, expire, unit);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <V> boolean appendListByLock(String key, List<V> list, long expire, TimeUnit unit) {
+        return this.appendList(key, list, expire, unit, this.getWriteLock(key));
     }
 
     public <V> void removeListAsync(String key, int index) {
@@ -205,10 +238,10 @@ public class RedissonHelper {
             return false;
 
         RMap<K, V> rMap = this.rMap(key);
-        if(!rMap.isEmpty())
+        if (!rMap.isEmpty())
             rMap.clear();
 
-        rMap.putAll(rMap);
+        rMap.putAll(map);
         if (TimeUnit.MILLISECONDS != unit)
             expire = unit.toMillis(expire);
         rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
@@ -227,6 +260,35 @@ public class RedissonHelper {
 
     public <K, V> boolean setByLock(String key, Map<K, V> map, long expire, TimeUnit unit) {
         return set(key, map, expire, unit, this.getWriteLock(key));
+    }
+
+    public <K, V> boolean appendMap(String key, K k, V v, long expire, TimeUnit unit) {
+        if (Objects.isNull(k))
+            return false;
+
+        RMap<K, V> rMap = this.rMap(key);
+        if (rMap.isExists())
+            return rMap.fastPut(k, v);
+
+        boolean flag = rMap.fastPut(k, v);
+        if (TimeUnit.MILLISECONDS != unit)
+            expire = unit.toMillis(expire);
+        rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        return flag;
+    }
+
+    public <K, V> boolean appendMap(String key, K k, V v, long expire, TimeUnit unit, RLock lock) {
+        // activating watch-dog
+        lock.lock();
+        try {
+            return this.appendMap(key, k, v, expire, unit);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <K, V> boolean appendMapByLock(String key, K k, V v, long expire, TimeUnit unit) {
+        return this.appendMap(key, k, v, expire, unit, this.getWriteLock(key));
     }
 
     public <K, V> void replaceMap(String key, K k, V v) {
@@ -278,8 +340,7 @@ public class RedissonHelper {
         if (rMap.isEmpty())
             return;
 
-        if (rMap.containsKey(k))
-            rMap.remove(k);
+        rMap.remove(k);
     }
 
     public <K, V> void removeMap(String key, K k, RLock lock) {
@@ -323,15 +384,15 @@ public class RedissonHelper {
         return this.getSet(key, getReadLock(key));
     }
 
-    public <V> boolean set(String key, Set<V> list, long expire, TimeUnit unit) {
-        if (Objects.isNull(list) || list.isEmpty())
+    public <V> boolean set(String key, Set<V> set, long expire, TimeUnit unit) {
+        if (Objects.isNull(set) || set.isEmpty())
             return false;
 
         RSet<V> rSet = this.rSet(key);
-        if(!rSet.isEmpty())
-            rSet.removeAll(rSet);
+        if (!rSet.isEmpty())
+            rSet.clear();
 
-        boolean flag = rSet.addAll(list);
+        boolean flag = rSet.addAll(set);
         if (flag) {
             if (TimeUnit.MILLISECONDS != unit)
                 expire = unit.toMillis(expire);
@@ -354,6 +415,37 @@ public class RedissonHelper {
         return this.set(key, set, expire, unit, this.getWriteLock(key));
     }
 
+    public <V> boolean appendSet(String key, V v, long expire, TimeUnit unit) {
+        if (Objects.isNull(v))
+            return false;
+
+        RSet<V> rSet = this.rSet(key);
+        if (rSet.isExists())
+            return rSet.add(v);
+
+        boolean flag = rSet.add(v);
+        if (flag) {
+            if (TimeUnit.MILLISECONDS != unit)
+                expire = unit.toMillis(expire);
+            rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        }
+        return flag;
+    }
+
+    public <V> boolean appendSet(String key, V v, long expire, TimeUnit unit, RLock lock) {
+        // activating watch-dog
+        lock.lock();
+        try {
+            return this.appendSet(key, v, expire, unit);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <V> boolean appendSetByLock(String key,V v, long expire, TimeUnit unit) {
+        return this.appendSet(key, v, expire, unit, this.getWriteLock(key));
+    }
+
     public <V> void removeSetAsync(String key, int index) {
         if (index < 0)
             return;
@@ -363,34 +455,28 @@ public class RedissonHelper {
             rSet.removeAsync(index);
     }
 
-    public <V> void removeSet(String key, int index) {
-        if (index < 0)
-            return;
-
+    public <V> void removeSet(String key, V v) {
         RSet<V> rSet = this.rSet(key);
-        if (rSet.size() > index)
-            rSet.remove(index);
+        if(!rSet.isEmpty())
+            rSet.remove(v);
     }
 
-    public <V> void removeSet(String key, int index, RLock lock) {
+    public <V> void removeSet(String key, V v, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.removeSet(key, index);
+            this.removeSet(key, v);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void removeSetByLock(String key, int index) {
-        if (index < 0)
-            return;
-
-        this.removeSet(key, index, this.getWriteLock(key));
+    public <V> void removeSetByLock(String key, V v) {
+        this.removeSet(key, v, this.getWriteLock(key));
     }
 
     public <V> V get(String key) {
-        return (V) this.getClient().getBucket(key).get();
+        return (V) getClient().getBucket(key).get();
     }
 
     public <V> V getByLock(String key) {
@@ -407,12 +493,12 @@ public class RedissonHelper {
         }
     }
 
-    public <V> V removeAsync(String key) {
-        return (V) this.getClient().getBucket(key).getAndDeleteAsync();
+    public Future<Object> removeAsync(String key) {
+        return getClient().getBucket(key).getAndDeleteAsync();
     }
 
     public <V> V remove(String key) {
-        return (V) this.getClient().getBucket(key).getAndDelete();
+        return (V) getClient().getBucket(key).getAndDelete();
     }
 
     public <V> V remove(String key, RLock lock) {
@@ -429,8 +515,8 @@ public class RedissonHelper {
         return this.remove(key, this.getWriteLock(key));
     }
 
-    public <V> void setAysnc(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = this.getClient().getBucket(key);
+    public <V> void setAsync(String key, V value, long expire, TimeUnit unit) {
+        RBucket<V> rBucket = getClient().getBucket(key);
         if (expire > 0) {
             rBucket.setAsync(value, expire, unit);
             return;
@@ -439,7 +525,7 @@ public class RedissonHelper {
     }
 
     public <V> void set(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = this.getClient().getBucket(key);
+        RBucket<V> rBucket = getClient().getBucket(key);
         if (expire > 0) {
             rBucket.set(value, expire, unit);
             return;
@@ -448,7 +534,7 @@ public class RedissonHelper {
     }
 
     public <V> void setIfExists(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = this.getClient().getBucket(key);
+        RBucket<V> rBucket = getClient().getBucket(key);
         if (expire > 0) {
             rBucket.setIfExists(value, expire, unit);
             return;
@@ -457,7 +543,7 @@ public class RedissonHelper {
     }
 
     public <V> void setIfAbsent(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = this.getClient().getBucket(key);
+        RBucket<V> rBucket = getClient().getBucket(key);
         if (expire > 0) {
             expire = TimeUnit.MILLISECONDS == unit ? expire : unit.toMillis(expire);
             rBucket.setIfAbsent(value, Duration.ofMillis(expire));
@@ -508,12 +594,12 @@ public class RedissonHelper {
         }
     }
 
-    public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit){
+    public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit) {
         RRateLimiter rl = getClient().getRateLimiter(RATE_LIMITED_PREFIX + name);
-        if(rl.isExists())
+        if (rl.isExists())
             return rl;
 
-        if(TimeUnit.SECONDS != unit)
+        if (TimeUnit.SECONDS != unit)
             interval = unit.toSeconds(interval);
 
         rl.trySetRate(RateType.OVERALL, rate, interval, RateIntervalUnit.SECONDS);
@@ -553,10 +639,10 @@ public class RedissonHelper {
     }
 
     private <K, V> RMap<K, V> rMap(String key) {
-        return getClient().<K, V>getMap(key);
+        return getClient().getMap(key);
     }
 
     private <V> RSet<V> rSet(String key) {
-        return getClient().<V>getSet(key);
+        return getClient().getSet(key);
     }
 }

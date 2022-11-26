@@ -42,20 +42,20 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private Cacheable cacheable;
     private boolean inRedis;
     private TimeUnit timeUnit;
-    private Class<? extends Object> returnType;
+    private Class<? extends Object> redisType;
 
     public CacheinOperationInterceptor(Cacheable cacheable,
                                        Cloneable.CloneType cloneType,
                                        long expire,
                                        TimeUnit timeUnit,
                                        boolean inRedis,
-                                       Class<? extends Object> returnType) {
+                                       Class<? extends Object> redisType) {
         this.cacheable = cacheable;
         this.cloneType = cloneType;
         this.expire = expire;
         this.timeUnit = timeUnit;
         this.inRedis = inRedis;
-        this.returnType = returnType;
+        this.redisType = redisType;
     }
 
     @Override
@@ -68,18 +68,18 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     private Object forRedis(String resolverKey, MethodInvocation invocation) throws Throwable {
-        Objects.requireNonNull(returnType, "Should specify the return type when getting the cache from redis.");
+        Objects.requireNonNull(redisType, "Should specify the return type when getting the cache from redis.");
         RedissonHelper helper = RedissonHelper.getInstance();
 
-        if (List.class.isAssignableFrom(returnType)) {
+        if (List.class.isAssignableFrom(redisType)) {
             List list = helper.getListByLock(resolverKey);
             if (!list.isEmpty())
                 return list;
-        } else if (Map.class.isAssignableFrom(returnType)) {
+        } else if (Map.class.isAssignableFrom(redisType)) {
             Map map = helper.getMapByLock(resolverKey);
             if (!map.isEmpty())
                 return map;
-        } else if (Set.class.isAssignableFrom(returnType)) {
+        } else if (Set.class.isAssignableFrom(redisType)) {
             Set set = helper.getSetByLock(resolverKey);
             if (!set.isEmpty())
                 return set;
@@ -87,7 +87,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             // for bucket
             Object obj = helper.getByLock(resolverKey);
             if (Objects.nonNull(obj)) {
-                if (ConverterFactory.getInstance().isConvert(returnType)) {
+                if (ConverterFactory.getInstance().isConvert(redisType)) {
                     if (StringUtils.isNotEmpty(obj.toString()))
                         return obj;
                 } else
@@ -105,7 +105,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                 helper.setByLock(resolverKey, (Map) result, expire, timeUnit);
             } else if (Set.class.isAssignableFrom(clazz)) {
                 helper.setByLock(resolverKey, (Set) result, expire, timeUnit);
-            } else if (ConverterFactory.getInstance().isConvert(returnType)) {
+            } else if (ConverterFactory.getInstance().isConvert(redisType)) {
                 if (StringUtils.isNotEmpty(result.toString()))
                     helper.setByLock(resolverKey, result, expire, timeUnit);
             } else
