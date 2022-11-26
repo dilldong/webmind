@@ -19,6 +19,7 @@ import java.util.Objects;
  * @date 2022/11/26
  */
 public class GsonCodec extends BaseCodec {
+    public static final GsonCodec INSTANCE = new GsonCodec();
     private final Encoder encoder;
     private final Decoder<Object> decoder;
 

@@ -11,8 +11,11 @@ import org.redisson.api.RBucket;
 import org.redisson.api.RList;
 import org.redisson.api.RLock;
 import org.redisson.api.RMap;
+import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RSet;
+import org.redisson.api.RateIntervalUnit;
+import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 
@@ -41,6 +44,7 @@ public class RedissonHelper {
     private static final String DEFAULT_REDISSON = "redisson.yml";
     private static final String JAR_REDISSON = "BOOT-INF/classes/redisson.yml";
     public static final String LOCK_PREFIX = "lock:";
+    public static final String RATE_LIMITED_PREFIX = "R.L:";
     private final RedissonClient redissonClient;
 
     private static class Helper {
@@ -93,6 +97,7 @@ public class RedissonHelper {
     }
 
     public <V> List<V> getList(String key, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.getList(key);
@@ -123,6 +128,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String key, List<V> list, long expire, TimeUnit unit, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.set(key, list, expire, unit);
@@ -154,6 +160,7 @@ public class RedissonHelper {
     }
 
     public <V> void removeList(String key, int index, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             this.removeList(key, index);
@@ -180,6 +187,7 @@ public class RedissonHelper {
     }
 
     public <K, V> Map<K, V> getMap(String key, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.getMap(key);
@@ -208,6 +216,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean set(String key, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.set(key, map, expire, unit);
@@ -233,6 +242,7 @@ public class RedissonHelper {
     }
 
     public <K, V> void replaceMap(String key, K k, V v, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             this.replaceMap(key, k, v);
@@ -273,6 +283,7 @@ public class RedissonHelper {
     }
 
     public <K, V> void removeMap(String key, K k, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             this.removeMap(key, k);
@@ -299,6 +310,7 @@ public class RedissonHelper {
     }
 
     public <V> Set<V> getSet(String key, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.getSet(key);
@@ -329,6 +341,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String key, Set<V> set, long expire, TimeUnit unit, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.set(key, set, expire, unit);
@@ -360,6 +373,7 @@ public class RedissonHelper {
     }
 
     public <V> void removeSet(String key, int index, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             this.removeSet(key, index);
@@ -384,6 +398,7 @@ public class RedissonHelper {
     }
 
     public <V> V get(String key, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.get(key);
@@ -401,6 +416,7 @@ public class RedissonHelper {
     }
 
     public <V> V remove(String key, RLock lock) {
+        // activating watch-dog
         lock.lock();
         try {
             return this.remove(key);
@@ -455,6 +471,7 @@ public class RedissonHelper {
     }
 
     public <V> void set(String key, V value, long expire, TimeUnit unit, RLock Lock) {
+        // activating watch-dog
         Lock.lock();
         try {
             this.set(key, value, expire, unit);
@@ -489,6 +506,18 @@ public class RedissonHelper {
         } finally {
             lock.unlock();
         }
+    }
+
+    public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit){
+        RRateLimiter rl = getClient().getRateLimiter(RATE_LIMITED_PREFIX + name);
+        if(rl.isExists())
+            return rl;
+
+        if(TimeUnit.SECONDS != unit)
+            interval = unit.toSeconds(interval);
+
+        rl.trySetRate(RateType.OVERALL, rate, interval, RateIntervalUnit.SECONDS);
+        return rl;
     }
 
     public RLock getLock(String key) {

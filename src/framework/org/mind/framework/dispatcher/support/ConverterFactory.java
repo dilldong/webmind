@@ -3,6 +3,8 @@ package org.mind.framework.dispatcher.support;
 import org.apache.commons.lang3.CharUtils;
 import org.mind.framework.exception.NotSupportedException;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +24,10 @@ public class ConverterFactory {
         Converter<Long> longConvert = value -> Long.parseLong(value);
 
         Converter<Integer> intConvert = value -> Integer.parseInt(value);
+
+        Converter<BigInteger> bigIntConvert = value -> new BigInteger(value);
+
+        Converter<BigDecimal> bigDecimalConvert = value -> new BigDecimal(value);
 
         Converter<Float> floatConvert = value -> Float.parseFloat(value);
 
@@ -57,6 +63,9 @@ public class ConverterFactory {
 
         this.converterMap.put(char.class.getName(), charConvert);
         this.converterMap.put(Character.class.getName(), charConvert);
+
+        this.converterMap.put(BigInteger.class.getName(), bigIntConvert);
+        this.converterMap.put(BigDecimal.class.getName(), bigDecimalConvert);
     }
 
     private static class ConverterHolder {

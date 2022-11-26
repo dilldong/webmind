@@ -4,9 +4,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.annotation.EnumFace;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
+import org.mind.framework.dispatcher.support.ConverterFactory;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.MatcherUtils;
@@ -71,32 +73,41 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
         if (List.class.isAssignableFrom(returnType)) {
             List list = helper.getListByLock(resolverKey);
-            if(!list.isEmpty())
+            if (!list.isEmpty())
                 return list;
         } else if (Map.class.isAssignableFrom(returnType)) {
             Map map = helper.getMapByLock(resolverKey);
-            if(!map.isEmpty())
+            if (!map.isEmpty())
                 return map;
         } else if (Set.class.isAssignableFrom(returnType)) {
             Set set = helper.getSetByLock(resolverKey);
-            if(!set.isEmpty())
+            if (!set.isEmpty())
                 return set;
+        } else {
+            // for bucket
+            Object obj = helper.getByLock(resolverKey);
+            if (Objects.nonNull(obj)) {
+                if (ConverterFactory.getInstance().isConvert(returnType)) {
+                    if (StringUtils.isNotEmpty(obj.toString()))
+                        return obj;
+                } else
+                    return obj;
+            }
         }
 
-        // for bucket
-        Object obj = helper.getByLock(resolverKey);
-        if (Objects.nonNull(obj))
-            return obj;
-
+        // invoke orig method
         Object result = this.callback(invocation);
         if (Objects.nonNull(result)) {
             Class<? extends Object> clazz = result.getClass();
             if (List.class.isAssignableFrom(clazz)) {
-                helper.setByLock(resolverKey, (List)result, expire, timeUnit);
+                helper.setByLock(resolverKey, (List) result, expire, timeUnit);
             } else if (Map.class.isAssignableFrom(clazz)) {
-                helper.setByLock(resolverKey, (Map)result, expire, timeUnit);
+                helper.setByLock(resolverKey, (Map) result, expire, timeUnit);
             } else if (Set.class.isAssignableFrom(clazz)) {
-                helper.setByLock(resolverKey, (Set)result, expire, timeUnit);
+                helper.setByLock(resolverKey, (Set) result, expire, timeUnit);
+            } else if (ConverterFactory.getInstance().isConvert(returnType)) {
+                if (StringUtils.isNotEmpty(result.toString()))
+                    helper.setByLock(resolverKey, result, expire, timeUnit);
             } else
                 helper.setByLock(resolverKey, result, expire, timeUnit);
         }
@@ -119,15 +130,13 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             Class<? extends Object> clazz = result.getClass();
             boolean addCache = true;
 
-            if (Collection.class.isAssignableFrom(clazz)) {
+            if (Collection.class.isAssignableFrom(clazz))
                 addCache = !((Collection) result).isEmpty();
-            } else if (Map.class.isAssignableFrom(clazz)) {
+            else if (Map.class.isAssignableFrom(clazz))
                 addCache = !((Map) result).isEmpty();
-            }
 
-            if (addCache) {
+            if (addCache)
                 this.cacheable.addCache(resolverKey, result, true, cloneType);
-            }
         }
 
         return result;
@@ -165,7 +174,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     private Object callback(MethodInvocation invocation) throws Exception {
-        if (invocation instanceof ProxyMethodInvocation) {
+        if (ProxyMethodInvocation.class.isAssignableFrom(invocation.getClass())) {
             try {
                 return ((ProxyMethodInvocation) invocation).invocableClone().proceed();
             } catch (Exception | Error e) {
