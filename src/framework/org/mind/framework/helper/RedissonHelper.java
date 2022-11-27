@@ -191,6 +191,19 @@ public class RedissonHelper {
         rList.clear();
     }
 
+    public <V> void clearList(String key, RLock lock) {
+        lock.lock();
+        try {
+            this.<V>clearList(key);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <V> void clearListByLock(String key) {
+        this.<V>clearList(key, this.getWriteLock(key));
+    }
+
     public <V> void removeListAsync(String key, int index) {
         if (index < 0)
             return;
@@ -353,6 +366,19 @@ public class RedissonHelper {
         rMap.clear();
     }
 
+    public <K, V> void clearMap(String key, RLock lock) {
+        lock.lock();
+        try {
+            this.<K, V>clearMap(key);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <K, V> void clearMapByLock(String key) {
+        this.<K, V>clearMap(key, this.getWriteLock(key));
+    }
+
     public <K, V> void removeMapAsync(String key, K k) {
         if (Objects.isNull(k))
             return;
@@ -476,7 +502,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> boolean appendSetByLock(String key,V v, long expire, TimeUnit unit) {
+    public <V> boolean appendSetByLock(String key, V v, long expire, TimeUnit unit) {
         return this.appendSet(key, v, expire, unit, this.getWriteLock(key));
     }
 
@@ -496,6 +522,19 @@ public class RedissonHelper {
         rSet.clear();
     }
 
+    public <V> void clearSet(String key, RLock lock) {
+        lock.lock();
+        try {
+            this.<V>clearSet(key);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <V> void clearSetByLock(String key) {
+        this.<V>clearSet(key, this.getWriteLock(key));
+    }
+
     public <V> void removeSetAsync(String key, int index) {
         if (index < 0)
             return;
@@ -507,7 +546,7 @@ public class RedissonHelper {
 
     public <V> void removeSet(String key, V v) {
         RSet<V> rSet = this.rSet(key);
-        if(!rSet.isEmpty())
+        if (!rSet.isEmpty())
             rSet.remove(v);
     }
 
@@ -583,25 +622,6 @@ public class RedissonHelper {
         rBucket.set(value);
     }
 
-    public <V> void setIfExists(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = getClient().getBucket(key);
-        if (expire > 0) {
-            rBucket.setIfExists(value, expire, unit);
-            return;
-        }
-        rBucket.setIfExists(value);
-    }
-
-    public <V> void setIfAbsent(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = getClient().getBucket(key);
-        if (expire > 0) {
-            expire = TimeUnit.MILLISECONDS == unit ? expire : unit.toMillis(expire);
-            rBucket.setIfAbsent(value, Duration.ofMillis(expire));
-            return;
-        }
-        rBucket.setIfAbsent(value);
-    }
-
     public <V> void setByLock(String key, V value, long expire, TimeUnit unit) {
         this.set(key, value, expire, unit, this.getWriteLock(key));
     }
@@ -613,34 +633,6 @@ public class RedissonHelper {
             this.set(key, value, expire, unit);
         } finally {
             Lock.unlock();
-        }
-    }
-
-    public <V> void setIfExistsByLock(String key, V value, long expire, TimeUnit unit) {
-        this.setIfExists(key, value, expire, unit, this.getWriteLock(key));
-    }
-
-    public <V> void setIfExists(String key, V value, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            this.setIfExists(key, value, expire, unit);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public <V> void setIfAbsentByLock(String key, V value, long expire, TimeUnit unit) {
-        this.setIfAbsent(key, value, expire, unit, this.getWriteLock(key));
-    }
-
-    public <V> void setIfAbsent(String key, V value, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            this.setIfAbsent(key, value, expire, unit);
-        } finally {
-            lock.unlock();
         }
     }
 
