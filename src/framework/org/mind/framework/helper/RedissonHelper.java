@@ -8,12 +8,15 @@ import org.mind.framework.cache.LruCache;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
+import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.redisson.Redisson;
 import org.redisson.api.LockOptions;
 import org.redisson.api.RBucket;
+import org.redisson.api.RIdGenerator;
 import org.redisson.api.RList;
 import org.redisson.api.RLock;
+import org.redisson.api.RLongAdder;
 import org.redisson.api.RMap;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReadWriteLock;
@@ -27,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +58,8 @@ public class RedissonHelper {
     private static final String REDIS_LOCAL_KEY = "redis_local_keys";
     public static final String LOCK_PREFIX = "LK:";
     public static final String RATE_LIMITED_PREFIX = "RL:";
+    public static final String INCREMENT_PREFIX = "ICR:";
+    public static final String UNIQUE_ID = "UNIQUE:ID";
     private final RedissonClient redissonClient;
     private final Cacheable cacheable;
 
@@ -306,7 +312,7 @@ public class RedissonHelper {
             rMap.clear();
 
         rMap.putAllAsync(map);
-        if(expire > 0L) {
+        if (expire > 0L) {
             if (TimeUnit.MILLISECONDS != unit)
                 expire = unit.toMillis(expire);
             rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
@@ -323,7 +329,7 @@ public class RedissonHelper {
             rMap.clear();
 
         rMap.putAll(map);
-        if(expire > 0L) {
+        if (expire > 0L) {
             if (TimeUnit.MILLISECONDS != unit)
                 expire = unit.toMillis(expire);
             rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
@@ -510,7 +516,7 @@ public class RedissonHelper {
             rSet.clear();
 
         rSet.addAllAsync(set);
-        if(expire > 0L) {
+        if (expire > 0L) {
             if (TimeUnit.MILLISECONDS != unit)
                 expire = unit.toMillis(expire);
             rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
@@ -528,7 +534,7 @@ public class RedissonHelper {
 
         boolean flag = rSet.addAll(set);
         if (flag) {
-            if(expire > 0L) {
+            if (expire > 0L) {
                 if (TimeUnit.MILLISECONDS != unit)
                     expire = unit.toMillis(expire);
                 rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
@@ -717,6 +723,47 @@ public class RedissonHelper {
         } finally {
             Lock.unlock();
         }
+    }
+
+    public long getIdForDate() {
+        String date = DateFormatUtils.dateNow().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        return Long.parseLong(String.format("%s%d", date, getId()));
+    }
+
+    public long getId() {
+        return getId(100_000L, 1_000L);
+    }
+
+    public long getId(long start, long allocationSize) {
+        RIdGenerator idGenerator = getClient().getIdGenerator(UNIQUE_ID);
+        idGenerator.tryInit(start, allocationSize);
+        return idGenerator.nextId();
+    }
+
+    public void increment(String name) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        adder.increment();
+    }
+
+    public void decrement(String name) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        adder.decrement();
+    }
+
+
+    public void decrement(String name, long value) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        adder.add(-value);
+    }
+
+    public void reset(String name) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        adder.reset();
+    }
+
+    public long sum(String name) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        return adder.sum();
     }
 
     public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit) {

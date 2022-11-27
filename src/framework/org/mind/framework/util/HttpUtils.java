@@ -23,6 +23,7 @@ public class HttpUtils {
     private static final String BODY_PARAMS = "post_body_input_stream";
     private static final String REQUEST_URI = "x_request_uri";
     private static final String REQUEST_URL = "x_request_url";
+    private static final String REQUEST_IP = "x_request_ip";
 
     /**
      * Identify and return the path component (from the request URI) that
@@ -81,15 +82,23 @@ public class HttpUtils {
     }
 
     public static String getRequestIP(HttpServletRequest request) {
-        String ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
-        if (StringUtils.isNotEmpty(ip))
-            return getRemoteIpFromForward(ip);
-
-        ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[1]);
-        if (StringUtils.isNotEmpty(ip))
+        String ip = (String) request.getAttribute(REQUEST_IP);
+        if(StringUtils.isNotEmpty(ip))
             return ip;
 
-        return request.getRemoteAddr();
+        ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
+        if (StringUtils.isNotEmpty(ip)) {
+            ip = getRemoteIpFromForward(ip);
+            request.setAttribute(REQUEST_IP, ip);
+            return ip;
+        }
+
+        ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[1]);
+        if (StringUtils.isEmpty(ip))
+            ip = request.getRemoteAddr();
+
+        request.setAttribute(REQUEST_IP, ip);
+        return ip;
     }
 
     /**

@@ -107,8 +107,8 @@ public class TestAction {
     }
 
     @Mapping("/object")
-    public TestModule.A object() {
-        TestModule.A a = TestModule.A.builder()
+    public TestSpringModule.A object() {
+        TestSpringModule.A a = TestSpringModule.A.builder()
                 .field01("field01")
                 .num01(100)
                 .num02(99_100_200_000L)
