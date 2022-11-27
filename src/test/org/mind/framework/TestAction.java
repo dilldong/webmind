@@ -6,6 +6,7 @@ import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TemplateRender;
+import org.mind.framework.server.WebServerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -31,6 +32,8 @@ public class TestAction {
 
     @Mapping
     public String first() {
+        log.info("{}", WebServerConfig.INSTANCE);
+        log.info("{}", WebServerConfig.INSTANCE);
         return "Welcome usage mind-framework.";
     }
 

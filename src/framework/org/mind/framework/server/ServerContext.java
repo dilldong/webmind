@@ -52,7 +52,7 @@ public abstract class ServerContext {
     protected abstract void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException;
 
     public ServerContext() {
-        this.serverConfig = WebServerConfig.init();
+        this.serverConfig = WebServerConfig.INSTANCE;
     }
 
     public void startup() throws WebServerException {

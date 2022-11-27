@@ -24,6 +24,7 @@ import java.util.Set;
 @Getter
 @Slf4j
 public class WebServerConfig {
+    public static final WebServerConfig INSTANCE = new WebServerConfig();
     public static final String JAR_IN_CLASSES = "BOOT-INF/classes";
     private static final String SERVER_PROPERTIES = "server.properties";
     private static final String JAR_PROPERTIES = String.format("%s/%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
@@ -105,13 +106,12 @@ public class WebServerConfig {
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
             this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
         }
+
+        // init mimeType
+        this.initMimeMapping();
     }
 
-    public static WebServerConfig init() {
-        return new WebServerConfig().initMimeMapping();
-    }
-
-    private WebServerConfig initMimeMapping() {
+    private void initMimeMapping() {
         mimeMapping = Collections.unmodifiableMap(
                 new HashMap<String, String>() {{
                     put("css", "text/css; charset=UTF-8");
@@ -156,6 +156,5 @@ public class WebServerConfig {
                     put("rar", "application/x-rar-compressed");
                     put("zip", "application/zip");
                 }});
-        return this;
     }
 }

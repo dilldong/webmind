@@ -40,6 +40,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static org.mind.framework.server.WebServerConfig.JAR_IN_CLASSES;
+
 /**
  * @version 1.0
  * @auther Marcus
@@ -48,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RedissonHelper {
     private static final String DEFAULT_REDISSON = "redisson.yml";
-    private static final String JAR_REDISSON = "BOOT-INF/classes/redisson.yml";
+    private static final String JAR_REDISSON = String.format("%s/%s", JAR_IN_CLASSES, DEFAULT_REDISSON);
     private static final String REDIS_LOCAL_KEY = "redis_local_keys";
     public static final String LOCK_PREFIX = "LK:";
     public static final String RATE_LIMITED_PREFIX = "RL:";
