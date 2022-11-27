@@ -1,6 +1,10 @@
 package org.mind.framework.helper;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.cache.CacheElement;
+import org.mind.framework.cache.Cacheable;
+import org.mind.framework.cache.LruCache;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
@@ -28,10 +32,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -44,9 +50,11 @@ import java.util.concurrent.TimeUnit;
 public class RedissonHelper {
     private static final String DEFAULT_REDISSON = "redisson.yml";
     private static final String JAR_REDISSON = "BOOT-INF/classes/redisson.yml";
+    private static final String REDIS_LOCAL_KEY = "redis_local_keys";
     public static final String LOCK_PREFIX = "LK:";
     public static final String RATE_LIMITED_PREFIX = "RL:";
     private final RedissonClient redissonClient;
+    private final Cacheable cacheable;
 
     private static class Helper {
         private static final RedissonHelper INSTANCE = new RedissonHelper();
@@ -71,6 +79,8 @@ public class RedissonHelper {
             ThrowProvider.doThrow(e);
         }
 
+        // Used to store the key added to redis
+        cacheable = LruCache.initCache();
         redissonClient = Redisson.create(config);
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Redisson-Gracefully", true, () -> {
             if (!redissonClient.isShutdown()) {
@@ -112,6 +122,23 @@ public class RedissonHelper {
         return this.getList(key, getReadLock(key));
     }
 
+    public <V> void setAsync(String key, List<V> list, long expire, TimeUnit unit) {
+        if (Objects.isNull(list) || list.isEmpty())
+            return;
+
+        RList<V> rList = this.rList(key);
+        if (!rList.isEmpty())
+            rList.clear();
+
+        rList.addAllAsync(list);
+        if (expire > 0L) {
+            if (TimeUnit.MILLISECONDS != unit)
+                expire = unit.toMillis(expire);
+            rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        }
+        this.putLocal(key, list.getClass());
+    }
+
     public <V> boolean set(String key, List<V> list, long expire, TimeUnit unit) {
         if (Objects.isNull(list) || list.isEmpty())
             return false;
@@ -122,9 +149,12 @@ public class RedissonHelper {
 
         boolean flag = rList.addAll(list);
         if (flag) {
-            if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+            if (expire > 0L) {
+                if (TimeUnit.MILLISECONDS != unit)
+                    expire = unit.toMillis(expire);
+                rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+            }
+            this.putLocal(key, list.getClass());
         }
         return flag;
     }
@@ -156,6 +186,7 @@ public class RedissonHelper {
             if (TimeUnit.MILLISECONDS != unit)
                 expire = unit.toMillis(expire);
             rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+            this.putLocal(key, ArrayList.class);
         }
 
         return flag;
@@ -181,6 +212,7 @@ public class RedissonHelper {
             return;
 
         rList.deleteAsync();
+        this.removeLocal(key);
     }
 
     public <V> void clearList(String key) {
@@ -189,6 +221,7 @@ public class RedissonHelper {
             return;
 
         rList.clear();
+        this.removeLocal(key);
     }
 
     public <V> void clearList(String key, RLock lock) {
@@ -263,6 +296,23 @@ public class RedissonHelper {
         return this.getMap(key, getReadLock(key));
     }
 
+    public <K, V> void setAsync(String key, Map<K, V> map, long expire, TimeUnit unit) {
+        if (Objects.isNull(map) || map.isEmpty())
+            return;
+
+        RMap<K, V> rMap = this.rMap(key);
+        if (!rMap.isEmpty())
+            rMap.clear();
+
+        rMap.putAllAsync(map);
+        if(expire > 0L) {
+            if (TimeUnit.MILLISECONDS != unit)
+                expire = unit.toMillis(expire);
+            rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        }
+        this.putLocal(key, map.getClass());
+    }
+
     public <K, V> boolean set(String key, Map<K, V> map, long expire, TimeUnit unit) {
         if (Objects.isNull(map) || map.isEmpty())
             return false;
@@ -272,9 +322,12 @@ public class RedissonHelper {
             rMap.clear();
 
         rMap.putAll(map);
-        if (TimeUnit.MILLISECONDS != unit)
-            expire = unit.toMillis(expire);
-        rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        if(expire > 0L) {
+            if (TimeUnit.MILLISECONDS != unit)
+                expire = unit.toMillis(expire);
+            rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        }
+        this.putLocal(key, map.getClass());
         return true;
     }
 
@@ -304,6 +357,7 @@ public class RedissonHelper {
         if (TimeUnit.MILLISECONDS != unit)
             expire = unit.toMillis(expire);
         rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        this.putLocal(key, HashMap.class);
         return flag;
     }
 
@@ -356,6 +410,7 @@ public class RedissonHelper {
             return;
 
         rMap.deleteAsync();
+        this.removeLocal(key);
     }
 
     public <K, V> void clearMap(String key) {
@@ -364,6 +419,7 @@ public class RedissonHelper {
             return;
 
         rMap.clear();
+        this.removeLocal(key);
     }
 
     public <K, V> void clearMap(String key, RLock lock) {
@@ -444,6 +500,23 @@ public class RedissonHelper {
         return this.getSet(key, getReadLock(key));
     }
 
+    public <V> void setAsync(String key, Set<V> set, long expire, TimeUnit unit) {
+        if (Objects.isNull(set) || set.isEmpty())
+            return;
+
+        RSet<V> rSet = this.rSet(key);
+        if (!rSet.isEmpty())
+            rSet.clear();
+
+        rSet.addAllAsync(set);
+        if(expire > 0L) {
+            if (TimeUnit.MILLISECONDS != unit)
+                expire = unit.toMillis(expire);
+            rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+        }
+        this.putLocal(key, set.getClass());
+    }
+
     public <V> boolean set(String key, Set<V> set, long expire, TimeUnit unit) {
         if (Objects.isNull(set) || set.isEmpty())
             return false;
@@ -454,9 +527,12 @@ public class RedissonHelper {
 
         boolean flag = rSet.addAll(set);
         if (flag) {
-            if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+            if(expire > 0L) {
+                if (TimeUnit.MILLISECONDS != unit)
+                    expire = unit.toMillis(expire);
+                rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+            }
+            this.putLocal(key, set.getClass());
         }
         return flag;
     }
@@ -488,6 +564,7 @@ public class RedissonHelper {
             if (TimeUnit.MILLISECONDS != unit)
                 expire = unit.toMillis(expire);
             rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+            this.putLocal(key, HashSet.class);
         }
         return flag;
     }
@@ -512,6 +589,7 @@ public class RedissonHelper {
             return;
 
         rSet.deleteAsync();
+        this.removeLocal(key);
     }
 
     public <V> void clearSet(String key) {
@@ -520,6 +598,7 @@ public class RedissonHelper {
             return;
 
         rSet.clear();
+        this.removeLocal(key);
     }
 
     public <V> void clearSet(String key, RLock lock) {
@@ -583,11 +662,15 @@ public class RedissonHelper {
     }
 
     public Future<Boolean> removeAsync(String key) {
-        return getClient().getBucket(key).deleteAsync();
+        Future<Boolean> future = getClient().getBucket(key).deleteAsync();
+        this.removeLocal(key);
+        return future;
     }
 
     public boolean remove(String key) {
-        return getClient().getBucket(key).delete();
+        boolean flag = getClient().getBucket(key).delete();
+        this.removeLocal(key);
+        return flag;
     }
 
     public boolean remove(String key, RLock lock) {
@@ -606,20 +689,20 @@ public class RedissonHelper {
 
     public <V> void setAsync(String key, V value, long expire, TimeUnit unit) {
         RBucket<V> rBucket = getClient().getBucket(key);
-        if (expire > 0) {
+        if (expire > 0)
             rBucket.setAsync(value, expire, unit);
-            return;
-        }
-        rBucket.setAsync(value);
+        else
+            rBucket.setAsync(value);
+        this.putLocal(key, value.getClass());
     }
 
     public <V> void set(String key, V value, long expire, TimeUnit unit) {
         RBucket<V> rBucket = getClient().getBucket(key);
-        if (expire > 0) {
+        if (expire > 0)
             rBucket.set(value, expire, unit);
-            return;
-        }
-        rBucket.set(value);
+        else
+            rBucket.set(value);
+        this.putLocal(key, value.getClass());
     }
 
     public <V> void setByLock(String key, V value, long expire, TimeUnit unit) {
@@ -674,6 +757,60 @@ public class RedissonHelper {
 
     public RLock getSpinLock(String key, LockOptions.BackOff backOff) {
         return getClient().getSpinLock(LOCK_PREFIX + key, backOff);
+    }
+
+    public void removeContainsFromLocalKeys(String keyPart) {
+        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
+        if (Objects.isNull(element))
+            return;
+
+        Map<String, Class<? extends Object>> redisKeys =
+                (Map<String, Class<? extends Object>>) element.getValue();
+        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+            return;
+
+        Iterator<Map.Entry<String, Class<? extends Object>>> iterator = redisKeys.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Class<? extends Object>> entry = iterator.next();
+            if (StringUtils.contains(entry.getKey(), keyPart)) {
+                if (List.class.isAssignableFrom(entry.getValue()))
+                    this.clearListAsync(entry.getKey());
+                else if (Map.class.isAssignableFrom(entry.getValue()))
+                    this.clearMapAsync(entry.getKey());
+                else if (Set.class.isAssignableFrom(entry.getValue()))
+                    this.clearSetAsync(entry.getKey());
+                else
+                    this.removeAsync(entry.getKey());
+                iterator.remove();
+            }
+        }
+    }
+
+    private void removeLocal(String key) {
+        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
+        if (Objects.isNull(element))
+            return;
+
+        Map<String, Class<? extends Object>> redisKeys =
+                (Map<String, Class<? extends Object>>) element.getValue();
+        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+            return;
+
+        redisKeys.remove(key);
+    }
+
+    private void putLocal(String key, Class<? extends Object> clazzType) {
+        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
+        if (Objects.isNull(element)) {
+            Map<String, Class<? extends Object>> redisKeys = new ConcurrentHashMap<>();
+            redisKeys.put(key, clazzType);
+            cacheable.addCache(REDIS_LOCAL_KEY, redisKeys, true);
+            return;
+        }
+
+        Map<String, Class<? extends Object>> redisKeys =
+                (Map<String, Class<? extends Object>>) element.getValue();
+        redisKeys.putIfAbsent(key, clazzType);
     }
 
     private <V> RList<V> rList(String key) {
