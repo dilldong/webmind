@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -661,10 +660,9 @@ public class RedissonHelper {
         }
     }
 
-    public Future<Boolean> removeAsync(String key) {
-        Future<Boolean> future = getClient().getBucket(key).deleteAsync();
+    public void removeAsync(String key) {
+        getClient().getBucket(key).deleteAsync();
         this.removeLocal(key);
-        return future;
     }
 
     public boolean remove(String key) {
@@ -764,14 +762,14 @@ public class RedissonHelper {
         if (Objects.isNull(element))
             return;
 
-        Map<String, Class<? extends Object>> redisKeys =
-                (Map<String, Class<? extends Object>>) element.getValue();
+        Map<String, Class<?>> redisKeys =
+                (Map<String, Class<?>>) element.getValue();
         if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
             return;
 
-        Iterator<Map.Entry<String, Class<? extends Object>>> iterator = redisKeys.entrySet().iterator();
+        Iterator<Map.Entry<String, Class<?>>> iterator = redisKeys.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, Class<? extends Object>> entry = iterator.next();
+            Map.Entry<String, Class<?>> entry = iterator.next();
             if (StringUtils.contains(entry.getKey(), keyPart)) {
                 if (List.class.isAssignableFrom(entry.getValue()))
                     this.clearListAsync(entry.getKey());
@@ -791,25 +789,25 @@ public class RedissonHelper {
         if (Objects.isNull(element))
             return;
 
-        Map<String, Class<? extends Object>> redisKeys =
-                (Map<String, Class<? extends Object>>) element.getValue();
+        Map<String, Class<?>> redisKeys =
+                (Map<String, Class<?>>) element.getValue();
         if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
             return;
 
         redisKeys.remove(key);
     }
 
-    private void putLocal(String key, Class<? extends Object> clazzType) {
+    private void putLocal(String key, Class<?> clazzType) {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
         if (Objects.isNull(element)) {
-            Map<String, Class<? extends Object>> redisKeys = new ConcurrentHashMap<>();
+            Map<String, Class<?>> redisKeys = new ConcurrentHashMap<>();
             redisKeys.put(key, clazzType);
             cacheable.addCache(REDIS_LOCAL_KEY, redisKeys, true);
             return;
         }
 
-        Map<String, Class<? extends Object>> redisKeys =
-                (Map<String, Class<? extends Object>>) element.getValue();
+        Map<String, Class<?>> redisKeys =
+                (Map<String, Class<?>>) element.getValue();
         redisKeys.putIfAbsent(key, clazzType);
     }
 
