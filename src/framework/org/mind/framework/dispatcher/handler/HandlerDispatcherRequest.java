@@ -223,7 +223,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 Class<?> type;
                 for (int i = 0; i < number; ++i) {
                     type = execution.getParameterTypes()[i];
-                    if (String.class.equals(type))
+                    if (String.class.getName().equals(type.getName()))
                         args[i] = matcher.group(i + 1);// segmentation fetch
                     else {
                         try {
@@ -299,11 +299,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             this.handleResult(result, request, response);
 
             // Interceptor renderCompletion
-            if (!currentInterceptors.isEmpty()) {
-                for (HandlerInterceptor interceptor : currentInterceptors) {
+            if (!currentInterceptors.isEmpty())
+                for (HandlerInterceptor interceptor : currentInterceptors)
                     interceptor.renderCompletion(request, response);
-                }
-            }
 
         } catch (IOException | ServletException e) {
             log.error(e.getMessage(), e);

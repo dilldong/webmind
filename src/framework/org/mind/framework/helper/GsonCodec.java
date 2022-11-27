@@ -67,9 +67,9 @@ public class GsonCodec extends BaseCodec {
 
     @Override
     public ClassLoader getClassLoader() {
-        ClassLoader classLoader = JsonUtils.class.getClassLoader();
-        if(Objects.nonNull(classLoader))
-            return classLoader;
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if(Objects.nonNull(loader))
+            return loader;
 
         return super.getClassLoader();
     }

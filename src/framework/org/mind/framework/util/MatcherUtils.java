@@ -1,5 +1,6 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.mind.framework.annotation.Mapping;
 
 import java.util.StringJoiner;
@@ -13,9 +14,9 @@ public class MatcherUtils {
      */
     public static final int DEFAULT_EQ = Pattern.CANON_EQ;
 
-    public static final String URI_PARAM_MATCH = "(\\$\\{)[A-Za-z_]+\\}";
+    public static final String URI_PARAM_MATCH = "(\\$\\{)\\w+\\}";
 
-    public static final String PARAM_MATCH = "(\\#\\{)[A-Za-z_.]+\\}";
+    public static final String PARAM_MATCH = "(#\\{)\\w+\\}";
 
     /**
      * 忽略大小写模式
@@ -23,7 +24,7 @@ public class MatcherUtils {
     public static final int IGNORECASE_EQ = Pattern.CASE_INSENSITIVE;
 
     public static Matcher matcher(String value, String regex, int... flags) {
-        Pattern pattern = Pattern.compile(regex, flags.length == 0 ? DEFAULT_EQ : flags[0]);
+        Pattern pattern = Pattern.compile(regex, ArrayUtils.isEmpty(flags) ? DEFAULT_EQ : flags[0]);
         return pattern.matcher(value);
     }
 

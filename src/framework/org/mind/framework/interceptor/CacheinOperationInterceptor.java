@@ -19,6 +19,7 @@ import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +57,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         this.expire = expire;
         this.timeUnit = timeUnit;
         this.inRedis = inRedis;
-        this.redisType = ArrayUtils.isEmpty(redisType)? null : redisType[0];
+        this.redisType = ArrayUtils.isEmpty(redisType) ? null : redisType[0];
     }
 
     @Override
@@ -118,8 +119,10 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
 
     private Object forLocal(String resolverKey, MethodInvocation invocation) throws Throwable {
-        CacheElement element = this.cacheable.getCache(resolverKey, expire);
-        if (element != null) {
+        CacheElement element = this.cacheable.getCache(
+                resolverKey,
+                TimeUnit.MILLISECONDS == timeUnit ? expire : timeUnit.toMillis(expire));
+        if (Objects.nonNull(element)) {
             if (log.isDebugEnabled())
                 log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
 
@@ -144,7 +147,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     private String resolverExpl(Object[] params, Object target, Method method, String attrValue) {
-        if (Objects.isNull(params) || params.length == 0)
+        if (ArrayUtils.isEmpty(params))
             return attrValue;
 
         if (MatcherUtils.checkCount(attrValue, MatcherUtils.PARAM_MATCH) == 0)
@@ -165,9 +168,9 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         for (int i = 0; i < size; ++i) {
             attrValue =
                     attrValue.replaceAll(
-                            "\\#\\{".concat(methodVarNames[i]).concat("\\}"),
+                            "#\\{".concat(methodVarNames[i]).concat("\\}"),
                             EnumFace.class.isAssignableFrom(params[i].getClass()) ?
-                                    ((EnumFace<String>) params[i]).getValue() :
+                                    String.valueOf(((EnumFace<? extends Serializable>) params[i]).getValue()) :
                                     String.valueOf(params[i]));
         }
 

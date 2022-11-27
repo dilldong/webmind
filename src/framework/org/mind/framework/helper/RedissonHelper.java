@@ -44,8 +44,8 @@ import java.util.concurrent.TimeUnit;
 public class RedissonHelper {
     private static final String DEFAULT_REDISSON = "redisson.yml";
     private static final String JAR_REDISSON = "BOOT-INF/classes/redisson.yml";
-    public static final String LOCK_PREFIX = "lock:";
-    public static final String RATE_LIMITED_PREFIX = "R.L:";
+    public static final String LOCK_PREFIX = "LK:";
+    public static final String RATE_LIMITED_PREFIX = "RL:";
     private final RedissonClient redissonClient;
 
     private static class Helper {
@@ -53,6 +53,7 @@ public class RedissonHelper {
     }
 
     private RedissonHelper() {
+        log.info("Loading redisson config for: {}", DEFAULT_REDISSON);
         Config config = null;
         try {
             InputStream in;
@@ -542,15 +543,15 @@ public class RedissonHelper {
         }
     }
 
-    public Future<Object> removeAsync(String key) {
-        return getClient().getBucket(key).getAndDeleteAsync();
+    public Future<Boolean> removeAsync(String key) {
+        return getClient().getBucket(key).deleteAsync();
     }
 
-    public <V> V remove(String key) {
-        return (V) getClient().getBucket(key).getAndDelete();
+    public boolean remove(String key) {
+        return getClient().getBucket(key).delete();
     }
 
-    public <V> V remove(String key, RLock lock) {
+    public boolean remove(String key, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
@@ -560,7 +561,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> V removeByLock(String key) {
+    public boolean removeByLock(String key) {
         return this.remove(key, this.getWriteLock(key));
     }
 
