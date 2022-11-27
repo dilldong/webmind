@@ -21,6 +21,8 @@ public class HttpUtils {
      */
     private static final String[] PROXY_REMOTE_IP_ADDRESS = {"X-Forwarded-For", "X-Real-IP"};
     private static final String BODY_PARAMS = "post_body_input_stream";
+    private static final String REQUEST_URI = "x_request_uri";
+    private static final String REQUEST_URL = "x_request_url";
 
     /**
      * Identify and return the path component (from the request URI) that
@@ -31,7 +33,11 @@ public class HttpUtils {
      * @param request The servlet request we are processing
      */
     public static String getURI(HttpServletRequest request) {
-        String uri = request.getRequestURI();
+        String uri = (String) request.getAttribute(REQUEST_URI);
+        if(StringUtils.isNotEmpty(uri))
+            return uri;
+
+        uri = request.getRequestURI();
         String contextPath = request.getContextPath();
 
 //		log.info("path info: "+ request.getPathInfo());
@@ -49,22 +55,29 @@ public class HttpUtils {
         if (hasJsession > -1)
             uri = uri.substring(0, hasJsession);
 
+        request.setAttribute(REQUEST_URI, uri);
         return uri;
     }
 
     public static String getURL(HttpServletRequest request) {
+        String url = (String) request.getAttribute(REQUEST_URL);
+        if(StringUtils.isNotEmpty(url))
+            return url;
+
         String scheme = request.getScheme();
         int port = request.getServerPort();
 
-        StringBuilder url = new StringBuilder();
-        url.append(scheme)
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(scheme)
                 .append("://")
                 .append(request.getServerName());
 
         if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
-            url.append(':').append(request.getServerPort());
+            urlBuilder.append(':').append(request.getServerPort());
 
-        return url.append(getURI(request)).toString();
+        url = urlBuilder.append(getURI(request)).toString();
+        request.setAttribute(REQUEST_URL, url);
+        return url;
     }
 
     public static String getRequestIP(HttpServletRequest request) {
