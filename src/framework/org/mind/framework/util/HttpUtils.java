@@ -21,9 +21,9 @@ public class HttpUtils {
      */
     private static final String[] PROXY_REMOTE_IP_ADDRESS = {"X-Forwarded-For", "X-Real-IP"};
     private static final String BODY_PARAMS = "post_body_input_stream";
-    private static final String REQUEST_URI = "x_request_uri";
-    private static final String REQUEST_URL = "x_request_url";
-    private static final String REQUEST_IP = "x_request_ip";
+    private static final String REQUEST_URI = "web_request_uri";
+    private static final String REQUEST_URL = "web_request_url";
+    private static final String REQUEST_IP = "web_request_ip";
 
     /**
      * Identify and return the path component (from the request URI) that

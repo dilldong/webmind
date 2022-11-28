@@ -35,8 +35,6 @@ public class TestAction {
             throw new RuntimeException("----------");
         }
 
-
-
         return "Welcome usage mind-framework.";
     }
 
