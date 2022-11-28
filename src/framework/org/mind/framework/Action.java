@@ -29,8 +29,8 @@ public final class Action {
     private HttpServletRequest request;
     private HttpServletResponse response;
 
-    public String getRemoteIp() {
-        return HttpUtils.getRequestIP(request);
+    public String getRemoteIp(boolean ... forAttr) {
+        return HttpUtils.getRequestIP(request, forAttr);
     }
 
     /**
