@@ -22,9 +22,9 @@ public interface HandlerResult {
 
     static void setRequestAttribute(HttpServletRequest request){
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("URL", HttpUtils.getURL(request));
+        jsonObject.addProperty("URL", HttpUtils.getURL(request, true));
         jsonObject.addProperty("Method", request.getMethod());
-        jsonObject.addProperty("Request IP", HttpUtils.getRequestIP(request));
+        jsonObject.addProperty("Request IP", HttpUtils.getRequestIP(request, true));
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
     }
 }
