@@ -290,9 +290,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             Object result = execution.execute(args);
 
             // Interceptor doAfter
-            if (!currentInterceptors.isEmpty())
+            if (!currentInterceptors.isEmpty()) {
                 for (HandlerInterceptor interceptor : currentInterceptors)
                     interceptor.doAfter(request, response);
+            }
 
             // resolver result
             this.handleResult(result, request, response);

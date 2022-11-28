@@ -1,6 +1,7 @@
 package org.mind.framework.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +26,13 @@ public class HttpUtils {
     private static final String REQUEST_URL = "web_request_url";
     private static final String REQUEST_IP = "web_request_ip";
 
+    public static void clearSetting(HttpServletRequest request){
+        request.removeAttribute(REQUEST_URI);
+        request.removeAttribute(REQUEST_URL);
+        request.removeAttribute(REQUEST_IP);
+        request.removeAttribute(BODY_PARAMS);
+    }
+
     /**
      * Identify and return the path component (from the request URI) that
      * we will use to select an Action to dispatch with.  If no such
@@ -33,12 +41,14 @@ public class HttpUtils {
      *
      * @param request The servlet request we are processing
      */
-    public static String getURI(HttpServletRequest request) {
-        String uri = (String) request.getAttribute(REQUEST_URI);
-        if(StringUtils.isNotEmpty(uri))
-            return uri;
+    public static String getURI(HttpServletRequest request, boolean ... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String uri = (String) request.getAttribute(REQUEST_URI);
+            if (StringUtils.isNotEmpty(uri))
+                return uri;
+        }
 
-        uri = request.getRequestURI();
+        String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
 
 //		log.info("path info: "+ request.getPathInfo());
@@ -60,10 +70,12 @@ public class HttpUtils {
         return uri;
     }
 
-    public static String getURL(HttpServletRequest request) {
-        String url = (String) request.getAttribute(REQUEST_URL);
-        if(StringUtils.isNotEmpty(url))
-            return url;
+    public static String getURL(HttpServletRequest request, boolean ... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String url = (String) request.getAttribute(REQUEST_URL);
+            if (StringUtils.isNotEmpty(url))
+                return url;
+        }
 
         String scheme = request.getScheme();
         int port = request.getServerPort();
@@ -76,17 +88,19 @@ public class HttpUtils {
         if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
             urlBuilder.append(':').append(request.getServerPort());
 
-        url = urlBuilder.append(getURI(request)).toString();
+        String url = urlBuilder.append(getURI(request)).toString();
         request.setAttribute(REQUEST_URL, url);
         return url;
     }
 
-    public static String getRequestIP(HttpServletRequest request) {
-        String ip = (String) request.getAttribute(REQUEST_IP);
-        if(StringUtils.isNotEmpty(ip))
-            return ip;
+    public static String getRequestIP(HttpServletRequest request, boolean ... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String ip = (String) request.getAttribute(REQUEST_IP);
+            if (StringUtils.isNotEmpty(ip))
+                return ip;
+        }
 
-        ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
+        String ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
         if (StringUtils.isNotEmpty(ip)) {
             ip = getRemoteIpFromForward(ip);
             request.setAttribute(REQUEST_IP, ip);

@@ -200,7 +200,7 @@ public class TomcatServer extends Tomcat {
         wrapper.setLoadOnStartup(1);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
-        ctx.addServletMappingDecoded("/*", ServerContext.SERVLET_NAME);
+        ctx.addServletMappingDecoded("/", ServerContext.SERVLET_NAME);
 
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {

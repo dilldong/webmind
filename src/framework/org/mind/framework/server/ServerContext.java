@@ -121,8 +121,7 @@ public abstract class ServerContext {
                         createTempDir(serverConfig.getServerName()) :
                         new File(serverConfig.getTomcatBaseDir());// Not recommended
 
-        String baseAbsolutePath = baseDir.getAbsolutePath();
-        serverConfig.setTomcatBaseDir(baseAbsolutePath);
+        serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
         ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
 
         // Copy root files
@@ -139,7 +138,7 @@ public abstract class ServerContext {
                         log.debug("Copy resource to baseDir: {}", resource.getFilename());
                         FileUtils.copyInputStreamToFile(
                                 resource.getInputStream(),
-                                new File(String.format("%s/%s", baseAbsolutePath, resource.getFilename())));
+                                new File(String.format("%s/%s", serverConfig.getTomcatBaseDir(), resource.getFilename())));
                     }
                 } catch (IOException e) {
                     ThrowProvider.doThrow(e);
@@ -156,7 +155,7 @@ public abstract class ServerContext {
                 if (ArrayUtils.isNotEmpty(resources)) {
                     String resourceBaseDir =
                             String.format("%s/%s",
-                                    baseAbsolutePath,
+                                    serverConfig.getTomcatBaseDir(),
                                     serverConfig.getResourceDir().startsWith("/") ?
                                             serverConfig.getResourceDir().substring(1) :
                                             serverConfig.getResourceDir());

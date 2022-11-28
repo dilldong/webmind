@@ -29,11 +29,10 @@ public class TestAction {
     @Value("${db.connectionTimeout}")
     String value;
 
-    @Mapping(value = "/${flag}")
-    public String first(boolean flag) {
-        if(flag){
+    @Mapping
+    public String first() {
+        if(true)
             throw new RuntimeException("----------");
-        }
 
         return "Welcome usage mind-framework.";
     }

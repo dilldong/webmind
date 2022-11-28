@@ -20,7 +20,7 @@ public class BaseException extends Exception {
     public final static int ERR_SYS = 3;
 
     public static final String SYS_EXCEPTION = "system_exception_mf";
-    public static final String EXCEPTION_REQUEST = "system_exception_mf_reqobject";
+    public static final String EXCEPTION_REQUEST = "system_exception_mf_info";
 
     protected int errLevel = ERR_INF;
 
