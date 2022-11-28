@@ -3,7 +3,6 @@ package org.mind.framework;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
-import org.mind.framework.exception.BaseException;
 import org.mind.framework.http.Response;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TemplateRender;
@@ -30,11 +29,14 @@ public class TestAction {
     @Value("${db.connectionTimeout}")
     String value;
 
-    @Mapping
-    public String first() throws BaseException {
-        if(true){
-            throw new BaseException("dddd");
+    @Mapping(value = "/${flag}")
+    public String first(boolean flag) {
+        if(flag){
+            throw new RuntimeException("----------");
         }
+
+
+
         return "Welcome usage mind-framework.";
     }
 
@@ -72,7 +74,7 @@ public class TestAction {
 
     @Mapping("/request/forward")
     public String forward() {
-        return "forward:https://github.com/dilldong";
+        return "forward:/";
     }
 
     @Mapping("/request/js")

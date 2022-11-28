@@ -6,6 +6,7 @@ import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.Catcher;
 import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.http.Response;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
@@ -303,17 +304,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         } catch (IOException | ServletException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
-            if (c instanceof IOException || c instanceof ServletException) {
-                try {
-                    throw c;
-                } catch (Throwable ex) {
-                    // do nothing
-                }
-            }
-
-            throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
+            if (c instanceof IOException || c instanceof ServletException)
+                ThrowProvider.doThrow(c);
+            else
+                throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {

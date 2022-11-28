@@ -7,9 +7,9 @@ import org.mind.framework.dispatcher.handler.HandlerRequest;
 import org.mind.framework.dispatcher.handler.HandlerResult;
 import org.mind.framework.dispatcher.support.WebContainerGenerator;
 import org.mind.framework.exception.BaseException;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
-import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -136,14 +136,14 @@ public class DispatcherServlet extends HttpServlet {
      * @throws ServletException
      */
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        log.info("{}", HttpUtils.getURI(request));
         try {
+            System.out.println(request.getServletPath());
             this.dispatcher.processor(request, response);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
             request.setAttribute(BaseException.SYS_EXCEPTION, c);
             HandlerResult.setRequestAttribute(request);
-            throw e;
+            ThrowProvider.doThrow(c);
         }
     }
 

@@ -36,6 +36,8 @@ import org.springframework.web.context.support.XmlWebApplicationContext;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * @author Marcus
@@ -198,10 +200,10 @@ public class TomcatServer extends Tomcat {
         wrapper.setLoadOnStartup(1);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
-        ctx.addServletMappingDecoded("/", ServerContext.SERVLET_NAME);
+        ctx.addServletMappingDecoded("/*", ServerContext.SERVLET_NAME);
 
         // Add Spring loader
-        if (serverConfig.getSpringFileSet() == null || serverConfig.getSpringFileSet().isEmpty()) {
+        if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
             log.warn("Spring's config file is not set.");
         } else {
             // init spring by xml, XmlLoad4SpringContext is custom implementation
@@ -254,6 +256,7 @@ public class TomcatServer extends Tomcat {
         ErrorPage errorPage = new ErrorPage();
         errorPage.setErrorCode(errorCode);
         errorPage.setLocation(location);
+        errorPage.setCharset(StandardCharsets.UTF_8);
         return errorPage;
     }
 
@@ -261,6 +264,7 @@ public class TomcatServer extends Tomcat {
         ErrorPage errorPage = new ErrorPage();
         errorPage.setExceptionType(exceptionType);
         errorPage.setLocation(location);
+        errorPage.setCharset(StandardCharsets.UTF_8);
         return errorPage;
     }
 }

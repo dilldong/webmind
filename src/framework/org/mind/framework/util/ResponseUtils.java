@@ -19,7 +19,7 @@ import java.nio.file.Path;
  */
 public class ResponseUtils {
 
-    private static final int MAX_BUFFER_SIZE = 1024;
+    private static final int MAX_BUFFER_SIZE = 4096;
 
     /**
      * Filter the specified string for characters that are senstive to HTML
@@ -115,7 +115,7 @@ public class ResponseUtils {
             byte[] buffer = new byte[MAX_BUFFER_SIZE];
 
             int length;
-            while ((length = input.read(buffer)) != -1)
+            while ((length = input.read(buffer)) > -1)
                 output.write(buffer, 0, length);
 
             output.flush();
