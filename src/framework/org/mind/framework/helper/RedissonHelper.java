@@ -741,15 +741,17 @@ public class RedissonHelper {
     }
 
     public void increment(String name) {
+        this.increment(name, 1L);
+    }
+
+    public void increment(String name, long add) {
         RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        adder.increment();
+        adder.add(add);
     }
 
     public void decrement(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        adder.decrement();
+        this.decrement(name, 1L);
     }
-
 
     public void decrement(String name, long value) {
         RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);

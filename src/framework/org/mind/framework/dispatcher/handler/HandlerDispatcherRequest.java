@@ -228,7 +228,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                     else {
                         try {
                             args[i] = this.converter.convert(type, matcher.group(i + 1));
-                        }catch (NumberFormatException | NullPointerException e){
+                        } catch (NumberFormatException | NullPointerException e) {
                             log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
                             throw e;
                         }
@@ -253,7 +253,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if(execution.isRequestLog())
+        if (execution.isRequestLog())
             log.info("From path: {}", path);
 
         /*
@@ -274,7 +274,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if(execution.isRequestLog())
+        if (execution.isRequestLog())
             log.info("Action is: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
 
         // currently request is multipart request.
@@ -302,15 +302,19 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                     interceptor.renderCompletion(request, response);
 
         } catch (IOException | ServletException e) {
-            log.error(e.getMessage(), e);
             throw e;
-        } catch (Exception ex){
-            Throwable c = Objects.isNull(ex.getCause()) ? ex : ex.getCause();
-            if (c instanceof IOException)
-                throw new IOException(c.getMessage(), c);
-            else
-                throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
-        }finally {
+        } catch (Exception e) {
+            Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
+            if (c instanceof IOException || c instanceof ServletException) {
+                try {
+                    throw c;
+                } catch (Throwable ex) {
+                    // do nothing
+                }
+            }
+
+            throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
+        } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
                 log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
@@ -354,9 +358,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if(Collection.class.isAssignableFrom(clazz)
+        if (Collection.class.isAssignableFrom(clazz)
                 || Map.class.isAssignableFrom(clazz)
-                || Object.class.isAssignableFrom(clazz)){
+                || Object.class.isAssignableFrom(clazz)) {
             new TextRender(JsonUtils.toJson(result)).render(request, response);
             return;
         }

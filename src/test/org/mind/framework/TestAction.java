@@ -3,10 +3,10 @@ package org.mind.framework;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
+import org.mind.framework.exception.BaseException;
 import org.mind.framework.http.Response;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TemplateRender;
-import org.mind.framework.server.WebServerConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -31,9 +31,10 @@ public class TestAction {
     String value;
 
     @Mapping
-    public String first() {
-        log.info("{}", WebServerConfig.INSTANCE);
-        log.info("{}", WebServerConfig.INSTANCE);
+    public String first() throws BaseException {
+        if(true){
+            throw new BaseException("dddd");
+        }
         return "Welcome usage mind-framework.";
     }
 
@@ -115,4 +116,5 @@ public class TestAction {
                 .build();
         return a;
     }
+
 }

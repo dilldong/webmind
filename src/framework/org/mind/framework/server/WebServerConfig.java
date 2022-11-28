@@ -106,12 +106,13 @@ public class WebServerConfig {
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
             this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
         }
-
-        // init mimeType
-        this.initMimeMapping();
     }
 
-    private void initMimeMapping() {
+    protected static WebServerConfig init() {
+        return new WebServerConfig().initMimeMapping();
+    }
+
+    private WebServerConfig initMimeMapping() {
         mimeMapping = Collections.unmodifiableMap(
                 new HashMap<String, String>() {{
                     put("css", "text/css; charset=UTF-8");
@@ -156,5 +157,6 @@ public class WebServerConfig {
                     put("rar", "application/x-rar-compressed");
                     put("zip", "application/zip");
                 }});
+        return this;
     }
 }
