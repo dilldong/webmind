@@ -830,7 +830,6 @@ public class RedissonHelper {
                     this.clearSetAsync(entry.getKey());
                 else
                     this.removeAsync(entry.getKey());
-                iterator.remove();
             }
         }
     }
@@ -883,27 +882,28 @@ public class RedissonHelper {
         if (Objects.isNull(element))
             return Collections.EMPTY_MAP;
 
-        Map<String, Class<?>> redisKeys =
+        Map<String, Class<?>> keysMap =
                 (Map<String, Class<?>>) element.getValue();
 
-        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+        if (Objects.isNull(keysMap) || keysMap.isEmpty())
             return Collections.EMPTY_MAP;
 
-        return redisKeys;
+        Map<String, Class<?>> resultMap = new HashMap<>(keysMap.size());
+        resultMap.putAll(keysMap);
+        return resultMap;
     }
-
 
     private void removeLocal(String key) {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
         if (Objects.isNull(element))
             return;
 
-        Map<String, Class<?>> redisKeys =
+        Map<String, Class<?>> localKeys =
                 (Map<String, Class<?>>) element.getValue();
-        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+        if (Objects.isNull(localKeys) || localKeys.isEmpty())
             return;
 
-        redisKeys.remove(key);
+        localKeys.remove(key);
     }
 
     private void putLocal(String key, Class<?> clazzType) {
