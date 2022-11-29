@@ -835,6 +835,64 @@ public class RedissonHelper {
         }
     }
 
+    public List<String> getLocalKeys(Class<?> clazzType) {
+        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
+
+        if (Objects.isNull(element))
+            return Collections.EMPTY_LIST;
+
+        Map<String, Class<?>> redisKeys =
+                (Map<String, Class<?>>) element.getValue();
+
+        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+            return Collections.EMPTY_LIST;
+
+        List<String> results = new ArrayList<>();
+        redisKeys.forEach((k, v) -> {
+            if (v.getName().equals(clazzType.getName()))
+                results.add(k);
+        });
+
+        return results;
+    }
+
+    public Map<String, Class<?>> getLocalKeys(String keyPart) {
+        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
+
+        if (Objects.isNull(element))
+            return Collections.EMPTY_MAP;
+
+        Map<String, Class<?>> redisKeys =
+                (Map<String, Class<?>>) element.getValue();
+
+        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+            return Collections.EMPTY_MAP;
+
+        Map<String, Class<?>> results = new HashMap<>();
+        redisKeys.forEach((k, v) -> {
+            if (k.contains(keyPart))
+                results.put(k, v);
+        });
+
+        return results;
+    }
+
+    public Map<String, Class<?>> getLocalKeys() {
+        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
+
+        if (Objects.isNull(element))
+            return Collections.EMPTY_MAP;
+
+        Map<String, Class<?>> redisKeys =
+                (Map<String, Class<?>>) element.getValue();
+
+        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
+            return Collections.EMPTY_MAP;
+
+        return redisKeys;
+    }
+
+
     private void removeLocal(String key) {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
         if (Objects.isNull(element))
