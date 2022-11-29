@@ -105,8 +105,8 @@ public class RedissonHelper {
         return getInstance().redissonClient;
     }
 
-    public <V> List<V> getList(String key) {
-        RList<V> rList = this.rList(key);
+    public <V> List<V> getList(String name) {
+        RList<V> rList = this.rList(name);
         if (rList.isEmpty())
             return Collections.emptyList();
 
@@ -115,25 +115,25 @@ public class RedissonHelper {
         return list;
     }
 
-    public <V> List<V> getList(String key, RLock lock) {
+    public <V> List<V> getList(String name, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.getList(key);
+            return this.getList(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> List<V> getListWithLock(String key) {
-        return this.getList(key, getReadLock(key));
+    public <V> List<V> getListWithLock(String name) {
+        return this.getList(name, getReadLock(name));
     }
 
-    public <V> void setAsync(String key, List<V> list, long expire, TimeUnit unit) {
+    public <V> void setAsync(String name, List<V> list, long expire, TimeUnit unit) {
         if (Objects.isNull(list) || list.isEmpty())
             return;
 
-        RList<V> rList = this.rList(key);
+        RList<V> rList = this.rList(name);
         if (!rList.isEmpty())
             rList.clear();
 
@@ -143,14 +143,14 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, list.getClass());
+        this.putLocal(name, list.getClass());
     }
 
-    public <V> boolean set(String key, List<V> list, long expire, TimeUnit unit) {
+    public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit) {
         if (Objects.isNull(list) || list.isEmpty())
             return false;
 
-        RList<V> rList = this.rList(key);
+        RList<V> rList = this.rList(name);
         if (!rList.isEmpty())
             rList.clear();
 
@@ -160,29 +160,29 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, list.getClass());
+        this.putLocal(name, list.getClass());
         return flag;
     }
 
-    public <V> boolean set(String key, List<V> list, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.set(key, list, expire, unit);
+            return this.set(name, list, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean setWithLock(String key, List<V> list, long expire, TimeUnit unit) {
-        return this.set(key, list, expire, unit, this.getWriteLock(key));
+    public <V> boolean setWithLock(String name, List<V> list, long expire, TimeUnit unit) {
+        return this.set(name, list, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> boolean appendList(String key, V v, long expire, TimeUnit unit) {
+    public <V> boolean appendList(String name, V v, long expire, TimeUnit unit) {
         if (Objects.isNull(v))
             return false;
 
-        RList<V> rList = this.rList(key);
+        RList<V> rList = this.rList(name);
         if (rList.isExists())
             return rList.add(v);
 
@@ -192,92 +192,114 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, ArrayList.class);
+        this.putLocal(name, ArrayList.class);
         return flag;
     }
 
-    public <V> boolean appendList(String key, V v, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean appendList(String name, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendList(key, v, expire, unit);
+            return this.appendList(name, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean appendListWithLock(String key, V v, long expire, TimeUnit unit) {
-        return this.appendList(key, v, expire, unit, this.getWriteLock(key));
+    public <V> boolean appendListWithLock(String name, V v, long expire, TimeUnit unit) {
+        return this.appendList(name, v, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> void clearListAsync(String key) {
-        RList<V> rList = this.rList(key);
+    public <V> void clearListAsync(String name) {
+        RList<V> rList = this.rList(name);
         if (rList.isEmpty())
             return;
 
         rList.deleteAsync();
-        this.removeLocal(key);
+        this.removeLocal(name);
     }
 
-    public <V> void clearList(String key) {
-        RList<V> rList = this.rList(key);
+    public <V> void clearList(String name) {
+        RList<V> rList = this.rList(name);
         if (rList.isEmpty())
             return;
 
         rList.clear();
-        this.removeLocal(key);
+        this.removeLocal(name);
     }
 
-    public <V> void clearList(String key, RLock lock) {
+    public <V> void clearList(String name, RLock lock) {
         lock.lock();
         try {
-            this.<V>clearList(key);
+            this.<V>clearList(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void clearListWithLock(String key) {
-        this.<V>clearList(key, this.getWriteLock(key));
+    public <V> void clearListWithLock(String name) {
+        this.<V>clearList(name, this.getWriteLock(name));
     }
 
-    public <V> void removeListAsync(String key, int index) {
+    public <V> void removeListAsync(String name, int index) {
         if (index < 0)
             return;
 
-        RList<V> rList = this.rList(key);
+        RList<V> rList = this.rList(name);
         if (rList.size() > index)
             rList.removeAsync(index);
     }
 
-    public <V> void removeList(String key, int index) {
+    public <V> void removeList(String name, int index) {
         if (index < 0)
             return;
 
-        RList<V> rList = this.rList(key);
+        RList<V> rList = this.rList(name);
         if (rList.size() > index)
             rList.remove(index);
     }
 
-    public <V> void removeList(String key, int index, RLock lock) {
+    public <V> void removeList(String name, int index, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.removeList(key, index);
+            this.removeList(name, index);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void removeListWithLock(String key, int index) {
+    public <V> void removeListWithLock(String name, int index) {
         if (index < 0)
             return;
 
-        this.removeList(key, index, this.getWriteLock(key));
+        this.removeList(name, index, this.getWriteLock(name));
     }
 
-    public <K, V> Map<K, V> getMap(String key) {
-        RMap<K, V> rMap = this.rMap(key);
+    public <K, V> V getMapValue(String name, K k) {
+        RMap<K, V> rMap = this.rMap(name);
+        if (rMap.isEmpty())
+            return null;
+
+        return rMap.get(k);
+    }
+
+    public <K, V> V getMapValue(String name, K k, RLock lock) {
+        // activating watch-dog
+        lock.lock();
+        try {
+            return this.getMapValue(name, k);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <K, V> V getMapValueWithLock(String name, K k) {
+        return this.getMapValue(name, k, getReadLock(name));
+    }
+
+    public <K, V> Map<K, V> getMap(String name) {
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
             return Collections.EMPTY_MAP;
 
@@ -286,25 +308,25 @@ public class RedissonHelper {
         return map;
     }
 
-    public <K, V> Map<K, V> getMap(String key, RLock lock) {
+    public <K, V> Map<K, V> getMap(String name, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.getMap(key);
+            return this.getMap(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> Map<K, V> getMapWithLock(String key) {
-        return this.getMap(key, getReadLock(key));
+    public <K, V> Map<K, V> getMapWithLock(String name) {
+        return this.getMap(name, getReadLock(name));
     }
 
-    public <K, V> void setAsync(String key, Map<K, V> map, long expire, TimeUnit unit) {
+    public <K, V> void setAsync(String name, Map<K, V> map, long expire, TimeUnit unit) {
         if (Objects.isNull(map) || map.isEmpty())
             return;
 
-        RMap<K, V> rMap = this.rMap(key);
+        RMap<K, V> rMap = this.rMap(name);
         if (!rMap.isEmpty())
             rMap.clear();
 
@@ -314,14 +336,14 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, map.getClass());
+        this.putLocal(name, map.getClass());
     }
 
-    public <K, V> boolean set(String key, Map<K, V> map, long expire, TimeUnit unit) {
+    public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit) {
         if (Objects.isNull(map) || map.isEmpty())
             return false;
 
-        RMap<K, V> rMap = this.rMap(key);
+        RMap<K, V> rMap = this.rMap(name);
         if (!rMap.isEmpty())
             rMap.clear();
 
@@ -331,29 +353,29 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, map.getClass());
+        this.putLocal(name, map.getClass());
         return true;
     }
 
-    public <K, V> boolean set(String key, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
+    public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.set(key, map, expire, unit);
+            return this.set(name, map, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> boolean setWithLock(String key, Map<K, V> map, long expire, TimeUnit unit) {
-        return set(key, map, expire, unit, this.getWriteLock(key));
+    public <K, V> boolean setWithLock(String name, Map<K, V> map, long expire, TimeUnit unit) {
+        return set(name, map, expire, unit, this.getWriteLock(name));
     }
 
-    public <K, V> boolean appendMap(String key, K k, V v, long expire, TimeUnit unit) {
+    public <K, V> boolean appendMap(String name, K k, V v, long expire, TimeUnit unit) {
         if (Objects.isNull(k))
             return false;
 
-        RMap<K, V> rMap = this.rMap(key);
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isExists())
             return rMap.fastPut(k, v);
 
@@ -363,29 +385,29 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, HashMap.class);
+        this.putLocal(name, HashMap.class);
         return flag;
     }
 
-    public <K, V> boolean appendMap(String key, K k, V v, long expire, TimeUnit unit, RLock lock) {
+    public <K, V> boolean appendMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendMap(key, k, v, expire, unit);
+            return this.appendMap(name, k, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> boolean appendMapWithLock(String key, K k, V v, long expire, TimeUnit unit) {
-        return this.appendMap(key, k, v, expire, unit, this.getWriteLock(key));
+    public <K, V> boolean appendMapWithLock(String name, K k, V v, long expire, TimeUnit unit) {
+        return this.appendMap(name, k, v, expire, unit, this.getWriteLock(name));
     }
 
-    public <K, V> void replaceMap(String key, K k, V v) {
+    public <K, V> void replaceMap(String name, K k, V v) {
         if (Objects.isNull(k))
             return;
 
-        RMap<K, V> rMap = this.rMap(key);
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
             return;
 
@@ -393,59 +415,59 @@ public class RedissonHelper {
             rMap.replace(k, v);
     }
 
-    public <K, V> void replaceMap(String key, K k, V v, RLock lock) {
+    public <K, V> void replaceMap(String name, K k, V v, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.replaceMap(key, k, v);
+            this.replaceMap(name, k, v);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> void replaceMapWithLock(String key, K k, V v) {
+    public <K, V> void replaceMapWithLock(String name, K k, V v) {
         if (Objects.isNull(k))
             return;
 
-        this.replaceMap(key, k, v, this.getWriteLock(key));
+        this.replaceMap(name, k, v, this.getWriteLock(name));
     }
 
-    public <K, V> void clearMapAsync(String key) {
-        RMap<K, V> rMap = this.rMap(key);
+    public <K, V> void clearMapAsync(String name) {
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
             return;
 
         rMap.deleteAsync();
-        this.removeLocal(key);
+        this.removeLocal(name);
     }
 
-    public <K, V> void clearMap(String key) {
-        RMap<K, V> rMap = this.rMap(key);
+    public <K, V> void clearMap(String name) {
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
             return;
 
         rMap.clear();
-        this.removeLocal(key);
+        this.removeLocal(name);
     }
 
-    public <K, V> void clearMap(String key, RLock lock) {
+    public <K, V> void clearMap(String name, RLock lock) {
         lock.lock();
         try {
-            this.<K, V>clearMap(key);
+            this.<K, V>clearMap(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> void clearMapWithLock(String key) {
-        this.<K, V>clearMap(key, this.getWriteLock(key));
+    public <K, V> void clearMapWithLock(String name) {
+        this.<K, V>clearMap(name, this.getWriteLock(name));
     }
 
-    public <K, V> void removeMapAsync(String key, K k) {
+    public <K, V> void removeMapAsync(String name, K k) {
         if (Objects.isNull(k))
             return;
 
-        RMap<K, V> rMap = this.rMap(key);
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
             return;
 
@@ -454,36 +476,36 @@ public class RedissonHelper {
     }
 
 
-    public <K, V> void removeMap(String key, K k) {
+    public <K, V> void removeMap(String name, K k) {
         if (Objects.isNull(k))
             return;
 
-        RMap<K, V> rMap = this.rMap(key);
+        RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
             return;
 
         rMap.remove(k);
     }
 
-    public <K, V> void removeMap(String key, K k, RLock lock) {
+    public <K, V> void removeMap(String name, K k, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.removeMap(key, k);
+            this.<K, V>removeMap(name, k);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> void removeMapWithLock(String key, K k) {
+    public <K, V> void removeMapWithLock(String name, K k) {
         if (Objects.isNull(k))
             return;
 
-        this.removeMap(key, k, this.getWriteLock(key));
+        this.<K, V>removeMap(name, k, this.getWriteLock(name));
     }
 
-    public <V> Set<V> getSet(String key) {
-        RSet<V> rSet = this.rSet(key);
+    public <V> Set<V> getSet(String name) {
+        RSet<V> rSet = this.rSet(name);
         if (rSet.isEmpty())
             return Collections.emptySet();
 
@@ -492,25 +514,25 @@ public class RedissonHelper {
         return set;
     }
 
-    public <V> Set<V> getSet(String key, RLock lock) {
+    public <V> Set<V> getSet(String name, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.getSet(key);
+            return this.getSet(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> Set<V> getSetWithLock(String key) {
-        return this.getSet(key, getReadLock(key));
+    public <V> Set<V> getSetWithLock(String name) {
+        return this.getSet(name, getReadLock(name));
     }
 
-    public <V> void setAsync(String key, Set<V> set, long expire, TimeUnit unit) {
+    public <V> void setAsync(String name, Set<V> set, long expire, TimeUnit unit) {
         if (Objects.isNull(set) || set.isEmpty())
             return;
 
-        RSet<V> rSet = this.rSet(key);
+        RSet<V> rSet = this.rSet(name);
         if (!rSet.isEmpty())
             rSet.clear();
 
@@ -520,14 +542,14 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, set.getClass());
+        this.putLocal(name, set.getClass());
     }
 
-    public <V> boolean set(String key, Set<V> set, long expire, TimeUnit unit) {
+    public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit) {
         if (Objects.isNull(set) || set.isEmpty())
             return false;
 
-        RSet<V> rSet = this.rSet(key);
+        RSet<V> rSet = this.rSet(name);
         if (!rSet.isEmpty())
             rSet.clear();
 
@@ -537,29 +559,29 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, set.getClass());
+        this.putLocal(name, set.getClass());
         return flag;
     }
 
-    public <V> boolean set(String key, Set<V> set, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.set(key, set, expire, unit);
+            return this.set(name, set, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean setWithLock(String key, Set<V> set, long expire, TimeUnit unit) {
-        return this.set(key, set, expire, unit, this.getWriteLock(key));
+    public <V> boolean setWithLock(String name, Set<V> set, long expire, TimeUnit unit) {
+        return this.set(name, set, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> boolean appendSet(String key, V v, long expire, TimeUnit unit) {
+    public <V> boolean appendSet(String name, V v, long expire, TimeUnit unit) {
         if (Objects.isNull(v))
             return false;
 
-        RSet<V> rSet = this.rSet(key);
+        RSet<V> rSet = this.rSet(name);
         if (rSet.isExists())
             return rSet.add(v);
 
@@ -569,154 +591,154 @@ public class RedissonHelper {
                 expire = unit.toMillis(expire);
             rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
         }
-        this.putLocal(key, HashSet.class);
+        this.putLocal(name, HashSet.class);
         return flag;
     }
 
-    public <V> boolean appendSet(String key, V v, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean appendSet(String name, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendSet(key, v, expire, unit);
+            return this.appendSet(name, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean appendSetWithLock(String key, V v, long expire, TimeUnit unit) {
-        return this.appendSet(key, v, expire, unit, this.getWriteLock(key));
+    public <V> boolean appendSetWithLock(String name, V v, long expire, TimeUnit unit) {
+        return this.appendSet(name, v, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> void clearSetAsync(String key) {
-        RSet<V> rSet = this.rSet(key);
+    public <V> void clearSetAsync(String name) {
+        RSet<V> rSet = this.rSet(name);
         if (rSet.isEmpty())
             return;
 
         rSet.deleteAsync();
-        this.removeLocal(key);
+        this.removeLocal(name);
     }
 
-    public <V> void clearSet(String key) {
-        RSet<V> rSet = this.rSet(key);
+    public <V> void clearSet(String name) {
+        RSet<V> rSet = this.rSet(name);
         if (rSet.isEmpty())
             return;
 
         rSet.clear();
-        this.removeLocal(key);
+        this.removeLocal(name);
     }
 
-    public <V> void clearSet(String key, RLock lock) {
+    public <V> void clearSet(String name, RLock lock) {
         lock.lock();
         try {
-            this.<V>clearSet(key);
+            this.<V>clearSet(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void clearSetWithLock(String key) {
-        this.<V>clearSet(key, this.getWriteLock(key));
+    public <V> void clearSetWithLock(String name) {
+        this.<V>clearSet(name, this.getWriteLock(name));
     }
 
-    public <V> void removeSetAsync(String key, int index) {
+    public <V> void removeSetAsync(String name, int index) {
         if (index < 0)
             return;
 
-        RSet<V> rSet = this.rSet(key);
+        RSet<V> rSet = this.rSet(name);
         if (rSet.size() > index)
             rSet.removeAsync(index);
     }
 
-    public <V> void removeSet(String key, V v) {
-        RSet<V> rSet = this.rSet(key);
+    public <V> void removeSet(String name, V v) {
+        RSet<V> rSet = this.rSet(name);
         if (!rSet.isEmpty())
             rSet.remove(v);
     }
 
-    public <V> void removeSet(String key, V v, RLock lock) {
+    public <V> void removeSet(String name, V v, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.removeSet(key, v);
+            this.removeSet(name, v);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void removeSetWithLock(String key, V v) {
-        this.removeSet(key, v, this.getWriteLock(key));
+    public <V> void removeSetWithLock(String name, V v) {
+        this.removeSet(name, v, this.getWriteLock(name));
     }
 
-    public <V> V get(String key) {
-        return (V) getClient().getBucket(key).get();
+    public <V> V get(String name) {
+        return (V) getClient().getBucket(name).get();
     }
 
-    public <V> V getWithLock(String key) {
-        return this.get(key, this.getReadLock(key));
+    public <V> V getWithLock(String name) {
+        return this.get(name, this.getReadLock(name));
     }
 
-    public <V> V get(String key, RLock lock) {
+    public <V> V get(String name, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.get(key);
+            return this.get(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public void removeAsync(String key) {
-        getClient().getBucket(key).deleteAsync();
-        this.removeLocal(key);
+    public void removeAsync(String name) {
+        getClient().getBucket(name).deleteAsync();
+        this.removeLocal(name);
     }
 
-    public boolean remove(String key) {
-        boolean flag = getClient().getBucket(key).delete();
-        this.removeLocal(key);
+    public boolean remove(String name) {
+        boolean flag = getClient().getBucket(name).delete();
+        this.removeLocal(name);
         return flag;
     }
 
-    public boolean remove(String key, RLock lock) {
+    public boolean remove(String name, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.remove(key);
+            return this.remove(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public boolean removeWithLock(String key) {
-        return this.remove(key, this.getWriteLock(key));
+    public boolean removeWithLock(String name) {
+        return this.remove(name, this.getWriteLock(name));
     }
 
-    public <V> void setAsync(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = getClient().getBucket(key);
+    public <V> void setAsync(String name, V value, long expire, TimeUnit unit) {
+        RBucket<V> rBucket = getClient().getBucket(name);
         if (expire > 0)
             rBucket.setAsync(value, expire, unit);
         else
             rBucket.setAsync(value);
-        this.putLocal(key, value.getClass());
+        this.putLocal(name, value.getClass());
     }
 
-    public <V> void set(String key, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = getClient().getBucket(key);
+    public <V> void set(String name, V value, long expire, TimeUnit unit) {
+        RBucket<V> rBucket = getClient().getBucket(name);
         if (expire > 0)
             rBucket.set(value, expire, unit);
         else
             rBucket.set(value);
-        this.putLocal(key, value.getClass());
+        this.putLocal(name, value.getClass());
     }
 
-    public <V> void setWithLock(String key, V value, long expire, TimeUnit unit) {
-        this.set(key, value, expire, unit, this.getWriteLock(key));
+    public <V> void setWithLock(String name, V value, long expire, TimeUnit unit) {
+        this.set(name, value, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> void set(String key, V value, long expire, TimeUnit unit, RLock Lock) {
+    public <V> void set(String name, V value, long expire, TimeUnit unit, RLock Lock) {
         // activating watch-dog
         Lock.lock();
         try {
-            this.set(key, value, expire, unit);
+            this.set(name, value, expire, unit);
         } finally {
             Lock.unlock();
         }
@@ -777,32 +799,32 @@ public class RedissonHelper {
         return rl;
     }
 
-    public RLock getLock(String key) {
-        return getClient().getLock(LOCK_PREFIX + key);
+    public RLock getLock(String name) {
+        return getClient().getLock(LOCK_PREFIX + name);
     }
 
-    public RReadWriteLock getReadWriteLock(String key) {
-        return getClient().getReadWriteLock(LOCK_PREFIX + key);
+    public RReadWriteLock getReadWriteLock(String name) {
+        return getClient().getReadWriteLock(LOCK_PREFIX + name);
     }
 
-    public RLock getReadLock(String key) {
-        return this.getReadWriteLock(key).readLock();
+    public RLock getReadLock(String name) {
+        return this.getReadWriteLock(name).readLock();
     }
 
-    public RLock getWriteLock(String key) {
-        return this.getReadWriteLock(key).writeLock();
+    public RLock getWriteLock(String name) {
+        return this.getReadWriteLock(name).writeLock();
     }
 
-    public RLock getFairLock(String key) {
-        return getClient().getFairLock(LOCK_PREFIX + key);
+    public RLock getFairLock(String name) {
+        return getClient().getFairLock(LOCK_PREFIX + name);
     }
 
-    public RLock getSpinLock(String key) {
-        return getClient().getSpinLock(LOCK_PREFIX + key);
+    public RLock getSpinLock(String name) {
+        return getClient().getSpinLock(LOCK_PREFIX + name);
     }
 
-    public RLock getSpinLock(String key, LockOptions.BackOff backOff) {
-        return getClient().getSpinLock(LOCK_PREFIX + key, backOff);
+    public RLock getSpinLock(String name, LockOptions.BackOff backOff) {
+        return getClient().getSpinLock(LOCK_PREFIX + name, backOff);
     }
 
     public void removeContainsFromLocalKeys(String keyPart) {
@@ -890,7 +912,7 @@ public class RedissonHelper {
         return resultMap;
     }
 
-    private void removeLocal(String key) {
+    private void removeLocal(String name) {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
         if (Objects.isNull(element))
             return;
@@ -900,32 +922,32 @@ public class RedissonHelper {
         if (Objects.isNull(localKeys) || localKeys.isEmpty())
             return;
 
-        localKeys.remove(key);
+        localKeys.remove(name);
     }
 
-    private void putLocal(String key, Class<?> clazzType) {
+    private void putLocal(String name, Class<?> clazzType) {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
         if (Objects.isNull(element)) {
             Map<String, Class<?>> redisKeys = new ConcurrentHashMap<>();
-            redisKeys.put(key, clazzType);
+            redisKeys.put(name, clazzType);
             cacheable.addCache(REDIS_LOCAL_KEY, redisKeys, true);
             return;
         }
 
         Map<String, Class<?>> redisKeys =
                 (Map<String, Class<?>>) element.getValue();
-        redisKeys.putIfAbsent(key, clazzType);
+        redisKeys.putIfAbsent(name, clazzType);
     }
 
-    private <V> RList<V> rList(String key) {
-        return getClient().getList(key);
+    private <V> RList<V> rList(String name) {
+        return getClient().getList(name);
     }
 
-    private <K, V> RMap<K, V> rMap(String key) {
-        return getClient().getMap(key);
+    private <K, V> RMap<K, V> rMap(String name) {
+        return getClient().getMap(name);
     }
 
-    private <V> RSet<V> rSet(String key) {
-        return getClient().getSet(key);
+    private <V> RSet<V> rSet(String name) {
+        return getClient().getSet(name);
     }
 }
