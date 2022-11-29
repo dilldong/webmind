@@ -74,20 +74,20 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         RedissonHelper helper = RedissonHelper.getInstance();
 
         if (List.class.isAssignableFrom(redisType)) {
-            List list = helper.getListByLock(resolverKey);
+            List list = helper.getListWithLock(resolverKey);
             if (!list.isEmpty())
                 return list;
         } else if (Map.class.isAssignableFrom(redisType)) {
-            Map map = helper.getMapByLock(resolverKey);
+            Map map = helper.getMapWithLock(resolverKey);
             if (!map.isEmpty())
                 return map;
         } else if (Set.class.isAssignableFrom(redisType)) {
-            Set set = helper.getSetByLock(resolverKey);
+            Set set = helper.getSetWithLock(resolverKey);
             if (!set.isEmpty())
                 return set;
         } else {
             // for bucket
-            Object obj = helper.getByLock(resolverKey);
+            Object obj = helper.getWithLock(resolverKey);
             if (Objects.nonNull(obj)) {
                 if (ConverterFactory.getInstance().isConvert(redisType)) {
                     if (StringUtils.isNotEmpty(obj.toString()))
@@ -102,16 +102,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (Objects.nonNull(result)) {
             Class<? extends Object> clazz = result.getClass();
             if (List.class.isAssignableFrom(clazz)) {
-                helper.setByLock(resolverKey, (List) result, expire, timeUnit);
+                helper.setWithLock(resolverKey, (List) result, expire, timeUnit);
             } else if (Map.class.isAssignableFrom(clazz)) {
-                helper.setByLock(resolverKey, (Map) result, expire, timeUnit);
+                helper.setWithLock(resolverKey, (Map) result, expire, timeUnit);
             } else if (Set.class.isAssignableFrom(clazz)) {
-                helper.setByLock(resolverKey, (Set) result, expire, timeUnit);
+                helper.setWithLock(resolverKey, (Set) result, expire, timeUnit);
             } else if (ConverterFactory.getInstance().isConvert(redisType)) {
                 if (StringUtils.isNotEmpty(result.toString()))
-                    helper.setByLock(resolverKey, result, expire, timeUnit);
+                    helper.setWithLock(resolverKey, result, expire, timeUnit);
             } else
-                helper.setByLock(resolverKey, result, expire, timeUnit);
+                helper.setWithLock(resolverKey, result, expire, timeUnit);
         }
 
         return result;

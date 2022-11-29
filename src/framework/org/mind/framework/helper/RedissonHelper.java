@@ -125,7 +125,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> List<V> getListByLock(String key) {
+    public <V> List<V> getListWithLock(String key) {
         return this.getList(key, getReadLock(key));
     }
 
@@ -174,7 +174,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> boolean setByLock(String key, List<V> list, long expire, TimeUnit unit) {
+    public <V> boolean setWithLock(String key, List<V> list, long expire, TimeUnit unit) {
         return this.set(key, list, expire, unit, this.getWriteLock(key));
     }
 
@@ -206,7 +206,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> boolean appendListByLock(String key, V v, long expire, TimeUnit unit) {
+    public <V> boolean appendListWithLock(String key, V v, long expire, TimeUnit unit) {
         return this.appendList(key, v, expire, unit, this.getWriteLock(key));
     }
 
@@ -237,7 +237,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> void clearListByLock(String key) {
+    public <V> void clearListWithLock(String key) {
         this.<V>clearList(key, this.getWriteLock(key));
     }
 
@@ -269,7 +269,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> void removeListByLock(String key, int index) {
+    public <V> void removeListWithLock(String key, int index) {
         if (index < 0)
             return;
 
@@ -296,7 +296,7 @@ public class RedissonHelper {
         }
     }
 
-    public <K, V> Map<K, V> getMapByLock(String key) {
+    public <K, V> Map<K, V> getMapWithLock(String key) {
         return this.getMap(key, getReadLock(key));
     }
 
@@ -345,7 +345,7 @@ public class RedissonHelper {
         }
     }
 
-    public <K, V> boolean setByLock(String key, Map<K, V> map, long expire, TimeUnit unit) {
+    public <K, V> boolean setWithLock(String key, Map<K, V> map, long expire, TimeUnit unit) {
         return set(key, map, expire, unit, this.getWriteLock(key));
     }
 
@@ -377,7 +377,7 @@ public class RedissonHelper {
         }
     }
 
-    public <K, V> boolean appendMapByLock(String key, K k, V v, long expire, TimeUnit unit) {
+    public <K, V> boolean appendMapWithLock(String key, K k, V v, long expire, TimeUnit unit) {
         return this.appendMap(key, k, v, expire, unit, this.getWriteLock(key));
     }
 
@@ -403,7 +403,7 @@ public class RedissonHelper {
         }
     }
 
-    public <K, V> void replaceMapByLock(String key, K k, V v) {
+    public <K, V> void replaceMapWithLock(String key, K k, V v) {
         if (Objects.isNull(k))
             return;
 
@@ -437,7 +437,7 @@ public class RedissonHelper {
         }
     }
 
-    public <K, V> void clearMapByLock(String key) {
+    public <K, V> void clearMapWithLock(String key) {
         this.<K, V>clearMap(key, this.getWriteLock(key));
     }
 
@@ -475,7 +475,7 @@ public class RedissonHelper {
         }
     }
 
-    public <K, V> void removeMapByLock(String key, K k) {
+    public <K, V> void removeMapWithLock(String key, K k) {
         if (Objects.isNull(k))
             return;
 
@@ -502,7 +502,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> Set<V> getSetByLock(String key) {
+    public <V> Set<V> getSetWithLock(String key) {
         return this.getSet(key, getReadLock(key));
     }
 
@@ -551,7 +551,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> boolean setByLock(String key, Set<V> set, long expire, TimeUnit unit) {
+    public <V> boolean setWithLock(String key, Set<V> set, long expire, TimeUnit unit) {
         return this.set(key, set, expire, unit, this.getWriteLock(key));
     }
 
@@ -583,7 +583,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> boolean appendSetByLock(String key, V v, long expire, TimeUnit unit) {
+    public <V> boolean appendSetWithLock(String key, V v, long expire, TimeUnit unit) {
         return this.appendSet(key, v, expire, unit, this.getWriteLock(key));
     }
 
@@ -614,7 +614,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> void clearSetByLock(String key) {
+    public <V> void clearSetWithLock(String key) {
         this.<V>clearSet(key, this.getWriteLock(key));
     }
 
@@ -643,7 +643,7 @@ public class RedissonHelper {
         }
     }
 
-    public <V> void removeSetByLock(String key, V v) {
+    public <V> void removeSetWithLock(String key, V v) {
         this.removeSet(key, v, this.getWriteLock(key));
     }
 
@@ -651,7 +651,7 @@ public class RedissonHelper {
         return (V) getClient().getBucket(key).get();
     }
 
-    public <V> V getByLock(String key) {
+    public <V> V getWithLock(String key) {
         return this.get(key, this.getReadLock(key));
     }
 
@@ -686,7 +686,7 @@ public class RedissonHelper {
         }
     }
 
-    public boolean removeByLock(String key) {
+    public boolean removeWithLock(String key) {
         return this.remove(key, this.getWriteLock(key));
     }
 
@@ -708,7 +708,7 @@ public class RedissonHelper {
         this.putLocal(key, value.getClass());
     }
 
-    public <V> void setByLock(String key, V value, long expire, TimeUnit unit) {
+    public <V> void setWithLock(String key, V value, long expire, TimeUnit unit) {
         this.set(key, value, expire, unit, this.getWriteLock(key));
     }
 
