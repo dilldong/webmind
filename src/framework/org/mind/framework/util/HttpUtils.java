@@ -3,6 +3,7 @@ package org.mind.framework.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.server.WebServerConfig;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -88,7 +89,11 @@ public class HttpUtils {
         if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
             urlBuilder.append(':').append(request.getServerPort());
 
-        String url = urlBuilder.append(getURI(request)).toString();
+        String contextPath = WebServerConfig.INSTANCE.getContextPath();
+        if(StringUtils.isNotEmpty(contextPath))
+            urlBuilder.append(contextPath);
+
+        String url = urlBuilder.append(getURI(request, true)).toString();
         request.setAttribute(REQUEST_URL, url);
         return url;
     }
