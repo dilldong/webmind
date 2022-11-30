@@ -27,7 +27,9 @@ public class ExecutorFactory {
     /**
      * The default thread-pool factory
      */
-    private static final ThreadFactory defaultThreadFactory = ExecutorFactory.newThreadFactory(false, Thread.NORM_PRIORITY);
+    private static final ThreadFactory defaultDemoThreadFactory = ExecutorFactory.newThreadFactory(true, Thread.NORM_PRIORITY);
+
+    private static final ThreadFactory defaultUserThreadFactory = ExecutorFactory.newThreadFactory(false, Thread.NORM_PRIORITY);
 
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
                                                            int maxPoolSize,
@@ -46,7 +48,7 @@ public class ExecutorFactory {
                 keepAliveTime,
                 unit,
                 taskRunnables,
-                defaultThreadFactory,
+                defaultDemoThreadFactory,
                 defaultRejectHandler);
     }
 
@@ -71,9 +73,9 @@ public class ExecutorFactory {
         return executor;
     }
 
-    public static ThreadFactory newThreadFactory(boolean demo, int priority) {
+    public static ThreadFactory newThreadFactory(boolean daemon, int priority) {
 //         return Executors.defaultThreadFactory();
-        return new TaskThreadFactory("pool-exec-", demo, priority);
+        return new TaskThreadFactory("pool-exec-", daemon, priority);
     }
 
     public static Thread newThread(Runnable runnable) {
@@ -81,9 +83,15 @@ public class ExecutorFactory {
     }
 
     public static Thread newThread(String name, Runnable runnable) {
+        return newThread(name, false, runnable);
+    }
+
+    public static Thread newThread(String name, boolean daemon, Runnable runnable) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(runnable);
-        Thread thread = defaultThreadFactory.newThread(runnable);
+        Thread thread = daemon ?
+                defaultDemoThreadFactory.newThread(runnable) :
+                defaultUserThreadFactory.newThread(runnable);
         try {
             thread.setName(name);
         } catch (SecurityException e) {

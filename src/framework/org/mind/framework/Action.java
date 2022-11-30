@@ -29,8 +29,8 @@ public final class Action {
     private HttpServletRequest request;
     private HttpServletResponse response;
 
-    public String getRemoteIp() {
-        return HttpUtils.getRequestIP(request);
+    public String getRemoteIp(boolean ... forAttr) {
+        return HttpUtils.getRequestIP(request, forAttr);
     }
 
     /**
@@ -64,7 +64,7 @@ public final class Action {
      * @throws IOException
      */
     public String getPostString() throws IOException {
-        return HttpUtils.getPostString(request);
+        return HttpUtils.getPostString(request, true);
     }
 
     public String getJson() {

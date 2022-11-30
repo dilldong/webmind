@@ -11,16 +11,16 @@ public class QueueLittle implements QueueService {
 
     private static final Logger log = LoggerFactory.getLogger(QueueService.class);
 
+    private final Object queueObject = new Object();
+
     @Setter
-    private BlockingQueue<DelegateMessage> queueInstance;
+    private transient volatile BlockingQueue<DelegateMessage> queueInstance;
 
     @Override
-    public void producer(DelegateMessage message) {
-        try {
-            queueInstance.put(message);
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(), e);
-        }
+    public boolean producer(DelegateMessage message) {
+        // LinkedBlockingQueue is thread safety
+        // current thread await: put()
+        return queueInstance.offer(message);
     }
 
     @Override
@@ -42,13 +42,15 @@ public class QueueLittle implements QueueService {
 
 
     @Override
-    public synchronized void destroy() {
-        if (Objects.isNull(queueInstance) || queueInstance.isEmpty())
-            return;
+    public void destroy() {
+        synchronized (queueObject) {
+            if (Objects.isNull(queueInstance) || queueInstance.isEmpty())
+                return;
 
-        int size = this.size();
-        log.info("Destroy QueueLittle@{} elements: [{}]", Integer.toHexString(hashCode()), size);
-        if (size > 0)
-            this.queueInstance.clear();
+            int size = this.size();
+            log.info("Destroy QueueLittle@{} elements: [{}]", Integer.toHexString(hashCode()), size);
+            if (size > 0)
+                this.queueInstance.clear();
+        }
     }
 }

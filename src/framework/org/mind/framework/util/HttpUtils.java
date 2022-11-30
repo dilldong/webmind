@@ -1,7 +1,9 @@
 package org.mind.framework.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.server.WebServerConfig;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -21,6 +23,16 @@ public class HttpUtils {
      */
     private static final String[] PROXY_REMOTE_IP_ADDRESS = {"X-Forwarded-For", "X-Real-IP"};
     private static final String BODY_PARAMS = "post_body_input_stream";
+    private static final String REQUEST_URI = "web_request_uri";
+    private static final String REQUEST_URL = "web_request_url";
+    private static final String REQUEST_IP = "web_request_ip";
+
+    public static void clearSetting(HttpServletRequest request){
+        request.removeAttribute(REQUEST_URI);
+        request.removeAttribute(REQUEST_URL);
+        request.removeAttribute(REQUEST_IP);
+        request.removeAttribute(BODY_PARAMS);
+    }
 
     /**
      * Identify and return the path component (from the request URI) that
@@ -30,7 +42,13 @@ public class HttpUtils {
      *
      * @param request The servlet request we are processing
      */
-    public static String getURI(HttpServletRequest request) {
+    public static String getURI(HttpServletRequest request, boolean ... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String uri = (String) request.getAttribute(REQUEST_URI);
+            if (StringUtils.isNotEmpty(uri))
+                return uri;
+        }
+
         String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
 
@@ -41,44 +59,65 @@ public class HttpUtils {
         uri = contextPath.length() > 0 ? uri.substring(contextPath.length()) : uri;
 
         // check is root path
-        if (uri.length() > 1) uri = uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
+        if (uri.length() > 1)
+            uri = uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
 
         // uri has sessionid
         int hasJsession = uri.indexOf(";jsessionid");
-        if (hasJsession != -1) uri = uri.substring(0, hasJsession);
+        if (hasJsession > -1)
+            uri = uri.substring(0, hasJsession);
 
+        request.setAttribute(REQUEST_URI, uri);
         return uri;
     }
 
-    public static String getURL(HttpServletRequest request) {
-        String scheme = request.getScheme();
-        int port = request.getServerPort();
-        String urlPath = request.getRequestURI();
-
-        StringBuilder url = new StringBuilder();
-        url.append(scheme);
-        url.append("://");
-        url.append(request.getServerName());
-
-        if (scheme.equals("http") && port != 80 || scheme.equals("https") && port != 443) {
-            url.append(':');
-            url.append(request.getServerPort());
+    public static String getURL(HttpServletRequest request, boolean ... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String url = (String) request.getAttribute(REQUEST_URL);
+            if (StringUtils.isNotEmpty(url))
+                return url;
         }
 
-        url.append(urlPath);
-        return url.toString();
+        String scheme = request.getScheme();
+        int port = request.getServerPort();
+
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(scheme)
+                .append("://")
+                .append(request.getServerName());
+
+        if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
+            urlBuilder.append(':').append(request.getServerPort());
+
+        String contextPath = WebServerConfig.INSTANCE.getContextPath();
+        if(StringUtils.isNotEmpty(contextPath))
+            urlBuilder.append(contextPath);
+
+        String url = urlBuilder.append(getURI(request, true)).toString();
+        request.setAttribute(REQUEST_URL, url);
+        return url;
     }
 
-    public static String getRequestIP(HttpServletRequest request) {
+    public static String getRequestIP(HttpServletRequest request, boolean ... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String ip = (String) request.getAttribute(REQUEST_IP);
+            if (StringUtils.isNotEmpty(ip))
+                return ip;
+        }
+
         String ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[0]);
-        if (StringUtils.isNotEmpty(ip))
-            return getRemoteIpFromForward(ip);
+        if (StringUtils.isNotEmpty(ip)) {
+            ip = getRemoteIpFromForward(ip);
+            request.setAttribute(REQUEST_IP, ip);
+            return ip;
+        }
 
         ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[1]);
-        if (StringUtils.isNotEmpty(ip))
-            return ip;
+        if (StringUtils.isEmpty(ip))
+            ip = request.getRemoteAddr();
 
-        return request.getRemoteAddr();
+        request.setAttribute(REQUEST_IP, ip);
+        return ip;
     }
 
     /**
@@ -97,7 +136,7 @@ public class HttpUtils {
     }
 
     public static String getJson(HttpServletRequest request) {
-        String json = getPostString(request);
+        String json = getPostString(request, true);
         if (JsonUtils.isJson(json))
             return json;
 
@@ -108,19 +147,23 @@ public class HttpUtils {
      * Get the content of the post request
      *
      * @return
-     * @throws UnsupportedEncodingException
      */
-    public static String getPostString(HttpServletRequest request) {
+    public static String getPostString(HttpServletRequest request, boolean... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String json = (String) request.getAttribute(BODY_PARAMS);
+            if (StringUtils.isNotEmpty(json))
+                return json;
+        }
+
         byte[] data = null;
         try {
             data = getPostBytes(request);
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
 
         /*
          * servlet规范:
-         * 一个InputStream对象在被读取完成后，将无法被再次读取，始终返回-1；
-         * InputStream并没有实现reset方法（可以重置首次读取的位置），无法实现重置操作；
+         * 一个InputStream对象在被读取完成后, 将无法被再次读取, 始终返回-1,
+         * InputStream并没有实现reset方法(可以重置首次读取的位置).
          */
         if (Objects.nonNull(data)) {
             String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
@@ -133,7 +176,7 @@ public class HttpUtils {
             }
         }
 
-        return (String) request.getAttribute(BODY_PARAMS);
+        return null;
     }
 
     /**

@@ -4,11 +4,13 @@ import org.mind.framework.ContextSupport;
 import org.mind.framework.container.ContainerAware;
 import org.mind.framework.dispatcher.handler.HandlerDispatcherRequest;
 import org.mind.framework.dispatcher.handler.HandlerRequest;
+import org.mind.framework.dispatcher.handler.HandlerResult;
 import org.mind.framework.dispatcher.support.WebContainerGenerator;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.renderer.template.TemplateFactory;
 import org.mind.framework.service.Service;
+import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -19,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * DispatcherServlet must be mapped to root URL "/". It handles ALL requests
@@ -136,25 +139,24 @@ public class DispatcherServlet extends HttpServlet {
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
             this.dispatcher.processor(request, response);
+            // remove request uri/url/ip
+            HttpUtils.clearSetting(request);
         } catch (Throwable e) {
-            Object object = request.getAttribute(BaseException.SYS_EXCEPTION);
-
-            if (object == null) {
-                Throwable c = e.getCause() == null ? e : e.getCause();
-                request.setAttribute(BaseException.SYS_EXCEPTION, c);
-            }
-
-            ThrowProvider.doThrow(e);
+            Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
+            request.setAttribute(BaseException.SYS_EXCEPTION, c);
+            HandlerResult.setRequestAttribute(request);
+            // remove request uri/url/ip
+            HttpUtils.clearSetting(request);
+            ThrowProvider.doThrow(c);
         }
     }
-
 
     /**
      * starting web thread service.
      */
     private void startServer() {
         try {
-            Service serv = (Service) ContextSupport.getBean("mainService", Service.class);
+            Service serv = ContextSupport.getBean("mainService", Service.class);
             serv.start();
         } catch (NoSuchBeanDefinitionException e) {
             log.warn("Queue and Thread services are not running: {}", e.getMessage());

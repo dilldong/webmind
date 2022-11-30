@@ -42,7 +42,7 @@ public class Indicator {
 
         int size = MetricEvent.size();
         this.counters = new LongAdder[size];
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; ++i)
             counters[i] = new LongAdder();
     }
 
@@ -50,7 +50,7 @@ public class Indicator {
         this.startTimeOfBucket = startMills;
 
         int size = MetricEvent.size();
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; ++i)
             counters[i].reset();
 
         return this;

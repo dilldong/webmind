@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -80,6 +81,9 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
     @Override
     public void afterPropertiesSet() throws Exception {
         this.cacheable = this.findBean(Cacheable.class);
+//        Set<Class<? extends Annotation>> cacheinAnnotationTypes = new LinkedHashSet<>(1);
+//        cacheinAnnotationTypes.add(Cachein.class);
+//        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
         this.advice = buildAdvice();
         if (this.advice instanceof BeanFactoryAware)
@@ -116,17 +120,27 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
     /**
      * Calculate a pointcut for the given cachein annotation types, if any.
      *
-     * @param cacheinAnnotationType the cachein annotation types to introspect
+     * @param cacheinAnnotationTypes the cachein annotation types to introspect
      * @return the applicable Pointcut object, or {@code null} if none
      */
-    private Pointcut buildPointcut(Class<? extends Annotation> cacheinAnnotationType) {
-        Pointcut filter = new AnnotationClassOrMethodPointcut(cacheinAnnotationType);
-        ComposablePointcut result = new ComposablePointcut(filter);
+    private Pointcut buildPointcut(Set<Class<? extends Annotation>> cacheinAnnotationTypes) {
+        ComposablePointcut result = null;
 
-        // if cacheinAnnotationType is arrays:
-        // result.union(filter);
+        for (Class<? extends Annotation> clazzType : cacheinAnnotationTypes) {
+            Pointcut filter = new AnnotationClassOrMethodPointcut(clazzType);
+            if (Objects.isNull(result)) {
+                result = new ComposablePointcut(filter);
+                continue;
+            }
+            result.union(filter);
+        }
 
         return result;
+    }
+
+    private Pointcut buildPointcut(Class<? extends Annotation> cacheinAnnotationType) {
+        Pointcut filter = new AnnotationClassOrMethodPointcut(cacheinAnnotationType);
+        return new ComposablePointcut(filter);
     }
 
     private CacheinAnnotationAwareInterceptor buildAdvice() {

@@ -109,7 +109,7 @@ public class UploadFile {
          */
         List<UploadProperty> props = new ArrayList<>(6);
 
-        int i = 1;
+        int i = 0;
         StringBuilder sb = new StringBuilder(this.directory.length() + 20);
 
         // Parse the incoming multipart.
@@ -129,7 +129,7 @@ public class UploadFile {
 
             fileName = sb
                     .append(this.directory).append(File.separator).append(currentTime)
-                    .append("-").append(i++).append(".")
+                    .append("-").append(++i).append(".")
                     .append(suffix).toString();
 
             sb.delete(0, sb.length());

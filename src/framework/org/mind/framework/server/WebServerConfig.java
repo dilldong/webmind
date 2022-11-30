@@ -24,6 +24,7 @@ import java.util.Set;
 @Getter
 @Slf4j
 public class WebServerConfig {
+    public static final WebServerConfig INSTANCE = new WebServerConfig();
     public static final String JAR_IN_CLASSES = "BOOT-INF/classes";
     private static final String SERVER_PROPERTIES = "server.properties";
     private static final String JAR_PROPERTIES = String.format("%s/%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
@@ -34,6 +35,8 @@ public class WebServerConfig {
     private String tomcatBaseDir = StringUtils.EMPTY;
 
     private String resourceDir = StringUtils.EMPTY;
+
+    private String resourceRootFiles = StringUtils.EMPTY;
 
     private String webXml = StringUtils.EMPTY;
 
@@ -88,6 +91,7 @@ public class WebServerConfig {
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
             this.resourceDir = properties.getProperty("server.resourceDirectory", resourceDir);
+            this.resourceRootFiles = properties.getProperty("server.resourceRootFiles", resourceRootFiles);
             this.webXml = properties.getProperty("server.webXml", webXml);
             this.serverName = properties.getProperty("server", serverName);
             this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));
@@ -104,7 +108,7 @@ public class WebServerConfig {
         }
     }
 
-    public static WebServerConfig init() {
+    protected static WebServerConfig init() {
         return new WebServerConfig().initMimeMapping();
     }
 

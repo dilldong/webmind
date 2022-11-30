@@ -2,9 +2,11 @@ package org.mind.framework.service;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.mind.framework.util.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,7 +18,13 @@ public abstract class LoopWorkerService extends AbstractService {
 
     static final Logger logger = LoggerFactory.getLogger(LoopWorkerService.class);
 
+    private static final long LOOP_HOUR_MILLS = TimeUnit.HOURS.toMillis(12L);
+
     private volatile boolean isLoop = true;
+
+    private volatile int loopCounter;
+
+    private volatile long prevgcTime;
 
     private Thread workerMainThread;
 
@@ -26,7 +34,7 @@ public abstract class LoopWorkerService extends AbstractService {
 
     @Getter
     @Setter
-    private boolean daemon;
+    private boolean daemon = false;
 
     public LoopWorkerService() {
         super();
@@ -40,12 +48,12 @@ public abstract class LoopWorkerService extends AbstractService {
     @Override
     public final void start() {
         serviceState = STARTED;
+        loopCounter = 0;
+        prevgcTime = DateFormatUtils.getMillis();
         prepareStart();
 
-        if (workerMainThread == null) {
-            workerMainThread = ExecutorFactory.newThread(serviceName, new Worker());
-            workerMainThread.setDaemon(this.daemon);
-        }
+        if (Objects.isNull(workerMainThread))
+            workerMainThread = ExecutorFactory.newThread(serviceName, daemon, new Worker());
 
         if (spaceTime <= 0)
             logger.warn("The space time is {}(ms)", spaceTime);
@@ -98,13 +106,22 @@ public abstract class LoopWorkerService extends AbstractService {
             while (isLoop) {
                 // process child thread
                 doLoopWork();
+                ++ loopCounter;
 
                 // sleep
                 if (spaceTime > 0) {
                     try {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
                     } catch (InterruptedException e) {}
-                    Thread.yield();
+
+                    if (DateFormatUtils.getMillis() - prevgcTime >= LOOP_HOUR_MILLS
+                            && loopCounter >= 10_000) {
+                        loopCounter = 0;
+                        prevgcTime = DateFormatUtils.getMillis();
+                        System.gc();
+                        if (logger.isInfoEnabled())
+                            logger.info("End of manual gc.");
+                    }
                 } else // jump out of the while loop with spaceTime<=0
                     break;
             }

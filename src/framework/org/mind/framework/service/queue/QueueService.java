@@ -19,7 +19,7 @@ public interface QueueService extends Destroyable {
      * @throws InterruptedException
      * @author dp
      */
-    void producer(DelegateMessage message);
+    boolean producer(DelegateMessage message);
 
     /**
      * 阻塞式处理一个队列中的消息对象

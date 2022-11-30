@@ -34,16 +34,20 @@ public class Execution {
     // Method's need arguments length
     private int argsNumber;
 
-    public Execution(Object actionInstance, Method method, RequestMethod[] requestMethods) {
-        this(actionInstance, method, null, requestMethods);
+    // Output request call log on parent
+    private boolean requestLog;
+
+    public Execution(Object actionInstance, Method method, RequestMethod[] requestMethods, boolean requestLog) {
+        this(actionInstance, method, null, requestMethods, requestLog);
     }
 
-    public Execution(Object actionInstance, Method method, Object[] arguments, RequestMethod[] requestMethods) {
+    public Execution(Object actionInstance, Method method, Object[] arguments, RequestMethod[] requestMethods, boolean requestLog) {
         this.actionInstance = actionInstance;
         this.method = method;
         this.parameterTypes = method.getParameterTypes();
         this.arguments = arguments;
         this.requestMethods = requestMethods;
+        this.requestLog = requestLog;
     }
 
     public Object execute() {
@@ -84,6 +88,10 @@ public class Execution {
 
     public void setRequestMethods(RequestMethod[] requestMethods) {
         this.requestMethods = requestMethods;
+    }
+
+    public boolean isRequestLog() {
+        return requestLog;
     }
 
     public boolean isSupportMethod(String method) {

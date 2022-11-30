@@ -4,8 +4,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.annotation.EnumFace;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
+import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.MatcherUtils;
 import org.slf4j.Logger;
@@ -14,10 +19,14 @@ import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @version 1.0
@@ -33,18 +42,87 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private long expire = 0;
     private Cloneable.CloneType cloneType;
     private Cacheable cacheable;
+    private boolean inRedis;
+    private TimeUnit timeUnit;
+    private Class<? extends Object> redisType;
 
-    public CacheinOperationInterceptor(Cacheable cacheable, Cloneable.CloneType cloneType, long expire) {
+    public CacheinOperationInterceptor(Cacheable cacheable,
+                                       Cloneable.CloneType cloneType,
+                                       long expire,
+                                       TimeUnit timeUnit,
+                                       boolean inRedis,
+                                       Class<? extends Object>[] redisType) {
         this.cacheable = cacheable;
         this.cloneType = cloneType;
         this.expire = expire;
+        this.timeUnit = timeUnit;
+        this.inRedis = inRedis;
+        this.redisType = ArrayUtils.isEmpty(redisType) ? null : redisType[0];
     }
 
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         String resolverKey = resolverExpl(invocation.getArguments(), invocation.getThis(), invocation.getMethod(), key);
-        CacheElement element = this.cacheable.getCache(resolverKey, expire);
-        if (element != null) {
+        if (this.inRedis)
+            return forRedis(resolverKey, invocation);
+
+        return forLocal(resolverKey, invocation);
+    }
+
+    private Object forRedis(String resolverKey, MethodInvocation invocation) throws Throwable {
+        Objects.requireNonNull(redisType, "Should specify the return type when getting the cache from redis.");
+        RedissonHelper helper = RedissonHelper.getInstance();
+
+        if (List.class.isAssignableFrom(redisType)) {
+            List list = helper.getListWithLock(resolverKey);
+            if (!list.isEmpty())
+                return list;
+        } else if (Map.class.isAssignableFrom(redisType)) {
+            Map map = helper.getMapWithLock(resolverKey);
+            if (!map.isEmpty())
+                return map;
+        } else if (Set.class.isAssignableFrom(redisType)) {
+            Set set = helper.getSetWithLock(resolverKey);
+            if (!set.isEmpty())
+                return set;
+        } else {
+            // for bucket
+            Object obj = helper.getWithLock(resolverKey);
+            if (Objects.nonNull(obj)) {
+                if (ConverterFactory.getInstance().isConvert(redisType)) {
+                    if (StringUtils.isNotEmpty(obj.toString()))
+                        return obj;
+                } else
+                    return obj;
+            }
+        }
+
+        // invoke orig method
+        Object result = this.callback(invocation);
+        if (Objects.nonNull(result)) {
+            Class<? extends Object> clazz = result.getClass();
+            if (List.class.isAssignableFrom(clazz)) {
+                helper.setWithLock(resolverKey, (List) result, expire, timeUnit);
+            } else if (Map.class.isAssignableFrom(clazz)) {
+                helper.setWithLock(resolverKey, (Map) result, expire, timeUnit);
+            } else if (Set.class.isAssignableFrom(clazz)) {
+                helper.setWithLock(resolverKey, (Set) result, expire, timeUnit);
+            } else if (ConverterFactory.getInstance().isConvert(redisType)) {
+                if (StringUtils.isNotEmpty(result.toString()))
+                    helper.setWithLock(resolverKey, result, expire, timeUnit);
+            } else
+                helper.setWithLock(resolverKey, result, expire, timeUnit);
+        }
+
+        return result;
+    }
+
+
+    private Object forLocal(String resolverKey, MethodInvocation invocation) throws Throwable {
+        CacheElement element = this.cacheable.getCache(
+                resolverKey,
+                TimeUnit.MILLISECONDS == timeUnit ? expire : timeUnit.toMillis(expire));
+        if (Objects.nonNull(element)) {
             if (log.isDebugEnabled())
                 log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
 
@@ -54,15 +132,12 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         Object result = this.callback(invocation);
         if (Objects.nonNull(result)) {
             Class<? extends Object> clazz = result.getClass();
-            boolean addCache = false;
-            if (Collection.class.isAssignableFrom(clazz)) {
-                if (!((Collection) result).isEmpty())
-                    addCache = true;
-            } else if (Map.class.isAssignableFrom(clazz)) {
-                if (!((Map) result).isEmpty())
-                    addCache = true;
-            } else
-                addCache = true;
+            boolean addCache = true;
+
+            if (Collection.class.isAssignableFrom(clazz))
+                addCache = !((Collection) result).isEmpty();
+            else if (Map.class.isAssignableFrom(clazz))
+                addCache = !((Map) result).isEmpty();
 
             if (addCache)
                 this.cacheable.addCache(resolverKey, result, true, cloneType);
@@ -72,7 +147,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     private String resolverExpl(Object[] params, Object target, Method method, String attrValue) {
-        if (Objects.isNull(params) || params.length == 0)
+        if (ArrayUtils.isEmpty(params))
             return attrValue;
 
         if (MatcherUtils.checkCount(attrValue, MatcherUtils.PARAM_MATCH) == 0)
@@ -90,18 +165,20 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         Objects.requireNonNull(methodVarNames);
         int size = params.length;
 
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             attrValue =
                     attrValue.replaceAll(
-                            String.join("", "\\#\\{", methodVarNames[i], "\\}"),
-                            String.valueOf(params[i]));
+                            "#\\{".concat(methodVarNames[i]).concat("\\}"),
+                            EnumFace.class.isAssignableFrom(params[i].getClass()) ?
+                                    String.valueOf(((EnumFace<? extends Serializable>) params[i]).getValue()) :
+                                    String.valueOf(params[i]));
         }
 
         return attrValue;
     }
 
     private Object callback(MethodInvocation invocation) throws Exception {
-        if (invocation instanceof ProxyMethodInvocation) {
+        if (ProxyMethodInvocation.class.isAssignableFrom(invocation.getClass())) {
             try {
                 return ((ProxyMethodInvocation) invocation).invocableClone().proceed();
             } catch (Exception | Error e) {

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,12 +64,13 @@ public class LruCache extends AbstractCache implements Cacheable {
     /*
      * jvm 当前可用的内存大小
      */
-    private long freeMemory = 0;
+    @Deprecated
+    private long freeMemory = 0L;
 
     /*
      * 条目最大超时设置
      */
-    private long timeout = 0;
+    private long timeout = 0L;
 
     private Map<String, CacheElement> itemsMap;
 
@@ -78,12 +80,12 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     private transient final Lock write = readWriteLock.writeLock();
 
-    public static Cacheable initCache() {
-        return CacheHolder.cacheInstance;
+    public static LruCache initCache() {
+        return CacheHolder.CACHE_INSTANCE;
     }
 
     private static class CacheHolder {
-        private static final Cacheable cacheInstance = new LruCache();
+        private static final LruCache CACHE_INSTANCE = new LruCache();
     }
 
     private LruCache() {
@@ -91,9 +93,8 @@ public class LruCache extends AbstractCache implements Cacheable {
             @Override
             protected boolean removeEldestEntry(Entry<String, CacheElement> eldest) {
                 boolean tooBig = this.size() > LruCache.this.capacity;
-                if (tooBig) {
+                if (tooBig && log.isDebugEnabled())
                     log.debug("Remove the last entry key: {}", eldest.getKey());
-                }
                 return tooBig;
             }
         };
@@ -129,9 +130,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     public Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type) {
-        // 这里的判断还有点问题>> DEFAULT_MAX_FREEMEMORY >
-        // Runtime.getRuntime().freeMemory()
-
+        /* Deprecated this condition, freeMemory() has no practical meaning.
         if (freeMemory > 0 && freeMemory > Runtime.getRuntime().freeMemory()) {
             if (log.isDebugEnabled())
                 log.debug("At present there is insufficient space, a clear java.util.Map of all objects");
@@ -139,7 +138,8 @@ public class LruCache extends AbstractCache implements Cacheable {
             this.destroy();
             return this;
 
-        } else if (!check && this.containsKey(key)) {
+        }*/
+        if (!check && this.containsKey(key)) {
             if (log.isDebugEnabled())
                 log.debug("The Cache key already exists.");
             return this;
@@ -231,8 +231,9 @@ public class LruCache extends AbstractCache implements Cacheable {
             return Collections.EMPTY_LIST;
 
         List<CacheElement> removeList = new ArrayList<>();
-        Set<Entry<String, CacheElement>> entries = this.getEntries();
-        for (Entry<String, CacheElement> entry : entries) {
+        Iterator<Entry<String, CacheElement>> iterator = this.getEntries().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, CacheElement> entry = iterator.next();
             if (StringUtils.contains(entry.getKey(), searchStr)) {
                 if (excludes != null && excludes.length > 0) {// Exclude
                     boolean flag = false;
@@ -248,7 +249,8 @@ public class LruCache extends AbstractCache implements Cacheable {
                         continue;
                 }
 
-                removeList.add(this.removeCache(entry.getKey()));
+                iterator.remove();
+                removeList.add(entry.getValue());
             }
         }
 
@@ -294,6 +296,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         this.capacity = capacity;
     }
 
+    @Deprecated
     public void setFreeMemory(long freeMemory) {
         this.freeMemory = freeMemory;
     }

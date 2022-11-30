@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.util.EntityUtils;
 import org.mind.framework.exception.ThrowProvider;
 
@@ -57,5 +58,11 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
     }
     public CloseableHttpResponse getResponse() {
         return httpResponse;
+    }
+
+    @Override
+    public void close() {
+        HttpClientUtils.closeQuietly(getResponse());
+        super.close();
     }
 }

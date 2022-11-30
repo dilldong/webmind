@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -33,10 +34,10 @@ public abstract class PropertiesUtils {
         InputStream in;
         URL url = ClassUtils.getResource(PropertiesUtils.class, DEFAULT_PROPERTIES);
 
-        if (url != null)
-            in = ClassUtils.getResourceAsStream(PropertiesUtils.class, DEFAULT_PROPERTIES);
-        else
+        if (Objects.isNull(url))
             in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
+        else
+            in = ClassUtils.getResourceAsStream(PropertiesUtils.class, DEFAULT_PROPERTIES);
 
         return getProperties(in);
     }

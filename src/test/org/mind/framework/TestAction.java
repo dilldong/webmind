@@ -11,8 +11,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 /**
  * @author Marcus
@@ -27,6 +31,9 @@ public class TestAction {
 
     @Mapping
     public String first() {
+        if(true)
+            throw new RuntimeException("----------");
+
         return "Welcome usage mind-framework.";
     }
 
@@ -64,7 +71,7 @@ public class TestAction {
 
     @Mapping("/request/forward")
     public String forward() {
-        return "forward:https://github.com/dilldong";
+        return "forward:/";
     }
 
     @Mapping("/request/js")
@@ -79,4 +86,34 @@ public class TestAction {
                 "listItem",
                 Arrays.asList(11, 22, 32, 3, 62, 92));
     }
+
+    @Mapping("/number/${value}")
+    public int number(int value) {
+        return value;
+    }
+
+    @Mapping("/list")
+    public List<String> list() {
+        List<String> results = new ArrayList<>();
+        IntStream.range(0, 10).forEachOrdered(item -> results.add("List-" + item));
+        return results;
+    }
+
+    @Mapping("/map")
+    public Map<String, Object> map() {
+        Map<String, Object> results = new HashMap<>();
+        IntStream.range(0, 10).forEachOrdered(item -> results.put("K-" + item, item));
+        return results;
+    }
+
+    @Mapping("/object")
+    public TestSpringModule.A object() {
+        TestSpringModule.A a = TestSpringModule.A.builder()
+                .field01("field01")
+                .num01(100)
+                .num02(99_100_200_000L)
+                .build();
+        return a;
+    }
+
 }

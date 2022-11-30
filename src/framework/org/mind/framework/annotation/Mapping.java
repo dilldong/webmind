@@ -22,4 +22,6 @@ public @interface Mapping {
     String value() default "/";
 
     RequestMethod[] method() default {};
+
+    boolean requestLog() default true;
 }

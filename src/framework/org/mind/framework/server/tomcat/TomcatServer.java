@@ -36,6 +36,8 @@ import org.springframework.web.context.support.XmlWebApplicationContext;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * @author Marcus
@@ -90,6 +92,7 @@ public class TomcatServer extends Tomcat {
             ctx.addErrorPage(newErrorPage(500, "/error/500"));
             ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/500"));
             ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/500"));
+            ctx.addErrorPage(newErrorPage("java.lang.RuntimeException", "/error/500"));
             ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/500"));
         }
 
@@ -132,6 +135,7 @@ public class TomcatServer extends Tomcat {
             super.start();
             Thread awaitThread = ExecutorFactory.newThread(
                     "web-container-".concat(String.valueOf(serverConfig.getPort())),
+                    true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
             awaitThread.start();
@@ -199,7 +203,7 @@ public class TomcatServer extends Tomcat {
         ctx.addServletMappingDecoded("/", ServerContext.SERVLET_NAME);
 
         // Add Spring loader
-        if (serverConfig.getSpringFileSet() == null || serverConfig.getSpringFileSet().isEmpty()) {
+        if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
             log.warn("Spring's config file is not set.");
         } else {
             // init spring by xml, XmlLoad4SpringContext is custom implementation
@@ -252,6 +256,7 @@ public class TomcatServer extends Tomcat {
         ErrorPage errorPage = new ErrorPage();
         errorPage.setErrorCode(errorCode);
         errorPage.setLocation(location);
+        errorPage.setCharset(StandardCharsets.UTF_8);
         return errorPage;
     }
 
@@ -259,6 +264,7 @@ public class TomcatServer extends Tomcat {
         ErrorPage errorPage = new ErrorPage();
         errorPage.setExceptionType(exceptionType);
         errorPage.setLocation(location);
+        errorPage.setCharset(StandardCharsets.UTF_8);
         return errorPage;
     }
 }

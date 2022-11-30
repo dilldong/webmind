@@ -84,7 +84,7 @@ public abstract class AbstractBucket {
 
         final int size = indicatorArray.length();
         List<Indicator> resultList = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; ++i) {
             Indicator indicator = indicatorArray.get(i);
             if (indicator == null || isDiscard(timeMills, indicator))
                 continue;

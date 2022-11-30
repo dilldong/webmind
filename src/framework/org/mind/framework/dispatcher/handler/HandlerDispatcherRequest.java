@@ -6,6 +6,7 @@ import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.Catcher;
 import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.http.Response;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
@@ -15,6 +16,7 @@ import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
@@ -31,6 +33,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +50,7 @@ import java.util.regex.Matcher;
  */
 public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
-    private static final Logger log = LoggerFactory.getLogger("HandlerRequest");
+    private static final Logger log = LoggerFactory.getLogger("RequestHandler");
 
     private ConverterFactory converter;
     private final ServletContext servletContext;
@@ -78,7 +81,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         this.converter = ConverterFactory.getInstance();
         this.urisRegex = new ArrayList<>();
         this.interceptorsCatcher = new ArrayList<>();
-        this.resourceHandler = new ResourceHttpRequest(this.servletConfig);
+        this.resourceHandler = new HandlerResourceRequest(this.servletConfig);
 
         // load web application static resource strs.
         this.resStr = this.servletConfig.getInitParameter("resource");
@@ -197,7 +200,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         }
 
-        log.info("From path: {}", path);
+        // set response no-cache
         this.processNoCache(request, response);
 
         /*
@@ -219,12 +222,18 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
                 // Fetch request parameters in the URI
                 Class<?> type;
-                for (int i = 0; i < number; i++) {
+                for (int i = 0; i < number; ++i) {
                     type = execution.getParameterTypes()[i];
-                    if (String.class.equals(type))
+                    if (String.class.getName().equals(type.getName()))
                         args[i] = matcher.group(i + 1);// segmentation fetch
-                    else
-                        args[i] = this.converter.convert(type, matcher.group(i + 1));
+                    else {
+                        try {
+                            args[i] = this.converter.convert(type, matcher.group(i + 1));
+                        } catch (NumberFormatException | NullPointerException e) {
+                            log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
+                            throw e;
+                        }
+                    }
                 }
             }
             break;
@@ -235,7 +244,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
          * available.
          */
         if (Objects.isNull(execution)) {
-            log.warn("The requested URI (404) Not found");
+            log.warn("The requested URI (404) Not found: {}", path);
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             this.handleResult(
                     new Response<String>(HttpServletResponse.SC_NOT_FOUND, "The request URI (404) Not found").toJson(),
@@ -244,6 +253,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             //response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
             return;
         }
+
+        if (execution.isRequestLog())
+            log.info("From path: {}", path);
 
         /*
          * validation request method
@@ -263,7 +275,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        log.info("Action is: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+        if (execution.isRequestLog())
+            log.info("Action is: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
 
         // currently request is multipart request.
         if (this.supportMultipartRequest &&
@@ -278,33 +291,32 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
             // Interceptor doAfter
             if (!currentInterceptors.isEmpty()) {
-                for (HandlerInterceptor interceptor : currentInterceptors) {
+                for (HandlerInterceptor interceptor : currentInterceptors)
                     interceptor.doAfter(request, response);
-                }
             }
 
             // resolver result
             this.handleResult(result, request, response);
 
             // Interceptor renderCompletion
-            if (!currentInterceptors.isEmpty()) {
-                for (HandlerInterceptor interceptor : currentInterceptors) {
+            if (!currentInterceptors.isEmpty())
+                for (HandlerInterceptor interceptor : currentInterceptors)
                     interceptor.renderCompletion(request, response);
-                }
-            }
 
+        } catch (IOException | ServletException e) {
+            throw e;
         } catch (Throwable e) {
-            log.error(e.getMessage(), e);
-
-            Throwable c = e.getCause() == null ? e : e.getCause();
-            if (c instanceof IOException)
-                throw new IOException(c.getMessage(), c);
+            Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
+            if (c instanceof IOException || c instanceof ServletException)
+                ThrowProvider.doThrow(c);
             else
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
             Action.removeActionContext();
-            log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
-            log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+            if (execution.isRequestLog()) {
+                log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
+                log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+            }
         }
     }
 
@@ -313,14 +325,10 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         if (Objects.isNull(result))
             return;
 
-        if (result instanceof Render) {
-            Render render = (Render) result;
-            render.render(request, response);
-            return;
-        }
-
-        if (result instanceof String) {
-            String str = (String) result;
+        Class<? extends Object> clazz = result.getClass();
+        ConverterFactory converterFactory = ConverterFactory.getInstance();
+        if (converterFactory.isConvert(clazz)) {
+            String str = result.toString();
 
             if (str.startsWith("forward:")) {
                 new NullRender(str.substring("forward:".length()), NullRender.RenderType.FORWARD).render(request, response);
@@ -339,6 +347,18 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
 
             new TextRender(str).render(request, response);
+            return;
+        }
+
+        if (Render.class.isAssignableFrom(clazz)) {
+            ((Render) result).render(request, response);
+            return;
+        }
+
+        if (Collection.class.isAssignableFrom(clazz)
+                || Map.class.isAssignableFrom(clazz)
+                || Object.class.isAssignableFrom(clazz)) {
+            new TextRender(JsonUtils.toJson(result)).render(request, response);
             return;
         }
 
@@ -392,7 +412,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             Mapping mapping = method.getAnnotation(Mapping.class);
             this.actions.put(
                     mapping.value(),
-                    new Execution(bean, method, mapping.method()));
+                    new Execution(bean, method, mapping.method(), mapping.requestLog()));
 
             sb.append(mapping.value()).append(", ");
         }
@@ -403,7 +423,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
     private boolean isMappingMethod(Method method) {
         Mapping mapping = method.getAnnotation(Mapping.class);
-        if (mapping == null)
+        if (Objects.isNull(mapping))
             return false;
 
         if (StringUtils.trimToEmpty(mapping.value()).length() == 0) {
@@ -424,15 +444,14 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         }
 
-        Class<?> retType = method.getReturnType();
-        if (void.class.equals(retType)
-                || String.class.equals(retType)
-                || Render.class.isAssignableFrom(retType)) {
-            return true;
-        }
-
-        log.warn("Unsupported Action method '{}'.", method.toGenericString());
-        return false;
+//        Class<?> retType = method.getReturnType();
+//        if (void.class.equals(retType)
+//                || String.class.getName().equals(retType.getName())
+//                || Render.class.isAssignableFrom(retType)) {
+//            return true;
+//        }
+//        log.warn("Unsupported Action method '{}'.", method.toGenericString());
+        return true;
     }
 
 }
