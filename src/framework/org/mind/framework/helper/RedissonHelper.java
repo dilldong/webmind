@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.mind.framework.server.WebServerConfig.JAR_IN_CLASSES;
@@ -782,9 +783,19 @@ public class RedissonHelper {
         adder.reset();
     }
 
+    public void resetAsync(String name) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        adder.resetAsync();
+    }
+
     public long sum(String name) {
         RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         return adder.sum();
+    }
+
+    public Future<Long> sumAsync(String name) {
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
+        return adder.sumAsync();
     }
 
     public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit) {
