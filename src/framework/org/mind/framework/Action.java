@@ -64,7 +64,7 @@ public final class Action {
      * @throws IOException
      */
     public String getPostString() throws IOException {
-        return HttpUtils.getPostString(request);
+        return HttpUtils.getPostString(request, true);
     }
 
     public String getJson() {

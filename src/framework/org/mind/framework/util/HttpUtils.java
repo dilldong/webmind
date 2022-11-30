@@ -131,7 +131,7 @@ public class HttpUtils {
     }
 
     public static String getJson(HttpServletRequest request) {
-        String json = getPostString(request);
+        String json = getPostString(request, true);
         if (JsonUtils.isJson(json))
             return json;
 
@@ -143,7 +143,13 @@ public class HttpUtils {
      *
      * @return
      */
-    public static String getPostString(HttpServletRequest request) {
+    public static String getPostString(HttpServletRequest request, boolean... forAttr) {
+        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String json = (String) request.getAttribute(BODY_PARAMS);
+            if (StringUtils.isNotEmpty(json))
+                return json;
+        }
+
         byte[] data = null;
         try {
             data = getPostBytes(request);
@@ -151,8 +157,8 @@ public class HttpUtils {
 
         /*
          * servlet规范:
-         * 一个InputStream对象在被读取完成后，将无法被再次读取，始终返回-1；
-         * InputStream并没有实现reset方法（可以重置首次读取的位置），无法实现重置操作；
+         * 一个InputStream对象在被读取完成后, 将无法被再次读取, 始终返回-1,
+         * InputStream并没有实现reset方法(可以重置首次读取的位置).
          */
         if (Objects.nonNull(data)) {
             String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
@@ -165,7 +171,7 @@ public class HttpUtils {
             }
         }
 
-        return (String) request.getAttribute(BODY_PARAMS);
+        return null;
     }
 
     /**
