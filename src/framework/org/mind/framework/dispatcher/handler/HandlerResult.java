@@ -1,6 +1,7 @@
 package org.mind.framework.dispatcher.handler;
 
 import com.google.gson.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.util.HttpUtils;
 
@@ -20,11 +21,18 @@ public interface HandlerResult {
 
     void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 
-    static void setRequestAttribute(HttpServletRequest request){
+    static void setRequestAttribute(HttpServletRequest request) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("URL", HttpUtils.getURL(request, true));
         jsonObject.addProperty("Method", request.getMethod());
         jsonObject.addProperty("Request IP", HttpUtils.getRequestIP(request, true));
+        String str = HttpUtils.getJson(request);
+        if (StringUtils.isNotEmpty(str) && str.contains("jsonrpc")) {
+            str = StringUtils.substringBetween(str, "method", ",");
+            str = str.replaceAll("[\'\":]*", "").trim();
+            jsonObject.addProperty("JsonRPC Method", str);
+        }
+
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
     }
 }

@@ -1,5 +1,6 @@
 package org.mind.framework;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mind.framework.helper.RedissonHelper;
 
@@ -8,6 +9,23 @@ import org.mind.framework.helper.RedissonHelper;
  * @auther Marcus
  */
 public class TestModule {
+
+    @Test
+    public void test02(){
+        String json = "{\n" +
+                "  \"id\": 64,\n" +
+                "  \"jsonrpc\": \"2.0\",\n" +
+                "  \"method\": \'eth_getBlockByNumber\',\n" +
+                "  \"params\": [\n" +
+                "    \"0x1b03d33\",\n" +
+                "    true\n" +
+                "  ]\n" +
+                "}";
+
+        json = StringUtils.substringBetween(json, "method", ",");
+        json = json.replaceAll("[\'\":]*", "").trim();
+        System.out.println(json);
+    }
 
     @Test
     public void test01(){
