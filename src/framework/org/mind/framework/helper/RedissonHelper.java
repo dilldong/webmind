@@ -11,6 +11,7 @@ import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.redisson.Redisson;
+import org.redisson.RedissonShutdownException;
 import org.redisson.api.LockOptions;
 import org.redisson.api.RBucket;
 import org.redisson.api.RIdGenerator;
@@ -93,7 +94,11 @@ public class RedissonHelper {
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Redisson-Gracefully", true, () -> {
             if (!redissonClient.isShutdown()) {
                 log.info("Redisson-Gracefully is shutdown ....");
-                redissonClient.shutdown(3L, 5L, TimeUnit.SECONDS);// timeout should >= quietPeriod
+                try {
+                    redissonClient.shutdown(10L, 15L, TimeUnit.SECONDS);// timeout should >= quietPeriod
+                }catch (RedissonShutdownException e){
+                    log.error("Redisson shutdown exception: {}", e.getMessage());
+                }
             }
         }));
     }
