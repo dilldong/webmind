@@ -137,7 +137,10 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         CacheElement element = this.cacheable.getCache(
                 resolverKey,
                 TimeUnit.MILLISECONDS == timeUnit ? expire : timeUnit.toMillis(expire));
-        if (Objects.nonNull(element)) {
+        if (Objects.isNull(element)) {
+            if (!this.penetration)
+                return null;
+        } else {
             if (log.isDebugEnabled())
                 log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
 
