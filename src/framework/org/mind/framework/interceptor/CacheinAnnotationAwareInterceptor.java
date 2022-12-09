@@ -106,6 +106,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                 new CacheinOperationInterceptor(
                         cacheable,
                         cachein.strategy(),
+                        cachein.penetration(),
                         cachein.expire(),
                         cachein.unit(),
                         cachein.inRedis(),
