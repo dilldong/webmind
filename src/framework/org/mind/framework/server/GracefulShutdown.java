@@ -72,8 +72,10 @@ public class GracefulShutdown {
 
                     //当收到停止信号时，等待主线程的执行完成
                     mainThread.join();
-                } catch (InterruptedException | IllegalStateException e) {}
-                log.info("Shutdown {} server completed.", nameTag);
+                } catch (InterruptedException | IllegalStateException e) {
+                } finally {
+                    log.info("Shutdown {} server completed.", nameTag);
+                }
             }
         }));
     }
