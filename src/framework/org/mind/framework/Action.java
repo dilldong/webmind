@@ -3,6 +3,7 @@ package org.mind.framework;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
@@ -108,6 +109,18 @@ public final class Action {
             return defaultValue;
 
         return Integer.parseInt(value);
+    }
+
+    public boolean getBoolean(String name) {
+        return BooleanUtils.toBoolean(getString(name));
+    }
+
+    public boolean getBoolean(String name, boolean defaultValue) {
+        String value = getString(name);
+        if (StringUtils.isEmpty(value))
+            return defaultValue;
+
+        return BooleanUtils.toBoolean(value);
     }
 
     public String getHeader(String name) {
