@@ -42,18 +42,21 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private long expire = 0;
     private Cloneable.CloneType cloneType;
     private Cacheable cacheable;
+    private boolean penetration;
     private boolean inRedis;
     private TimeUnit timeUnit;
     private Class<? extends Object> redisType;
 
     public CacheinOperationInterceptor(Cacheable cacheable,
                                        Cloneable.CloneType cloneType,
+                                       boolean penetration,
                                        long expire,
                                        TimeUnit timeUnit,
                                        boolean inRedis,
                                        Class<? extends Object>[] redisType) {
         this.cacheable = cacheable;
         this.cloneType = cloneType;
+        this.penetration = penetration;
         this.expire = expire;
         this.timeUnit = timeUnit;
         this.inRedis = inRedis;
@@ -75,20 +78,32 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
         if (List.class.isAssignableFrom(redisType)) {
             List list = helper.getListWithLock(resolverKey);
-            if (!list.isEmpty())
+            if (list.isEmpty()) {
+                if (!this.penetration)
+                    return list;
+            } else
                 return list;
         } else if (Map.class.isAssignableFrom(redisType)) {
             Map map = helper.getMapWithLock(resolverKey);
-            if (!map.isEmpty())
+            if (map.isEmpty()) {
+                if (!this.penetration)
+                    return map;
+            } else
                 return map;
         } else if (Set.class.isAssignableFrom(redisType)) {
             Set set = helper.getSetWithLock(resolverKey);
-            if (!set.isEmpty())
+            if (set.isEmpty()) {
+                if (!this.penetration)
+                    return set;
+            } else
                 return set;
         } else {
             // for bucket
             Object obj = helper.getWithLock(resolverKey);
-            if (Objects.nonNull(obj)) {
+            if (Objects.isNull(obj)) {
+                if (!this.penetration)
+                    return null;
+            } else {
                 if (ConverterFactory.getInstance().isConvert(redisType)) {
                     if (StringUtils.isNotEmpty(obj.toString()))
                         return obj;
@@ -122,7 +137,10 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         CacheElement element = this.cacheable.getCache(
                 resolverKey,
                 TimeUnit.MILLISECONDS == timeUnit ? expire : timeUnit.toMillis(expire));
-        if (Objects.nonNull(element)) {
+        if (Objects.isNull(element)) {
+            if (!this.penetration)
+                return null;
+        } else {
             if (log.isDebugEnabled())
                 log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
 
