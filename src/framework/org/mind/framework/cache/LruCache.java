@@ -57,18 +57,12 @@ public class LruCache extends AbstractCache implements Cacheable {
     private static final Logger log = LoggerFactory.getLogger(LruCache.class);
 
     /*
-     * 保持活跃的缓存条目最大数,默认容量1024
+     * The maximum number of active cache entries, the default capacity is 1024
      */
     private int capacity = 1024;
 
     /*
-     * jvm 当前可用的内存大小
-     */
-    @Deprecated
-    private long freeMemory = 0L;
-
-    /*
-     * 条目最大超时设置
+     * entry timeout
      */
     private long timeout = 0L;
 
@@ -113,6 +107,7 @@ public class LruCache extends AbstractCache implements Cacheable {
      * @param value
      * @author dp
      */
+    @Override
     public Cacheable addCache(String key, Object value) {
         return addCache(key, value, false);
     }
@@ -125,25 +120,27 @@ public class LruCache extends AbstractCache implements Cacheable {
      * @param check false:若条目存在，不做任何操作。 true:先移除存在的条目，再重新装入;
      * @author dp
      */
+    @Override
     public Cacheable addCache(String key, Object value, boolean check) {
         return addCache(key, value, check, Cloneable.CloneType.ORIGINAL);
     }
 
+    @Override
     public Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type) {
-        /* Deprecated this condition, freeMemory() has no practical meaning.
-        if (freeMemory > 0 && freeMemory > Runtime.getRuntime().freeMemory()) {
-            if (log.isDebugEnabled())
-                log.debug("At present there is insufficient space, a clear java.util.Map of all objects");
+        return this.addCache(key, new CacheElement(value, key, type), check);
+    }
 
-            this.destroy();
-            return this;
+    @Override
+    public Cacheable addCache(String key, CacheElement element){
+        return this.addCache(key, element, false);
+    }
 
-        }*/
+    @Override
+    public Cacheable addCache(String key, CacheElement element, boolean check) {
         if (!check && this.containsKey(key)) {
             if (log.isDebugEnabled())
                 log.debug("The Cache key already exists.");
             return this;
-
         } else if (check) {
             this.removeCache(key);
         }
@@ -151,7 +148,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         while (true) {
             if (write.tryLock()) {
                 try {
-                    itemsMap.put(super.realKey(key), new CacheElement(value, key, type));
+                    itemsMap.put(super.realKey(key), element);
                     return this;
                 } finally {
                     write.unlock();
@@ -296,13 +293,18 @@ public class LruCache extends AbstractCache implements Cacheable {
         this.capacity = capacity;
     }
 
-    @Deprecated
-    public void setFreeMemory(long freeMemory) {
-        this.freeMemory = freeMemory;
-    }
-
+    @Override
     public void setTimeout(long timeout) {
         this.timeout = timeout;
     }
 
+    @Override
+    public int getCapacity() {
+        return this.capacity;
+    }
+
+    @Override
+    public long getTimeOut() {
+        return timeout;
+    }
 }

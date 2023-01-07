@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 @Slf4j
 @Component
 @Interceptor(excludes = {"/error/*"}, order = 1)
-public class InterceptorClass extends AbstractHandlerInterceptor {
+public class InterceptorTest extends AbstractHandlerInterceptor {
 
     @Override
     public boolean doBefore(HttpServletRequest request, HttpServletResponse response) {
