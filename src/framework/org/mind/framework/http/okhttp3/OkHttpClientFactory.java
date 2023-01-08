@@ -1,6 +1,5 @@
 package org.mind.framework.http.okhttp3;
 
-import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Dispatcher;
 import okhttp3.Interceptor;
@@ -28,13 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class OkHttpClientFactory {
 
     private static final OkHttpClient sharedClient;
-    private static final Converter.Factory converterFactory =
-            GsonConverterFactory.create(
-                    new GsonBuilder()
-                            .setLenient()
-                            .disableHtmlEscaping()
-                            .setDateFormat(JsonUtils.DEFAULT_DATE_PATTERN)
-                            .create());
+    private static final Converter.Factory converterFactory = GsonConverterFactory.create(JsonUtils.getSingleton());
 
     private static final Converter<ResponseBody, RequestError> errorBodyConverter =
             (Converter<ResponseBody, RequestError>)
