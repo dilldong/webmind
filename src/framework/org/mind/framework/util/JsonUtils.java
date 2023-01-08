@@ -47,7 +47,8 @@ public class JsonUtils {
                 new GsonBuilder()
                         .setDateFormat(DEFAULT_DATE_PATTERN)
                         .disableHtmlEscaping()
-                        .setObjectToNumberStrategy(OBJECT_TO_NUMBER).create();
+                        .setObjectToNumberStrategy(OBJECT_TO_NUMBER)
+                        .create();
     }
 
     private static class SingletonExposedHolder {
