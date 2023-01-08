@@ -4,6 +4,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberStrategy;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.http.Response;
@@ -26,6 +27,18 @@ public class JsonUtils {
 
     public static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    /**
+     * long类型序列化保持long类型，不会转成double类型
+     */
+    private static final ToNumberStrategy OBJECT_TO_NUMBER = (in) -> {
+        String value = in.nextString();
+        if (value.contains(".") || value.contains("e") || value.contains("E"))
+            return Double.parseDouble(value);
+
+        long aLong = Long.parseLong(value);
+        return aLong <= Integer.MAX_VALUE ? (int) aLong : aLong;
+    };
+
     private static class SingletonHolder {
         private SingletonHolder() {
         }
@@ -34,7 +47,7 @@ public class JsonUtils {
                 new GsonBuilder()
                         .setDateFormat(DEFAULT_DATE_PATTERN)
                         .disableHtmlEscaping()
-                        .create();
+                        .setObjectToNumberStrategy(OBJECT_TO_NUMBER).create();
     }
 
     private static class SingletonExposedHolder {
@@ -46,6 +59,7 @@ public class JsonUtils {
                         .setDateFormat(DEFAULT_DATE_PATTERN)
                         .disableHtmlEscaping()
                         .excludeFieldsWithoutExposeAnnotation()
+                        .setObjectToNumberStrategy(OBJECT_TO_NUMBER)
                         .create();
     }
 
