@@ -15,13 +15,11 @@ public class VelocityTemplateFactory extends TemplateFactory {
     private VelocityEngine velocityEngine;
 
     public Template loadTemplate(String path) {
-        log.debug("Load Velocity template '{}'", path);
+        log.info("Load Velocity template '{}'", path);
         return new VelocityTemplate(velocityEngine.getTemplate(path));
     }
 
     public void init(ServletContext context) {
-        this.velocityEngine =
-                (VelocityEngine)
-                        ContextSupport.getBean("velocityEngine", VelocityEngine.class);
+        this.velocityEngine = ContextSupport.getBean("velocityEngine", VelocityEngine.class);
     }
 }

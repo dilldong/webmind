@@ -8,7 +8,7 @@ import javax.servlet.ServletContext;
 /**
  * TemplateFactory which uses JSP.
  *
- * @author Michael Liao (askxuefeng@gmail.com)
+ * @author dp
  */
 public class JspTemplateFactory extends TemplateFactory {
 
@@ -22,7 +22,8 @@ public class JspTemplateFactory extends TemplateFactory {
 
     @Override
     public void init(ServletContext context) {
-        log.debug("JspTemplateFactory init success.");
+        if (log.isDebugEnabled())
+            log.debug("JspTemplateFactory init success.");
     }
 
 }
