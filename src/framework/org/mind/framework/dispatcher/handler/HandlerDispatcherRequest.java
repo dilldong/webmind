@@ -226,6 +226,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                     try {
                         type = execution.getParameterTypes()[i];
                     }catch (ArrayIndexOutOfBoundsException e){
+                        log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
                         throw new IllegalArgumentException("Method is missing URL parameter");
                     }
 
