@@ -16,9 +16,9 @@ import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
-import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,7 +223,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 // Fetch request parameters in the URI
                 Class<?> type;
                 for (int i = 0; i < number; ++i) {
-                    type = execution.getParameterTypes()[i];
+                    try {
+                        type = execution.getParameterTypes()[i];
+                    }catch (ArrayIndexOutOfBoundsException e){
+                        throw new IllegalArgumentException("Method is missing URL parameter");
+                    }
+
                     if (String.class.getName().equals(type.getName()))
                         args[i] = matcher.group(i + 1);// segmentation fetch
                     else {
