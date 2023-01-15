@@ -103,8 +103,7 @@ public class ConsumerService implements Updateable, Destroyable {
                 try {
                     if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
                         executor.shutdownNow();
-                } catch (InterruptedException e) {
-                }
+                } catch (InterruptedException e) {}
                 log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
             }
         }

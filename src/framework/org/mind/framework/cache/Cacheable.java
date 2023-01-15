@@ -50,6 +50,10 @@ public interface Cacheable extends Serializable {
 
     Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type);
 
+    Cacheable addCache(String key, CacheElement element);
+
+    Cacheable addCache(String key, CacheElement element, boolean check);
+
     /**
      * 删除缓存
      *
@@ -133,4 +137,14 @@ public interface Cacheable extends Serializable {
      * @param capacity
      */
     void setCapacity(int capacity);
+
+    /**
+     * 指定默认超时时间
+     * @param timeout
+     */
+    void setTimeout(long timeout);
+
+    int getCapacity();
+
+    long getTimeOut();
 }

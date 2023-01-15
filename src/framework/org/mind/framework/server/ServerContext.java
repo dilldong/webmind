@@ -22,6 +22,8 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -116,10 +118,20 @@ public abstract class ServerContext {
         serverConfig.setSpringFileSet(springFileSet);
 
         // Set Tomcat base-work-directory
-        File baseDir =
-                StringUtils.isEmpty(serverConfig.getTomcatBaseDir()) ?
-                        createTempDir(serverConfig.getServerName()) :
-                        new File(serverConfig.getTomcatBaseDir());// Not recommended
+        File baseDir;
+        if(StringUtils.isEmpty(serverConfig.getTomcatBaseDir())) {
+            baseDir = createTempDir(serverConfig.getServerName());
+        } else {
+            // Not recommended
+            Path path = Paths.get(serverConfig.getTomcatBaseDir());
+            if(Files.notExists(path)){
+                try {
+                    Files.createDirectories(path);
+                } catch (IOException e) {
+                }
+            }
+            baseDir = path.toFile();
+        }
 
         serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
         ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();

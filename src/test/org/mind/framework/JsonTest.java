@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.Test;
 import org.mind.framework.http.Response;
+import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.JsonUtils;
 import org.springframework.http.HttpStatus;
 
@@ -21,11 +22,14 @@ public class JsonTest {
 
     @Test
     public void test03() {
-        A<List<String>> a = new A<>(23, "dasef", Arrays.asList("value1", "value2"));
+        A<List<Object>> a = new A<>(23, "dasef", Arrays.asList("value1", "value2", 0.00, DateFormatUtils.getMillis()));
         String json = ViewResolver.<A>response(HttpStatus.OK, a).toJson(false);
         System.out.println(json);
 
-        System.out.println(JsonUtils.fromJson(json, new TypeToken<Response<A>>(){}));
+        Response<A> resp = JsonUtils.fromJson(json, new TypeToken<Response<A>>(){});
+        System.out.println(resp);
+        System.out.println(resp.toJson());
+
     }
 
     @Test
