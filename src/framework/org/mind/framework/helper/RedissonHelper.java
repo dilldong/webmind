@@ -84,7 +84,6 @@ public class RedissonHelper {
             // read config from file
             config = Config.fromYAML(in);
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
             ThrowProvider.doThrow(e);
         }
 
