@@ -85,12 +85,16 @@ public class AESUtils {
      * @return
      */
     public static String generateKey(int length) {
+        return Base64.encodeBase64String(generateBytes(length));
+    }
+
+    public static byte[] generateBytes(int length) {
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance(ALGORITHM);
             keyGenerator.init(length);
             SecretKey secretKey = keyGenerator.generateKey();
 
-            return Base64.encodeBase64String(secretKey.getEncoded());
+            return secretKey.getEncoded();
         } catch (NoSuchAlgorithmException e) {
             log.error(e.getMessage(), e);
         }
