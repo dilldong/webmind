@@ -237,7 +237,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                             args[i] = this.converter.convert(type, matcher.group(i + 1));
                         } catch (NumberFormatException | NullPointerException e) {
                             log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
-                            throw e;
+                            throw new IllegalArgumentException("URL parameters was incorrect");
                         }
                     }
                 }

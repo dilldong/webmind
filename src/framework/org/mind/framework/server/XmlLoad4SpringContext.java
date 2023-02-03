@@ -41,7 +41,7 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
             if (!resource.exists()) {
                 String tempLoc = location.startsWith("/") ? location.substring(1) : location;
                 InputStream in = JarFileUtils.getJarEntryStream(
-                        String.format("%s%c%s", WebServerConfig.JAR_IN_CLASSES, IOUtils.DIR_SEPARATOR_UNIX, tempLoc));
+                        WebServerConfig.JAR_IN_CLASSES + IOUtils.DIR_SEPARATOR_UNIX + tempLoc);
 
                 showLog = true;
                 reader.setValidating(false);// close validate

@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public final class ContextSupport {
 
-    private static ApplicationContext wctx;
+    private static volatile ApplicationContext applicationContext;
 
     /**
      * Support Spring file loading
@@ -22,8 +22,8 @@ public final class ContextSupport {
             if (!configLocations[i].startsWith("file:"))
                 configLocations[i] = String.format("file:%s", configLocations[i]);
 
-        wctx = new FileSystemXmlApplicationContext(configLocations);
-        return wctx;
+        applicationContext = new FileSystemXmlApplicationContext(configLocations);
+        return applicationContext;
     }
 
     /**
@@ -35,11 +35,11 @@ public final class ContextSupport {
     public static void initWebContext(ServletContext sc) {
         Objects.requireNonNull(sc, "HttpServlet ServletContext is null");
         // ContextLoaderListener
-        wctx = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
+        applicationContext = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
     }
 
     public static void setApplicationContext(ApplicationContext applicationContext){
-        wctx = applicationContext;
+        ContextSupport.applicationContext = applicationContext;
     }
 
     /**
@@ -50,8 +50,8 @@ public final class ContextSupport {
      * @author dp
      */
     public static Object getBean(String name) {
-        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
-        return wctx.getBean(name);
+        Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
+        return applicationContext.getBean(name);
     }
 
     /**
@@ -63,29 +63,29 @@ public final class ContextSupport {
      * @author dp
      */
     public static <T> T getBean(String name, Class<T> requiredType) {
-        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
         if (Objects.isNull(requiredType))
             return (T) getBean(name);
 
-        return wctx.<T>getBean(name, requiredType);
+        Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
+        return applicationContext.getBean(name, requiredType);
     }
 
     public <T> T getBean(Class<T> requiredType) {
-        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
-        return wctx.<T>getBean(requiredType);
+        Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
+        return applicationContext.getBean(requiredType);
     }
 
     public <T> T getBean(Class<T> requiredType, Object... args) {
-        Objects.requireNonNull(wctx, "Spring ApplicationContext is null.");
-        return wctx.<T>getBean(requiredType, args);
+        Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
+        return applicationContext.getBean(requiredType, args);
     }
 
     public static String[] getBeanNames() {
-        return wctx.getBeanDefinitionNames();
+        return applicationContext.getBeanDefinitionNames();
     }
 
     public static long getStartupTime() {
-        return wctx.getStartupDate();
+        return applicationContext.getStartupDate();
     }
 
 }
