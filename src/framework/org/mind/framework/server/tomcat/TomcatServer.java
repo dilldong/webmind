@@ -15,6 +15,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
+import org.mind.framework.ContextSupport;
 import org.mind.framework.dispatcher.DispatcherServlet;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
@@ -134,7 +135,7 @@ public class TomcatServer extends Tomcat {
         try {
             super.start();
             Thread awaitThread = ExecutorFactory.newThread(
-                    "web-container-".concat(String.valueOf(serverConfig.getPort())),
+                    "tomcat-" + serverConfig.getPort(),
                     true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
@@ -212,11 +213,14 @@ public class TomcatServer extends Tomcat {
             // load spring config
             xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[0]));
 
-            // load properties
+            // load properties in spring
             loadResource(xmas.getEnvironment());
 
             // Listen when spring starts by ContextLoaderListener
             ctx.addApplicationLifecycleListener(new ContextLoaderListener(xmas));
+
+            // setting spring context
+            ContextSupport.setApplicationContext(xmas);
         }
     }
 

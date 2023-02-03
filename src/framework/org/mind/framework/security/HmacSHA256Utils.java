@@ -38,7 +38,6 @@ public class HmacSHA256Utils {
 //            return Hex.encodeHexString(sha256Hmac.doFinal(message.getBytes()));
             return Base64.encodeBase64String(sha256Hmac.doFinal(message.getBytes()));
         } catch (Exception e) {
-            log.warn("Unable to sign message.");
             log.error(e.getMessage(), e);
         }
         return null;
@@ -61,7 +60,6 @@ public class HmacSHA256Utils {
 //            return Hex.encodeHexString(originalKey.getEncoded());
             return Base64.encodeBase64String(originalKey.getEncoded());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            log.warn("Unable to sign message.");
             log.error(e.getMessage(), e);
         }
 
