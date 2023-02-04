@@ -152,9 +152,11 @@ public class FileUtils {
             return null;
         }
 
+        // get a file channel for the file
         try (FileChannel channel = FileChannel.open(filePath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             int tryCounter = 0;
             do {
+                // This method returns null or throws an exception if the file is already locked.
                 try (FileLock lock = channel.tryLock(0, Long.MAX_VALUE, sharedLock)) {
                     if (Objects.isNull(lock))
                         throw new OverlappingFileLockException();
