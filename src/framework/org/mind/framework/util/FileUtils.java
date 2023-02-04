@@ -2,6 +2,7 @@ package org.mind.framework.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.mind.framework.exception.ThrowProvider;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -38,8 +39,6 @@ public class FileUtils {
      * @param content   file content
      */
     public static void write(String directory, String fileName, String content) {
-        createDirectory(directory);
-
         String filePath;
         if (directory.endsWith(IS_WINDOWS ? WINDOWS_DIR : UNIX_DIR))
             filePath = directory + fileName;
@@ -60,6 +59,20 @@ public class FileUtils {
     }
 
     /**
+     * Write file with file lock
+     *
+     * @param filePath     file absolute path
+     * @param content      file content
+     * @param sharedLock   true: shared lock, false: exclusive lock
+     * @param awaitAcquire The operation after the failure to get file lock, true: await to acquire file lock, false: break and return null
+     * @return The number of bytes written, possibly zero
+     */
+    public static int write(String filePath, String content, boolean sharedLock, boolean awaitAcquire) {
+        return write(Paths.get(filePath), content, sharedLock, awaitAcquire);
+    }
+
+
+    /**
      * Write file
      *
      * @param filePath file absolute path
@@ -68,6 +81,15 @@ public class FileUtils {
     public static void write(Path filePath, String content) {
         if (log.isDebugEnabled())
             log.debug("Writing file path to: [{}]", filePath.toAbsolutePath());
+
+        if (!Files.exists(filePath.getParent())) {
+            try {
+                Files.createDirectories(filePath.getParent());
+            } catch (IOException e) {
+                log.error("Creating directory to failed, {}", e.getMessage());
+                ThrowProvider.doThrow(e);
+            }
+        }
 
         try (FileChannel channel = FileChannel.open(
                 filePath,
@@ -82,6 +104,58 @@ public class FileUtils {
     }
 
     /**
+     * Write file with file lock
+     *
+     * @param filePath     file absolute path
+     * @param content      file content
+     * @param sharedLock   true: shared lock, false: exclusive lock
+     * @param awaitAcquire The operation after the failure to get file lock, true: await to acquire file lock, false: break and return null
+     * @return The number of bytes written, possibly zero
+     */
+    public static int write(Path filePath, String content, boolean sharedLock, boolean awaitAcquire) {
+        if (log.isDebugEnabled())
+            log.debug("Writing file path to: [{}]", filePath.toAbsolutePath());
+
+        if (!Files.exists(filePath.getParent())) {
+            try {
+                Files.createDirectories(filePath.getParent());
+            } catch (IOException e) {
+                log.error("Creating directory to failed, {}", e.getMessage());
+                ThrowProvider.doThrow(e);
+            }
+        }
+
+        try (FileChannel channel =
+                     FileChannel.open(filePath, StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+            int tryCounter = 0;
+            do {
+                // This method returns null or throws an exception if the file is already locked.
+                try (FileLock lock = channel.tryLock(0, Long.MAX_VALUE, sharedLock)) {
+                    if (Objects.isNull(lock))
+                        throw new OverlappingFileLockException();
+
+                    return channel.write(ByteBuffer.wrap(content.getBytes(StandardCharsets.UTF_8)));
+                } catch (OverlappingFileLockException e) {
+                    log.warn("Write file lock overlap: {}", filePath.toAbsolutePath());
+                    if (!awaitAcquire)
+                        break;
+
+                    try {
+                        Thread.sleep(100L);
+                    } catch (InterruptedException ex) {
+                    }
+                }
+            } while (++tryCounter < 10);
+        } catch (IOException e) {
+            log.error("Failed to write file [{}], content: [{}], error: {}",
+                    filePath.toAbsolutePath(),
+                    content,
+                    e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
      * Read file
      *
      * @param filePath file absolute path
@@ -92,9 +166,10 @@ public class FileUtils {
     }
 
     /**
-     * Read file
+     * Read file with file lock
      *
      * @param filePath     file absolute path
+     * @param sharedLock   true: shared lock, false: exclusive lock
      * @param awaitAcquire The operation after the failure to get file lock, true: await to acquire file lock, false: break and return null
      * @return file content
      */
@@ -164,12 +239,13 @@ public class FileUtils {
                     return readBuffer(channel, fileSize);
                 } catch (OverlappingFileLockException e) {
                     log.warn("Get file lock overlap: {}", filePath.toAbsolutePath());
-                    if(!awaitAcquire)
+                    if (!awaitAcquire)
                         break;
 
                     try {
                         Thread.sleep(100L);
-                    } catch (InterruptedException ex) {}
+                    } catch (InterruptedException ex) {
+                    }
                 }
             } while (++tryCounter < 10);
         } catch (IOException e) {
@@ -211,17 +287,5 @@ public class FileUtils {
             log.warn("You reading file doesn't exist. [{}]", filePath.toAbsolutePath());
         }
         return null;
-    }
-
-    private static void createDirectory(String directory) {
-        // Directory is exists
-        Path path = Paths.get(directory);
-        if (!(Files.exists(path) && Files.isDirectory(path))) {
-            try {
-                Files.createDirectories(path);
-            } catch (IOException e) {
-                log.error("Creating directory to failed, {}", e.getMessage());
-            }
-        }
     }
 }
