@@ -38,7 +38,7 @@ public class FileUtils {
      * @param content   file content
      */
     public static void write(String directory, String fileName, String content) {
-        createOrGetDirecotry(directory);
+        createDirectory(directory);
 
         String filePath;
         if (directory.endsWith(IS_WINDOWS ? WINDOWS_DIR : UNIX_DIR))
@@ -162,11 +162,14 @@ public class FileUtils {
                     return readBuffer(channel, fileSize);
                 } catch (OverlappingFileLockException e) {
                     log.warn("Get file lock overlap: {}", filePath.toAbsolutePath());
+                    if(!awaitAcquire)
+                        break;
+
                     try {
                         Thread.sleep(100L);
                     } catch (InterruptedException ex) {}
                 }
-            } while (awaitAcquire && (++tryCounter) < 10);
+            } while (++tryCounter < 10);
         } catch (IOException e) {
             log.error("FileChannel open or read exception: {}", e.getMessage());
         }
@@ -208,7 +211,7 @@ public class FileUtils {
         return null;
     }
 
-    private static void createOrGetDirecotry(String directory) {
+    private static void createDirectory(String directory) {
         // Directory is exists
         Path path = Paths.get(directory);
         if (!(Files.exists(path) && Files.isDirectory(path))) {
