@@ -53,9 +53,10 @@ public class FileUtils {
      *
      * @param filePath file absolute path
      * @param content  file content
+     * @return The number of bytes written, possibly zero
      */
-    public static void write(String filePath, String content) {
-        write(Paths.get(filePath), content);
+    public static int write(String filePath, String content) {
+        return write(Paths.get(filePath), content);
     }
 
     /**
@@ -77,8 +78,9 @@ public class FileUtils {
      *
      * @param filePath file absolute path
      * @param content  file content
+     * @return The number of bytes written, possibly zero
      */
-    public static void write(Path filePath, String content) {
+    public static int write(Path filePath, String content) {
         if (log.isDebugEnabled())
             log.debug("Writing file path to: [{}]", filePath.toAbsolutePath());
 
@@ -94,13 +96,14 @@ public class FileUtils {
         try (FileChannel channel = FileChannel.open(
                 filePath,
                 StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
-            channel.write(ByteBuffer.wrap(content.getBytes(StandardCharsets.UTF_8)));
+            return channel.write(ByteBuffer.wrap(content.getBytes(StandardCharsets.UTF_8)));
         } catch (IOException e) {
             log.error("Failed to write file [{}], content: [{}], error: {}",
                     filePath.toAbsolutePath(),
                     content,
                     e.getMessage());
         }
+        return 0;
     }
 
     /**
