@@ -37,15 +37,16 @@ public class FileUtils {
      * @param directory file directory
      * @param fileName  file name
      * @param content   file content
+     * @return The number of bytes written, possibly zero
      */
-    public static void write(String directory, String fileName, String content) {
+    public static int write(String directory, String fileName, String content) {
         String filePath;
         if (directory.endsWith(IS_WINDOWS ? WINDOWS_DIR : UNIX_DIR))
             filePath = directory + fileName;
         else
             filePath = String.join(IS_WINDOWS ? WINDOWS_DIR : UNIX_DIR, directory, fileName);
 
-        write(filePath, content);
+        return write(filePath, content);
     }
 
     /**
