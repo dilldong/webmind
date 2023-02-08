@@ -140,8 +140,8 @@ public class IOUtils {
         int sw = ((len - 1) * 8);
         int mask = (0xff << sw);
 
-        for (int l = 0; l < len; l++) {
-            b[offset + l] = (byte) ((num & mask) >>> sw);
+        for (int i = 0; i < len; ++i) {
+            b[offset + i] = (byte) ((num & mask) >>> sw);
 
             sw -= 8;
             mask >>>= 8;
@@ -159,7 +159,7 @@ public class IOUtils {
      * @return An array of length len containing the byte representation of num.
      */
     public static byte[] longToBytes(long num, int len) {
-        return (longToBytes(num, len, null, 0));
+        return longToBytes(num, len, null, 0);
     }
 
     /**
@@ -182,8 +182,8 @@ public class IOUtils {
         long sw = ((len - 1) * 8L);
         long mask = (0xffL << sw);
 
-        for (int l = 0; l < len; l++) {
-            b[offset + l] = (byte) ((num & mask) >>> sw);
+        for (int i = 0; i < len; ++i) {
+            b[offset + i] = (byte) ((num & mask) >>> sw);
 
             sw -= 8;
             mask >>>= 8;
