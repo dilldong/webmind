@@ -1,5 +1,7 @@
 package org.mind.framework.annotation;
 
+import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.cache.AbstractCache;
 import org.mind.framework.service.Cloneable;
 
 import java.lang.annotation.Documented;
@@ -22,13 +24,13 @@ import java.util.concurrent.TimeUnit;
 @Documented
 public @interface Cachein {
 
-    String prefix() default "";
+    String prefix() default StringUtils.EMPTY;
 
-    String suffix() default "";
+    String suffix() default StringUtils.EMPTY;
 
-    String delimiter() default "_";
+    String delimiter() default AbstractCache.CACHE_DELIMITER;
 
-    String cacheable() default "";
+    String cacheable() default StringUtils.EMPTY;
 
     Cloneable.CloneType strategy() default Cloneable.CloneType.ORIGINAL;
 
