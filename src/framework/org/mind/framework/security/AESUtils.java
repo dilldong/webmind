@@ -18,7 +18,6 @@ import java.util.Objects;
  */
 @Slf4j
 public class AESUtils {
-
     static final String ALGORITHM = "AES";
     private static final String MODE = "AES/CBC/PKCS5Padding";
 
@@ -39,16 +38,13 @@ public class AESUtils {
     }
 
     public static byte[] encrypt(String content, String key, String iv) {
-        byte[] contentData = content.getBytes(StandardCharsets.UTF_8);
-        byte[] keyData = Base64.decodeBase64(key.getBytes(StandardCharsets.UTF_8));
-        byte[] ivData = Base64.decodeBase64(iv.getBytes(StandardCharsets.UTF_8));
 
         try {
             // 生成/读取用于加解密的密钥
-            SecretKeySpec keySpec = new SecretKeySpec(keyData, ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
 
             //使用CBC模式，需要一个向量iv，可增加加密算法的强度
-            IvParameterSpec ivSpec = new IvParameterSpec(ivData);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
 
             // 指定算法、获取Cipher对象
             // AES/CBC/PKCS5Padding 算法/模式/补码方式
@@ -57,7 +53,7 @@ public class AESUtils {
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
 
             //进行最终的加解密操作
-            return cipher.doFinal(contentData);
+            return cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -65,18 +61,14 @@ public class AESUtils {
         return null;
     }
 
-    public static String descrypt(String content, String key, String iv) {
-        byte[] contentData = Base64.decodeBase64(content.getBytes(StandardCharsets.UTF_8));
-        byte[] keyData = Base64.decodeBase64(key.getBytes(StandardCharsets.UTF_8));
-        byte[] ivData = Base64.decodeBase64(iv.getBytes(StandardCharsets.UTF_8));
-
+    public static String decrypt(String content, String key, String iv) {
         try {
-            SecretKeySpec keySpec = new SecretKeySpec(keyData, ALGORITHM);
-            IvParameterSpec ivSpec = new IvParameterSpec(ivData);
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
             Cipher cipher = Cipher.getInstance(MODE);
             cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 
-            byte[] data = cipher.doFinal(contentData);
+            byte[] data = cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
             return new String(data, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
