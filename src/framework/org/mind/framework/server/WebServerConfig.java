@@ -31,6 +31,8 @@ public class WebServerConfig {
 
     private String contextPath = StringUtils.EMPTY;
 
+    private String nioMode = "nio";
+
     @Setter
     private String tomcatBaseDir = StringUtils.EMPTY;
 
@@ -57,6 +59,12 @@ public class WebServerConfig {
     private int sessionTimeout = 30;
 
     private String staticSuffix = "css|js|jpg|png|gif|jpeg|webp|ico|svg|html|htm|rtf|ttf|tof|woff|woff2|csv|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt|xml|mov|mp3|aac|avi|mpeg|swf";
+
+    private String compression = "on";
+
+    private int compressionMinSize = 2048;
+
+    private String compressibleMimeType = "text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml";
 
     private transient Map<String, String> mimeMapping;
 
@@ -88,6 +96,7 @@ public class WebServerConfig {
 
         Properties properties = PropertiesUtils.getProperties(in);
         if (properties != null) {
+            this.nioMode = properties.getProperty("server.nio.mode", contextPath);
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
             this.resourceDir = properties.getProperty("server.resourceDirectory", resourceDir);
@@ -98,8 +107,12 @@ public class WebServerConfig {
             this.connectionTimeout = Integer.parseInt(properties.getProperty("server.connectionTimeout", String.valueOf(connectionTimeout)));
             this.maxConnections = Integer.parseInt(properties.getProperty("server.maxConnections", String.valueOf(maxConnections)));
             this.maxThreads = Integer.parseInt(properties.getProperty("server.maxThreads", String.valueOf(maxThreads)));
-            this.minSpareThreads = Integer.parseInt(properties.getProperty("server.minSpareThreads", String.valueOf(minSpareThreads)));
+            this.minSpareThreads = Integer.parseInt(properties.getProperty("server.minThreads", String.valueOf(minSpareThreads)));
             this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
+
+            this.compression = properties.getProperty("server.compression", compression);
+            this.compressionMinSize = Integer.parseInt(properties.getProperty("server.compression.minSize", String.valueOf(compressionMinSize)));
+            this.compressibleMimeType = properties.getProperty("server.compression.mimeType", compressibleMimeType);
 
             this.sessionTimeout = Integer.parseInt(properties.getProperty("server.sessionTimeout", String.valueOf(sessionTimeout)));
             this.staticSuffix = properties.getProperty("server.resourceSuffix", staticSuffix);
