@@ -77,10 +77,10 @@ public abstract class ServerContext {
                 // blocking non-daemon to stop immediate shutdown
                 tomcat.start();
 
-                log.info("Starting Protocol: [{}], [{}], [{}]",
+                log.info("Starting {} Protocol: [{}], [{}]",
+                        serverConfig.getNioMode().toUpperCase(),
                         serverConfig.getPort(),
-                        StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath(),
-                        serverConfig.getNioMode());
+                        StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
 
                 log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatch.getTime());
             } catch (Exception e) {
