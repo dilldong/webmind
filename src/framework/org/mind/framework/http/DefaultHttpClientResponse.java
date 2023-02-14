@@ -39,17 +39,6 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
     }
 
     @Override
-    public boolean isCompressible() {
-        if (Objects.isNull(entity.getContentEncoding()))
-            return false;
-
-        return StringUtils.containsAny(
-                entity.getContentEncoding().getValue(),
-                "gzip",
-                "deflate");
-    }
-
-    @Override
     public String getHeader(String name) {
         Header[] headers = this.httpResponse.getHeaders(name);
         return Objects.nonNull(headers) && headers.length > 0 ? headers[0].getValue() : StringUtils.EMPTY;

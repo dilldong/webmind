@@ -66,13 +66,6 @@ public class HttpResponse<T> implements Closeable {
             inStream = new GZIPInputStream(inStream);
     }
 
-    public boolean isCompressible() {
-        if (Objects.isNull(this.con))
-            return false;
-
-        return "gzip".equals(con.getContentEncoding());
-    }
-
     public String getHeader(String name) {
         if (con != null)
             return con.getHeaderField(name);
