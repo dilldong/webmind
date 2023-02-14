@@ -103,7 +103,7 @@ public class TomcatServer extends Tomcat {
 
     protected Connector getNioConnector() {
         Connector connector;
-        if("nio2".equalsIgnoreCase(serverConfig.getNioMode()))
+        if ("nio2".equalsIgnoreCase(serverConfig.getNioMode()))
             connector = new Connector("org.apache.coyote.http11.Http11Nio2Protocol");
         else
             connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
@@ -144,10 +144,11 @@ public class TomcatServer extends Tomcat {
      */
     @Override
     public void start() {
+        Thread awaitThread = null;
         try {
             super.start();
-            Thread awaitThread = ExecutorFactory.newThread(
-                    "tomcat-" + serverConfig.getPort(),
+            awaitThread = ExecutorFactory.newThread(
+                    "tomcat-await-" + serverConfig.getPort(),
                     true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
@@ -155,6 +156,8 @@ public class TomcatServer extends Tomcat {
         } catch (Exception e) {
             stop();
             destroy();
+            if (Objects.nonNull(awaitThread) && awaitThread.isAlive())
+                awaitThread.interrupt();
             throw new WebServerException(e.getMessage(), e);
         }
     }
