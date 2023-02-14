@@ -25,7 +25,8 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
     public DefaultHttpClientResponse(CloseableHttpResponse httpResponse) {
         this.httpResponse = httpResponse;
         super.responseCode = httpResponse.getStatusLine().getStatusCode();
-        entity = httpResponse.getEntity();
+        this.entity = httpResponse.getEntity();
+
         try {
             super.inStream = entity.getContent();
         } catch (IOException e) {
@@ -35,6 +36,17 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
 
     public Header[] getAllHeaders() {
         return this.httpResponse.getAllHeaders();
+    }
+
+    @Override
+    public boolean isCompressible() {
+        if (Objects.isNull(entity.getContentEncoding()))
+            return false;
+
+        return StringUtils.containsAny(
+                entity.getContentEncoding().getValue(),
+                "gzip",
+                "deflate");
     }
 
     @Override
@@ -56,6 +68,7 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
         }
         return this.responseAsString;
     }
+
     public CloseableHttpResponse getResponse() {
         return httpResponse;
     }

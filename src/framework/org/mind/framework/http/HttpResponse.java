@@ -34,7 +34,6 @@ public class HttpResponse<T> implements Closeable {
     protected boolean streamConsumed = false;
 
     public HttpResponse() {
-
     }
 
     /**
@@ -50,7 +49,8 @@ public class HttpResponse<T> implements Closeable {
         } catch (SocketTimeoutException e) {
             try {
                 TimeUnit.MILLISECONDS.sleep(100L);
-            } catch (InterruptedException e1) {}
+            } catch (InterruptedException e1) {
+            }
 
             this.responseCode = con.getResponseCode();
         }
@@ -60,9 +60,17 @@ public class HttpResponse<T> implements Closeable {
         if ((inStream = con.getErrorStream()) == null)
             inStream = con.getInputStream();
 
+
         // the response is gzipped
         if (inStream != null && "gzip".equals(con.getContentEncoding()))
             inStream = new GZIPInputStream(inStream);
+    }
+
+    public boolean isCompressible() {
+        if (Objects.isNull(this.con))
+            return false;
+
+        return "gzip".equals(con.getContentEncoding());
     }
 
     public String getHeader(String name) {
@@ -154,25 +162,26 @@ public class HttpResponse<T> implements Closeable {
     }
 
     public T asJson(Charset charset) {
-        return this.asJson(charset, new TypeToken<T>(){});
+        return this.asJson(charset, new TypeToken<T>() {
+        });
     }
 
-    public T asJson(Charset charset, TypeToken<T> typeToken){
-        String result = this.asString(charset);
-        return JsonUtils.fromJson(result, typeToken);
+    public T asJson(Charset charset, TypeToken<T> typeToken) {
+        return JsonUtils.fromJson(this.asString(charset), typeToken);
     }
 
     @Override
-    public void close(){
+    public void close() {
         if (Objects.nonNull(con)) {
             con.disconnect();
             con = null;
         }
 
-        if(Objects.nonNull(inStream)){
+        if (Objects.nonNull(inStream)) {
             try {
                 inStream.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
             inStream = null;
         }
     }
