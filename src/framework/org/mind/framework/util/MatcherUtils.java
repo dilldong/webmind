@@ -3,25 +3,33 @@ package org.mind.framework.util;
 import org.apache.commons.lang3.ArrayUtils;
 import org.mind.framework.annotation.Mapping;
 
-import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MatcherUtils {
+    private static final String URL_SEP = "([^\\/]+)";
+    private static final String ANY_CHAR = "\\\\S*";
+    private static final String URI_SEP = "\\\\/";
+    public static final String START = "^";
+    public static final String END = "$";
 
     /**
-     * 默认匹配模式，区分大小写
+     * Default match pattern, case sensitive
      */
     public static final int DEFAULT_EQ = Pattern.CANON_EQ;
 
-    public static final String URI_PARAM_MATCH = "(\\$\\{)\\w+\\}";
-
-    public static final String PARAM_MATCH = "(#\\{)\\w+\\}";
-
     /**
-     * 忽略大小写模式
+     * ignore case
      */
     public static final int IGNORECASE_EQ = Pattern.CASE_INSENSITIVE;
+
+    public static final Pattern URI_PARAM_PATTERN = Pattern.compile("(\\$\\{)\\w+\\}");
+
+    public static final Pattern PARAM_MATCH_PATTERN = Pattern.compile("(#\\{)\\w+\\}");
+
+    public static final Pattern ANY_PATTERN = Pattern.compile("\\*");
+
+    public static final Pattern URI_SEP_PATTERN = Pattern.compile("\\/");
 
     public static Matcher matcher(String value, String regex, int... flags) {
         Pattern pattern = Pattern.compile(regex, ArrayUtils.isEmpty(flags) ? DEFAULT_EQ : flags[0]);
@@ -47,15 +55,23 @@ public class MatcherUtils {
      *
      * @param value 需要检查的值
      * @param regex 如：SQL---\\?+
-     * @param flags 匹配模式，PatternUtil.IGNORECASE_EQ（忽略大小写的匹配）| PatternUtil.DEFAULT_EQ(默认等价匹配)
+     * @param flags 匹配模式，MatcherUtils.IGNORECASE_EQ（忽略大小写的匹配）| MatcherUtils.DEFAULT_EQ(默认等价匹配)
      * @return
      * @author dp
      */
     public static int checkCount(String value, String regex, int... flags) {
-        Matcher matcher = matcher(value, regex, DEFAULT_EQ);
+        Matcher matcher = matcher(value, regex, flags);
         int count = 0;
         while (matcher.find())
-            count++;
+            ++count;
+        return count;
+    }
+
+    public static int checkCount(String value, Pattern pattern) {
+        Matcher matcher = pattern.matcher(value);
+        int count = 0;
+        while (matcher.find())
+            ++count;
         return count;
     }
 
@@ -66,20 +82,22 @@ public class MatcherUtils {
      * @return
      */
     public static String convertURI(String uri) {
-        return toPattern(uri, URI_PARAM_MATCH);
+        return toPattern(uri, URI_PARAM_PATTERN);
     }
 
     public static String convertParam(String uri) {
-        return toPattern(uri, PARAM_MATCH);
+        return toPattern(uri, PARAM_MATCH_PATTERN);
     }
 
-    private static String toPattern(String param, String pattern) {
-        StringJoiner joiner = new StringJoiner("");
-        joiner.add("^");
-        joiner.add(param.replaceAll(pattern, "([^\\/]+)")
-                .replaceAll("\\*", "\\\\S*")
-                .replaceAll("\\/", "\\\\/"));
-        joiner.add("$");
-        return joiner.toString();
+    private static String toPattern(String param, Pattern pattern) {
+        param = pattern.matcher(param).replaceAll(URL_SEP);
+        param = ANY_PATTERN.matcher(param).replaceAll(ANY_CHAR);
+        param = URI_SEP_PATTERN.matcher(param).replaceAll(URI_SEP);
+
+        return new StringBuilder(param.length() + 2)
+                .append(START)
+                .append(param)
+                .append(END)
+                .toString();
     }
 }
