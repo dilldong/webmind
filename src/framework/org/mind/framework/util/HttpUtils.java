@@ -8,7 +8,7 @@ import org.mind.framework.server.WebServerConfig;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -167,10 +167,14 @@ public class HttpUtils {
          * InputStream does not implement the reset method (which can reset the position of the first read).
          */
         if (Objects.nonNull(data)) {
-            String encoding = request.getCharacterEncoding();
-            String body = new String(
-                    data,
-                    StringUtils.isEmpty(encoding)? StandardCharsets.UTF_8 : Charset.forName(encoding));
+            String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
+            String body;
+
+            try {
+                body = new String(data, encoding);
+            } catch (UnsupportedEncodingException e) {
+                body = new String(data, StandardCharsets.UTF_8);
+            }
 
             String contentType = request.getContentType();
             if (StringUtils.isNotEmpty(contentType) && contentType.contains(Render.MIME_JSON))
