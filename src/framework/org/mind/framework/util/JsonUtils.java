@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public class JsonUtils {
     private static final Logger log = LoggerFactory.getLogger(JsonUtils.class);
@@ -27,8 +28,11 @@ public class JsonUtils {
 
     public static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    // Delete spaces, carriage returns, newlines, and tabs in a string
+    private static final Pattern REPLACE_PATT = Pattern.compile("\\s{2,}|\t|\r|\n");
+
     /**
-     * long类型序列化保持long类型，不会转成double类型
+     * Long type serialization maintains long type and will not be converted to double type
      */
     private static final ToNumberStrategy OBJECT_TO_NUMBER = (in) -> {
         String value = in.nextString();
@@ -172,8 +176,21 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Delete spaces, carriage returns, newlines, and tabs in a string
+     * @param source origin string
+     * @return the deleted string
+     */
+    public static String deletionBlank(String source){
+        if(StringUtils.isEmpty(source))
+            return StringUtils.EMPTY;
+
+        return REPLACE_PATT.matcher(source).replaceAll(StringUtils.EMPTY);
+    }
+
     private static String defaultEmpty(Object target) {
-        if (target.getClass().isAssignableFrom(Collection.class) || target.getClass().isArray())
+        Class clazz = target.getClass();
+        if (Collection.class.isAssignableFrom(clazz) || clazz.isArray())
             return EMPTY_JSON_ARRAY;
 
         return EMPTY_JSON_OBJECT;
