@@ -81,11 +81,12 @@ public class HmacSHA256Utils {
      *
      * @param password
      * @param salt     random letters
-     * @param length   128/192/256
+     * @param iterationCount the iteration count.
+     * @param keyLength   the to-be-derived key length. ranges: 128/192/256
      * @return hex string
      */
-    public static String generateKeyHex(String password, String salt, int length) {
-        byte[] bytes = generateKey(password, salt, length);
+    public static String generateKeyHex(String password, String salt, int iterationCount, int keyLength) {
+        byte[] bytes = generateKey(password, salt, iterationCount, keyLength);
         if (Objects.isNull(bytes))
             return null;
 
@@ -97,11 +98,12 @@ public class HmacSHA256Utils {
      *
      * @param password
      * @param salt     random letters
-     * @param length   128/192/256
+     * @param iterationCount the iteration count.
+     * @param keyLength   the to-be-derived key length. ranges: 128/192/256
      * @return base64 string
      */
-    public static String generateKeyBase64(String password, String salt, int length) {
-        byte[] bytes = generateKey(password, salt, length);
+    public static String generateKeyBase64(String password, String salt, int iterationCount, int keyLength) {
+        byte[] bytes = generateKey(password, salt, iterationCount, keyLength);
         if (Objects.isNull(bytes))
             return null;
 
@@ -109,21 +111,22 @@ public class HmacSHA256Utils {
     }
 
     /**
-     * Define a method for generating the SecretKey from a given password with 12,288(or more) iterations and a key length bits:
+     * Using password, salt, iteration count, and key length for generating PBEKey of variable-key-size PBE ciphers.
      *
      * @param password
      * @param salt     random letters
-     * @param length   128/192/256
+     * @param iterationCount the iteration count.
+     * @param keyLength   the to-be-derived key length. ranges: 128/192/256
      * @return byte array
      */
-    public static byte[] generateKey(String password, String salt, int length) {
+    public static byte[] generateKey(String password, String salt, int iterationCount, int keyLength) {
         try {
             SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF2_HMAC_SHA256);
             KeySpec spec = new PBEKeySpec(
                     password.toCharArray(),
                     salt.getBytes(StandardCharsets.UTF_8),
-                    12_288,
-                    length);
+                    iterationCount,
+                    keyLength);
 
             SecretKey originalKey = new SecretKeySpec(
                     factory.generateSecret(spec).getEncoded(),
