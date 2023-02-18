@@ -60,7 +60,7 @@ public abstract class ServerContext {
 
     public void startup() throws WebServerException {
         synchronized (this.monitor) {
-            WeakReference<StopWatch> stopWatchRef = new WeakReference<>(StopWatch.createStarted());
+            StopWatch stopWatch = StopWatch.createStarted();
             try {
                 Tomcat tomcat = creationServer();
                 this.registerServer(tomcat, serverConfig);
@@ -83,12 +83,12 @@ public abstract class ServerContext {
                         serverConfig.getPort(),
                         StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
 
-                log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatchRef.get().getTime());
+                log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatch.getTime());
             } catch (Exception e) {
                 throw new WebServerException("Unable to start embedded Tomcat", e);
             } finally {
-                stopWatchRef.get().stop();
-                stopWatchRef.clear();
+                stopWatch.stop();
+                stopWatch = null;
             }
         }
     }
