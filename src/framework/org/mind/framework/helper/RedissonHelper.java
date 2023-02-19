@@ -769,7 +769,7 @@ public class RedissonHelper {
     }
 
     public void increment(String name, long add) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX.concat(name));
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         adder.add(add);
     }
 
@@ -778,32 +778,32 @@ public class RedissonHelper {
     }
 
     public void decrement(String name, long value) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX.concat(name));
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         adder.add(-value);
     }
 
     public void reset(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX.concat(name));
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         adder.reset();
     }
 
     public void resetAsync(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX.concat(name));
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         adder.resetAsync();
     }
 
     public long sum(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX.concat(name));
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         return adder.sum();
     }
 
     public Future<Long> sumAsync(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX.concat(name));
+        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
         return adder.sumAsync();
     }
 
     public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit) {
-        RRateLimiter rl = getClient().getRateLimiter(RATE_LIMITED_PREFIX.concat(name));
+        RRateLimiter rl = getClient().getRateLimiter(RATE_LIMITED_PREFIX + name);
         if (rl.isExists())
             return rl;
 
@@ -815,11 +815,11 @@ public class RedissonHelper {
     }
 
     public RLock getLock(String name) {
-        return getClient().getLock(LOCK_PREFIX.concat(name));
+        return getClient().getLock(LOCK_PREFIX + name);
     }
 
     public RReadWriteLock getReadWriteLock(String name) {
-        return getClient().getReadWriteLock(LOCK_PREFIX.concat(name));
+        return getClient().getReadWriteLock(LOCK_PREFIX + name);
     }
 
     public RLock getReadLock(String name) {
@@ -831,15 +831,15 @@ public class RedissonHelper {
     }
 
     public RLock getFairLock(String name) {
-        return getClient().getFairLock(LOCK_PREFIX.concat(name));
+        return getClient().getFairLock(LOCK_PREFIX + name);
     }
 
     public RLock getSpinLock(String name) {
-        return getClient().getSpinLock(LOCK_PREFIX.concat(name));
+        return getClient().getSpinLock(LOCK_PREFIX + name);
     }
 
     public RLock getSpinLock(String name, LockOptions.BackOff backOff) {
-        return getClient().getSpinLock(LOCK_PREFIX.concat(name), backOff);
+        return getClient().getSpinLock(LOCK_PREFIX + name, backOff);
     }
 
     public void removeContainsFromLocalKeys(String keyPart) {
