@@ -15,6 +15,8 @@ public abstract class AbstractCache implements Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCache.class);
 
+    public static final String CACHE_DELIMITER = "_";
+
     private String cacheName = "Webmind-Cache";
 
     protected AbstractCache() {
@@ -24,19 +26,21 @@ public abstract class AbstractCache implements Destroyable {
         this.cacheName = cacheName;
     }
 
-    protected String realKey(Object key) {
+    protected String realKey(String key) {
         return realKey(null, key);
     }
 
-    protected String realKey(String prefix, Object key) {
+    protected String realKey(String prefix, String key) {
         if (StringUtils.isEmpty(prefix))
-            return key.toString();
+            return key;
 
-        return String.join("_", prefix, key.toString());
+        return String.join(CACHE_DELIMITER, prefix, key);
     }
 
+    @Override
     public void destroy() {
-        log.debug("Destroy {} manager.", cacheName);
+        if(log.isDebugEnabled())
+            log.debug("Destroy {} manager.", cacheName);
     }
 
     public String getCacheName() {

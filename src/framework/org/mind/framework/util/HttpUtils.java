@@ -3,6 +3,7 @@ package org.mind.framework.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.renderer.Render;
 import org.mind.framework.server.WebServerConfig;
 
 import javax.servlet.http.HttpServletRequest;
@@ -161,19 +162,26 @@ public class HttpUtils {
         } catch (IOException e) {}
 
         /*
-         * servlet规范:
-         * 一个InputStream对象在被读取完成后, 将无法被再次读取, 始终返回-1,
-         * InputStream并没有实现reset方法(可以重置首次读取的位置).
+         * Servlet Specification:
+         * After an InputStream object is read, it cannot be read again, and always returns -1,
+         * InputStream does not implement the reset method (which can reset the position of the first read).
          */
         if (Objects.nonNull(data)) {
             String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
+            String body;
+
             try {
-                String body = new String(data, encoding);
-                request.setAttribute(BODY_PARAMS, body);
-                return body;
+                body = new String(data, encoding);
             } catch (UnsupportedEncodingException e) {
-                return null;
+                body = new String(data, StandardCharsets.UTF_8);
             }
+
+            String contentType = request.getContentType();
+            if (StringUtils.isNotEmpty(contentType) && contentType.contains(Render.MIME_JSON))
+                body = JsonUtils.deletionBlank(body);
+
+            request.setAttribute(BODY_PARAMS, body);
+            return body;
         }
 
         return null;

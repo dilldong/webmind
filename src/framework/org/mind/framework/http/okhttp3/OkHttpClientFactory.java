@@ -5,6 +5,7 @@ import okhttp3.Dispatcher;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.util.JsonUtils;
 import retrofit2.Call;
@@ -25,7 +26,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class OkHttpClientFactory {
-
     private static final OkHttpClient sharedClient;
     private static final Converter.Factory converterFactory = GsonConverterFactory.create(JsonUtils.getSingleton());
 
@@ -37,17 +37,23 @@ public class OkHttpClientFactory {
         Dispatcher dispatcher = new Dispatcher();
         dispatcher.setMaxRequestsPerHost(200);
         dispatcher.setMaxRequests(200);
-        sharedClient =
+        OkHttpClient.Builder builder =
                 new OkHttpClient.Builder()
                         .dispatcher(dispatcher)
 //                        .followSslRedirects(false)
 //                        .followRedirects(false)
-//                        .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC))
                         .connectTimeout(15, TimeUnit.SECONDS)
                         .readTimeout(15, TimeUnit.SECONDS)
                         .writeTimeout(15, TimeUnit.SECONDS)
-                        .pingInterval(20, TimeUnit.SECONDS)// websocket自动发送 ping 帧，直到连接失败或关闭
-                        .build();
+                        .pingInterval(20, TimeUnit.SECONDS);// websocket自动发送 ping 帧，直到连接失败或关闭
+
+        if (log.isDebugEnabled()) {
+            builder.addInterceptor(
+                    new HttpLoggingInterceptor(log::debug)
+                            .setLevel(HttpLoggingInterceptor.Level.BASIC));
+        }
+
+        sharedClient = builder.build();
     }
 
     public static <V> V createService(Class<V> serviceClass, HttpOption option) {
@@ -75,8 +81,7 @@ public class OkHttpClientFactory {
             retrofitBuilder.client(adaptedClient);
         }
 
-        Retrofit retrofit = retrofitBuilder.build();
-        return retrofit.create(serviceClass);
+        return retrofitBuilder.build().create(serviceClass);
     }
 
     /**

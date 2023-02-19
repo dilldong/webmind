@@ -97,7 +97,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                     throw new IllegalArgumentException(String.format("URI mapping is a globally unique, and can not be repeated: %s", key));
                 }
 
-                value.setArgsNumber(MatcherUtils.checkCount(key, MatcherUtils.URI_PARAM_MATCH));// find args number
+                value.setArgsNumber(MatcherUtils.checkCount(key, MatcherUtils.URI_PARAM_PATTERN));// find args number
                 urisRegex.add(regexKey);// add List
                 return super.put(regexKey, value);
             }

@@ -164,12 +164,12 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         return result;
     }
 
-    private String resolverExpl(Object[] params, Object target, Method method, String attrValue) {
+    private String resolverExpl(Object[] params, Object target, Method method, String attrKey) {
         if (ArrayUtils.isEmpty(params))
-            return attrValue;
+            return attrKey;
 
-        if (MatcherUtils.checkCount(attrValue, MatcherUtils.PARAM_MATCH) == 0)
-            return attrValue;
+        if (MatcherUtils.checkCount(attrKey, MatcherUtils.PARAM_MATCH_PATTERN) == 0)
+            return attrKey;
 
         String[] methodVarNames = parameterNameDiscoverer.getParameterNames(method);
         if (Objects.isNull(methodVarNames)) {
@@ -184,15 +184,15 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         int size = params.length;
 
         for (int i = 0; i < size; ++i) {
-            attrValue =
-                    attrValue.replaceAll(
-                            "#\\{".concat(methodVarNames[i]).concat("\\}"),
+            attrKey =
+                    attrKey.replaceAll(
+                            "#\\{" + methodVarNames[i] + "\\}",
                             EnumFace.class.isAssignableFrom(params[i].getClass()) ?
                                     String.valueOf(((EnumFace<? extends Serializable>) params[i]).getValue()) :
                                     String.valueOf(params[i]));
         }
 
-        return attrValue;
+        return attrKey;
     }
 
     private Object callback(MethodInvocation invocation) throws Exception {

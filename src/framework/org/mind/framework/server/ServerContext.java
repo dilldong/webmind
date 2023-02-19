@@ -21,6 +21,7 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,7 +78,8 @@ public abstract class ServerContext {
                 // blocking non-daemon to stop immediate shutdown
                 tomcat.start();
 
-                log.info("Starting Protocol: [{}], [{}]",
+                log.info("Starting {} Protocol: [{}], [{}]",
+                        serverConfig.getNioMode().toUpperCase(),
                         serverConfig.getPort(),
                         StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
 
@@ -127,14 +129,14 @@ public abstract class ServerContext {
             if(Files.notExists(path)){
                 try {
                     Files.createDirectories(path);
-                } catch (IOException e) {
-                }
+                } catch (IOException e) {}
             }
             baseDir = path.toFile();
         }
 
         serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
-        ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+        WeakReference<ResourcePatternResolver> patternResolverWeakRef =
+                new WeakReference<>(new PathMatchingResourcePatternResolver());
 
         // Copy root files
         if(StringUtils.isNotEmpty(serverConfig.getResourceRootFiles())){
@@ -142,12 +144,13 @@ public abstract class ServerContext {
             for(String path : paths){
                 try {
                     Resource[] resources =
-                            patternResolver.getResources(String.format("classpath*:/%s", path.trim()));
+                            patternResolverWeakRef.get().getResources(String.format("classpath*:/%s", path.trim()));
                     if(ArrayUtils.isEmpty(resources))
                         continue;
 
                     for (Resource resource : resources) {
-                        log.debug("Copy resource to baseDir: {}", resource.getFilename());
+                        if(log.isDebugEnabled())
+                            log.debug("Copy resource to baseDir: {}", resource.getFilename());
                         FileUtils.copyInputStreamToFile(
                                 resource.getInputStream(),
                                 new File(String.format("%s/%s", serverConfig.getTomcatBaseDir(), resource.getFilename())));
@@ -163,7 +166,7 @@ public abstract class ServerContext {
             String resNamePattern = String.format("classpath*:/%s/**/*.*", serverConfig.getResourceDir());
 
             try {
-                Resource[] resources = patternResolver.getResources(resNamePattern);
+                Resource[] resources = patternResolverWeakRef.get().getResources(resNamePattern);
                 if (ArrayUtils.isNotEmpty(resources)) {
                     String resourceBaseDir =
                             String.format("%s/%s",
@@ -176,7 +179,8 @@ public abstract class ServerContext {
                         String namePath = StringUtils.substringAfter(
                                 resource.getURL().getPath(), serverConfig.getResourceDir());
 
-                        log.debug("Copy static resource: {}-{}", serverConfig.getResourceDir(), namePath);
+                        if(log.isDebugEnabled())
+                            log.debug("Copy static resource: {}-{}", serverConfig.getResourceDir(), namePath);
                         FileUtils.copyInputStreamToFile(
                                 resource.getInputStream(),
                                 new File(String.format("%s%s", resourceBaseDir, namePath)));
@@ -188,8 +192,8 @@ public abstract class ServerContext {
             }
         }
 
-        if(Objects.nonNull(patternResolver))
-            patternResolver = null;
+        // gc after clearing
+        patternResolverWeakRef.clear();
 
         // Create Tomcat-Server
         TomcatServer tomcat = new TomcatServer(serverConfig);

@@ -131,18 +131,19 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public Cacheable addCache(String key, CacheElement element){
+    public Cacheable addCache(String key, CacheElement element) {
         return this.addCache(key, element, false);
     }
 
     @Override
     public Cacheable addCache(String key, CacheElement element, boolean check) {
-        if (!check && this.containsKey(key)) {
+        if (this.containsKey(key)) {
+            if (check)
+                return this.replace(key, element);
+
             if (log.isDebugEnabled())
                 log.debug("The Cache key already exists.");
             return this;
-        } else if (check) {
-            this.removeCache(key);
         }
 
         while (true) {
@@ -154,7 +155,6 @@ public class LruCache extends AbstractCache implements Cacheable {
                     write.unlock();
                 }
             }
-            Thread.yield();
         }
     }
 
@@ -165,15 +165,9 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public CacheElement getCache(String key, long interval) {
-        read.lock();
-        CacheElement element;
-        try {
-            element = itemsMap.get(super.realKey(key));
-            if (Objects.isNull(element))
-                return null;
-        } finally {
-            read.unlock();
-        }
+        CacheElement element = this.getElement(key);
+        if (Objects.isNull(element))
+            return null;
 
         if (interval > 0 && (DateFormatUtils.getMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
@@ -184,15 +178,15 @@ public class LruCache extends AbstractCache implements Cacheable {
         while (true) {
             if (write.tryLock()) {
                 try {
-                    element.recordVisited();// 记录访问次数
-                    element.recordTime(DateFormatUtils.getMillis()); // 记录本次访问时间
+                    element.recordVisited();// record count of visit
+                    element.recordTime(DateFormatUtils.getMillis()); // record time of visit
                     return element;
                 } finally {
                     write.unlock();
                 }
             }
-            Thread.yield();
         }
+
     }
 
     @Override
@@ -206,7 +200,6 @@ public class LruCache extends AbstractCache implements Cacheable {
                         write.unlock();
                     }
                 }
-                Thread.yield();
             }
         }
         return null;
@@ -229,20 +222,24 @@ public class LruCache extends AbstractCache implements Cacheable {
 
         List<CacheElement> removeList = new ArrayList<>();
         Iterator<Entry<String, CacheElement>> iterator = this.getEntries().iterator();
+        boolean exclude;
+
         while (iterator.hasNext()) {
             Map.Entry<String, CacheElement> entry = iterator.next();
-            if (StringUtils.contains(entry.getKey(), searchStr)) {
-                if (excludes != null && excludes.length > 0) {// Exclude
-                    boolean flag = false;
+            if (StringUtils.containsIgnoreCase(entry.getKey(), searchStr)) {
+                // Exclude
+                if (excludes != null && excludes.length > 0) {
+                    // true: continue find, false: for delete
+                    exclude = false;
                     for (String exKey : excludes) {
-                        flag = Cacheable.CompareType.EQ_FULL == excludesRule ?
+                        exclude = Cacheable.CompareType.EQ_FULL == excludesRule ?
                                 StringUtils.equals(entry.getKey(), exKey) :
                                 StringUtils.contains(entry.getKey(), exKey);
-                        if (flag)
+                        if (exclude)
                             break;
                     }
 
-                    if (flag)
+                    if (exclude)
                         continue;
                 }
 
@@ -273,7 +270,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     @Override
     public Set<Entry<String, CacheElement>> getEntries() {
         if (this.isEmpty())
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
 
         return itemsMap.entrySet();
     }
@@ -282,11 +279,44 @@ public class LruCache extends AbstractCache implements Cacheable {
     public boolean containsKey(String key) {
         read.lock();
         try {
+            if (this.isEmpty())
+                return false;
+
             return this.itemsMap.containsKey(super.realKey(key));
         } finally {
             read.unlock();
         }
     }
+
+    private CacheElement getElement(String key) {
+        read.lock();
+        try {
+            if (this.isEmpty())
+                return null;
+
+            String realKey = super.realKey(key);
+            if (this.itemsMap.containsKey(realKey))
+                return this.itemsMap.get(realKey);
+
+            return null;
+        } finally {
+            read.unlock();
+        }
+    }
+
+    private Cacheable replace(String key, CacheElement element) {
+        while (true) {
+            if (write.tryLock()) {
+                try {
+                    itemsMap.replace(super.realKey(key), element);
+                    return this;
+                } finally {
+                    write.unlock();
+                }
+            }
+        }
+    }
+
 
     @Override
     public void setCapacity(int capacity) {

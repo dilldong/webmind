@@ -135,7 +135,7 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
         String regex = MatcherUtils.convertURI(v);
         System.out.println(regex);
-        int count = MatcherUtils.checkCount(v, MatcherUtils.URI_PARAM_MATCH);
+        int count = MatcherUtils.checkCount(v, MatcherUtils.URI_PARAM_PATTERN);
         System.out.println("count:" + count);
 
         String uri = "/user/1332?id=13&path=http://www.c.cs/user/idja/tt";

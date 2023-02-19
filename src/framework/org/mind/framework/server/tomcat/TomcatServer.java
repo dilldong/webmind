@@ -13,7 +13,7 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.coyote.http11.Http11NioProtocol;
+import org.apache.coyote.http11.AbstractHttp11JsseProtocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.dispatcher.DispatcherServlet;
@@ -102,15 +102,27 @@ public class TomcatServer extends Tomcat {
     }
 
     protected Connector getNioConnector() {
-        // org.apache.coyote.http11.Http11Nio2Protocol
-        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+        Connector connector;
+        if ("nio2".equalsIgnoreCase(serverConfig.getNioMode()))
+            connector = new Connector("org.apache.coyote.http11.Http11Nio2Protocol");
+        else
+            connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+
         connector.setUseBodyEncodingForURI(true);
         connector.setThrowOnFailure(true);
 
-        Http11NioProtocol nioProtocol = (Http11NioProtocol) connector.getProtocolHandler();
+        AbstractHttp11JsseProtocol nioProtocol = (AbstractHttp11JsseProtocol) connector.getProtocolHandler();
         nioProtocol.setPort(serverConfig.getPort());
         nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
-        nioProtocol.setCompression("on");
+
+        if ("on".equalsIgnoreCase(serverConfig.getCompression())) {
+            nioProtocol.setCompression(serverConfig.getCompression());
+            nioProtocol.setCompressionMinSize(serverConfig.getCompressionMinSize());
+            nioProtocol.setCompressibleMimeType(serverConfig.getCompressibleMimeType());
+            // compression当为on时, 需要与sendfile互斥, 两者取其一
+            nioProtocol.setUseSendfile(false);
+        }
+
         nioProtocol.setMaxThreads(serverConfig.getMaxThreads());
         nioProtocol.setAcceptCount(serverConfig.getAcceptCount());
         nioProtocol.setMaxConnections(serverConfig.getMaxConnections());
@@ -132,10 +144,11 @@ public class TomcatServer extends Tomcat {
      */
     @Override
     public void start() {
+        Thread awaitThread = null;
         try {
             super.start();
-            Thread awaitThread = ExecutorFactory.newThread(
-                    "tomcat-" + serverConfig.getPort(),
+            awaitThread = ExecutorFactory.newThread(
+                    "tomcat-await-" + serverConfig.getPort(),
                     true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
@@ -143,6 +156,8 @@ public class TomcatServer extends Tomcat {
         } catch (Exception e) {
             stop();
             destroy();
+            if (Objects.nonNull(awaitThread) && awaitThread.isAlive())
+                awaitThread.interrupt();
             throw new WebServerException(e.getMessage(), e);
         }
     }
