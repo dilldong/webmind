@@ -44,6 +44,17 @@ public class DateFormatUtils {
         return System.currentTimeMillis();
     }
 
+    /**
+     * 返回时间的秒数
+     *
+     * @return
+     * @author dp
+     */
+    public static long getSeconds() {
+        return getMillis() / 1000L;
+    }
+
+
 
     /**
      * 返回某天之前的时间戳
