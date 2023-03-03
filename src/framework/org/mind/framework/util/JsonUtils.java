@@ -165,13 +165,20 @@ public class JsonUtils {
     }
 
     public static <V> V fromJson(String json, TypeToken<V> typeToken) {
+        return fromJson(json, typeToken, true);
+    }
+
+    public static <V> V fromJson(String json, TypeToken<V> typeToken, boolean printErrorStack) {
         if (StringUtils.isBlank(json))
             return null;
 
         try {
             return getSingleton().fromJson(json, typeToken.getType());
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+            if(printErrorStack)
+                log.error(ex.getMessage(), ex);
+            else
+                log.error(ex.getMessage());
             return null;
         }
     }
