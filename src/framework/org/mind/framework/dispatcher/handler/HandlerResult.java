@@ -30,9 +30,13 @@ public interface HandlerResult {
 
     static void setRequestAttribute(HttpServletRequest request) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty(REQUEST_URL,
-                HttpUtils.getURL(request, true) +
-                        StringUtils.defaultIfEmpty("?" + request.getQueryString(), StringUtils.EMPTY));
+        String queryString = request.getQueryString();
+
+        if (StringUtils.isEmpty(queryString))
+            jsonObject.addProperty(REQUEST_URL, HttpUtils.getURL(request, true));
+        else
+            jsonObject.addProperty(REQUEST_URL, HttpUtils.getURL(request, true) + "?" + queryString);
+
         jsonObject.addProperty(REQUEST_METHOD, request.getMethod());
         jsonObject.addProperty(REQUEST_IP, HttpUtils.getRequestIP(request, true));
 
