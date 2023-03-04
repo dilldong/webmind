@@ -2,6 +2,7 @@ package org.mind.framework.interceptor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.renderer.Render;
+import org.mind.framework.util.HttpUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +23,7 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void renderCompletion(HttpServletRequest request, HttpServletResponse response) {
-
+        HttpUtils.clearSetting(request);
     }
 
     protected boolean render(Render render, HttpServletRequest request, HttpServletResponse response) {
