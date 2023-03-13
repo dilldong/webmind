@@ -14,15 +14,11 @@ import java.io.IOException;
  * @author dp
  */
 public abstract class Render {
-    public static final String MIME_JSON = "application/json";
-    public static final String MIME_JAVASCRIPT = "application/x-javascript";
-    public static final String MIME_OCTET_STREAM = "application/octet-stream";
-    public static final String MIME_TEXT_HTML = "text/html";
-    public static final String MIME_TEXT_PLAIN = "text/plain";
-
     protected static final Logger log = LoggerFactory.getLogger(Render.class);
 
     protected String contentType;
+
+    public static final String MIME_JAVASCRIPT = "application/x-javascript";
 
     /**
      * get response content type.
