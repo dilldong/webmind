@@ -20,6 +20,14 @@ public abstract class Render {
 
     public static final String MIME_JAVASCRIPT = "application/x-javascript";
 
+    public static final String FORBIDDEN_HTML = "<div style='text-align:center;margin-top:5vh'><h2>403</h2><h2>Forbidden</h2></div>";
+
+    public static final String BAD_REQUEST_HTML = "<div style='text-align:center;margin-top:5vh'><h2>400</h2><h2>Bad Request</h2></div>";
+
+    public static final String NOT_FOUND_HTML = "<div style='text-align:center;margin-top:5vh'><h2>404</h2><h2>Not Found</h2></div>";
+
+    public static final String SERVER_ERROR_HTML = "<div style='text-align:center;margin-top:5vh'><h2>500</h2><h2>Internal Server Error</h2></div>";
+
     /**
      * get response content type.
      */
