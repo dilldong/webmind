@@ -14,16 +14,12 @@ import java.io.IOException;
  * @author dp
  */
 public interface HandlerResult {
-
-    String IF_MODIFIED_SINCE = "If-Modified-Since";
-
-    String LAST_MODIFIED = "Last-Modified";
-
+    String NO_CACHE = "no-cache";
     String REQUEST_URL = "URL";
     String REQUEST_METHOD = "Method";
     String REQUEST_IP = "Request IP";
 
-    String JSON_METHOD = "JSONRPC Method";
+    String JSON_METHOD = "Json Method";
     String REQUEST_RAW_CONTENT = "Raw Content";
 
     void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
