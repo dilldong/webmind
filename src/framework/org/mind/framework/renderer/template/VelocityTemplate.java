@@ -4,13 +4,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.io.VelocityWriter;
-import org.mind.framework.renderer.Render;
+import org.springframework.http.MediaType;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -40,9 +41,9 @@ public class VelocityTemplate implements Template {
             HttpServletResponse response,
             Map<String, Object> model) throws IOException {
 
-        String charset = StringUtils.isEmpty(encoding) ? "UTF-8" : encoding;
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(StringUtils.isEmpty(contentType) ? Render.MIME_TEXT_HTML : contentType)
+        String charset = StringUtils.isEmpty(encoding) ? StandardCharsets.UTF_8.name() : encoding;
+        StringBuilder sb = new StringBuilder(40);
+        sb.append(StringUtils.isEmpty(contentType) ? MediaType.TEXT_HTML_VALUE : contentType)
                 .append(";charset=")
                 .append(charset);
 
