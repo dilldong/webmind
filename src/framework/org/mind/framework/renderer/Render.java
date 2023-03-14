@@ -20,13 +20,13 @@ public abstract class Render {
 
     public static final String MIME_JAVASCRIPT = "application/x-javascript";
 
-    public static final String FORBIDDEN_HTML = "<div style='text-align:center;margin-top:5vh'><h2>403</h2><h2>Forbidden</h2></div>";
+    public static final String BAD_REQUEST_HTML = "<html><head><title>400 Bad Request</title></head><body bgcolor='white'><center><h1>400 Bad Request</h1></center><hr><center><a href='https://docs.solarpath.io'>docs.solarpath.io</a></center></body></html>";
 
-    public static final String BAD_REQUEST_HTML = "<div style='text-align:center;margin-top:5vh'><h2>400</h2><h2>Bad Request</h2></div>";
+    public static final String FORBIDDEN_HTML = "<html><head><title>403 Forbidden</title></head><body bgcolor='white'><center><h1>403 Forbidden</h1></center><hr><center><a href='https://docs.solarpath.io'>docs.solarpath.io</a></center></body></html>";
 
-    public static final String NOT_FOUND_HTML = "<div style='text-align:center;margin-top:5vh'><h2>404</h2><h2>Not Found</h2></div>";
+    public static final String NOT_FOUND_HTML = "<html><head><title>404 Not Found</title></head><body bgcolor='white'><center><h1>404 Not Found</h1></center><hr><center><a href='https://docs.solarpath.io'>docs.solarpath.io</a></center></body></html>";
 
-    public static final String SERVER_ERROR_HTML = "<div style='text-align:center;margin-top:5vh'><h2>500</h2><h2>Internal Server Error</h2></div>";
+    public static final String SERVER_ERROR_HTML = "<html><head><title>500 Internal Server Error</title></head><body bgcolor='white'><center><h1>500 Internal Server Error</h1></center><hr><center><a href='https://docs.solarpath.io'>docs.solarpath.io</a></center></body></html>";
 
     /**
      * get response content type.
