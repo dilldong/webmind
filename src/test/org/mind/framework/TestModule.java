@@ -1,18 +1,70 @@
 package org.mind.framework;
 
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.service.ExecutorFactory;
+import org.mind.framework.util.FileUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * @version 1.0
  * @auther Marcus
  */
 public class TestModule {
+
+    @SneakyThrows
+    @Test
+    public void test04() {
+        for(int i=0; i<1; ++i) {
+            Thread t1 = ExecutorFactory.newThread(() -> {
+                while (true) {
+                    readBy();
+                    try {
+                        Thread.sleep(1000_000L);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            });
+
+            Thread t2 = ExecutorFactory.newThread(() -> {
+                while (true) {
+                    readBy();
+                    try {
+                        Thread.sleep(1000_000L);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            });
+            t1.start();
+            t2.start();
+        }
+
+        System.in.read();
+    }
+
+    private void readBy() {
+        String rootDirectory = "/Users/marcus/Desktop/eventdata";
+        try (Stream<Path> streams = Files.list(Paths.get(rootDirectory))) {
+            streams.filter(p -> StringUtils.endsWith(p.getFileName().toString(), ".json"))
+                    .forEach(path -> {
+                        String content = FileUtils.read(path, false, false);
+                        System.out.println(path.getFileName().toString()+ ": "+ (content == null? "null" : content.length()));
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Test
     public void test03(){

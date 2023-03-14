@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * NIO Read/Write files
@@ -214,10 +215,23 @@ public class FileUtils {
      *
      * @param filePath     file absolute path
      * @param sharedLock   true: shared lock, false: exclusive lock
-     * @param awaitAcquire The operation after the failure to get file lock, true: await to acquire file lock, false: break and return null
+     * @param awaitAcquire The operation after the failure to get file lock:
+     *                     true: await to acquire file lock(also possible not get content),
+     *                     false: break and return null
      * @return file content
      */
     public static String read(Path filePath, boolean sharedLock, boolean awaitAcquire) {
+        return read(filePath, sharedLock, awaitAcquire ? 750L : 0L, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * @param filePath              file absolute path
+     * @param sharedLock            true: shared lock, false: exclusive lock
+     * @param awaitAcquireOfTime    The waiting time for acquiring a lock (must be greater than 160 ms)
+     * @param awaitTimeUnit         The unit of time to wait for a lock
+     * @return file content
+     */
+    public static String read(Path filePath, boolean sharedLock, long awaitAcquireOfTime, TimeUnit awaitTimeUnit) {
         if (log.isDebugEnabled())
             log.debug("Reading file: [{}]", filePath.toAbsolutePath());
 
@@ -231,9 +245,14 @@ public class FileUtils {
             return null;
         }
 
+        long loopLimit;
+        if(awaitTimeUnit == TimeUnit.MILLISECONDS)
+            loopLimit = awaitAcquireOfTime > 0L ? awaitAcquireOfTime / 160L : 0L;
+        else
+            loopLimit = awaitAcquireOfTime > 0L ? awaitTimeUnit.toMillis(awaitAcquireOfTime) / 160L : 0L;
+
         // get a file channel for the file
         try (FileChannel channel = FileChannel.open(filePath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-            int tryCounter = 0;
             do {
                 // This method returns null or throws an exception if the file is already locked.
                 try (FileLock lock = channel.tryLock(0, Long.MAX_VALUE, sharedLock)) {
@@ -243,15 +262,15 @@ public class FileUtils {
                     return readBuffer(channel, fileSize);
                 } catch (OverlappingFileLockException e) {
                     log.warn("Get file lock overlap: {}", filePath.toAbsolutePath());
-                    if (!awaitAcquire)
+                    if (loopLimit == 0L)
                         break;
 
                     try {
-                        Thread.sleep(100L);
+                        Thread.sleep(160L);
                     } catch (InterruptedException ex) {
                     }
                 }
-            } while (++tryCounter < 10);
+            } while (--loopLimit >= 0);
         } catch (IOException e) {
             log.error("FileChannel open or read exception: {}", e.getMessage());
         }
@@ -259,14 +278,12 @@ public class FileUtils {
     }
 
     private static String readBuffer(FileChannel channel, long size) throws IOException {
-        if (size == -1L)
-            size = MAX_BUFFER_SIZE;
-
-        if (size > MAX_BUFFER_SIZE || size > Integer.MAX_VALUE)
+        if (size == -1L || size > MAX_BUFFER_SIZE || size > Integer.MAX_VALUE)
             size = MAX_BUFFER_SIZE;
 
         ByteBuffer buffer = ByteBuffer.allocate((int) size);
-        StringBuilder stringJoiner = new StringBuilder((int) size);
+        StringBuilder stringJoiner = new StringBuilder(buffer.capacity());
+
         while (channel.read(buffer) > -1) {
             buffer.flip();
             stringJoiner.append(
@@ -274,7 +291,6 @@ public class FileUtils {
                             buffer.position(),
                             buffer.limit(),
                             StandardCharsets.UTF_8));
-            buffer.clear();
         }
         return stringJoiner.toString();
     }

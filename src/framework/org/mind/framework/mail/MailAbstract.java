@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.internet.MimeMessage;
+import java.nio.charset.StandardCharsets;
 
 
 public abstract class MailAbstract implements DelegateMessage {
@@ -22,7 +23,7 @@ public abstract class MailAbstract implements DelegateMessage {
     private JavaMailSender sender;
     private MailType mailType = MailType.HTML;
 
-    protected String defaultCharset = "UTF-8";
+    protected String defaultCharset = StandardCharsets.UTF_8.name();
 
     public enum MailType {
         TEXT,

@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -39,8 +40,6 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
     private static final int MAX_SIZE = 16 * 1024 * 1024;
 
     private static final int MIN_SIZE = 0;
-
-    private static final String DEFAULT_CHARENCODEING = "UTF-8";
 
     private int defaultSize;
 
@@ -135,7 +134,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
                 if (filePart.isFormField()) {
                     this.addFiled(filePart.getFieldName(),
-                            Streams.asString(filePart.openStream(), DEFAULT_CHARENCODEING));
+                            Streams.asString(filePart.openStream(), StandardCharsets.UTF_8.name()));
                     continue;
                 }
 

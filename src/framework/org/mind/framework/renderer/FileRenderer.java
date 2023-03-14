@@ -3,6 +3,7 @@ package org.mind.framework.renderer;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.Action;
 import org.mind.framework.util.ResponseUtils;
+import org.springframework.http.MediaType;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -64,7 +65,7 @@ public class FileRenderer extends Render {
             ServletContext context = Action.getActionContext().getServletContext();
             mime = context.getMimeType(file.getName());
             if (StringUtils.isEmpty(mime))
-                mime = MIME_OCTET_STREAM;
+                mime = MediaType.APPLICATION_OCTET_STREAM_VALUE;
         }
 
         response.setContentType(mime);

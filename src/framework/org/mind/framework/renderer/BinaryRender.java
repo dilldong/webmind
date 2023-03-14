@@ -2,6 +2,7 @@ package org.mind.framework.renderer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.ResponseUtils;
+import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,7 +37,7 @@ public class BinaryRender extends Render {
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType(
-                StringUtils.isEmpty(contentType) ? MIME_OCTET_STREAM : contentType);
+                StringUtils.isEmpty(contentType) ? MediaType.APPLICATION_OCTET_STREAM_VALUE : contentType);
 
         response.setContentLength(data.length);
         ResponseUtils.write(response.getOutputStream(), data);

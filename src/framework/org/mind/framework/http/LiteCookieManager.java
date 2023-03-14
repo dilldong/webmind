@@ -3,6 +3,7 @@ package org.mind.framework.http;
 import org.mind.framework.container.Destroyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 
 import java.io.IOException;
 import java.net.URL;
@@ -36,13 +37,11 @@ public class LiteCookieManager implements Destroyable {
     private static final Logger log = LoggerFactory.getLogger(LiteCookieManager.class);
     private Map<String, Map<String, Map<String, String>>> store;
 
-    private static final String SET_COOKIE = "Set-Cookie";
     private static final String COOKIE_VALUE_DELIMITER = ";";
     private static final String PATH = "path";
     private static final String EXPIRES = "expires";
     private static final String DATE_FORMAT = "EEE, dd-MMM-yyyy hh:mm:ss z";
     private static final String SET_COOKIE_SEPARATOR = "; ";
-    private static final String COOKIE = "Cookie";
 
     private static final char NAME_VALUE_SEPARATOR = '=';
     private static final char DOT = '.';
@@ -84,7 +83,7 @@ public class LiteCookieManager implements Destroyable {
 
         String headerName;
         for (int i = 1; (headerName = conn.getHeaderFieldKey(i)) != null; ++i) {
-            if (headerName.equalsIgnoreCase(SET_COOKIE)) {
+            if (headerName.equalsIgnoreCase(HttpHeaders.SET_COOKIE)) {
                 Map<String, String> cookie = new HashMap<>();
                 StringTokenizer st = new StringTokenizer(
                         conn.getHeaderField(i), COOKIE_VALUE_DELIMITER);
@@ -156,7 +155,7 @@ public class LiteCookieManager implements Destroyable {
         }
         try {
             log.info("set-cookie: {}", cookieStringBuffer);
-            conn.setRequestProperty(COOKIE, cookieStringBuffer.toString());
+            conn.setRequestProperty(HttpHeaders.COOKIE, cookieStringBuffer.toString());
         } catch (java.lang.IllegalStateException ise) {
             throw new IOException(
                     "Illegal State! Cookies cannot be set on a URLConnection that is already connected. Only call setCookies(java.net.URLConnection) AFTER calling java.net.URLConnection.connect().");

@@ -3,10 +3,12 @@ package org.mind.framework.renderer;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ResponseUtils;
+import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Render html, javascript, css or any text type
@@ -50,10 +52,10 @@ public class TextRender extends Render {
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // json
         boolean isJson = JsonUtils.isJson(text);
-        String charset = StringUtils.isEmpty(characterEncoding) ? "UTF-8" : characterEncoding;
+        String charset = StringUtils.isEmpty(characterEncoding) ? StandardCharsets.UTF_8.name() : characterEncoding;
 
-        StringBuilder sb = new StringBuilder(64)
-                .append(StringUtils.isEmpty(contentType) ? (isJson ? MIME_JSON : MIME_TEXT_HTML) : contentType)
+        StringBuilder sb = new StringBuilder(40)
+                .append(StringUtils.isEmpty(contentType) ? (isJson ? MediaType.APPLICATION_JSON_VALUE : MediaType.TEXT_HTML_VALUE) : contentType)
                 .append(";charset=")
                 .append(charset);
 

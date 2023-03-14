@@ -5,6 +5,8 @@ import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -119,17 +121,18 @@ public class HandlerResourceRequest implements HandlerResult {
 
         long lastModified = readAttributes.lastModifiedTime().toMillis();
         // Get 'If-Modified-Since' from request header
-        long modifiedSince = parseDateHeader(request, IF_MODIFIED_SINCE);
+        long modifiedSince = parseDateHeader(request, HttpHeaders.IF_MODIFIED_SINCE);
 
         // not modified
         if (modifiedSince != -1 && modifiedSince >= lastModified) {
-            log.debug("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
+            if(log.isDebugEnabled())
+                log.debug("{} - Resource Not Modified.", HttpServletResponse.SC_NOT_MODIFIED);
             response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             return;
         }
 
         // Set last modified time in response
-        response.setDateHeader(LAST_MODIFIED, lastModified);
+        response.setDateHeader(HttpHeaders.LAST_MODIFIED, lastModified);
 
         long length = readAttributes.size();
         if (length > Integer.MAX_VALUE)
@@ -139,11 +142,11 @@ public class HandlerResourceRequest implements HandlerResult {
 
         // set cache:
         if (this.expires < 0) {// -1
-            response.setHeader("Cache-Control", "no-cache");
+            response.setHeader(HttpHeaders.CACHE_CONTROL, NO_CACHE);
         } else if (this.expires > 0) {
-            response.setHeader("Cache-Control", maxAge);
+            response.setHeader(HttpHeaders.CACHE_CONTROL, maxAge);
             // Reset HTTP 1.0 Expires header if present
-            response.setDateHeader("Expires", DateFormatUtils.getMillis() + this.expires);
+            response.setDateHeader(HttpHeaders.EXPIRES, DateFormatUtils.getMillis() + this.expires);
         }
 
         // should download?
@@ -154,7 +157,7 @@ public class HandlerResourceRequest implements HandlerResult {
 //      }
 
         String mime = servletContext.getMimeType(path.getFileName().toString());
-        response.setContentType(StringUtils.isEmpty(mime) ? "application/octet-stream" : mime);
+        response.setContentType(StringUtils.isEmpty(mime) ? MediaType.APPLICATION_OCTET_STREAM_VALUE : mime);
 
         // write stream
         ResponseUtils.write(response.getOutputStream(), path);

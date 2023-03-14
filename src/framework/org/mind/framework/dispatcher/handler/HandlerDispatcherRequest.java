@@ -21,6 +21,7 @@ import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -381,9 +382,11 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
      * @param response The servlet response we are creating
      */
     protected void processNoCache(HttpServletRequest request, HttpServletResponse response) {
-        response.setHeader("Pragma", "No-cache");
-        response.setHeader("Cache-Control", "no-cache");
-        response.setDateHeader("Expires", 0L);
+        // HTTP/1.0
+        response.setHeader(HttpHeaders.PRAGMA, HandlerResult.NO_CACHE);
+        // HTTP/1.1+
+        response.setHeader(HttpHeaders.CACHE_CONTROL, HandlerResult.NO_CACHE);
+        response.setDateHeader(HttpHeaders.EXPIRES, 0L);
     }
 
 

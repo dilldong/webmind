@@ -7,8 +7,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -23,7 +21,6 @@ import java.util.Enumeration;
  * @author dp
  */
 public final class Action {
-    private static final Logger log = LoggerFactory.getLogger(Action.class);
     private static final ThreadLocal<Action> actionContext = new ThreadLocal<>();
 
     private ServletContext context;

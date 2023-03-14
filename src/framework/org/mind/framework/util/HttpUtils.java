@@ -3,8 +3,8 @@ package org.mind.framework.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.renderer.Render;
 import org.mind.framework.server.WebServerConfig;
+import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -177,7 +177,7 @@ public class HttpUtils {
             }
 
             String contentType = request.getContentType();
-            if (StringUtils.isNotEmpty(contentType) && contentType.contains(Render.MIME_JSON))
+            if (StringUtils.isNotEmpty(contentType) && contentType.contains(MediaType.APPLICATION_JSON_VALUE))
                 body = JsonUtils.deletionBlank(body);
 
             request.setAttribute(BODY_PARAMS, body);
