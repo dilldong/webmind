@@ -21,6 +21,8 @@ public interface HandlerResult {
 
     String JSON_METHOD = "Json Method";
     String REQUEST_RAW_CONTENT = "Raw Content";
+
+    String JSON_RPC_ID = "id";
     String JSON_RPC_TAG = "jsonrpc";
     String JSON_RPC_METHOD = "method";
 
