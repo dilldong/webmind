@@ -2,12 +2,12 @@ package org.mind.framework.dispatcher.handler;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.Action;
+import org.mind.framework.ViewResolver;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.Catcher;
 import org.mind.framework.dispatcher.support.ConverterFactory;
 import org.mind.framework.exception.ThrowProvider;
-import org.mind.framework.http.Response;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.renderer.JavaScriptRender;
@@ -22,6 +22,7 @@ import org.mind.framework.util.MatcherUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -172,7 +173,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 // Interceptor doBefore
                 // return false, Return to the request page
                 if (!interceptor.doBefore(request, response)) {
-                    log.debug("Intercept access request URI: {}, The interception class is: {}", path, interceptor.getClass().getSimpleName());
+                    if (log.isDebugEnabled())
+                        log.debug("Intercept access request URI: {}, The interception class is: {}", path, interceptor.getClass().getSimpleName());
                     return;
                 }
 
@@ -226,8 +228,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                 for (int i = 0; i < number; ++i) {
                     try {
                         type = execution.getParameterTypes()[i];
-                    }catch (ArrayIndexOutOfBoundsException e){
-                        log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        log.warn("{}, exception: {} - {}", path, e.getClass().getName(), e.getMessage());
                         throw new IllegalArgumentException("Method is missing URL parameter");
                     }
 
@@ -237,7 +239,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
                         try {
                             args[i] = this.converter.convert(type, matcher.group(i + 1));
                         } catch (NumberFormatException | NullPointerException e) {
-                            log.warn("{}, {}: {}", path, e.getClass().getName(), e.getMessage());
+                            log.warn("{}, exception: {} - {}", path, e.getClass().getName(), e.getMessage());
                             throw new IllegalArgumentException("URL parameters was incorrect");
                         }
                     }
@@ -247,17 +249,16 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         /*
-         * Status code (404) indicating that the requested resource is not
-         * available.
+         * Status code (404) indicating that the requested resource is not available.
          */
         if (Objects.isNull(execution)) {
-            log.warn("The requested URI (404) Not found: {}", path);
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            this.handleResult(
-                    new Response<String>(HttpServletResponse.SC_NOT_FOUND, "The request URI (404) Not found").toJson(),
+            log.warn("The requested URL (404) Not found: {}", path);
+            this.sendError(
+                    HttpServletResponse.SC_NOT_FOUND,
+                    "The requested URL (404) Not found",
+                    Render.NOT_FOUND_HTML,
                     request,
                     response);
-            //response.sendError(HttpServletResponse.SC_NOT_FOUND, "(404) Not found.");
             return;
         }
 
@@ -270,15 +271,12 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         if (!execution.isSupportMethod(request.getMethod())) {
             log.warn("HTTP method {} is not supported by this URI, specified as: {}",
                     request.getMethod(), execution.methodString());
-
-            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-            this.handleResult(
-                    new Response<String>(HttpServletResponse.SC_METHOD_NOT_ALLOWED, String.format("HTTP method '%s' is not supported by this URI", request.getMethod())).toJson(),
+            this.sendError(
+                    HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    String.format("This URL does not support the HTTP method '%s'", request.getMethod()),
+                    Render.METHOD_NOT_ALLOWED_HTML,
                     request,
                     response);
-
-//            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-//                    String.format("HTTP method %s is not supported by this URL", request.getMethod()));
             return;
         }
 
@@ -461,6 +459,18 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 //        }
 //        log.warn("Unsupported Action method '{}'.", method.toGenericString());
         return true;
+    }
+
+    private void sendError(int statusCode, String jsonMessage, String htmlMessage, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setStatus(statusCode);
+        // json body
+        String contentType = request.getContentType();
+        if (StringUtils.isNotEmpty(contentType) && contentType.startsWith(MediaType.APPLICATION_JSON_VALUE))
+            ViewResolver.text(ViewResolver.<String>response(statusCode, jsonMessage).toJson())
+                    .render(request, response);
+        else
+            ViewResolver.text(htmlMessage).render(request, response);
+
     }
 
 }

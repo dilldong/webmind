@@ -97,7 +97,7 @@ public class HandlerResourceRequest implements HandlerResult {
         if (forbidden) {
             log.warn("[{}]{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN, uri);
             HandlerResult.setRequestAttribute(request);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access.");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "(403) Forbidden access.");
             return;
         }
 
@@ -105,7 +105,7 @@ public class HandlerResourceRequest implements HandlerResult {
         if (!Files.exists(path)) {
             log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, uri);
             HandlerResult.setRequestAttribute(request);
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is (404) not found.");
             return;
         }
 
@@ -115,7 +115,7 @@ public class HandlerResourceRequest implements HandlerResult {
         if (!readAttributes.isRegularFile()) {
             log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, uri);
             HandlerResult.setRequestAttribute(request);
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is not found.");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is (404) not found.");
             return;
         }
 
