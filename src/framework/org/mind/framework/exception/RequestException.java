@@ -1,5 +1,6 @@
 package org.mind.framework.exception;
 
+import lombok.Getter;
 import org.mind.framework.http.okhttp3.RequestError;
 
 import java.util.Objects;
@@ -10,7 +11,7 @@ import java.util.Objects;
  */
 public class RequestException extends RuntimeException {
 
-    private String errCode;
+    @Getter
     private RequestError error;
 
     public RequestException(Throwable cause) {
@@ -20,7 +21,6 @@ public class RequestException extends RuntimeException {
     public RequestException(RequestError error) {
         super(error.getMsg());
         this.error = error;
-        errCode = String.valueOf(error.getCode());
     }
 
     @Override

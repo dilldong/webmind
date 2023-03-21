@@ -30,6 +30,7 @@ public class InterceptorTest extends AbstractHandlerInterceptor {
 
     @Override
     public void renderCompletion(HttpServletRequest request, HttpServletResponse response) {
+        super.renderCompletion(request, response);
         log.debug("Interceptor render complete ....");
     }
 }

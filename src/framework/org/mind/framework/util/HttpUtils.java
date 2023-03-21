@@ -3,6 +3,7 @@ package org.mind.framework.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.BaseException;
 import org.mind.framework.server.WebServerConfig;
 import org.springframework.http.MediaType;
 
@@ -33,6 +34,8 @@ public class HttpUtils {
         request.removeAttribute(REQUEST_URL);
         request.removeAttribute(REQUEST_IP);
         request.removeAttribute(BODY_PARAMS);
+        request.removeAttribute(BaseException.EXCEPTION_REQUEST);
+        request.removeAttribute(BaseException.SYS_EXCEPTION);
     }
 
     /**
