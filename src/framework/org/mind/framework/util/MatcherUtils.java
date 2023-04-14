@@ -90,13 +90,13 @@ public class MatcherUtils {
     }
 
     private static String toPattern(String param, Pattern pattern) {
-        param = pattern.matcher(param).replaceAll(URL_SEP);
-        param = ANY_PATTERN.matcher(param).replaceAll(ANY_CHAR);
-        param = URI_SEP_PATTERN.matcher(param).replaceAll(URI_SEP);
+        String newParam = pattern.matcher(param).replaceAll(URL_SEP);
+        newParam = ANY_PATTERN.matcher(newParam).replaceAll(ANY_CHAR);
+        newParam = URI_SEP_PATTERN.matcher(newParam).replaceAll(URI_SEP);
 
-        return new StringBuilder(param.length() + 2)
+        return new StringBuilder(newParam.length() + 2)
                 .append(START)
-                .append(param)
+                .append(newParam)
                 .append(END)
                 .toString();
     }
