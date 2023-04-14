@@ -3,6 +3,7 @@
 
 [![License](https://img.shields.io/github/license/dilldong/webmind)](https://raw.githubusercontent.com/dilldong/webmind/master/LICENSE)
 [![Maven2.0](https://img.shields.io/badge/maven-build-blue)](https://mvnrepository.com/artifact/io.github.dilldong/webmind-framework)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e457baf96038467f814c72d0300eda44)](https://app.codacy.com/gh/dilldong/webmind/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 Webmind is a lightweight web service framework that integrates with SpringFramework. Realize the embedded startup of Tomcat, which is easy to use, occupies less memory, responds quickly, and has stable service. Suitable for Java microservices and web projects.
 ## Add maven dependency

@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -395,10 +396,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
 
     @Override
     public int compareTo(final ObjectId other) {
-        if (other == null) {
-            throw new NullPointerException();
-        }
-
+        Objects.requireNonNull(other);
         byte[] byteArray = toByteArray();
         byte[] otherByteArray = other.toByteArray();
         for (int i = 0; i < 12; ++i) {
