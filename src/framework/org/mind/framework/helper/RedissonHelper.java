@@ -144,9 +144,10 @@ public class RedissonHelper {
 
         rList.addAllAsync(list);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, list.getClass());
     }
@@ -161,9 +162,10 @@ public class RedissonHelper {
 
         boolean flag = rList.addAll(list);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, list.getClass());
         return flag;
@@ -193,9 +195,10 @@ public class RedissonHelper {
 
         boolean flag = rList.add(v);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, ArrayList.class);
         return flag;
@@ -337,9 +340,10 @@ public class RedissonHelper {
 
         rMap.putAllAsync(map);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rMap.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, map.getClass());
     }
@@ -354,9 +358,10 @@ public class RedissonHelper {
 
         rMap.putAll(map);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rMap.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, map.getClass());
         return true;
@@ -386,9 +391,10 @@ public class RedissonHelper {
 
         boolean flag = rMap.fastPut(k, v);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rMap.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rMap.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, HashMap.class);
         return flag;
@@ -543,9 +549,10 @@ public class RedissonHelper {
 
         rSet.addAllAsync(set);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rSet.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, set.getClass());
     }
@@ -560,9 +567,10 @@ public class RedissonHelper {
 
         boolean flag = rSet.addAll(set);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rSet.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, set.getClass());
         return flag;
@@ -592,9 +600,10 @@ public class RedissonHelper {
 
         boolean flag = rSet.add(v);
         if (expire > 0L) {
+            long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
-                expire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(expire, ChronoUnit.MILLIS));
+                newExpire = unit.toMillis(expire);
+            rSet.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, HashSet.class);
         return flag;

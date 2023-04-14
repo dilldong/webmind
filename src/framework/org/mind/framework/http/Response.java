@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.mind.framework.Action;
 import org.mind.framework.util.JsonUtils;
 
 import javax.servlet.http.HttpServletResponse;
@@ -54,6 +55,15 @@ public class Response<T> {
 
     public Response<T> setMsg(String msg) {
         this.msg = msg;
+        return this;
+    }
+
+    /**
+     * Set response-code follow code
+     * @return
+     */
+    public Response<T> following(){
+        Action.getActionContext().getResponse().setStatus(code);
         return this;
     }
 

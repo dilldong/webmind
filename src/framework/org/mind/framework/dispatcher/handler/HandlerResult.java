@@ -22,6 +22,10 @@ public interface HandlerResult {
     String JSON_METHOD = "Json Method";
     String REQUEST_RAW_CONTENT = "Raw Content";
 
+    String JSON_RPC_ID = "id";
+    String JSON_RPC_TAG = "jsonrpc";
+    String JSON_RPC_METHOD = "method";
+
     void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 
     static void setRequestAttribute(HttpServletRequest request) {
@@ -39,8 +43,11 @@ public interface HandlerResult {
         String str = HttpUtils.getJson(request);
         jsonObject.addProperty(REQUEST_RAW_CONTENT, StringUtils.defaultIfEmpty(str, StringUtils.EMPTY));
 
-        if (StringUtils.isNotEmpty(str) && str.contains("jsonrpc")) {
-            str = StringUtils.substringBetween(str, "method", ",");
+        if (StringUtils.isNotEmpty(str) && str.contains(JSON_RPC_TAG)) {
+            str = StringUtils.substringBetween(str, JSON_RPC_METHOD, ",");
+            if(StringUtils.isEmpty(str))
+                str = StringUtils.substringBetween(str, JSON_RPC_METHOD, "}");
+
             str = str.replaceAll("[\'\":]*", StringUtils.EMPTY).trim();
             jsonObject.addProperty(JSON_METHOD, str);
         }
