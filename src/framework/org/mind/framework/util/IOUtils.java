@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 
 public class IOUtils {
 
-    public IOUtils() {
+    private IOUtils() {
     }
 
     public static int byte2int(byte[] b, int offset) {

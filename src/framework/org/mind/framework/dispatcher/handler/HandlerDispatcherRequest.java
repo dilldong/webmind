@@ -204,7 +204,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         }
 
         // set response no-cache
-        this.processNoCache(request, response);
+        this.processNoCache(response);
 
         /*
          * find and process action
@@ -376,10 +376,9 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
      * automatically if a <code>RequestDispatcher.forward()</code> call is
      * ultimately invoked.
      *
-     * @param request  The servlet request we are processing
      * @param response The servlet response we are creating
      */
-    protected void processNoCache(HttpServletRequest request, HttpServletResponse response) {
+    protected void processNoCache(HttpServletResponse response) {
         // HTTP/1.0
         response.setHeader(HttpHeaders.PRAGMA, HandlerResult.NO_CACHE);
         // HTTP/1.1+
