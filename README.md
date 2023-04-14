@@ -1,6 +1,7 @@
 
 # Webmind Framework
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/78ccda5ac6aa44509ae2a1ca01c550d1)](https://app.codacy.com/gh/dilldong/webmind?utm_source=github.com&utm_medium=referral&utm_content=dilldong/webmind&utm_campaign=Badge_Grade)
 [![License](https://img.shields.io/github/license/dilldong/webmind)](https://raw.githubusercontent.com/dilldong/webmind/master/LICENSE)
 [![Maven2.0](https://img.shields.io/badge/maven-build-blue)](https://mvnrepository.com/artifact/io.github.dilldong/webmind-framework)
 
