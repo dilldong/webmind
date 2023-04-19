@@ -34,6 +34,7 @@ public abstract class PropertiesUtils {
         InputStream in;
         URL url = ClassUtils.getResource(PropertiesUtils.class, DEFAULT_PROPERTIES);
 
+        // jar in jar
         if (Objects.isNull(url))
             in = JarFileUtils.getJarEntryStream(JAR_PROPERTIES);
         else
