@@ -17,15 +17,18 @@ import java.util.jar.JarFile;
  * @date 2022-03-17
  */
 public final class JarFileUtils {
-    public static String getRuntimePath() {
-        String classPath = String.join(".", JarFileUtils.class.getName()
-                .replaceAll("\\.", "/"), "class");
+    private static final String CLASS_PATH =
+            String.join(
+                    ".",
+                    JarFileUtils.class.getName().replaceAll("\\.", "/"),
+                    "class");
 
-        URL resource = ClassUtils.getResource(JarFileUtils.class, classPath);
-        if (resource == null)
+    public static String getRuntimePath() {
+        URL url = ClassUtils.getResource(JarFileUtils.class, CLASS_PATH);
+        if (Objects.isNull(url))
             return null;
 
-        String urlString = resource.toString();
+        String urlString = url.toString();
         int insidePathIndex = urlString.indexOf('!');
 
         if (insidePathIndex > -1) {
@@ -33,7 +36,7 @@ public final class JarFileUtils {
             return urlString;
         }
 
-        return urlString.substring(urlString.indexOf("file:") + 5, urlString.length() - classPath.length());
+        return urlString.substring(urlString.indexOf("file:") + 5, urlString.length() - CLASS_PATH.length());
     }
     public static JarEntry getJarEntry(String fileName){
         return getJarEntry(getRuntimePath(), fileName);
