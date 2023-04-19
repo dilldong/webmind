@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
@@ -34,12 +35,24 @@ public final class JarFileUtils {
 
         return urlString.substring(urlString.indexOf("file:") + 5, urlString.length() - classPath.length());
     }
-
-    public static String getJarEntry(String fileName) {
+    public static JarEntry getJarEntry(String fileName){
         return getJarEntry(getRuntimePath(), fileName);
     }
 
-    public static String getJarEntry(String jarPath, String fileName) {
+    public static JarEntry getJarEntry(String jarPath, String fileName){
+        try (JarFile jarFile = new JarFile(jarPath)){
+            return jarFile.getJarEntry(fileName);
+        } catch (IOException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return null;
+    }
+
+    public static String getJarEntryContent(String fileName) {
+        return getJarEntryContent(getRuntimePath(), fileName);
+    }
+
+    public static String getJarEntryContent(String jarPath, String fileName) {
         InputStream in = getJarEntryStream(jarPath, fileName);
         try {
             return IOUtils.toString(in, StandardCharsets.UTF_8);
