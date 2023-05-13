@@ -41,7 +41,7 @@ public class ClassUtils {
     }
 
     public static InputStream getResourceAsStream(Class<?> classObj, String name) {
-        while (name.startsWith("/"))
+        while (name.startsWith(IOUtils.DIR_SEPARATOR))
             name = name.substring(1);
 
         // current thread ClassLoader
@@ -60,7 +60,7 @@ public class ClassUtils {
     }
 
     public static URL getResource(Class<?> classObj, String name) {
-        while (name.startsWith("/"))
+        while (name.startsWith(IOUtils.DIR_SEPARATOR))
             name = name.substring(1);
 
         // current thread ClassLoader

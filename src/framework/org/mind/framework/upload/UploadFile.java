@@ -45,9 +45,9 @@ public class UploadFile {
         this.property = PropertiesUtils.getProperties();
 
         String dir = PropertiesUtils.getString(this.property, "upload.dir");
-        dir = dir.startsWith("/") ?
+        dir = dir.startsWith(IOUtils.DIR_SEPARATOR) ?
                 dir :
-                request.getSession().getServletContext().getRealPath("/" + dir);
+                request.getSession().getServletContext().getRealPath(IOUtils.DIR_SEPARATOR + dir);
 
         this.setDirectory(dir);
     }
@@ -124,13 +124,13 @@ public class UploadFile {
             /*
              * 匹配允许的文件格式
              */
-            String suffix = fileName.substring(fileName.lastIndexOf(IOUtils.DOT) + 1);
+            String suffix = fileName.substring(fileName.lastIndexOf(IOUtils.DOT_SEPARATOR) + 1);
             if (!MatcherUtils.matcher(suffix, regexType, MatcherUtils.IGNORECASE_EQ).matches())
                 throw new NotSupportedException(String.format("%s file suffix mismatch, allowed suffix: %s", suffix, regexType));
 
             fileName = sb
                     .append(this.directory).append(File.separator).append(currentTime)
-                    .append("-").append(++i).append(IOUtils.DOT)
+                    .append("-").append(++i).append(IOUtils.DOT_SEPARATOR)
                     .append(suffix).toString();
 
             sb.delete(0, sb.length());

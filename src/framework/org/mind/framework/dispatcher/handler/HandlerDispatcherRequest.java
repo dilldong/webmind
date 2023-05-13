@@ -188,7 +188,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             request.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         // static resource
-        int subIndex = path.lastIndexOf(IOUtils.DOT);
+        int subIndex = path.lastIndexOf(IOUtils.DOT_SEPARATOR);
         if (subIndex != -1) {
             String suffix = path.substring(subIndex + 1);
 

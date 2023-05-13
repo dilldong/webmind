@@ -24,6 +24,7 @@ import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
 import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
+import org.mind.framework.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
@@ -221,7 +222,7 @@ public class TomcatServer extends Tomcat {
         wrapper.setLoadOnStartup(1);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
-        ctx.addServletMappingDecoded("/", ServerContext.SERVLET_NAME);
+        ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, ServerContext.SERVLET_NAME);
 
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {

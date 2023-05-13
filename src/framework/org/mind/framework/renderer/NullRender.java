@@ -1,5 +1,7 @@
 package org.mind.framework.renderer;
 
+import org.mind.framework.util.IOUtils;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +33,7 @@ public class NullRender extends Render {
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         switch (type) {
             case REDIRECT:
-                if (uri.startsWith("/"))
+                if (uri.startsWith(IOUtils.DIR_SEPARATOR))
                     uri = String.format("%s%s", request.getContextPath(), uri);
 
                 if(log.isDebugEnabled())

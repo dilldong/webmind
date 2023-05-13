@@ -185,8 +185,8 @@ public class LiteCookieManager implements Destroyable {
     }
 
     private String getDomainFromHost(String host) {
-        if (host.indexOf(IOUtils.DOT) != host.lastIndexOf(IOUtils.DOT))
-            return host.substring(host.indexOf(IOUtils.DOT) + 1);
+        if (host.indexOf(IOUtils.DOT_SEPARATOR) != host.lastIndexOf(IOUtils.DOT_SEPARATOR))
+            return host.substring(host.indexOf(IOUtils.DOT_SEPARATOR) + 1);
 
         return host;
     }
@@ -208,7 +208,7 @@ public class LiteCookieManager implements Destroyable {
     private boolean comparePaths(String cookiePath, String targetPath) {
         if (cookiePath == null) {
             return true;
-        } else if (cookiePath.equals("/")) {
+        } else if (cookiePath.equals(IOUtils.DIR_SEPARATOR)) {
             return true;
         } else return targetPath.regionMatches(0, cookiePath, 0, cookiePath.length());
 

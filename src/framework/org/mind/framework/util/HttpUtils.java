@@ -64,7 +64,7 @@ public class HttpUtils {
 
         // check is root path
         if (uri.length() > 1)
-            uri = uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
+            uri = uri.endsWith(IOUtils.DIR_SEPARATOR) ? uri.substring(0, uri.length() - 1) : uri;
 
         // uri has sessionid
         int hasJsession = uri.indexOf(";jsessionid");
