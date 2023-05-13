@@ -10,13 +10,12 @@ import org.mind.framework.dispatcher.support.ConverterFactory;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.interceptor.HandlerInterceptor;
-import org.mind.framework.renderer.JavaScriptRender;
-import org.mind.framework.renderer.NullRender;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.HttpUtils;
+import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.slf4j.Logger;
@@ -188,7 +187,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             request.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         // static resource
-        int subIndex = path.lastIndexOf(".");
+        int subIndex = path.lastIndexOf(IOUtils.DOT);
         if (subIndex != -1) {
             String suffix = path.substring(subIndex + 1);
 
@@ -333,25 +332,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         Class<? extends Object> clazz = result.getClass();
         ConverterFactory converterFactory = ConverterFactory.getInstance();
         if (converterFactory.isConvert(clazz)) {
-            String str = result.toString();
-
-            if (str.startsWith("forward:")) {
-                new NullRender(str.substring("forward:".length()), NullRender.RenderType.FORWARD).render(request, response);
-                return;
-            }
-
-            if (str.startsWith("redirect:")) {
-                new NullRender(str.substring("redirect:".length()), NullRender.RenderType.REDIRECT).render(request, response);
-                return;
-            }
-
-            if (str.startsWith("script:")) {
-                String script = str.substring("script:".length());
-                new JavaScriptRender(script).render(request, response);
-                return;
-            }
-
-            new TextRender(str).render(request, response);
+            Render.stringRender(result.toString()).render(request, response);
             return;
         }
 

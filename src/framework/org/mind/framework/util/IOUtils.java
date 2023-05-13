@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 
 public class IOUtils {
 
+    public static final String DOT = ".";
+
     private IOUtils() {
     }
 

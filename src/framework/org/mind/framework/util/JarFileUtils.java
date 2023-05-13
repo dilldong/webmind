@@ -19,7 +19,7 @@ import java.util.jar.JarFile;
 public final class JarFileUtils {
     private static final String CLASS_PATH =
             String.join(
-                    ".",
+                    org.mind.framework.util.IOUtils.DOT,
                     JarFileUtils.class.getName().replaceAll("\\.", "/"),
                     "class");
 
