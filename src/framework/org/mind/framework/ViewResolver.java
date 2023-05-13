@@ -6,6 +6,7 @@ import org.mind.framework.renderer.FileRenderer;
 import org.mind.framework.renderer.JavaScriptRender;
 import org.mind.framework.renderer.NullRender;
 import org.mind.framework.renderer.Render;
+import org.mind.framework.renderer.RenderType;
 import org.mind.framework.renderer.TemplateRender;
 import org.mind.framework.renderer.TextRender;
 import org.springframework.http.HttpStatus;
@@ -73,7 +74,7 @@ public class ViewResolver {
         return new TextRender(text, StandardCharsets.UTF_8.name());
     }
 
-    public static Render render(String uri, NullRender.RenderType type) {
+    public static Render render(String uri, RenderType type) {
         return new NullRender(uri, type);
     }
 
