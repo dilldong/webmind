@@ -60,7 +60,8 @@ public final class WebContainerGenerator {
         String templateName = config.getInitParameter("template");
         if (Objects.isNull(templateName) || StringUtils.equalsIgnoreCase(templateName, "JspTemplate")) {
             templateName = JspTemplateFactory.class.getName();
-            log.debug("Default template factory to '{}'.", templateName);
+            if(log.isDebugEnabled())
+                log.debug("Default template factory to '{}'.", templateName);
         }
 
         Object obj = null;

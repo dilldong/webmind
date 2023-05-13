@@ -146,7 +146,8 @@ public class UploadFile {
                 out.close();
             }
 
-            log.debug("upload files: {}", fileName);
+            if(log.isDebugEnabled())
+                log.debug("upload files: {}", fileName);
 
             props.add(new UploadProperty(
                     item.getFiledName(),

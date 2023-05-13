@@ -86,7 +86,8 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
         // load web application static resource strs.
         this.resStr = this.servletConfig.getInitParameter("resource");
-        log.debug("resource suffix: {}", resStr);
+        if(log.isDebugEnabled())
+            log.debug("resource suffix: {}", resStr);
 
         // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
         this.actions = new HashMap<String, Execution>() {
@@ -431,13 +432,6 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
             }
         }
 
-//        Class<?> retType = method.getReturnType();
-//        if (void.class.equals(retType)
-//                || String.class.getName().equals(retType.getName())
-//                || Render.class.isAssignableFrom(retType)) {
-//            return true;
-//        }
-//        log.warn("Unsupported Action method '{}'.", method.toGenericString());
         return true;
     }
 

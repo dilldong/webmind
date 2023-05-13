@@ -71,7 +71,9 @@ public class TomcatServer extends Tomcat {
 
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
-            log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
+            if(log.isDebugEnabled())
+                log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
+
             ctx.addLifecycleListener(super.getDefaultWebXmlListener());
             LifecycleListener config = this.getContextListener(host);
             ctx.addLifecycleListener(config);
@@ -79,7 +81,8 @@ public class TomcatServer extends Tomcat {
             if (config instanceof ContextConfig)
                 ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
-            log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
+            if(log.isDebugEnabled())
+                log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
 
             // create servlet
             this.createServlet(host, ctx);
@@ -192,7 +195,9 @@ public class TomcatServer extends Tomcat {
         } catch (LifecycleException e) {
         }
 
-        log.debug("Delete tomcat temp directory ....");
+        if(log.isDebugEnabled())
+            log.debug("Delete tomcat temp directory ....");
+
         try {
             if (StringUtils.isNotEmpty(serverConfig.getTomcatBaseDir()))
                 FileUtils.deleteDirectory(new File(serverConfig.getTomcatBaseDir()));

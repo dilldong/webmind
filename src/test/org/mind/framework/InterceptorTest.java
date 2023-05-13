@@ -19,18 +19,21 @@ public class InterceptorTest extends AbstractHandlerInterceptor {
 
     @Override
     public boolean doBefore(HttpServletRequest request, HttpServletResponse response) {
-        log.debug("Interceptor doBefore ....");
+        if(log.isDebugEnabled())
+            log.debug("Interceptor doBefore ....");
         return super.doBefore(request, response);
     }
 
     @Override
     public void doAfter(HttpServletRequest request, HttpServletResponse response) {
-        log.debug("Interceptor doAfter ....");
+        if(log.isDebugEnabled())
+            log.debug("Interceptor doAfter ....");
     }
 
     @Override
     public void renderCompletion(HttpServletRequest request, HttpServletResponse response) {
         super.renderCompletion(request, response);
-        log.debug("Interceptor render complete ....");
+        if(log.isDebugEnabled())
+            log.debug("Interceptor render complete ....");
     }
 }

@@ -128,6 +128,7 @@ public class ConsumerService implements Updateable, Destroyable {
 
             if(log.isDebugEnabled())
                 log.debug("Consumer queue message....");
+
             try {
                 delegate.process();
             } catch (Exception e) {

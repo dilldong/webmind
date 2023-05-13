@@ -16,7 +16,8 @@ public class JspTemplateFactory extends TemplateFactory {
 
     @Override
     public Template loadTemplate(String path) {
-        log.debug("Load JSP template '{}'", path);
+        if(log.isDebugEnabled())
+            log.debug("Load JSP template '{}'", path);
         return new JspTemplate(path);
     }
 
