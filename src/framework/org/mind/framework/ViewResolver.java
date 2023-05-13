@@ -79,10 +79,10 @@ public class ViewResolver {
     }
 
     public static String redirect(String path) {
-        return "redirect:" + path;
+        return RenderType.REDIRECT.keyName + path;
     }
 
     public static String forward(String path) {
-        return "forward:" + path;
+        return RenderType.FORWARD.keyName + path;
     }
 }
