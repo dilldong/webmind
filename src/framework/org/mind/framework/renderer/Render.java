@@ -7,6 +7,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Render object to indicate how to rendering the http response.
@@ -54,5 +55,19 @@ public abstract class Render {
      * @throws IOException, ServletException.
      */
     public abstract void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
+
+
+    public static Render stringRender(String value) {
+        Objects.requireNonNull(value);
+        
+        if (value.startsWith(RenderType.FORWARD.keyName))
+            return new NullRender(value.substring(RenderType.FORWARD.keyLength), RenderType.FORWARD);
+        else if (value.startsWith(RenderType.REDIRECT.keyName))
+            return new NullRender(value.substring(RenderType.REDIRECT.keyLength), RenderType.REDIRECT);
+        else if (value.startsWith(RenderType.SCRIPT.keyName))
+            return new JavaScriptRender(value.substring(RenderType.SCRIPT.keyLength));
+        else
+            return new TextRender(value);
+    }
 
 }

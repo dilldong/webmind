@@ -13,6 +13,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.tomcat.TomcatServer;
+import org.mind.framework.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -81,7 +82,7 @@ public abstract class ServerContext {
                 log.info("Starting {} Protocol: [{}], [{}]",
                         serverConfig.getNioMode().toUpperCase(),
                         serverConfig.getPort(),
-                        StringUtils.isEmpty(serverConfig.getContextPath()) ? "/" : serverConfig.getContextPath());
+                        StringUtils.isEmpty(serverConfig.getContextPath()) ? IOUtils.DIR_SEPARATOR : serverConfig.getContextPath());
 
                 log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatch.getTime());
             } catch (Exception e) {
@@ -171,7 +172,7 @@ public abstract class ServerContext {
                     String resourceBaseDir =
                             String.format("%s/%s",
                                     serverConfig.getTomcatBaseDir(),
-                                    serverConfig.getResourceDir().startsWith("/") ?
+                                    serverConfig.getResourceDir().startsWith(IOUtils.DIR_SEPARATOR) ?
                                             serverConfig.getResourceDir().substring(1) :
                                             serverConfig.getResourceDir());
 

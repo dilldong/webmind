@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
@@ -16,15 +17,18 @@ import java.util.jar.JarFile;
  * @date 2022-03-17
  */
 public final class JarFileUtils {
-    public static String getRuntimePath() {
-        String classPath = String.join(".", JarFileUtils.class.getName()
-                .replaceAll("\\.", "/"), "class");
+    private static final String CLASS_PATH =
+            String.join(
+                    org.mind.framework.util.IOUtils.DOT_SEPARATOR,
+                    JarFileUtils.class.getName().replaceAll("\\.", org.mind.framework.util.IOUtils.DIR_SEPARATOR),
+                    "class");
 
-        URL resource = ClassUtils.getResource(JarFileUtils.class, classPath);
-        if (resource == null)
+    public static String getRuntimePath() {
+        URL url = ClassUtils.getResource(JarFileUtils.class, CLASS_PATH);
+        if (Objects.isNull(url))
             return null;
 
-        String urlString = resource.toString();
+        String urlString = url.toString();
         int insidePathIndex = urlString.indexOf('!');
 
         if (insidePathIndex > -1) {
@@ -32,14 +36,26 @@ public final class JarFileUtils {
             return urlString;
         }
 
-        return urlString.substring(urlString.indexOf("file:") + 5, urlString.length() - classPath.length());
+        return urlString.substring(urlString.indexOf("file:") + 5, urlString.length() - CLASS_PATH.length());
     }
-
-    public static String getJarEntry(String fileName) {
+    public static JarEntry getJarEntry(String fileName){
         return getJarEntry(getRuntimePath(), fileName);
     }
 
-    public static String getJarEntry(String jarPath, String fileName) {
+    public static JarEntry getJarEntry(String jarPath, String fileName){
+        try (JarFile jarFile = new JarFile(jarPath)){
+            return jarFile.getJarEntry(fileName);
+        } catch (IOException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return null;
+    }
+
+    public static String getJarEntryContent(String fileName) {
+        return getJarEntryContent(getRuntimePath(), fileName);
+    }
+
+    public static String getJarEntryContent(String jarPath, String fileName) {
         InputStream in = getJarEntryStream(jarPath, fileName);
         try {
             return IOUtils.toString(in, StandardCharsets.UTF_8);

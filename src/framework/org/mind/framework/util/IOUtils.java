@@ -6,6 +6,10 @@ import java.nio.charset.StandardCharsets;
 
 public class IOUtils {
 
+    public static final String DIR_SEPARATOR = "/";
+
+    public static final String DOT_SEPARATOR = ".";
+
     private IOUtils() {
     }
 

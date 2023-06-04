@@ -27,7 +27,7 @@ public class TemplateResourceLoader extends ClasspathResourceLoader {
 
     @Override
     public void init(ExtProperties configuration) {
-        templatePath = configuration.getString("path", "/");
+        templatePath = configuration.getString("path", org.mind.framework.util.IOUtils.DIR_SEPARATOR);
     }
 
     @Override

@@ -36,7 +36,7 @@ public class JsonUtils {
      */
     private static final ToNumberStrategy OBJECT_TO_NUMBER = (in) -> {
         String value = in.nextString();
-        if (value.contains(".") || value.contains("e") || value.contains("E"))
+        if (value.contains(IOUtils.DOT_SEPARATOR) || value.contains("e") || value.contains("E"))
             return Double.parseDouble(value);
 
         long aLong = Long.parseLong(value);

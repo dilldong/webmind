@@ -6,6 +6,7 @@ import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.PropertiesUtils;
 import org.slf4j.Logger;
@@ -44,9 +45,9 @@ public class UploadFile {
         this.property = PropertiesUtils.getProperties();
 
         String dir = PropertiesUtils.getString(this.property, "upload.dir");
-        dir = dir.startsWith("/") ?
+        dir = dir.startsWith(IOUtils.DIR_SEPARATOR) ?
                 dir :
-                request.getSession().getServletContext().getRealPath("/" + dir);
+                request.getSession().getServletContext().getRealPath(IOUtils.DIR_SEPARATOR + dir);
 
         this.setDirectory(dir);
     }
@@ -123,13 +124,13 @@ public class UploadFile {
             /*
              * 匹配允许的文件格式
              */
-            String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
+            String suffix = fileName.substring(fileName.lastIndexOf(IOUtils.DOT_SEPARATOR) + 1);
             if (!MatcherUtils.matcher(suffix, regexType, MatcherUtils.IGNORECASE_EQ).matches())
                 throw new NotSupportedException(String.format("%s file suffix mismatch, allowed suffix: %s", suffix, regexType));
 
             fileName = sb
                     .append(this.directory).append(File.separator).append(currentTime)
-                    .append("-").append(++i).append(".")
+                    .append("-").append(++i).append(IOUtils.DOT_SEPARATOR)
                     .append(suffix).toString();
 
             sb.delete(0, sb.length());
@@ -145,7 +146,8 @@ public class UploadFile {
                 out.close();
             }
 
-            log.debug("upload files: {}", fileName);
+            if(log.isDebugEnabled())
+                log.debug("upload files: {}", fileName);
 
             props.add(new UploadProperty(
                     item.getFiledName(),

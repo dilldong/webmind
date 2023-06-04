@@ -1,6 +1,7 @@
 package org.mind.framework.http;
 
 import org.mind.framework.container.Destroyable;
+import org.mind.framework.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -44,7 +45,6 @@ public class LiteCookieManager implements Destroyable {
     private static final String SET_COOKIE_SEPARATOR = "; ";
 
     private static final char NAME_VALUE_SEPARATOR = '=';
-    private static final char DOT = '.';
 
     public LiteCookieManager() {
         store = new HashMap<>();
@@ -185,8 +185,8 @@ public class LiteCookieManager implements Destroyable {
     }
 
     private String getDomainFromHost(String host) {
-        if (host.indexOf(DOT) != host.lastIndexOf(DOT))
-            return host.substring(host.indexOf(DOT) + 1);
+        if (host.indexOf(IOUtils.DOT_SEPARATOR) != host.lastIndexOf(IOUtils.DOT_SEPARATOR))
+            return host.substring(host.indexOf(IOUtils.DOT_SEPARATOR) + 1);
 
         return host;
     }
@@ -208,7 +208,7 @@ public class LiteCookieManager implements Destroyable {
     private boolean comparePaths(String cookiePath, String targetPath) {
         if (cookiePath == null) {
             return true;
-        } else if (cookiePath.equals("/")) {
+        } else if (cookiePath.equals(IOUtils.DIR_SEPARATOR)) {
             return true;
         } else return targetPath.regionMatches(0, cookiePath, 0, cookiePath.length());
 

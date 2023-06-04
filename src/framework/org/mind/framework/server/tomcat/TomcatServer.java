@@ -24,6 +24,7 @@ import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
 import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
+import org.mind.framework.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
@@ -71,7 +72,9 @@ public class TomcatServer extends Tomcat {
 
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
-            log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
+            if(log.isDebugEnabled())
+                log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
+
             ctx.addLifecycleListener(super.getDefaultWebXmlListener());
             LifecycleListener config = this.getContextListener(host);
             ctx.addLifecycleListener(config);
@@ -79,7 +82,8 @@ public class TomcatServer extends Tomcat {
             if (config instanceof ContextConfig)
                 ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
-            log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
+            if(log.isDebugEnabled())
+                log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
 
             // create servlet
             this.createServlet(host, ctx);
@@ -192,7 +196,9 @@ public class TomcatServer extends Tomcat {
         } catch (LifecycleException e) {
         }
 
-        log.debug("Delete tomcat temp directory ....");
+        if(log.isDebugEnabled())
+            log.debug("Delete tomcat temp directory ....");
+
         try {
             if (StringUtils.isNotEmpty(serverConfig.getTomcatBaseDir()))
                 FileUtils.deleteDirectory(new File(serverConfig.getTomcatBaseDir()));
@@ -216,7 +222,7 @@ public class TomcatServer extends Tomcat {
         wrapper.setLoadOnStartup(1);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
-        ctx.addServletMappingDecoded("/", ServerContext.SERVLET_NAME);
+        ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, ServerContext.SERVLET_NAME);
 
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {

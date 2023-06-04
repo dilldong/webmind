@@ -39,7 +39,7 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
 
             // xml in jar
             if (!resource.exists()) {
-                String tempLoc = location.startsWith("/") ? location.substring(1) : location;
+                String tempLoc = location.startsWith(org.mind.framework.util.IOUtils.DIR_SEPARATOR) ? location.substring(1) : location;
                 InputStream in = JarFileUtils.getJarEntryStream(
                         WebServerConfig.JAR_IN_CLASSES + IOUtils.DIR_SEPARATOR_UNIX + tempLoc);
 

@@ -36,7 +36,7 @@ public class CalculateUtils {
     }
 
     public static String format(String number, RoundingMode mode, int scale) {
-        String afterPart = StringUtils.substringAfter(number, ".");
+        String afterPart = StringUtils.substringAfter(number, IOUtils.DOT_SEPARATOR);
         if (afterPart.length() > scale)
             return format(new BigDecimal(number), mode, scale);
 
@@ -201,7 +201,7 @@ public class CalculateUtils {
     }
 
     public static String formatNumberSymbol(String amount) {
-        String intpart = StringUtils.substringBefore(amount, ".");
+        String intpart = StringUtils.substringBefore(amount, IOUtils.DOT_SEPARATOR);
         int size = intpart.length();
 
         if (size > 3) {
@@ -218,10 +218,10 @@ public class CalculateUtils {
                 index++;
             }
 
-            String decimals = StringUtils.substringAfter(amount, ".");
+            String decimals = StringUtils.substringAfter(amount, IOUtils.DOT_SEPARATOR);
             return StringUtils.isEmpty(decimals) ?
                     str.append(newChars).toString() :
-                    str.append(newChars).append(".").append(decimals).toString();
+                    str.append(newChars).append(IOUtils.DOT_SEPARATOR).append(decimals).toString();
         }
 
 //        DecimalFormat formatter = (DecimalFormat) NumberFormat.getNumberInstance(Locale.getDefault());

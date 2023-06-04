@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -759,7 +760,15 @@ public class RedissonHelper {
     }
 
     public long getIdForDate() {
-        String date = DateFormatUtils.dateNow().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        return getIdForDate(ZoneId.systemDefault());
+    }
+
+    public long getIdForDate(ZoneId zone) {
+        return getIdForDate(zone, "yyMMdd");
+    }
+
+    public long getIdForDate(ZoneId zone, String dateFormat) {
+        String date = DateFormatUtils.dateNow(zone).format(DateTimeFormatter.ofPattern(dateFormat));
         return Long.parseLong(String.format("%s%d", date, getId()));
     }
 
