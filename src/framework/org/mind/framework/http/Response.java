@@ -62,7 +62,7 @@ public class Response<T> {
      * Set response-code follow code
      * @return
      */
-    public Response<T> following(){
+    public Response<T> followHttpStatus(){
         Action.getActionContext().getResponse().setStatus(code);
         return this;
     }
