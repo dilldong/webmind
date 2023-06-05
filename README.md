@@ -6,7 +6,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e457baf96038467f814c72d0300eda44)](https://app.codacy.com/gh/dilldong/webmind/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 Webmind is a lightweight web service framework that integrates with SpringFramework. Realize the embedded startup of Tomcat, which is easy to use, occupies less memory, responds quickly, and has stable service. Suitable for Java microservices and web projects.
-## Add maven dependency
+## Maven
 Add the following Maven dependency to your project's pom.xml
 ```xml
 <dependency>
@@ -14,6 +14,10 @@ Add the following Maven dependency to your project's pom.xml
     <artifactId>webmind-framework</artifactId>
     <version>4.5.1</version>
 </dependency>
+```
+## Gradle
+```text
+implementation 'io.github.dilldong:webmind-framework:4.5.1'
 ```
 ## Example
 ### 1. Mapping
@@ -31,11 +35,17 @@ public class HelloController {
     public String withText() {
         return "Hello,This is mind-framework.";
     }
+    
+    // Spec a URL parameter, text response.
+    @Mapping(value = "/request/text/${name}", method = RequestMethod.GET)
+    public String withText(String name) {
+        return "Hello "+ name +",This is mind-framework.";
+    }
 
     // Json response
     @Mapping("/request/json")
-    public String withJson() {
-        return new Response<String>(HttpStatus.SC_OK, "OK").toJson();
+    public Response<String> withJson() {
+        return new Response<String>(HttpStatus.SC_OK, "OK");
     }
 
     // Json body response
@@ -87,7 +97,7 @@ public class Application {
     public static void main(String[] args) {
         SpringApplication.run(
                 Application.class,
-                new String[]{"spring/springContext.xml", "spring/businessConfig.xml"},
+                new String[]{"spring/springContext.xml"},
                 args);
     }
 }
