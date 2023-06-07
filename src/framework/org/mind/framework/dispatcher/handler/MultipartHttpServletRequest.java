@@ -158,7 +158,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
         item.setFileName(fileName);
 
         long size = 0;
-        int read = -1;
+        int read;
         byte[] buf = new byte[8 * 1024];
 
         ByteArrayOutputStream byteStream;

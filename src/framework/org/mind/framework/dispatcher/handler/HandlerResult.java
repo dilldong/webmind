@@ -48,7 +48,7 @@ public interface HandlerResult {
             if(StringUtils.isEmpty(str))
                 str = StringUtils.substringBetween(str, JSON_RPC_METHOD, "}");
 
-            str = str.replaceAll("[\'\":]*", StringUtils.EMPTY).trim();
+            str = str.replaceAll("['\":]*", StringUtils.EMPTY).trim();
             jsonObject.addProperty(JSON_METHOD, str);
         }
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
