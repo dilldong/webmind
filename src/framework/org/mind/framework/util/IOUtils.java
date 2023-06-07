@@ -96,7 +96,7 @@ public class IOUtils {
     }
 
     public static long getLong(byte[] b, int off) {
-        return ((b[off + 7] & 0xFFL) << 0) + ((b[off + 6] & 0xFFL) << 8)
+        return (b[off + 7] & 0xFFL) + ((b[off + 6] & 0xFFL) << 8)
                 + ((b[off + 5] & 0xFFL) << 16) + ((b[off + 4] & 0xFFL) << 24)
                 + ((b[off + 3] & 0xFFL) << 32) + ((b[off + 2] & 0xFFL) << 40)
                 + ((b[off + 1] & 0xFFL) << 48) + ((b[off] & 0xFFL) << 56);
@@ -226,7 +226,7 @@ public class IOUtils {
      * @param b      The array containing the bytes
      * @param offset The array index of the MSB
      * @param size   The number of bytes to convert into the long
-     * @return An long value represented by the specified bytes.
+     * @return A long value represented by the specified bytes.
      */
     public static long bytesToLong(byte[] b, int offset, int size) {
         long num = 0;

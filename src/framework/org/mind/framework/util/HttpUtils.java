@@ -162,7 +162,7 @@ public class HttpUtils {
         byte[] data = null;
         try {
             data = getPostBytes(request);
-        } catch (IOException e) {}
+        } catch (IOException ignored) {}
 
         /*
          * Servlet Specification:

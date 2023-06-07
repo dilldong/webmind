@@ -58,7 +58,7 @@ public final class JarFileUtils {
     public static String getJarEntryContent(String jarPath, String fileName) {
         InputStream in = getJarEntryStream(jarPath, fileName);
         try {
-            return IOUtils.toString(in, StandardCharsets.UTF_8);
+            return IOUtils.toString(Objects.requireNonNull(in), StandardCharsets.UTF_8);
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
             return null;

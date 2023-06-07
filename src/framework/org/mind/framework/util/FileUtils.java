@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class FileUtils {
-    static final int MAX_BUFFER_SIZE = 1024;
+    public static final int MAX_BUFFER_SIZE = 1024;
     public static final String UNIX_DIR = String.valueOf(IOUtils.DIR_SEPARATOR_UNIX);
     public static final String WINDOWS_DIR = String.valueOf(IOUtils.DIR_SEPARATOR_WINDOWS);
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
@@ -147,8 +147,8 @@ public class FileUtils {
 
                     try {
                         Thread.sleep(100L);
-                    } catch (InterruptedException ex) {
-                    }
+                    } catch (InterruptedException ignored) {}
+                    Thread.yield();
                 }
             } while (++tryCounter < 10);
         } catch (IOException e) {
@@ -267,8 +267,8 @@ public class FileUtils {
 
                     try {
                         Thread.sleep(160L);
-                    } catch (InterruptedException ex) {
-                    }
+                    } catch (InterruptedException ignored) {}
+                    Thread.yield();
                 }
             } while (--loopLimit >= 0);
         } catch (IOException e) {
@@ -278,7 +278,7 @@ public class FileUtils {
     }
 
     private static String readBuffer(FileChannel channel, long size) throws IOException {
-        if (size == -1L || size > MAX_BUFFER_SIZE || size > Integer.MAX_VALUE)
+        if (size == -1L || size > MAX_BUFFER_SIZE)
             size = MAX_BUFFER_SIZE;
 
         ByteBuffer buffer = ByteBuffer.allocate((int) size);
