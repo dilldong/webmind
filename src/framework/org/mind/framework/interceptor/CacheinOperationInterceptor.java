@@ -176,8 +176,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             try {
                 Method m = target.getClass().getMethod(method.getName(), method.getParameterTypes());
                 methodVarNames = parameterNameDiscoverer.getParameterNames(m);
-            } catch (NoSuchMethodException e) {
-            }
+            } catch (NoSuchMethodException ignored) {}
         }
 
         Objects.requireNonNull(methodVarNames);
