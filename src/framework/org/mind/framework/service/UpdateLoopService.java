@@ -19,14 +19,14 @@ public class UpdateLoopService extends LoopWorkerService {
 
     @Getter
     @Setter
-    private List<Updateable> updaters;
+    private List<Updatable> updaters;
 
     @Override
     protected void doLoopWork() {
         if (updaters != null && !updaters.isEmpty()) {
-            updaters.forEach(updateable -> {
-                if (Objects.nonNull(updateable))
-                    updateable.doUpdate();
+            updaters.forEach(updatable -> {
+                if (Objects.nonNull(updatable))
+                    updatable.doUpdate();
             });
         }
     }
@@ -43,14 +43,14 @@ public class UpdateLoopService extends LoopWorkerService {
         updaters.clear();
     }
 
-    public void addUpdater(Updateable updater) {
+    public void addUpdater(Updatable updater) {
         if (updaters == null)
             updaters = new CopyOnWriteArrayList<>();
 
         updaters.add(updater);
     }
 
-    public boolean removeUpdater(Updateable updater) {
+    public boolean removeUpdater(Updatable updater) {
         if (updaters == null) {
             updaters = new CopyOnWriteArrayList<>();
             return false;
