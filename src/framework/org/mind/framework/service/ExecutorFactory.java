@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 public class ExecutorFactory {
     private static final long KEEP_ALIVE_TIME = 60L;
 
+    private static final String NAME_PREFIX = "mind-pool-exec-";
+
     /**
      * The default rejected execution handler
      */
@@ -75,7 +77,7 @@ public class ExecutorFactory {
 
     public static ThreadFactory newThreadFactory(boolean daemon, int priority) {
 //         return Executors.defaultThreadFactory();
-        return new TaskThreadFactory("pool-exec-", daemon, priority);
+        return new TaskThreadFactory(NAME_PREFIX, daemon, priority);
     }
 
     public static Thread newThread(Runnable runnable) {
