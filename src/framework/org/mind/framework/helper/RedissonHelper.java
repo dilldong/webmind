@@ -194,7 +194,7 @@ public class RedissonHelper {
         if (rList.isExists())
             return rList.add(v);
 
-        boolean flag = rList.add(v);
+        rList.add(v);
         if (expire > 0L) {
             long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
@@ -202,7 +202,7 @@ public class RedissonHelper {
             rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
         }
         this.putLocal(name, ArrayList.class);
-        return flag;
+        return true;
     }
 
     public <V> boolean appendList(String name, V v, long expire, TimeUnit unit, RLock lock) {

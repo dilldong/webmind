@@ -19,7 +19,6 @@ import java.util.Objects;
  * @date 2022/11/26
  */
 public class GsonCodec extends BaseCodec {
-    public static final GsonCodec INSTANCE = new GsonCodec();
     private final Encoder encoder;
     private final Decoder<Object> decoder;
 
@@ -30,17 +29,16 @@ public class GsonCodec extends BaseCodec {
     public GsonCodec(boolean expose) {
         this.encoder = in -> {
             ByteBuf out = ByteBufAllocator.DEFAULT.buffer();
-            try {
-                ByteBufOutputStream os = new ByteBufOutputStream(out);
+            try (ByteBufOutputStream os = new ByteBufOutputStream(out)){
                 os.writeUTF(JsonUtils.toJson(in, expose));
                 os.writeUTF(in.getClass().getName());
                 return os.buffer();
             } catch (IOException e) {
-                out.release();
                 throw e;
             } catch (Exception e) {
-                out.release();
                 throw new IOException(e);
+            }finally {
+                out.release();
             }
         };
 
@@ -51,6 +49,9 @@ public class GsonCodec extends BaseCodec {
                 return JsonUtils.fromJson(value, ClassUtils.getClass(type));
             } catch (ClassNotFoundException e) {
                 throw new IOException(e);
+            }finally {
+                if(Objects.nonNull(buf))
+                    buf.release();
             }
         };
     }

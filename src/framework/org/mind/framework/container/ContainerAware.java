@@ -1,8 +1,7 @@
 package org.mind.framework.container;
 
-import java.util.List;
-
 import javax.servlet.ServletConfig;
+import java.util.List;
 
 /**
  * Web container instance for creating IOC container.

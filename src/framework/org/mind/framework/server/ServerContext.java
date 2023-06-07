@@ -130,11 +130,12 @@ public abstract class ServerContext {
             if(Files.notExists(path)){
                 try {
                     Files.createDirectories(path);
-                } catch (IOException e) {}
+                } catch (IOException ignored) {}
             }
             baseDir = path.toFile();
         }
 
+        Objects.requireNonNull(baseDir, "The tomcat work directory not exists.");
         serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
         WeakReference<ResourcePatternResolver> patternResolverWeakRef =
                 new WeakReference<>(new PathMatchingResourcePatternResolver());

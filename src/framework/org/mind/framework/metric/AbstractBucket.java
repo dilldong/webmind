@@ -80,7 +80,7 @@ public abstract class AbstractBucket {
 
     public List<Indicator> getValuesByPeriod(long timeMills) {
         if (timeMills < 0)
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
 
         final int size = indicatorArray.length();
         List<Indicator> resultList = new ArrayList<>(size);

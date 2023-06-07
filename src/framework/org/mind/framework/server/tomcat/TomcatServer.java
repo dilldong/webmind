@@ -115,7 +115,7 @@ public class TomcatServer extends Tomcat {
         connector.setUseBodyEncodingForURI(true);
         connector.setThrowOnFailure(true);
 
-        AbstractHttp11JsseProtocol nioProtocol = (AbstractHttp11JsseProtocol) connector.getProtocolHandler();
+        AbstractHttp11JsseProtocol<?> nioProtocol = (AbstractHttp11JsseProtocol<?>) connector.getProtocolHandler();
         nioProtocol.setPort(serverConfig.getPort());
         nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
 
@@ -182,8 +182,7 @@ public class TomcatServer extends Tomcat {
     public void stop() {
         try {
             super.stop();
-        } catch (LifecycleException e) {
-        }
+        } catch (LifecycleException ignored) {}
     }
 
     /**
@@ -193,8 +192,7 @@ public class TomcatServer extends Tomcat {
     public void destroy() {
         try {
             super.destroy();
-        } catch (LifecycleException e) {
-        }
+        } catch (LifecycleException ignored) {}
 
         if(log.isDebugEnabled())
             log.debug("Delete tomcat temp directory ....");
