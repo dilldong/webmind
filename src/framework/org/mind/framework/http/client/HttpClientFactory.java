@@ -36,8 +36,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class HttpClientFactory {
     private static final CloseableHttpClient httpClient;
+    private static final Thread shutdownThread;
     private static HttpClientBuilder httpClientBuilder;
-    private static Thread shutdownThread;
 
     static {
         log.info("Init CloseableHttpClient ....");
