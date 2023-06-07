@@ -310,7 +310,7 @@ public class RedissonHelper {
     public <K, V> Map<K, V> getMap(String name) {
         RMap<K, V> rMap = this.rMap(name);
         if (rMap.isEmpty())
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
 
         Map<K, V> map = new HashMap<>(rMap.size());
         map.putAll(rMap);
@@ -890,13 +890,13 @@ public class RedissonHelper {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
 
         if (Objects.isNull(element))
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
 
         Map<String, Class<?>> redisKeys =
                 (Map<String, Class<?>>) element.getValue();
 
         if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
 
         List<String> results = new ArrayList<>();
         redisKeys.forEach((k, v) -> {
@@ -911,13 +911,13 @@ public class RedissonHelper {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
 
         if (Objects.isNull(element))
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
 
         Map<String, Class<?>> redisKeys =
                 (Map<String, Class<?>>) element.getValue();
 
         if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
 
         Map<String, Class<?>> results = new HashMap<>();
         redisKeys.forEach((k, v) -> {
@@ -932,13 +932,13 @@ public class RedissonHelper {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
 
         if (Objects.isNull(element))
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
 
         Map<String, Class<?>> keysMap =
                 (Map<String, Class<?>>) element.getValue();
 
         if (Objects.isNull(keysMap) || keysMap.isEmpty())
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
 
         Map<String, Class<?>> resultMap = new HashMap<>(keysMap.size());
         resultMap.putAll(keysMap);
