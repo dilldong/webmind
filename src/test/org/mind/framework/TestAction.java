@@ -108,12 +108,11 @@ public class TestAction {
 
     @Mapping("/object")
     public TestSpringModule.A object() {
-        TestSpringModule.A a = TestSpringModule.A.builder()
+        return TestSpringModule.A.builder()
                 .field01("field01")
                 .num01(100)
                 .num02(99_100_200_000L)
                 .build();
-        return a;
     }
 
 }
