@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Render object to indicate how to rendering the http response.
+ * Render object to indicate how to render the http response.
  *
  * @author dp
  */
