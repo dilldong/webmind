@@ -7,9 +7,9 @@ import org.mind.framework.server.WebServer;
  * @version 1.0
  */
 public class SpringApplication {
-    private String[] springLocations;
-    private String[] resources;
-    private Class<?> mainClass;
+    private final String[] springLocations;
+    private final String[] resources;
+    private final Class<?> mainClass;
 
     private SpringApplication(Class<?> mainClass, String[] springLocations, String[] resources) {
         this.mainClass = mainClass;
