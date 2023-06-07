@@ -6,7 +6,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
 import org.mind.framework.service.ExecutorFactory;
-import org.mind.framework.service.Updateable;
+import org.mind.framework.service.Updatable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class ConsumerService implements Updateable, Destroyable {
+public class ConsumerService implements Updatable, Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
@@ -66,7 +66,7 @@ public class ConsumerService implements Updateable, Destroyable {
 
             if (running) {
                 while ((--wholeCount) >= 0)
-                    this.submitTask(() -> execute());
+                    this.submitTask(this::execute);
             }
             return;
         }
@@ -103,7 +103,7 @@ public class ConsumerService implements Updateable, Destroyable {
                 try {
                     if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
                         executor.shutdownNow();
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException ignored) {}
                 log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
             }
         }
