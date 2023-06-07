@@ -72,7 +72,7 @@ public class GracefulShutdown {
 
                     //当收到停止信号时，等待主线程的执行完成
                     mainThread.join();
-                } catch (InterruptedException | IllegalStateException e) {
+                } catch (InterruptedException | IllegalStateException ignored) {
                 } finally {
                     log.info("Shutdown {} server completed.", nameTag);
                 }
@@ -103,7 +103,7 @@ public class GracefulShutdown {
                             waitTimeUnit.name());
                     threadPoolExecutor.shutdownNow();
                 }
-            } catch (InterruptedException | IllegalStateException e) {
+            } catch (InterruptedException | IllegalStateException ignored) {
             }
         }else if(this.executor instanceof java.util.concurrent.ThreadPoolExecutor){
             try {
@@ -120,7 +120,7 @@ public class GracefulShutdown {
                             waitTimeUnit.name());
                     threadPoolExecutor.shutdownNow();
                 }
-            } catch (InterruptedException | IllegalStateException e) {
+            } catch (InterruptedException | IllegalStateException ignored) {
             }
         }
 
@@ -129,8 +129,7 @@ public class GracefulShutdown {
             try {
                 tomcat.stop();
                 tomcat.destroy();
-            } catch (LifecycleException e) {
-            }
+            } catch (LifecycleException ignored) {}
         }
     }
 }
