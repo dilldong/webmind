@@ -94,8 +94,7 @@ public class ExecutorFactory {
                 defaultUserThreadFactory.newThread(runnable);
         try {
             thread.setName(name);
-        } catch (SecurityException e) {
-        }
+        } catch (SecurityException ignored) {}
         return thread;
     }
 
