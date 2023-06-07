@@ -26,7 +26,7 @@ public class ClassUtils {
         if (Objects.nonNull(loader)) {
             try {
                 c = Class.forName(clazz, true, loader);
-            } catch (ClassNotFoundException e) {}
+            } catch (ClassNotFoundException ignored) {}
         }
 
         if(Objects.isNull(c))
