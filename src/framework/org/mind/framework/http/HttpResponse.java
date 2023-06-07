@@ -49,8 +49,7 @@ public class HttpResponse<T> implements Closeable {
         } catch (SocketTimeoutException e) {
             try {
                 TimeUnit.MILLISECONDS.sleep(100L);
-            } catch (InterruptedException e1) {
-            }
+            } catch (InterruptedException ignored) {}
 
             this.responseCode = con.getResponseCode();
         }
@@ -174,8 +173,7 @@ public class HttpResponse<T> implements Closeable {
         if (Objects.nonNull(inStream)) {
             try {
                 inStream.close();
-            } catch (IOException e) {
-            }
+            } catch (IOException ignored) {}
             inStream = null;
         }
     }

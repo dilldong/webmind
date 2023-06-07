@@ -104,7 +104,7 @@ public class OkHttpClientFactory {
      * Extracts and converts the response error body into an object.
      */
     public static RequestError getError(Response<?> response) throws IOException {
-        assert response.errorBody() != null;
+        Objects.requireNonNull(response.errorBody());
         return errorBodyConverter.convert(response.errorBody());
     }
 

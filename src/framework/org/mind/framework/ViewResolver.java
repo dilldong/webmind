@@ -23,15 +23,15 @@ public class ViewResolver {
     }
 
     public static <V> Response<V> response() {
-        return new Response<V>();
+        return new Response<>();
     }
 
     public static <V> Response<V> response(int code, String msg) {
-        return new Response<V>(code, msg);
+        return new Response<>(code, msg);
     }
 
     public static <V> Response<V> response(int code, String msg, V result) {
-        return new Response<V>(code, msg, result);
+        return new Response<>(code, msg, result);
     }
 
     public static <V> Response<V> response(HttpStatus state) {

@@ -98,7 +98,7 @@ public class HttpClientFactory {
         httpClient = httpClientBuilder.build();
 
         // When the JVM stops or restarts, closing the connection-pool releases the connection
-        shutdownThread = ExecutorFactory.newThread(() -> close());
+        shutdownThread = ExecutorFactory.newThread(HttpClientFactory::close);
         Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
@@ -118,7 +118,7 @@ public class HttpClientFactory {
         if(Objects.nonNull(shutdownThread)){
             try {
                 Runtime.getRuntime().removeShutdownHook(shutdownThread);
-            }catch (IllegalStateException e){}
+            }catch (IllegalStateException ignored){}
         }
     }
 }
