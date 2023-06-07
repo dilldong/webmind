@@ -140,7 +140,7 @@ public class JsonUtils {
                 .newBuilder()
                 .setExclusionStrategies(
                         new ExclusionStrategy() {
-                            Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
+                            final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
 
                             @Override
                             public boolean shouldSkipField(FieldAttributes field) {
@@ -196,7 +196,7 @@ public class JsonUtils {
     }
 
     private static String defaultEmpty(Object target) {
-        Class clazz = target.getClass();
+        Class<?> clazz = target.getClass();
         if (Collection.class.isAssignableFrom(clazz) || clazz.isArray())
             return EMPTY_JSON_ARRAY;
 
