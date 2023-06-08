@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.JsonUtils;
 import org.redisson.client.codec.BaseCodec;
@@ -18,27 +19,29 @@ import java.util.Objects;
  * @auther Marcus
  * @date 2022/11/26
  */
+@Slf4j
 public class GsonCodec extends BaseCodec {
     private final Encoder encoder;
     private final Decoder<Object> decoder;
 
-    public GsonCodec(){
+    public GsonCodec() {
         this(false);
     }
 
     public GsonCodec(boolean expose) {
         this.encoder = in -> {
-            ByteBuf out = ByteBufAllocator.DEFAULT.buffer();
-            try (ByteBufOutputStream os = new ByteBufOutputStream(out)){
+            ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();
+            try {
+                ByteBufOutputStream os = new ByteBufOutputStream(buf);
                 os.writeUTF(JsonUtils.toJson(in, expose));
                 os.writeUTF(in.getClass().getName());
                 return os.buffer();
             } catch (IOException e) {
+                buf.release();
                 throw e;
             } catch (Exception e) {
+                buf.release();
                 throw new IOException(e);
-            }finally {
-                out.release();
             }
         };
 
@@ -49,9 +52,6 @@ public class GsonCodec extends BaseCodec {
                 return JsonUtils.fromJson(value, ClassUtils.getClass(type));
             } catch (ClassNotFoundException e) {
                 throw new IOException(e);
-            }finally {
-                if(Objects.nonNull(buf))
-                    buf.release();
             }
         };
     }
@@ -69,7 +69,7 @@ public class GsonCodec extends BaseCodec {
     @Override
     public ClassLoader getClassLoader() {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if(Objects.nonNull(loader))
+        if (Objects.nonNull(loader))
             return loader;
 
         return super.getClassLoader();
