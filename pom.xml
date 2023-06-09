@@ -271,7 +271,7 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
             <version>1.9.19</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
         </dependency>
 
         <!--Spring framework-->
