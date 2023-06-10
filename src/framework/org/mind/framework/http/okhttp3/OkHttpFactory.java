@@ -1,13 +1,17 @@
 package org.mind.framework.http.okhttp3;
 
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.CipherSuite;
 import okhttp3.ConnectionSpec;
 import okhttp3.Dispatcher;
+import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
@@ -24,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * @author dp
@@ -105,7 +110,7 @@ public class OkHttpFactory {
         if (log.isDebugEnabled()) {
             builder.addInterceptor(
                     new HttpLoggingInterceptor(log::debug)
-                            .setLevel(HttpLoggingInterceptor.Level.BODY));
+                            .setLevel(HttpLoggingInterceptor.Level.BASIC));
         }
 
         HTTP_CLIENT = builder.build();
@@ -171,18 +176,48 @@ public class OkHttpFactory {
         return HTTP_CLIENT;
     }
 
+    public static String request(Request request) throws IOException {
+        return request(request, header -> {});
+    }
+
+    public static String request(Request request, Consumer<Headers> processHeaders) throws IOException {
+        try (okhttp3.Response response = client().newCall(request).execute()) {
+            processHeaders.accept(response.headers());
+            ResponseBody responseBody = response.body();
+            if (response.isSuccessful())
+                return Objects.isNull(responseBody)? StringUtils.EMPTY : responseBody.string();
+
+            String text = Objects.isNull(responseBody)? "N/A" : responseBody.string();
+            throw new RequestException("Invalid response received: " + response.code() + "; " + text);
+        }
+    }
+
+    public static <T> T request(Request request, Class<T> clazz) throws IOException {
+        return request(request, TypeToken.get(clazz));
+    }
+
+    public static <T> T request(Request request, TypeToken<T> typeRef) throws IOException {
+        String json = request(request);
+        if(StringUtils.isEmpty(json))
+            return null;
+
+        return JsonUtils.fromJson(json, typeRef);
+    }
+
     private static void gracefulShutdown() {
-        log.info("Close OkHttpClient ....");
-        String nameTag = "OkHttp-Graceful";
 
         GracefulShutdown shutdown =
-                new GracefulShutdown(nameTag, Thread.currentThread(), HTTP_CLIENT.dispatcher().executorService())
+                new GracefulShutdown(
+                        "OkHttp-Graceful",
+                        Thread.currentThread(),
+                        HTTP_CLIENT.dispatcher().executorService())
                 .waitTime(20L, TimeUnit.SECONDS);
 
         shutdown.registerShutdownHook(signal -> {
             if(signal == ShutDownSignalEnum.IN) {
-                log.info("'{}' request active count: {}", nameTag, HTTP_CLIENT.dispatcher().runningCallsCount());
+                log.info("Close OkHttpClient ....");
             } else if(signal == ShutDownSignalEnum.OUT){
+                log.info("Clear OkHttpClient connections ....");
                 // 清理连接池中的所有连接
                 HTTP_CLIENT.connectionPool().evictAll();
 
