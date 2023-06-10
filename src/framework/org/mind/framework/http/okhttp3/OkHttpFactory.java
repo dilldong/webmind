@@ -11,6 +11,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
+import okio.GzipSource;
+import okio.Okio;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.server.GracefulShutdown;
@@ -22,8 +24,12 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -37,12 +43,13 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class OkHttpFactory {
+    private static final String GZIP = "gzip";
+    private static final String CONTENT_ENCODING = "Content-Encoding";
+
     private static final OkHttpClient HTTP_CLIENT;
+    private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
     private static final Converter.Factory GSON_CONVERTER_FACTORY = GsonConverterFactory.create(JsonUtils.getSingleton());
 
-    private static final Converter<ResponseBody, RequestError> ERROR_BODY_CONVERTER =
-            (Converter<ResponseBody, RequestError>)
-                    GSON_CONVERTER_FACTORY.responseBodyConverter(RequestError.class, new Annotation[0], null);
 
     /**
      * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
@@ -110,7 +117,7 @@ public class OkHttpFactory {
         if (log.isDebugEnabled()) {
             builder.addInterceptor(
                     new HttpLoggingInterceptor(log::debug)
-                            .setLevel(HttpLoggingInterceptor.Level.BASIC));
+                            .setLevel(HttpLoggingInterceptor.Level.BODY));
         }
 
         HTTP_CLIENT = builder.build();
@@ -154,8 +161,7 @@ public class OkHttpFactory {
             if (response.isSuccessful())
                 return response.body();
 
-            RequestError apiError = getError(response);
-            throw new RequestException(apiError);
+            throw new RequestException(getError(response));
         } catch (IOException e) {
             throw new RequestException(e);
         }
@@ -165,8 +171,11 @@ public class OkHttpFactory {
      * Extracts and converts the response error body into an object.
      */
     public static RequestError getError(Response<?> response) throws IOException {
-        Objects.requireNonNull(response.errorBody());
-        return ERROR_BODY_CONVERTER.convert(response.errorBody());
+        ResponseBody errBody = response.errorBody();
+        if(Objects.isNull(errBody))
+            return RequestError.newInstance(response.code(), response.message());
+
+        return RequestError.newInstance(response.code(), errBody.string());
     }
 
     /**
@@ -176,53 +185,103 @@ public class OkHttpFactory {
         return HTTP_CLIENT;
     }
 
+    /**
+     * Execute Http request and return a String
+     */
     public static String request(Request request) throws IOException {
-        return request(request, header -> {});
+        InputStream in = request(request, header -> {});
+        if (Objects.isNull(in))
+            return StringUtils.EMPTY;
+
+        String line;
+        StringBuilder sb = new StringBuilder(CONTENT_LENGTH_LOCAL.get());
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            while ((line = reader.readLine()) != null)
+                sb.append(line);
+
+            return sb.toString();
+        }
     }
 
-    public static String request(Request request, Consumer<Headers> processHeaders) throws IOException {
+    /**
+     * Execute Http request and return a InputStream
+     */
+    public static InputStream request(Request request, Consumer<Headers> processHeaders) throws IOException {
         try (okhttp3.Response response = client().newCall(request).execute()) {
             processHeaders.accept(response.headers());
             ResponseBody responseBody = response.body();
-            if (response.isSuccessful())
-                return Objects.isNull(responseBody)? StringUtils.EMPTY : responseBody.string();
 
-            String text = Objects.isNull(responseBody)? "N/A" : responseBody.string();
+            if (response.isSuccessful()) {
+                return Objects.isNull(responseBody) ?
+                        null :
+                        buildInputStream(response.headers(), responseBody);
+            }
+
+            String text = Objects.isNull(responseBody) ? "N/A" : responseBody.string();
             throw new RequestException("Invalid response received: " + response.code() + "; " + text);
         }
     }
 
+    /**
+     * Execute Http request and return a json serialized object
+     */
     public static <T> T request(Request request, Class<T> clazz) throws IOException {
         return request(request, TypeToken.get(clazz));
     }
 
-    public static <T> T request(Request request, TypeToken<T> typeRef) throws IOException {
-        String json = request(request);
-        if(StringUtils.isEmpty(json))
+    /**
+     * Execute Http request and return a json serialized object
+     */
+    public static <T> T request(Request request, TypeToken<T> typeReference) throws IOException {
+        InputStream in = request(request, header -> {});
+        if (Objects.isNull(in))
             return null;
 
-        return JsonUtils.fromJson(json, typeRef);
+        return JsonUtils.fromJson(new InputStreamReader(in), typeReference);
     }
 
-    private static void gracefulShutdown() {
+    private static InputStream buildInputStream(Headers responseHeaders, ResponseBody responseBody) throws IOException {
+        ByteArrayInputStream in;
+        if (GZIP.equals(responseHeaders.get(CONTENT_ENCODING))) {
+            in = new ByteArrayInputStream(
+                    Okio.buffer(new GzipSource(
+                                    responseBody.source()))
+                            .readByteArray());
+            // The following methods are also available
+            // return new GZIPInputStream(responseBody.byteStream());
+        } else
+            in = new ByteArrayInputStream(responseBody.bytes());
 
+        // Set return content length
+        CONTENT_LENGTH_LOCAL.remove();
+        CONTENT_LENGTH_LOCAL.set(in.available());
+
+        return in;
+    }
+
+    /**
+     * Close OkHttpClient gracefully
+     */
+    private static void gracefulShutdown() {
         GracefulShutdown shutdown =
                 new GracefulShutdown(
                         "OkHttp-Graceful",
                         Thread.currentThread(),
                         HTTP_CLIENT.dispatcher().executorService())
-                .waitTime(20L, TimeUnit.SECONDS);
+                        .waitTime(20L, TimeUnit.SECONDS);
 
         shutdown.registerShutdownHook(signal -> {
-            if(signal == ShutDownSignalEnum.IN) {
+            if (signal == ShutDownSignalEnum.IN) {
                 log.info("Close OkHttpClient ....");
-            } else if(signal == ShutDownSignalEnum.OUT){
+            } else if (signal == ShutDownSignalEnum.OUT) {
                 log.info("Clear OkHttpClient connections ....");
                 // 清理连接池中的所有连接
                 HTTP_CLIENT.connectionPool().evictAll();
 
                 // 取消调度器中的所有请求
                 HTTP_CLIENT.dispatcher().cancelAll();
+
+                CONTENT_LENGTH_LOCAL.remove();
             }
         });
     }
