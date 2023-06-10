@@ -18,6 +18,10 @@ public class RequestException extends RuntimeException {
         super(cause);
     }
 
+    public RequestException(String message) {
+        super(message);
+    }
+
     public RequestException(RequestError error) {
         super(error.getMsg());
         this.error = error;
