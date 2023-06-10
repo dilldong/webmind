@@ -188,8 +188,12 @@ public class OkHttpFactory {
     /**
      * Execute Http request and return a String
      */
-    public static String request(Request request) throws IOException {
-        InputStream in = request(request, header -> {});
+    public static String requestString(Request request) throws IOException {
+        return requestString(request, header -> {});
+    }
+
+    public static String requestString(Request request, Consumer<Headers> processHeaders) throws IOException {
+        InputStream in = requestStream(request, processHeaders);
         if (Objects.isNull(in))
             return StringUtils.EMPTY;
 
@@ -206,7 +210,10 @@ public class OkHttpFactory {
     /**
      * Execute Http request and return a InputStream
      */
-    public static InputStream request(Request request, Consumer<Headers> processHeaders) throws IOException {
+    public static InputStream requestStream(Request request) throws IOException {
+        return requestStream(request, header -> {});
+    }
+    public static InputStream requestStream(Request request, Consumer<Headers> processHeaders) throws IOException {
         try (okhttp3.Response response = client().newCall(request).execute()) {
             processHeaders.accept(response.headers());
             ResponseBody responseBody = response.body();
@@ -233,11 +240,12 @@ public class OkHttpFactory {
      * Execute Http request and return a json serialized object
      */
     public static <T> T request(Request request, TypeToken<T> typeReference) throws IOException {
-        InputStream in = request(request, header -> {});
-        if (Objects.isNull(in))
-            return null;
+        try(InputStream in = requestStream(request)) {
+            if (Objects.isNull(in))
+                return null;
 
-        return JsonUtils.fromJson(new InputStreamReader(in), typeReference);
+            return JsonUtils.fromJson(new InputStreamReader(in), typeReference);
+        }
     }
 
     private static InputStream buildInputStream(Headers responseHeaders, ResponseBody responseBody) throws IOException {
