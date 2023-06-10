@@ -173,7 +173,7 @@ public class JsonUtils {
             return null;
 
         try {
-            return getSingleton().fromJson(json, typeToken.getType());
+            return getSingleton().fromJson(json, typeToken);
         } catch (Exception ex) {
             if(printErrorStack)
                 log.error(ex.getMessage(), ex);
