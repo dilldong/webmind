@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * @author dp
  */
 public final class Action {
-    private static final ThreadLocal<Action> actionContext = new ThreadLocal<>();
+    private static final ThreadLocal<Action> ACTION_THREAD_LOCAL = new ThreadLocal<>();
 
     private ServletContext context;
     private HttpServletRequest request;
@@ -167,7 +167,7 @@ public final class Action {
      * Get current Action object.
      */
     public static Action getActionContext() {
-        return actionContext.get();
+        return ACTION_THREAD_LOCAL.get();
     }
 
     public static void setActionContext(ServletContext context, HttpServletRequest request, HttpServletResponse response) {
@@ -175,10 +175,10 @@ public final class Action {
         action.context = context;
         action.request = request;
         action.response = response;
-        actionContext.set(action);
+        ACTION_THREAD_LOCAL.set(action);
     }
 
     public static void removeActionContext() {
-        actionContext.remove();
+        ACTION_THREAD_LOCAL.remove();
     }
 }
