@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class HttpClientFactory {
-    private static final CloseableHttpClient httpClient;
-    private static final Thread shutdownThread;
+    private static final CloseableHttpClient HTTP_CLIENT;
+    private static final Thread SHUTDOWN_THREAD;
     private static HttpClientBuilder httpClientBuilder;
 
     static {
@@ -95,15 +95,15 @@ public class HttpClientFactory {
                 .setKeepAliveStrategy(DefaultConnectionKeepAliveStrategy.INSTANCE) //长连接配置，即获取长连接生产多长时间
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(0, false)); //设置重试次数，默认是3次，当前禁用掉（根据需要开启）
 
-        httpClient = httpClientBuilder.build();
+        HTTP_CLIENT = httpClientBuilder.build();
 
         // When the JVM stops or restarts, closing the connection-pool releases the connection
-        shutdownThread = ExecutorFactory.newThread(HttpClientFactory::close);
-        Runtime.getRuntime().addShutdownHook(shutdownThread);
+        SHUTDOWN_THREAD = ExecutorFactory.newThread(HttpClientFactory::close);
+        Runtime.getRuntime().addShutdownHook(SHUTDOWN_THREAD);
     }
 
     public static CloseableHttpClient client() {
-        return httpClient;
+        return HTTP_CLIENT;
     }
 
     public static HttpClientBuilder newBuilder() {
@@ -112,12 +112,12 @@ public class HttpClientFactory {
 
     private static void close() {
         log.info("Close HttpClient ....");
-        HttpClientUtils.closeQuietly(httpClient);
+        HttpClientUtils.closeQuietly(HTTP_CLIENT);
         httpClientBuilder = null;
 
-        if(Objects.nonNull(shutdownThread)){
+        if(Objects.nonNull(SHUTDOWN_THREAD)){
             try {
-                Runtime.getRuntime().removeShutdownHook(shutdownThread);
+                Runtime.getRuntime().removeShutdownHook(SHUTDOWN_THREAD);
             }catch (IllegalStateException ignored){}
         }
     }
