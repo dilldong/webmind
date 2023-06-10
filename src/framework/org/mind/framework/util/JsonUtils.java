@@ -11,6 +11,7 @@ import org.mind.framework.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -30,6 +31,12 @@ public class JsonUtils {
 
     // Delete spaces, carriage returns, newlines, and tabs in a string
     private static final Pattern REPLACE_PATT = Pattern.compile("\\s{2,}|\t|\r|\n");
+
+    // JSON attribute
+    private static final Pattern JSON_ATTR_PATTERN = Pattern.compile("['\":]*");
+
+    // JSON attribute
+    private static final Pattern JSON_OBJ_ATTR_PATTERN = Pattern.compile("^(['|\"]:)?");
 
     /**
      * Long type serialization maintains long type and will not be converted to double type
@@ -92,6 +99,40 @@ public class JsonUtils {
             return false;
 
         return text.startsWith("{") && text.endsWith("}");
+    }
+
+    public static String getAttribute(String name, String json) {
+        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
+            return StringUtils.EMPTY;
+
+        if (json.contains(name)) {
+            String result = StringUtils.substringBetween(json, name, ",");
+            if(StringUtils.isEmpty(result))
+                result = StringUtils.substringBetween(json, name, "}");
+
+            return JSON_ATTR_PATTERN.matcher(result).replaceAll(StringUtils.EMPTY).trim();
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public static String getAttributeObject(String name, String json) {
+        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
+            return StringUtils.EMPTY;
+
+        if (json.contains(name)) {
+            String result = StringUtils.substringBetween(json, name, ",");
+            if(StringUtils.isEmpty(result))
+                result = StringUtils.substringBetween(json, name, "}");
+
+            result = JSON_OBJ_ATTR_PATTERN.matcher(result).replaceAll(StringUtils.EMPTY).trim();
+            if(StringUtils.startsWith(result, "{"))
+                result += "}";
+            else if(StringUtils.startsWith(result, "["))
+                result += "]";
+
+            return result;
+        }
+        return StringUtils.EMPTY;
     }
 
     public static String toJson(Object target) {
@@ -174,6 +215,26 @@ public class JsonUtils {
 
         try {
             return getSingleton().fromJson(json, typeToken);
+        } catch (Exception ex) {
+            if(printErrorStack)
+                log.error(ex.getMessage(), ex);
+            else
+                log.error(ex.getMessage());
+            return null;
+        }
+    }
+
+    public static <V> V fromJson(Reader jsonReader, Class<V> clazz) {
+        return fromJson(jsonReader, TypeToken.get(clazz));
+    }
+
+    public static <V> V fromJson(Reader jsonReader, TypeToken<V> typeToken) {
+        return fromJson(jsonReader, typeToken, true);
+    }
+
+    public static <V> V fromJson(Reader jsonReader, TypeToken<V> typeToken, boolean printErrorStack) {
+        try {
+            return getSingleton().fromJson(jsonReader, typeToken);
         } catch (Exception ex) {
             if(printErrorStack)
                 log.error(ex.getMessage(), ex);
