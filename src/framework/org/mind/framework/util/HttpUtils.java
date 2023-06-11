@@ -29,6 +29,9 @@ public class HttpUtils {
     private static final String REQUEST_URL = "web_request_url";
     private static final String REQUEST_IP = "web_request_ip";
 
+    public static final String GZIP = "gzip";
+    public static final String MIME_JAVASCRIPT = "application/x-javascript";
+
     public static void clearSetting(HttpServletRequest request){
         request.removeAttribute(REQUEST_URI);
         request.removeAttribute(REQUEST_URL);
