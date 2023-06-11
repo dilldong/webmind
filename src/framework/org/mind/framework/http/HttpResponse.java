@@ -1,7 +1,10 @@
 package org.mind.framework.http;
 
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.ThrowProvider;
+import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,29 +51,26 @@ public class HttpResponse<T> implements Closeable {
             this.responseCode = con.getResponseCode();
         } catch (SocketTimeoutException e) {
             try {
-                TimeUnit.MILLISECONDS.sleep(100L);
+                TimeUnit.MILLISECONDS.sleep(120L);
             } catch (InterruptedException ignored) {}
 
+            Thread.yield();
             this.responseCode = con.getResponseCode();
         }
 
-        if(log.isDebugEnabled())
-            log.debug("http response code: {}", this.responseCode);
+        if (log.isDebugEnabled())
+            log.debug("Http response code: {}", this.responseCode);
 
-        if ((inStream = con.getErrorStream()) == null)
+        if (Objects.isNull((inStream = con.getErrorStream())))
             inStream = con.getInputStream();
 
-
         // the response is gzipped
-        if (inStream != null && "gzip".equals(con.getContentEncoding()))
+        if (Objects.nonNull(inStream) && HttpUtils.GZIP.equals(con.getContentEncoding()))
             inStream = new GZIPInputStream(inStream);
     }
 
     public String getHeader(String name) {
-        if (con != null)
-            return con.getHeaderField(name);
-
-        return null;
+        return Objects.isNull(this.con) ? null : con.getHeaderField(name);
     }
 
     /**
@@ -107,22 +107,23 @@ public class HttpResponse<T> implements Closeable {
         if (StringUtils.isNotEmpty(this.responseAsString))
             return this.responseAsString;
 
-        try (InputStream stream = asStream()) {
-            if (Objects.isNull(stream))
-                return null;
+        InputStream stream = asStream();
+        if (Objects.isNull(stream))
+            return null;
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream, charset));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, charset))) {
             StringBuilder buf = new StringBuilder();
             String line;
 
-            while ((line = br.readLine()) != null)
+            while ((line = reader.readLine()) != null)
                 buf.append(line);
 
             this.responseAsString = buf.toString();
             streamConsumed = true;
-            this.close();
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            ThrowProvider.doThrow(e);
+        } finally {
+            this.close();
         }
 
         return responseAsString;
@@ -155,12 +156,19 @@ public class HttpResponse<T> implements Closeable {
     }
 
     public T asJson(Charset charset) {
-        return this.asJson(charset, new TypeToken<T>() {
-        });
+        return this.asJson(charset, new TypeToken<T>() {});
     }
 
     public T asJson(Charset charset, TypeToken<T> typeToken) {
-        return JsonUtils.fromJson(this.asString(charset), typeToken);
+        if (this.streamConsumed && StringUtils.isNotEmpty(this.responseAsString))
+            return JsonUtils.fromJson(responseAsString, typeToken);
+
+        try (InputStreamReader reader = new InputStreamReader(this.inStream, charset)) {
+            return JsonUtils.fromJson(reader, typeToken);
+        } catch (IOException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return null;
     }
 
     @Override
@@ -170,12 +178,7 @@ public class HttpResponse<T> implements Closeable {
             con = null;
         }
 
-        if (Objects.nonNull(inStream)) {
-            try {
-                inStream.close();
-            } catch (IOException ignored) {}
-            inStream = null;
-        }
+        IOUtils.closeQuietly(inStream);
     }
 
     public int getStatusCode() {
