@@ -3,7 +3,6 @@ package org.mind.framework.http;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.slf4j.Logger;
@@ -90,11 +89,11 @@ public class HttpResponse<T> implements Closeable {
         return this.inStream;
     }
 
-    public String asString() {
+    public String asString() throws IOException {
         return this.asString(StandardCharsets.UTF_8);
     }
 
-    public String asString(String charset) {
+    public String asString(String charset) throws IOException {
         return this.asString(Charset.forName(charset));
     }
 
@@ -103,7 +102,7 @@ public class HttpResponse<T> implements Closeable {
      * Disconnects the internal HttpURLConnection silently. @return response
      * body as string @throws
      */
-    public String asString(Charset charset) {
+    public String asString(Charset charset) throws IOException {
         if (StringUtils.isNotEmpty(this.responseAsString))
             return this.responseAsString;
 
@@ -120,8 +119,6 @@ public class HttpResponse<T> implements Closeable {
 
             this.responseAsString = buf.toString();
             streamConsumed = true;
-        } catch (IOException e) {
-            ThrowProvider.doThrow(e);
         } finally {
             this.close();
         }
@@ -138,11 +135,11 @@ public class HttpResponse<T> implements Closeable {
      * Disconnects the internal HttpURLConnection silently. @return response
      * body as json @throws
      */
-    public T asJson() {
+    public T asJson() throws IOException {
         return this.asJson(StandardCharsets.UTF_8);
     }
 
-    public T asJson(TypeToken<T> typeToken) {
+    public T asJson(TypeToken<T> typeToken) throws IOException {
         return this.asJson(StandardCharsets.UTF_8, typeToken);
     }
 
@@ -151,24 +148,21 @@ public class HttpResponse<T> implements Closeable {
      * Disconnects the internal HttpURLConnection silently. @return response
      * body as json @throws
      */
-    public T asJson(String charset) {
+    public T asJson(String charset) throws IOException {
         return this.asJson(Charset.forName(charset));
     }
 
-    public T asJson(Charset charset) {
+    public T asJson(Charset charset) throws IOException {
         return this.asJson(charset, new TypeToken<T>() {});
     }
 
-    public T asJson(Charset charset, TypeToken<T> typeToken) {
+    public T asJson(Charset charset, TypeToken<T> typeToken) throws IOException {
         if (this.streamConsumed && StringUtils.isNotEmpty(this.responseAsString))
             return JsonUtils.fromJson(responseAsString, typeToken);
 
         try (InputStreamReader reader = new InputStreamReader(this.inStream, charset)) {
             return JsonUtils.fromJson(reader, typeToken);
-        } catch (IOException e) {
-            ThrowProvider.doThrow(e);
         }
-        return null;
     }
 
     @Override
