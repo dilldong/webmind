@@ -19,8 +19,6 @@ public abstract class Render {
 
     protected String contentType;
 
-    public static final String MIME_JAVASCRIPT = "application/x-javascript";
-
     public static final String BAD_REQUEST_HTML = "<html><head><title>400 Bad Request</title></head><body bgcolor='white'><center><h1>400 Bad Request</h1></center><hr><center>Webmind Service</center></body></html>";
 
     public static final String FORBIDDEN_HTML = "<html><head><title>403 Forbidden</title></head><body bgcolor='white'><center><h1>403 Forbidden</h1></center><hr><center>Webmind Service</center></body></html>";

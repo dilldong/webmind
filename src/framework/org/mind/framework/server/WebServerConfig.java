@@ -78,6 +78,10 @@ public class WebServerConfig {
     // OkHttpClient settting
     private int maxRequestsPerHost = 200;
     private int maxRequests = 200;
+    private int connectTimeout = 15;// SECONDS
+    private int readTimeout = 15;   // SECONDS
+    private int writeTimeout = 15;  // SECONDS
+    private int pingInterval = 20;  // SECONDS
 
     @Setter
     private transient Set<String> springFileSet;
@@ -124,8 +128,13 @@ public class WebServerConfig {
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
             this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
 
+            // OkHttpClient
             this.maxRequestsPerHost = Integer.parseInt(properties.getProperty("okhttp.maxRequestsPerHost", String.valueOf(maxRequestsPerHost)));
             this.maxRequests = Integer.parseInt(properties.getProperty("okhttp.maxRequests", String.valueOf(maxRequests)));
+            this.connectTimeout = Integer.parseInt(properties.getProperty("okhttp.connectTimeout", String.valueOf(connectTimeout)));
+            this.readTimeout = Integer.parseInt(properties.getProperty("okhttp.readTimeout", String.valueOf(readTimeout)));
+            this.writeTimeout = Integer.parseInt(properties.getProperty("okhttp.writeTimeout", String.valueOf(writeTimeout)));
+            this.pingInterval = Integer.parseInt(properties.getProperty("okhttp.pingInterval", String.valueOf(pingInterval)));
         }
     }
 

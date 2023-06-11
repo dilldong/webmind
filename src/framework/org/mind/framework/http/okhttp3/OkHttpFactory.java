@@ -17,6 +17,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
+import org.mind.framework.server.WebServerConfig;
+import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import retrofit2.Call;
 import retrofit2.Converter;
@@ -43,13 +45,11 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class OkHttpFactory {
-    private static final String GZIP = "gzip";
     private static final String CONTENT_ENCODING = "Content-Encoding";
 
     private static final OkHttpClient HTTP_CLIENT;
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
     private static final Converter.Factory GSON_CONVERTER_FACTORY = GsonConverterFactory.create(JsonUtils.getSingleton());
-
 
     /**
      * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
@@ -100,19 +100,21 @@ public class OkHttpFactory {
     static {
         log.info("Init OkHttpClient ....");
 
+        WebServerConfig config = WebServerConfig.INSTANCE;
         Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequestsPerHost(200);
-        dispatcher.setMaxRequests(200);
+        dispatcher.setMaxRequestsPerHost(config.getMaxRequestsPerHost());
+        dispatcher.setMaxRequests(config.getMaxRequests());
+
         OkHttpClient.Builder builder =
                 new OkHttpClient.Builder()
                         .connectionSpecs(CONNECTION_SPEC_LIST)
                         .dispatcher(dispatcher)
 //                        .followSslRedirects(false)
 //                        .followRedirects(false)
-                        .connectTimeout(15, TimeUnit.SECONDS)
-                        .readTimeout(15, TimeUnit.SECONDS)
-                        .writeTimeout(15, TimeUnit.SECONDS)
-                        .pingInterval(20, TimeUnit.SECONDS);// websocket自动发送 ping 帧，直到连接失败或关闭
+                        .connectTimeout(config.getConnectTimeout(), TimeUnit.SECONDS)
+                        .readTimeout(config.getReadTimeout(), TimeUnit.SECONDS)
+                        .writeTimeout(config.getWriteTimeout(), TimeUnit.SECONDS)
+                        .pingInterval(config.getPingInterval(), TimeUnit.SECONDS);// websocket自动发送 ping 帧，直到连接失败或关闭
 
         if (log.isDebugEnabled()) {
             builder.addInterceptor(
@@ -251,7 +253,7 @@ public class OkHttpFactory {
 
     private static InputStream buildInputStream(Headers responseHeaders, ResponseBody responseBody) throws IOException {
         ByteArrayInputStream in;
-        if (GZIP.equals(responseHeaders.get(CONTENT_ENCODING))) {
+        if (HttpUtils.GZIP.equals(responseHeaders.get(CONTENT_ENCODING))) {
             in = new ByteArrayInputStream(
                     Okio.buffer(new GzipSource(
                                     responseBody.source()))
