@@ -16,6 +16,7 @@ import okio.GzipSource;
 import okio.Okio;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
+import org.mind.framework.http.NoContentResponse;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.server.WebServerConfig;
@@ -189,6 +190,15 @@ public class OkHttpFactory {
      */
     public static OkHttpClient client() {
         return HTTP_CLIENT;
+    }
+
+    /**
+     * Execute Http request and return a NoContentResponse
+     */
+    public static NoContentResponse requestNobody(Request request) throws IOException {
+        try (okhttp3.Response response = client().newCall(request).execute()) {
+            return new NoContentResponse(response.headers(), response.code());
+        }
     }
 
     /**

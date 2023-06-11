@@ -69,7 +69,7 @@ public class HttpResponse<T> implements Closeable {
     }
 
     public String getHeader(String name) {
-        return Objects.isNull(this.con) ? null : con.getHeaderField(name);
+        return Objects.isNull(this.con) || StringUtils.isEmpty(name) ? null : con.getHeaderField(name);
     }
 
     /**
