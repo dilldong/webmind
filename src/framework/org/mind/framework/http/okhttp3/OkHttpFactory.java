@@ -7,6 +7,7 @@ import okhttp3.ConnectionSpec;
 import okhttp3.Dispatcher;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
@@ -50,6 +51,9 @@ public class OkHttpFactory {
     private static final OkHttpClient HTTP_CLIENT;
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
     private static final Converter.Factory GSON_CONVERTER_FACTORY = GsonConverterFactory.create(JsonUtils.getSingleton());
+
+    // json media type
+    public static final MediaType JSON_MEDIA = MediaType.parse("application/json;charset=UTF-8");
 
     /**
      * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
