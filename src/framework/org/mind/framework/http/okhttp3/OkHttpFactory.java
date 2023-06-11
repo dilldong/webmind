@@ -240,11 +240,12 @@ public class OkHttpFactory {
      * Execute Http request and return a json serialized object
      */
     public static <T> T request(Request request, TypeToken<T> typeReference) throws IOException {
-        try(InputStream in = requestStream(request)) {
-            if (Objects.isNull(in))
-                return null;
+        InputStream in = requestStream(request);
+        if (Objects.isNull(in))
+            return null;
 
-            return JsonUtils.fromJson(new InputStreamReader(in), typeReference);
+        try(InputStreamReader reader = new InputStreamReader(in)) {
+            return JsonUtils.fromJson(reader, typeReference);
         }
     }
 
