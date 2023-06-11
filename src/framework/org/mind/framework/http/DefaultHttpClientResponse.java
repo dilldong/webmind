@@ -46,12 +46,12 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
 
     @Override
     public String asString(Charset charset) {
-        if (StringUtils.isNotEmpty(this.responseAsString))
-            return this.responseAsString;
+        if (StringUtils.isNotEmpty(super.responseAsString))
+            return super.responseAsString;
 
         try {
-            this.responseAsString = EntityUtils.toString(entity, charset);
-            streamConsumed = true;
+            super.responseAsString = EntityUtils.toString(entity, charset);
+            super.streamConsumed = true;
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
         }
