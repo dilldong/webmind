@@ -95,7 +95,7 @@ public abstract class ServerContext {
     }
 
     public ServerContext addSpringFile(String... filePath) {
-        if (filePath == null || filePath.length == 0)
+        if (ArrayUtils.isEmpty(filePath))
             return this;
 
         if (Objects.isNull(this.springFileSet))
@@ -106,7 +106,7 @@ public abstract class ServerContext {
     }
 
     public ServerContext addResource(String... resPath) {
-        if (resPath == null || resPath.length == 0)
+        if (ArrayUtils.isEmpty(resPath))
             return this;
 
         if (Objects.isNull(this.resourceSet))
