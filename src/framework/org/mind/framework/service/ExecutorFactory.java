@@ -1,7 +1,6 @@
 package org.mind.framework.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.threads.TaskThreadFactory;
 
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
@@ -76,7 +75,7 @@ public class ExecutorFactory {
     }
 
     public static ThreadFactory newThreadFactory(boolean daemon, int priority) {
-//         return Executors.defaultThreadFactory();
+        // Executors.defaultThreadFactory();
         return new TaskThreadFactory(NAME_PREFIX, daemon, priority);
     }
 
