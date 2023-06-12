@@ -1,6 +1,7 @@
 package org.mind.framework;
 
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -17,12 +18,17 @@ public final class ContextSupport {
      * @param configLocations spring files
      * @return
      */
-    public static ApplicationContext initContext(String[] configLocations) {
+    public static ApplicationContext initContextByFile(String ... configLocations) {
         for (int i = 0; i < configLocations.length; ++i)
             if (!configLocations[i].startsWith("file:"))
                 configLocations[i] = String.format("file:%s", configLocations[i]);
 
-        applicationContext = new FileSystemXmlApplicationContext(configLocations);
+        setApplicationContext(new FileSystemXmlApplicationContext(configLocations));
+        return applicationContext;
+    }
+
+    public static ApplicationContext initContextByClassPathFile(String ... configLocations) {
+        setApplicationContext(new ClassPathXmlApplicationContext(configLocations));
         return applicationContext;
     }
 
