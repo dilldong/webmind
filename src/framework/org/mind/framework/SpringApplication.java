@@ -28,18 +28,37 @@ public class SpringApplication {
         this.resources = resources;
     }
 
+    /**
+     * Load the Spring service and use Tomcat to run the web project.
+     */
     public static void run(Class<?> mainClass, String... args) {
         run(mainClass, null, args);
     }
 
+    /**
+     * Load the Spring service and use Tomcat to run the web project.
+     */
     public static void run(Class<?> mainClass, String[] springLocations, String... args) {
         run(mainClass, springLocations, null, args);
     }
 
+    /**
+     * Load the Spring service and use Tomcat to run the web project.
+     */
     public static void run(Class<?> mainClass, String[] springLocations, String[] resources, String... args) {
         new SpringApplication(mainClass, springLocations, resources).run(args);
     }
 
+    /**
+     * Load the Spring service, non-web project.
+     */
+    public static ApplicationContext runApplication(Class<?> mainClass, String[] springLocations){
+        return runApplication(mainClass, null, springLocations);
+    }
+
+    /**
+     * Load the Spring service, non-web project.
+     */
     public static ApplicationContext runApplication(Class<?> mainClass, String log4j, String[] springLocations) {
         if(StringUtils.isNotEmpty(log4j)) {
             URL url = ClassUtils.getResource(mainClass, log4j);
