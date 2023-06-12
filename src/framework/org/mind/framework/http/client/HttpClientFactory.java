@@ -24,7 +24,7 @@ import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.SystemDefaultDnsResolver;
 import org.apache.http.impl.io.DefaultHttpRequestWriterFactory;
-import org.mind.framework.service.ExecutorFactory;
+import org.mind.framework.service.threads.ExecutorFactory;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;

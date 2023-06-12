@@ -4,7 +4,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mind.framework.helper.RedissonHelper;
-import org.mind.framework.service.ExecutorFactory;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.FileUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;

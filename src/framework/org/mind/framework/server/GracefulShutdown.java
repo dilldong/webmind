@@ -1,15 +1,12 @@
 package org.mind.framework.server;
 
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.connector.Connector;
-import org.apache.catalina.startup.Tomcat;
-import org.apache.tomcat.util.threads.ThreadPoolExecutor;
-import org.mind.framework.service.ExecutorFactory;
+import lombok.Getter;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -18,31 +15,26 @@ import java.util.function.Consumer;
  * @version 1.0
  * @date 2022-03-14
  */
+@Getter
 public class GracefulShutdown {
-    private static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
+    protected static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
     private final String nameTag;
     private final Thread mainThread;
     private final Object shutdownMonitor = new Object();
 
-    private volatile Tomcat tomcat;
-    private volatile ExecutorService executor;
+    protected volatile ExecutorService executor;
 
     private long waitTime = 30L;// await 30s
     private TimeUnit waitTimeUnit;
 
     private Consumer<ShutDownSignalEnum> consumer;
 
-    private GracefulShutdown(String nameTag, Thread mainThread) {
+    protected GracefulShutdown(String nameTag, Thread mainThread) {
         super();
         this.nameTag = nameTag;
         this.mainThread = mainThread;
         this.waitTimeUnit = TimeUnit.SECONDS;
-    }
-
-    public GracefulShutdown(Thread mainThread, Tomcat tomcat) {
-        this("Tomcat-Graceful", mainThread);
-        this.tomcat = tomcat;
     }
 
     public GracefulShutdown(Thread mainThread, ExecutorService executor) {
@@ -91,30 +83,8 @@ public class GracefulShutdown {
     }
 
     protected void onStoppingEvent() {
-        if (Objects.nonNull(tomcat)) {
-            Connector connector = this.tomcat.getConnector();
-            log.info("Stopping connector is: {}", connector.toString());
-            connector.pause();
-            this.consumer.accept(ShutDownSignalEnum.PAUSE);
-            this.executor = (ExecutorService) connector.getProtocolHandler().getExecutor();
-        }
-
-        // This ExecutorService object
         if (this.executor instanceof ThreadPoolExecutor) {
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            log.info("'{}' request active count: {}", nameTag, threadPoolExecutor.getActiveCount());
-            this.shutdown(threadPoolExecutor);
-
-            // tomcat stopping(see TomcatServer: stop(), destroy())
-            if(Objects.nonNull(tomcat)) {
-                try {
-                    tomcat.stop();
-                    tomcat.destroy();
-                } catch (LifecycleException ignored) {}
-            }
-        } else if (this.executor instanceof java.util.concurrent.ThreadPoolExecutor) {
-            java.util.concurrent.ThreadPoolExecutor threadPoolExecutor =
-                    (java.util.concurrent.ThreadPoolExecutor) executor;
 
             log.info("'{}' request active count: {}", nameTag, threadPoolExecutor.getActiveCount());
             this.shutdown(threadPoolExecutor);
@@ -123,7 +93,7 @@ public class GracefulShutdown {
         }
     }
 
-    private void shutdown(ExecutorService executorService) {
+    protected void shutdown(ExecutorService executorService) {
         try {
             executorService.shutdown();
             this.consumer.accept(ShutDownSignalEnum.DOWN);

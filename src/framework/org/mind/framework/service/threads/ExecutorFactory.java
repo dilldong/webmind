@@ -1,4 +1,4 @@
-package org.mind.framework.service;
+package org.mind.framework.service.threads;
 
 import lombok.extern.slf4j.Slf4j;
 

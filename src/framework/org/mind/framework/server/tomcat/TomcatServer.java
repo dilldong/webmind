@@ -22,7 +22,7 @@ import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.ServerContext;
 import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
-import org.mind.framework.service.ExecutorFactory;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.IOUtils;
 import org.slf4j.Logger;

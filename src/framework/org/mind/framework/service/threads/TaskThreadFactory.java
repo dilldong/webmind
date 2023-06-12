@@ -1,6 +1,4 @@
-package org.mind.framework.service;
-
-import org.apache.tomcat.util.threads.TaskThread;
+package org.mind.framework.service.threads;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,11 +23,7 @@ public class TaskThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(Runnable r) {
-        TaskThread t =
-                new TaskThread(
-                        group,
-                        r,
-                        namePrefix + threadNumber.getAndIncrement());
+        TaskThread t = new TaskThread(group, r, namePrefix + threadNumber.getAndIncrement());
         t.setDaemon(daemon);
         t.setPriority(threadPriority);
         t.setContextClassLoader(getClass().getClassLoader());

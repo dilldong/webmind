@@ -5,8 +5,8 @@ import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
-import org.mind.framework.service.ExecutorFactory;
 import org.mind.framework.service.Updatable;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
