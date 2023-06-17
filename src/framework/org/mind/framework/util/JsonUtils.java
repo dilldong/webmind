@@ -102,6 +102,9 @@ public class JsonUtils {
         return text.startsWith("{") && text.endsWith("}");
     }
 
+    /**
+     * 返回JSON中第一个name属性的值
+     */
     public static String getAttribute(String name, String json) {
         if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
             return StringUtils.EMPTY;
@@ -116,6 +119,9 @@ public class JsonUtils {
         return StringUtils.EMPTY;
     }
 
+    /**
+     * 返回JSON对象中第一层级的name对象
+     */
     public static String getAttributeObject(String name, String json) {
         if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
             return StringUtils.EMPTY;
