@@ -14,6 +14,7 @@ import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okio.GzipSource;
 import okio.Okio;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.http.NoContentResponse;
@@ -28,12 +29,10 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -179,7 +178,7 @@ public class OkHttpFactory {
      */
     public static RequestError getError(Response<?> response) throws IOException {
         ResponseBody errBody = response.errorBody();
-        if(Objects.isNull(errBody))
+        if (Objects.isNull(errBody))
             return RequestError.newInstance(response.code(), response.message());
 
         return RequestError.newInstance(response.code(), errBody.string());
@@ -205,7 +204,7 @@ public class OkHttpFactory {
      * Execute Http request and return a String
      */
     public static String requestString(Request request) throws IOException {
-        return requestString(request, header -> {});
+        return requestString(request, null);
     }
 
     public static String requestString(Request request, Consumer<Headers> processHeaders) throws IOException {
@@ -213,13 +212,10 @@ public class OkHttpFactory {
         if (Objects.isNull(in))
             return StringUtils.EMPTY;
 
-        String line;
-        StringBuilder sb = new StringBuilder(CONTENT_LENGTH_LOCAL.get());
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-            while ((line = reader.readLine()) != null)
-                sb.append(line);
-
-            return sb.toString();
+        try {
+            return Okio.buffer(Okio.source(in)).readUtf8();
+        } finally {
+            IOUtils.closeQuietly(in);
         }
     }
 
@@ -227,11 +223,13 @@ public class OkHttpFactory {
      * Execute Http request and return a InputStream
      */
     public static InputStream requestStream(Request request) throws IOException {
-        return requestStream(request, header -> {});
+        return requestStream(request, null);
     }
+
     public static InputStream requestStream(Request request, Consumer<Headers> processHeaders) throws IOException {
         try (okhttp3.Response response = client().newCall(request).execute()) {
-            processHeaders.accept(response.headers());
+            if (Objects.nonNull(processHeaders))
+                processHeaders.accept(response.headers());
             ResponseBody responseBody = response.body();
 
             if (response.isSuccessful()) {
@@ -240,8 +238,10 @@ public class OkHttpFactory {
                         buildInputStream(response.headers(), responseBody);
             }
 
-            String text = Objects.isNull(responseBody) ? "N/A" : responseBody.string();
-            throw new RequestException("Invalid response received: " + response.code() + "; " + text);
+            String message = Objects.isNull(responseBody) ?
+                    "N/A" :
+                    buildResponseString(response.headers(), responseBody);
+            throw new RequestException("Invalid response received: " + response.code() + "; " + message);
         }
     }
 
@@ -260,7 +260,7 @@ public class OkHttpFactory {
         if (Objects.isNull(in))
             return null;
 
-        try(InputStreamReader reader = new InputStreamReader(in)) {
+        try (InputStreamReader reader = new InputStreamReader(in)) {
             return JsonUtils.fromJson(reader, typeReference);
         }
     }
@@ -282,6 +282,13 @@ public class OkHttpFactory {
         CONTENT_LENGTH_LOCAL.set(in.available());
 
         return in;
+    }
+
+    private static String buildResponseString(Headers responseHeaders, ResponseBody responseBody) throws IOException {
+        if (HttpUtils.GZIP.equals(responseHeaders.get(CONTENT_ENCODING)))
+            return Okio.buffer(new GzipSource(responseBody.source())).readUtf8();
+
+        return responseBody.string();
     }
 
     /**
