@@ -4,6 +4,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.ToNumberStrategy;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
@@ -120,17 +121,15 @@ public class JsonUtils {
             return StringUtils.EMPTY;
 
         if (json.contains(name)) {
-            String result = StringUtils.substringBetween(json, name, ",");
-            if(StringUtils.isEmpty(result))
-                result = StringUtils.substringBetween(json, name, "}");
+            JsonElement rootElement = JsonUtils.fromJson(json, JsonElement.class);
+            JsonElement element = null;
 
-            result = JSON_OBJ_ATTR_PATTERN.matcher(result).replaceAll(StringUtils.EMPTY).trim();
-            if(StringUtils.startsWith(result, "{"))
-                result += "}";
-            else if(StringUtils.startsWith(result, "["))
-                result += "]";
+            // only support json-object
+            if(rootElement.isJsonObject())
+                element = rootElement.getAsJsonObject().get(name);
 
-            return result;
+            if(Objects.nonNull(element) && !element.isJsonNull())
+                return element.toString();
         }
         return StringUtils.EMPTY;
     }
