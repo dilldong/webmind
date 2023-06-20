@@ -23,14 +23,14 @@ public class ExecutorFactory {
     /**
      * The default rejected execution handler
      */
-    private static final RejectedExecutionHandler defaultRejectHandler = new ThreadPoolExecutor.AbortPolicy();
+    private static final RejectedExecutionHandler DEFAULT_REJECT_HANDLER = new ThreadPoolExecutor.AbortPolicy();
 
     /**
      * The default thread-pool factory
      */
-    private static final ThreadFactory defaultDemoThreadFactory = ExecutorFactory.newThreadFactory(true, Thread.NORM_PRIORITY);
+    public static final ThreadFactory DEFAULT_DAEMON_THREAD_FACTORY = ExecutorFactory.newThreadFactory(true, Thread.NORM_PRIORITY);
 
-    private static final ThreadFactory defaultUserThreadFactory = ExecutorFactory.newThreadFactory(false, Thread.NORM_PRIORITY);
+    public static final ThreadFactory DEFAULT_USER_THREAD_FACTORY = ExecutorFactory.newThreadFactory(false, Thread.NORM_PRIORITY);
 
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
                                                            int maxPoolSize,
@@ -49,8 +49,8 @@ public class ExecutorFactory {
                 keepAliveTime,
                 unit,
                 taskRunnables,
-                defaultDemoThreadFactory,
-                defaultRejectHandler);
+                DEFAULT_DAEMON_THREAD_FACTORY,
+                DEFAULT_REJECT_HANDLER);
     }
 
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
@@ -91,8 +91,8 @@ public class ExecutorFactory {
         Objects.requireNonNull(name);
         Objects.requireNonNull(runnable);
         Thread thread = daemon ?
-                defaultDemoThreadFactory.newThread(runnable) :
-                defaultUserThreadFactory.newThread(runnable);
+                DEFAULT_DAEMON_THREAD_FACTORY.newThread(runnable) :
+                DEFAULT_USER_THREAD_FACTORY.newThread(runnable);
         try {
             thread.setName(name);
         } catch (SecurityException ignored) {}
