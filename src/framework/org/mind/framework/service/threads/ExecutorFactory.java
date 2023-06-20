@@ -75,8 +75,12 @@ public class ExecutorFactory {
     }
 
     public static ThreadFactory newThreadFactory(boolean daemon, int priority) {
-        // Executors.defaultThreadFactory();
         return new TaskThreadFactory(NAME_PREFIX, daemon, priority);
+    }
+
+    public static ThreadFactory newThreadFactory(String threadNamePrefix, boolean daemon, int priority) {
+        // Executors.defaultThreadFactory();
+        return new TaskThreadFactory(threadNamePrefix, daemon, priority);
     }
 
     public static Thread newThread(Runnable runnable) {
