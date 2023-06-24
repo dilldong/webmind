@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class ExecutorFactory {
     private static final long KEEP_ALIVE_TIME = 60L;
 
-    private static final String NAME_PREFIX = "mind-pool-exec-";
+    private static final String NAME_PREFIX = "mind-pool-";
 
     /**
      * The default rejected execution handler
