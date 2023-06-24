@@ -1,13 +1,14 @@
 package org.mind.framework.service.threads;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A Thread implementation that records the time at which it was created.
  */
+@Slf4j
 public class TaskThread extends Thread {
-    private static final Logger log = LoggerFactory.getLogger(TaskThread.class);
+    @Getter
     private final long creationTime;
 
     public TaskThread(ThreadGroup group, Runnable target, String name) {
@@ -15,17 +16,9 @@ public class TaskThread extends Thread {
         this.creationTime = System.currentTimeMillis();
     }
 
-    public TaskThread(ThreadGroup group, Runnable target, String name,
-                      long stackSize) {
+    public TaskThread(ThreadGroup group, Runnable target, String name, long stackSize) {
         super(group, new WrappingRunnable(target), name, stackSize);
         this.creationTime = System.currentTimeMillis();
-    }
-
-    /**
-     * @return the time (in ms) at which this thread was created
-     */
-    public final long getCreationTime() {
-        return creationTime;
     }
 
     /**
@@ -33,7 +26,7 @@ public class TaskThread extends Thread {
      * instead of letting it go and potentially trigger a break in a debugger.
      */
     private static class WrappingRunnable implements Runnable {
-        private Runnable wrappedRunnable;
+        private final Runnable wrappedRunnable;
 
         WrappingRunnable(Runnable wrappedRunnable) {
             this.wrappedRunnable = wrappedRunnable;
@@ -47,7 +40,7 @@ public class TaskThread extends Thread {
                 //expected : we just swallow the exception to avoid disturbing
                 //debuggers like eclipse's
                 if(log.isDebugEnabled())
-                    log.debug("Thread exiting on purpose", e);
+                    log.debug("Thread exiting on purpose, "+ e.getMessage(), e);
             }
         }
 
