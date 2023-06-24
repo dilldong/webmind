@@ -20,7 +20,7 @@ public class ExecutorFactory {
     private static final long KEEP_ALIVE_TIME = 60L;
 
     private static final String DAEMON_PREFIX = "mind-dthread-";
-    private static final String USER_PREFIX = "mind-uthread-";
+    private static final String USER_PREFIX = "mind-thread-";
 
     /**
      * The default rejected execution handler
