@@ -1,6 +1,7 @@
 package org.mind.framework.service.threads;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
@@ -18,7 +19,8 @@ import java.util.concurrent.TimeUnit;
 public class ExecutorFactory {
     private static final long KEEP_ALIVE_TIME = 60L;
 
-    private static final String NAME_PREFIX = "mind-pool-";
+    private static final String DAEMON_PREFIX = "mind-dthread-";
+    private static final String USER_PREFIX = "mind-uthread-";
 
     /**
      * The default rejected execution handler
@@ -75,7 +77,7 @@ public class ExecutorFactory {
     }
 
     public static ThreadFactory newThreadFactory(boolean daemon, int priority) {
-        return new TaskThreadFactory(NAME_PREFIX, daemon, priority);
+        return new TaskThreadFactory(daemon? DAEMON_PREFIX : USER_PREFIX, daemon, priority);
     }
 
     public static ThreadFactory newThreadFactory(String threadNamePrefix, boolean daemon, int priority) {
@@ -84,7 +86,7 @@ public class ExecutorFactory {
     }
 
     public static Thread newThread(Runnable runnable) {
-        return newThread(ThreadFactory.class.getSimpleName(), runnable);
+        return newThread(null, runnable);
     }
 
     public static Thread newThread(String name, Runnable runnable) {
@@ -92,14 +94,17 @@ public class ExecutorFactory {
     }
 
     public static Thread newThread(String name, boolean daemon, Runnable runnable) {
-        Objects.requireNonNull(name);
         Objects.requireNonNull(runnable);
         Thread thread = daemon ?
                 DEFAULT_DAEMON_THREAD_FACTORY.newThread(runnable) :
                 DEFAULT_USER_THREAD_FACTORY.newThread(runnable);
-        try {
-            thread.setName(name);
-        } catch (SecurityException ignored) {}
+
+        if(StringUtils.isNotEmpty(name)) {
+            try {
+                thread.setName(name);
+            } catch (SecurityException ignored) {
+            }
+        }
         return thread;
     }
 
