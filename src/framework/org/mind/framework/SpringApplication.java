@@ -125,7 +125,7 @@ public class SpringApplication {
             }
 
             // load spring
-            ContextSupport.initContextByClassPathFile(springLocations);
+            ContextSupport.initSpringByClassPathFile(springLocations);
         }
     }
 
