@@ -94,7 +94,14 @@ public class SpringApplication {
         synchronized (lock) {
             try {
                 lock.wait();
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
+    public void close() {
+        synchronized (lock) {
+            lock.notify();
         }
     }
 
@@ -121,7 +128,11 @@ public class SpringApplication {
                     log4jInputStream = ClassUtils.getResourceAsStream(mainClass, log4j);
 
                 // load log4j
-                PropertyConfigurator.configure(log4jInputStream);
+                try {
+                    PropertyConfigurator.configure(log4jInputStream);
+                } finally {
+                    org.apache.commons.io.IOUtils.closeQuietly(log4jInputStream);
+                }
             }
 
             // load spring
