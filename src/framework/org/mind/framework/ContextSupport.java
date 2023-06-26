@@ -1,5 +1,6 @@
 package org.mind.framework;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
@@ -56,6 +57,9 @@ public final class ContextSupport {
      * @author dp
      */
     public static Object getBean(String name) {
+        if(StringUtils.isEmpty(name))
+            throw new NullPointerException("Get bean 'name' must not be null");
+
         Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
         return applicationContext.getBean(name);
     }
@@ -76,12 +80,12 @@ public final class ContextSupport {
         return applicationContext.getBean(name, requiredType);
     }
 
-    public <T> T getBean(Class<T> requiredType) {
+    public static <T> T getBean(Class<T> requiredType) {
         Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
         return applicationContext.getBean(requiredType);
     }
 
-    public <T> T getBean(Class<T> requiredType, Object... args) {
+    public static <T> T getBean(Class<T> requiredType, Object... args) {
         Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
         return applicationContext.getBean(requiredType, args);
     }
