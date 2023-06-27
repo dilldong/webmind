@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
+import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.service.Updatable;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
@@ -13,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -56,19 +56,18 @@ public class ConsumerService implements Updatable, Destroyable {
 
     @Override
     public void doUpdate() {
-        if (this.useThreadPool) {
-            if(executor.getQueue().size() >= queueService.size())
-                return;
+        synchronized (executObject) {
+            if (this.useThreadPool) {
+                int wholeCount = Math.min(queueService.size(), submitTaskCount);
+                if (wholeCount < 1)
+                    return;
 
-            int wholeCount = Math.min(queueService.size(), submitTaskCount);
-            if (wholeCount <= 0)
+                if (running) {
+                    while ((--wholeCount) >= 0)
+                        this.submitTask(this::execute);
+                }
                 return;
-
-            if (running) {
-                while ((--wholeCount) >= 0)
-                    this.submitTask(this::execute);
             }
-            return;
         }
 
         this.execute();
@@ -91,33 +90,23 @@ public class ConsumerService implements Updatable, Destroyable {
         executor.allowCoreThreadTimeOut(coreThreadTimeOut);
         running = true;
         log.info("Init ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
+
+        new GracefulShutdown("Mind-Consumer", Thread.currentThread(), executor)
+                .waitTime(15L, TimeUnit.SECONDS)
+                        .registerShutdownHook(signal -> this.running = false);
+
     }
 
     @Override
     public void destroy() {
-        synchronized (executObject) {
-            if (this.useThreadPool && this.running) {
-                this.running = false;
-                log.info("Consumer-service active count: [{}]", executor.getActiveCount());
-                this.executor.shutdown();
-                try {
-                    if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
-                        executor.shutdownNow();
-                } catch (InterruptedException ignored) {}
-                log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
-            }
-        }
+
     }
 
     private void submitTask(Runnable task) {
         if (Objects.isNull(task))
             return;
 
-        try {
-            executor.submit(task);
-        } catch (RejectedExecutionException e) {
-            log.error("Executor [{}] rejected task from: {}", executor.toString(), task);
-        }
+        executor.submit(task);
     }
 
     private void execute() {
@@ -126,7 +115,7 @@ public class ConsumerService implements Updatable, Destroyable {
             if (Objects.isNull(delegate))
                 return;
 
-            if(log.isDebugEnabled())
+            if (log.isDebugEnabled())
                 log.debug("Consumer queue message....");
 
             try {
@@ -151,7 +140,7 @@ public class ConsumerService implements Updatable, Destroyable {
                     .append(" running", running)
                     .append(" activeWorker", executor.getActiveCount())
                     .append(" completedTask", executor.getCompletedTaskCount())
-                    .append(" uncompletedTask", executor.getQueue().size())
+                    .append(" remainingTask", executor.getTaskCount() - executor.getCompletedTaskCount())
                     .toString();
         }
 
