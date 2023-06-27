@@ -90,7 +90,7 @@ public class GracefulShutdown {
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
             long completed = threadPoolExecutor.getCompletedTaskCount();
-            log.info("'{}' active thread count: {}, completed task: {}, remaining task: {}",
+            log.info("'{}' active thread worker: {}, completed task: {}, remaining task: {}",
                     nameTag,
                     threadPoolExecutor.getActiveCount(),
                     completed,
