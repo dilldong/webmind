@@ -30,7 +30,7 @@ public class TomcatGracefulShutdown extends GracefulShutdown {
             Connector connector = this.tomcat.getConnector();
             log.info("Stopping connector is: {}", connector.toString());
             connector.pause();
-            this.getConsumer().accept(ShutDownSignalEnum.PAUSE);
+            super.consumer.accept(ShutDownSignalEnum.PAUSE);
             executor = connector.getProtocolHandler().getExecutor();
         }
 

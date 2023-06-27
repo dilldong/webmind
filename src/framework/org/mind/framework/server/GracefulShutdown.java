@@ -15,20 +15,23 @@ import java.util.function.Consumer;
  * @version 1.0
  * @date 2022-03-14
  */
-@Getter
 public class GracefulShutdown {
     protected static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
+    @Getter
     private final String nameTag;
+    @Getter
     private final Thread currentThread;
-    private final Object shutdownMonitor = new Object();
 
-    protected volatile ExecutorService executor;
-
+    @Getter
     private long waitTime = 30L;// await 30s
+    @Getter
     private TimeUnit waitTimeUnit;
 
-    private Consumer<ShutDownSignalEnum> consumer;
+    protected volatile ExecutorService executor;
+    protected Consumer<ShutDownSignalEnum> consumer;
+
+    private final Object shutdownMonitor = new Object();
 
     protected GracefulShutdown(String nameTag, Thread currentThread) {
         super();
