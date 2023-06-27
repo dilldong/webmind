@@ -6,6 +6,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
 import org.mind.framework.server.GracefulShutdown;
+import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.service.Updatable;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
@@ -89,12 +90,15 @@ public class ConsumerService implements Updatable, Destroyable {
 
         executor.allowCoreThreadTimeOut(coreThreadTimeOut);
         running = true;
-        log.info("Init ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
 
-        new GracefulShutdown("Mind-Consumer", Thread.currentThread(), executor)
+        new GracefulShutdown("Consumer-Graceful", Thread.currentThread(), executor)
                 .waitTime(15L, TimeUnit.SECONDS)
-                        .registerShutdownHook(signal -> this.running = false);
+                        .registerShutdownHook(signal -> {
+                            if(signal == ShutDownSignalEnum.IN)
+                                this.running = false;
+                        });
 
+        log.info("Initialize the thread pool consumer service: {}", this.simplePoolInfo());
     }
 
     @Override
@@ -146,6 +150,16 @@ public class ConsumerService implements Updatable, Destroyable {
 
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("queueService", queueService.toString())
+                .toString();
+    }
+
+    private String simplePoolInfo(){
+        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+                .append("maxPoolSize", maxPoolSize)
+                .append(" corePoolSize", corePoolSize)
+                .append(" keepAliveTime", keepAliveTime)
+                .append(" taskCapacity", taskCapacity)
+                .append(" submitTaskCount", submitTaskCount)
                 .toString();
     }
 }
