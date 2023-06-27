@@ -28,7 +28,7 @@ public class ConsumerService implements Updatable, Destroyable {
     private int maxPoolSize = 10;
 
     @Setter
-    private int corePoolSize = 3;
+    private int corePoolSize = 2;
 
     @Setter
     private long keepAliveTime = 60L;
