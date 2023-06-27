@@ -20,7 +20,7 @@ public class GracefulShutdown {
     protected static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
     private final String nameTag;
-    private final Thread mainThread;
+    private final Thread currentThread;
     private final Object shutdownMonitor = new Object();
 
     protected volatile ExecutorService executor;
@@ -30,19 +30,19 @@ public class GracefulShutdown {
 
     private Consumer<ShutDownSignalEnum> consumer;
 
-    protected GracefulShutdown(String nameTag, Thread mainThread) {
+    protected GracefulShutdown(String nameTag, Thread currentThread) {
         super();
         this.nameTag = nameTag;
-        this.mainThread = mainThread;
+        this.currentThread = currentThread;
         this.waitTimeUnit = TimeUnit.SECONDS;
     }
 
-    public GracefulShutdown(Thread mainThread, ExecutorService executor) {
-        this("Executor-Graceful", mainThread, executor);
+    public GracefulShutdown(Thread currentThread, ExecutorService executor) {
+        this("Executor-Graceful", currentThread, executor);
     }
 
-    public GracefulShutdown(String nameTag, Thread mainThread, ExecutorService executor) {
-        this(nameTag, mainThread);
+    public GracefulShutdown(String nameTag, Thread currentThread, ExecutorService executor) {
+        this(nameTag, currentThread);
         this.executor = executor;
     }
 
@@ -70,10 +70,10 @@ public class GracefulShutdown {
                 this.consumer.accept(ShutDownSignalEnum.OUT);
 
                 try {
-                    mainThread.interrupt();
+                    currentThread.interrupt();
 
                     //当收到停止信号时，等待主线程的执行完成
-                    mainThread.join();
+                    currentThread.join();
                 } catch (InterruptedException | IllegalStateException ignored) {
                 } finally {
                     log.info("Shutdown '{}' server completed.", nameTag);
@@ -86,7 +86,12 @@ public class GracefulShutdown {
         if (this.executor instanceof ThreadPoolExecutor) {
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
-            log.info("'{}' request active count: {}", nameTag, threadPoolExecutor.getActiveCount());
+            long completed = threadPoolExecutor.getCompletedTaskCount();
+            log.info("'{}' active thread count: {}, completed task: {}, remaining task: {}",
+                    nameTag,
+                    threadPoolExecutor.getActiveCount(),
+                    completed,
+                    threadPoolExecutor.getTaskCount() - completed);
             this.shutdown(threadPoolExecutor);
         } else {
             this.shutdown(this.executor);
@@ -98,7 +103,7 @@ public class GracefulShutdown {
             executorService.shutdown();
             this.consumer.accept(ShutDownSignalEnum.DOWN);
 
-            log.info("Request active thread processing, waiting ....");
+            log.info("'{}' active thread processing, waiting ....", nameTag);
             if (!executorService.awaitTermination(waitTime, waitTimeUnit)) {
                 log.warn("'{}' didn't shutdown gracefully within '{} {}'. Proceeding with forceful shutdown",
                         nameTag,
