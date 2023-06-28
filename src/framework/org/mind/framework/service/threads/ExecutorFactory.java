@@ -51,7 +51,7 @@ public class ExecutorFactory {
                 keepAliveTime,
                 unit,
                 taskRunnables,
-                DEFAULT_DAEMON_THREAD_FACTORY,
+                DEFAULT_USER_THREAD_FACTORY,
                 DEFAULT_REJECT_HANDLER);
     }
 
