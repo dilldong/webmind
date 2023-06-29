@@ -23,7 +23,11 @@ public class RequestException extends RuntimeException {
     }
 
     public RequestException(RequestError error) {
-        super(error.getMsg());
+        this(error.getMsg(), error);
+    }
+
+    public RequestException(String message, RequestError error) {
+        super(message);
         this.error = error;
     }
 

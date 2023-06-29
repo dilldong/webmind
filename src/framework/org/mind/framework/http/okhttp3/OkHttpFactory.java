@@ -241,7 +241,9 @@ public class OkHttpFactory {
             String message = Objects.isNull(responseBody) ?
                     "N/A" :
                     buildResponseString(response.headers(), responseBody);
-            throw new RequestException("Invalid response received: " + response.code() + "; " + message);
+            throw new RequestException(
+                    "Invalid response received: " + response.code() + "; " + message,
+                    RequestError.newInstance(response.code(), message));
         }
     }
 
