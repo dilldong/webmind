@@ -74,7 +74,7 @@ public class ConsumerService implements Updatable, Destroyable {
         this.execute();
     }
 
-    protected void initExecutorPool() {
+    public void initExecutorPool() {
         if (!this.useThreadPool || this.running)
             return;
 
