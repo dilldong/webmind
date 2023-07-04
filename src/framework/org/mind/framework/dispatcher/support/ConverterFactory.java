@@ -1,5 +1,6 @@
 package org.mind.framework.dispatcher.support;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.CharUtils;
 import org.mind.framework.exception.NotSupportedException;
 
@@ -19,7 +20,7 @@ public class ConverterFactory {
     private final Map<String, Converter<?>> converterMap;
 
     private ConverterFactory() {
-        Converter<Boolean> booleanConvert = Boolean::parseBoolean;
+        Converter<Boolean> booleanConvert = BooleanUtils::toBoolean;
 
         Converter<Long> longConvert = Long::parseLong;
 
@@ -39,7 +40,7 @@ public class ConverterFactory {
 
         Converter<Character> charConvert = CharUtils::toChar;
 
-        this.converterMap = new HashMap<>(16);
+        this.converterMap = new HashMap<>(18);
         this.converterMap.put(boolean.class.getName(), booleanConvert);
         this.converterMap.put(Boolean.class.getName(), booleanConvert);
 
