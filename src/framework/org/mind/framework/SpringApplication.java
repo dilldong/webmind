@@ -14,6 +14,7 @@ import org.mind.framework.util.JarFileUtils;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Marcus
@@ -79,12 +80,22 @@ public class SpringApplication {
         return application;
     }
 
-    public void waiting(Thread mainThread) {
-        this.waiting(StringUtils.defaultIfEmpty(mainThread.getName(), "Main-Graceful"), mainThread);
+    public void waiting(long await, TimeUnit timeUnit){
+        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Main-Graceful", true, () -> {
+            try {
+                timeUnit.sleep(await);
+                this.close();
+            } catch (InterruptedException | IllegalStateException ignored) {
+            } finally {
+                log.info("Shutdown '{}' server completed.", Thread.currentThread().getName());
+            }
+        }));
+
+        this.await();
     }
 
-    public void waiting(final String nameTag, final Thread mainThread) {
-        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread(nameTag, true, () -> {
+    public void waiting(Thread mainThread) {
+        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Main-Graceful", true, () -> {
             try {
                 mainThread.interrupt();
                 // When received a stop signal,
@@ -92,21 +103,25 @@ public class SpringApplication {
                 mainThread.join();
             } catch (InterruptedException | IllegalStateException ignored) {
             } finally {
-                log.info("Shutdown '{}' server completed.", nameTag);
+                log.info("Shutdown '{}' server completed.", Thread.currentThread().getName());
             }
         }));
 
-        synchronized (lock) {
-            try {
-                lock.wait();
-            } catch (InterruptedException ignored) {
-            }
-        }
+        this.await();
     }
 
     public void close() {
         synchronized (lock) {
             lock.notify();
+        }
+    }
+
+    private void await(){
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 
