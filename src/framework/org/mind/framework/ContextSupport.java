@@ -36,8 +36,8 @@ public final class ContextSupport {
         return context;
     }
 
-    public static AbstractApplicationContext initSpringByAnnotationClass(Class<?> ... springConfigs){
-        AbstractApplicationContext context = new AnnotationConfigApplicationContext(springConfigs);
+    public static AbstractApplicationContext initSpringByAnnotationClass(Class<?> ... componentClasses){
+        AbstractApplicationContext context = new AnnotationConfigApplicationContext(componentClasses);
         context.registerShutdownHook();
         setApplicationContext(context);
         return context;

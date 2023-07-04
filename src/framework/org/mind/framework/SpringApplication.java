@@ -1,6 +1,7 @@
 package org.mind.framework;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.PropertyConfigurator;
 import org.mind.framework.server.WebServer;
@@ -21,8 +22,8 @@ import java.util.Objects;
 @Slf4j
 public class SpringApplication {
     private final Object lock = new Object();
-    private final String[] springLocations;
     private final Class<?> mainClass;
+    private String[] springLocations;
     private String[] resources;
     private String log4j;
 
@@ -32,10 +33,8 @@ public class SpringApplication {
         this.resources = resources;
     }
 
-    private SpringApplication(Class<?> mainClass, String[] springLocations, String log4j) {
+    public SpringApplication(Class<?> mainClass) {
         this.mainClass = mainClass;
-        this.springLocations = springLocations;
-        this.log4j = log4j;
     }
 
     /**
@@ -62,15 +61,20 @@ public class SpringApplication {
     /**
      * Load the Spring service, non-web project.
      */
-    public static SpringApplication runApplication(Class<?> mainClass, String[] springLocations) {
-        return runApplication(mainClass, null, springLocations);
+    public static SpringApplication runApplication(Class<?> mainClass, String log4j) {
+        SpringApplication application = new SpringApplication(mainClass);
+        application.log4j = log4j;
+        application.runApplication();
+        return application;
     }
 
     /**
      * Load the Spring service, non-web project.
      */
     public static SpringApplication runApplication(Class<?> mainClass, String log4j, String[] springLocations) {
-        SpringApplication application = new SpringApplication(mainClass, springLocations, log4j);
+        SpringApplication application = new SpringApplication(mainClass);
+        application.springLocations = springLocations;
+        application.log4j = log4j;
         application.runApplication();
         return application;
     }
@@ -83,7 +87,8 @@ public class SpringApplication {
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread(nameTag, true, () -> {
             try {
                 mainThread.interrupt();
-                // 当收到停止信号时，等待主线程的执行完成
+                // When received a stop signal,
+                // wait for the execution of the main thread to complete.
                 mainThread.join();
             } catch (InterruptedException | IllegalStateException ignored) {
             } finally {
@@ -94,7 +99,7 @@ public class SpringApplication {
         synchronized (lock) {
             try {
                 lock.wait();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
     }
@@ -136,7 +141,10 @@ public class SpringApplication {
             }
 
             // load spring
-            ContextSupport.initSpringByClassPathFile(springLocations);
+            if (ArrayUtils.isEmpty(springLocations))
+                ContextSupport.initSpringByAnnotationClass(this.mainClass);
+            else
+                ContextSupport.initSpringByClassPathFile(springLocations);
         }
     }
 

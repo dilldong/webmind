@@ -36,7 +36,13 @@ public class TomcatGracefulShutdown extends GracefulShutdown {
 
         if(Objects.nonNull(executor)) {
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-            log.info("'{}' request active count: {}", this.getNameTag(), threadPoolExecutor.getActiveCount());
+            long completed = threadPoolExecutor.getCompletedTaskCount();
+            log.info("'{}' request active worker: {}, completed task: {}, remaining task: {}",
+                    super.getNameTag(),
+                    threadPoolExecutor.getActiveCount(),
+                    completed,
+                    threadPoolExecutor.getTaskCount() - completed);
+
             super.shutdown(threadPoolExecutor);
         }
 

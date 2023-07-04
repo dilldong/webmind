@@ -1,5 +1,6 @@
 package org.mind.framework.cache;
 
+import org.mind.framework.container.Destroyable;
 import org.mind.framework.service.Cloneable;
 
 import java.io.Serializable;
@@ -14,7 +15,7 @@ import java.util.Set;
  * @author dp
  * @date Nov 27, 2010
  */
-public interface Cacheable extends Serializable {
+public interface Cacheable extends Serializable, Destroyable {
 
     enum CompareType {
         EQ_FULL, EQ_PART
