@@ -85,6 +85,14 @@ public class ExecutorFactory {
         return new TaskThreadFactory(threadNamePrefix, daemon, priority);
     }
 
+    public static Thread newDaemonThread(Runnable runnable) {
+        return newDaemonThread(null, runnable);
+    }
+
+    public static Thread newDaemonThread(String name, Runnable runnable) {
+        return newThread(name, true, runnable);
+    }
+
     public static Thread newThread(Runnable runnable) {
         return newThread(null, runnable);
     }
@@ -102,8 +110,7 @@ public class ExecutorFactory {
         if(StringUtils.isNotEmpty(name)) {
             try {
                 thread.setName(name);
-            } catch (SecurityException ignored) {
-            }
+            } catch (SecurityException ignored) {}
         }
         return thread;
     }
