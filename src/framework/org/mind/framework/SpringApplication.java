@@ -62,11 +62,15 @@ public class SpringApplication {
     /**
      * Load the Spring service, non-web project.
      */
+    public static SpringApplication runApplication(Class<?> mainClass) {
+        return runApplication(mainClass, null);
+    }
+
+    /**
+     * Load the Spring service, non-web project.
+     */
     public static SpringApplication runApplication(Class<?> mainClass, String log4j) {
-        SpringApplication application = new SpringApplication(mainClass);
-        application.log4j = log4j;
-        application.runApplication();
-        return application;
+        return runApplication(mainClass, log4j, null);
     }
 
     /**
