@@ -196,7 +196,12 @@ public class OkHttpFactory {
      */
     public static NoContentResponse requestNobody(Request request) throws IOException {
         try (okhttp3.Response response = client().newCall(request).execute()) {
-            return new NoContentResponse(response.headers(), response.code());
+            ResponseBody body = response.body();
+            return new NoContentResponse(
+                    response.headers(),
+                    response.code(),
+                    Objects.isNull(body) ? null : body.contentType(),
+                    Objects.isNull(body) ? 0L : body.contentLength());
         }
     }
 

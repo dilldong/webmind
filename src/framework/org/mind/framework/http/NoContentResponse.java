@@ -3,6 +3,7 @@ package org.mind.framework.http;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import okhttp3.Headers;
+import okhttp3.MediaType;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
@@ -17,10 +18,16 @@ import java.util.Objects;
 @Getter
 public class NoContentResponse extends HttpResponse<Void> {
     private final Headers headers;
+    private final MediaType mediaType;
+    private final long contentLength;
 
-    public NoContentResponse(Headers headers, int statusCode) {
-        this.headers = headers;
+    public NoContentResponse(Headers headers, int statusCode, MediaType mediaType, long contentLength) {
+        super.streamConsumed = true;
         super.responseCode = statusCode;
+
+        this.headers = headers;
+        this.mediaType = mediaType;
+        this.contentLength = contentLength;
     }
 
     @Override
