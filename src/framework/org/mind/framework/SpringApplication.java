@@ -80,29 +80,27 @@ public class SpringApplication {
         return application;
     }
 
-    public void waiting(long await, TimeUnit timeUnit){
-        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Main-Graceful", true, () -> {
-            try {
-                timeUnit.sleep(await);
-                this.close();
-            } catch (InterruptedException | IllegalStateException ignored) {
-            } finally {
-                log.info("Shutdown '{}' server completed.", Thread.currentThread().getName());
-            }
-        }));
-
-        this.await();
+    public void waiting(long await, TimeUnit timeUnit) {
+        this.waiting(await, timeUnit, Thread.currentThread());
     }
 
     public void waiting(Thread mainThread) {
-        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Main-Graceful", true, () -> {
+        this.waiting(0, TimeUnit.MILLISECONDS, mainThread);
+    }
+
+    public void waiting(long await, TimeUnit timeUnit, Thread mainThread) {
+        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newDaemonThread("Main-Graceful", () -> {
             try {
+                if (await > 0L)
+                    timeUnit.sleep(await);
+
                 mainThread.interrupt();
                 // When received a stop signal,
                 // wait for the execution of the main thread to complete.
                 mainThread.join();
             } catch (InterruptedException | IllegalStateException ignored) {
             } finally {
+                this.close();
                 log.info("Shutdown '{}' server completed.", Thread.currentThread().getName());
             }
         }));
@@ -112,15 +110,18 @@ public class SpringApplication {
 
     public void close() {
         synchronized (lock) {
-            lock.notify();
+            try {
+                lock.notify();
+            } catch (IllegalMonitorStateException ignored) {
+            }
         }
     }
 
-    private void await(){
+    private void await() {
         synchronized (lock) {
             try {
                 lock.wait();
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException | IllegalMonitorStateException ignored) {
             }
         }
     }
