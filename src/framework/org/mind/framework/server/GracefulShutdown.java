@@ -74,8 +74,6 @@ public class GracefulShutdown {
 
                 try {
                     currentThread.interrupt();
-
-                    //当收到停止信号时，等待主线程的执行完成
                     currentThread.join();
                 } catch (InterruptedException | IllegalStateException ignored) {
                 } finally {
@@ -106,7 +104,6 @@ public class GracefulShutdown {
             executorService.shutdown();
             this.consumer.accept(ShutDownSignalEnum.DOWN);
 
-            log.info("'{}' active thread processing, waiting ....", nameTag);
             if (!executorService.awaitTermination(waitTime, waitTimeUnit)) {
                 log.warn("'{}' didn't shutdown gracefully within '{} {}'. Proceeding with forceful shutdown",
                         nameTag,

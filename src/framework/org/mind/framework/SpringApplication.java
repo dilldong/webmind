@@ -88,8 +88,8 @@ public class SpringApplication {
         this.waiting(await, timeUnit, Thread.currentThread());
     }
 
-    public void waiting(Thread mainThread) {
-        this.waiting(0, TimeUnit.MILLISECONDS, mainThread);
+    public void waiting() {
+        this.waiting(0, TimeUnit.MILLISECONDS, Thread.currentThread());
     }
 
     public void waiting(long await, TimeUnit timeUnit, Thread mainThread) {

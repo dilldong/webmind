@@ -21,6 +21,7 @@ import org.mind.framework.http.NoContentResponse;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.server.WebServerConfig;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import retrofit2.Call;
@@ -36,6 +37,8 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -50,7 +53,10 @@ public class OkHttpFactory {
 
     private static final OkHttpClient HTTP_CLIENT;
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
-    private static final Converter.Factory GSON_CONVERTER_FACTORY = GsonConverterFactory.create(JsonUtils.getSingleton());
+
+    private static class ConverterFactory {
+        private static final Converter.Factory GSON_CONVERTER = GsonConverterFactory.create(JsonUtils.getSingleton());
+    }
 
     // json media type
     public static final MediaType JSON_MEDIA = MediaType.parse("application/json;charset=UTF-8");
@@ -105,7 +111,14 @@ public class OkHttpFactory {
         log.info("Init OkHttpClient ....");
 
         WebServerConfig config = WebServerConfig.INSTANCE;
-        Dispatcher dispatcher = new Dispatcher();
+        ExecutorService executorService =
+                ExecutorFactory.newThreadPoolExecutor(
+                        0,
+                        config.getMaxRequests(),
+                        new SynchronousQueue<>(),
+                        ExecutorFactory.newThreadFactory("okhttp3-exec-", false));
+
+        Dispatcher dispatcher = new Dispatcher(executorService);
         dispatcher.setMaxRequestsPerHost(config.getMaxRequestsPerHost());
         dispatcher.setMaxRequests(config.getMaxRequests());
 
@@ -144,7 +157,7 @@ public class OkHttpFactory {
     public static <V> V createService(Class<V> serviceClass, HttpOption option, Interceptor newInterceptor) {
         Retrofit.Builder retrofitBuilder = new Retrofit.Builder()
                 .baseUrl(option.getRestHost())
-                .addConverterFactory(GSON_CONVERTER_FACTORY);
+                .addConverterFactory(ConverterFactory.GSON_CONVERTER);
 
         if (Objects.isNull(newInterceptor)) {
             retrofitBuilder.client(HTTP_CLIENT);
@@ -307,21 +320,14 @@ public class OkHttpFactory {
                         "OkHttp-Graceful",
                         Thread.currentThread(),
                         HTTP_CLIENT.dispatcher().executorService())
-                        .waitTime(20L, TimeUnit.SECONDS);
+                        .waitTime(15L, TimeUnit.SECONDS);
 
         shutdown.registerShutdownHook(signal -> {
             if (signal == ShutDownSignalEnum.IN) {
-                log.info("Close OkHttpClient ....");
-            } else if (signal == ShutDownSignalEnum.OUT) {
-                log.info("Clear OkHttpClient connections ....");
-                // 清理连接池中的所有连接
-                HTTP_CLIENT.connectionPool().evictAll();
-
-                // 取消调度器中的所有请求
+                log.info("Cancel OkHttpClient connections ....");
                 HTTP_CLIENT.dispatcher().cancelAll();
-
+            } else if (signal == ShutDownSignalEnum.OUT)
                 CONTENT_LENGTH_LOCAL.remove();
-            }
         });
     }
 }

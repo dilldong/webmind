@@ -23,11 +23,6 @@ public class ExecutorFactory {
     private static final String USER_PREFIX = "mind-thread-";
 
     /**
-     * The default rejected execution handler
-     */
-    private static final RejectedExecutionHandler DEFAULT_REJECT_HANDLER = new ThreadPoolExecutor.AbortPolicy();
-
-    /**
      * The default thread-pool factory
      */
     public static final ThreadFactory DEFAULT_DAEMON_THREAD_FACTORY = ExecutorFactory.newThreadFactory(true, Thread.NORM_PRIORITY);
@@ -36,30 +31,56 @@ public class ExecutorFactory {
 
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
                                                            int maxPoolSize,
-                                                           BlockingQueue<Runnable> taskRunnables) {
-        return newThreadPoolExecutor(corePoolSize, maxPoolSize, KEEP_ALIVE_TIME, TimeUnit.SECONDS, taskRunnables);
+                                                           BlockingQueue<Runnable> workQueue) {
+        return newThreadPoolExecutor(corePoolSize, maxPoolSize, workQueue, DEFAULT_USER_THREAD_FACTORY);
     }
 
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
                                                            int maxPoolSize,
-                                                           long keepAliveTime,
-                                                           TimeUnit unit,
-                                                           BlockingQueue<Runnable> taskRunnables) {
+                                                           BlockingQueue<Runnable> workQueue,
+                                                           ThreadFactory threadFactory) {
         return newThreadPoolExecutor(
-                corePoolSize,
-                maxPoolSize,
-                keepAliveTime,
-                unit,
-                taskRunnables,
-                DEFAULT_USER_THREAD_FACTORY,
-                DEFAULT_REJECT_HANDLER);
+                corePoolSize, maxPoolSize, KEEP_ALIVE_TIME, TimeUnit.SECONDS, workQueue, threadFactory);
     }
+
 
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
                                                            int maxPoolSize,
                                                            long keepAliveTime,
                                                            TimeUnit unit,
-                                                           BlockingQueue<Runnable> taskRunnables,
+                                                           BlockingQueue<Runnable> workQueue) {
+        return newThreadPoolExecutor(
+                corePoolSize, maxPoolSize, keepAliveTime, unit, workQueue, DEFAULT_USER_THREAD_FACTORY);
+    }
+
+
+    public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
+                                                           int maxPoolSize,
+                                                           long keepAliveTime,
+                                                           TimeUnit unit,
+                                                           BlockingQueue<Runnable> workQueue,
+                                                           ThreadFactory threadFactory) {
+        ThreadPoolExecutor executor =
+                new ThreadPoolExecutor(
+                        corePoolSize,
+                        Math.max(maxPoolSize, corePoolSize),
+                        keepAliveTime,
+                        unit,
+                        workQueue,
+                        threadFactory);
+
+        // Prestart all core threads
+        if (corePoolSize > 0)
+            executor.prestartAllCoreThreads();
+        return executor;
+    }
+
+
+    public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
+                                                           int maxPoolSize,
+                                                           long keepAliveTime,
+                                                           TimeUnit unit,
+                                                           BlockingQueue<Runnable> workQueue,
                                                            ThreadFactory threadFactory,
                                                            RejectedExecutionHandler handler) {
         ThreadPoolExecutor executor =
@@ -67,17 +88,26 @@ public class ExecutorFactory {
                         corePoolSize,
                         Math.max(maxPoolSize, corePoolSize),
                         keepAliveTime, unit,
-                        taskRunnables,
+                        workQueue,
                         threadFactory,
                         handler);
 
         // Prestart all core threads
-        executor.prestartAllCoreThreads();
+        if (corePoolSize > 0)
+            executor.prestartAllCoreThreads();
         return executor;
     }
 
+    public static ThreadFactory newThreadFactory(String threadNamePrefix, boolean daemon) {
+        return newThreadFactory(threadNamePrefix, daemon, Thread.NORM_PRIORITY);
+    }
+
+    public static ThreadFactory newThreadFactory(boolean daemon) {
+        return newThreadFactory(daemon, Thread.NORM_PRIORITY);
+    }
+
     public static ThreadFactory newThreadFactory(boolean daemon, int priority) {
-        return new TaskThreadFactory(daemon? DAEMON_PREFIX : USER_PREFIX, daemon, priority);
+        return newThreadFactory(daemon ? DAEMON_PREFIX : USER_PREFIX, daemon, priority);
     }
 
     public static ThreadFactory newThreadFactory(String threadNamePrefix, boolean daemon, int priority) {
@@ -107,10 +137,11 @@ public class ExecutorFactory {
                 DEFAULT_DAEMON_THREAD_FACTORY.newThread(runnable) :
                 DEFAULT_USER_THREAD_FACTORY.newThread(runnable);
 
-        if(StringUtils.isNotEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             try {
                 thread.setName(name);
-            } catch (SecurityException ignored) {}
+            } catch (SecurityException ignored) {
+            }
         }
         return thread;
     }

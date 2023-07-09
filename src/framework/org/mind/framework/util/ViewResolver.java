@@ -1,4 +1,4 @@
-package org.mind.framework;
+package org.mind.framework.util;
 
 import org.mind.framework.http.Response;
 import org.mind.framework.renderer.BinaryRender;

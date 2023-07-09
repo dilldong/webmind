@@ -23,13 +23,15 @@ public class Async {
         executor = ExecutorFactory.newThreadPoolExecutor(
                 0,
                 Runtime.getRuntime().availableProcessors() << 3,
-                60L,
-                TimeUnit.SECONDS,
-                new SynchronousQueue());
+                new SynchronousQueue<>());
 
         new GracefulShutdown("Async-Graceful", Thread.currentThread(), executor)
-                .waitTime(12L, TimeUnit.SECONDS)
+                .waitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook();
+    }
+
+    public static ExecutorService executorService(){
+        return executor;
     }
 
     public static <T> CompletableFuture<T> run(Callable<T> callable) {
