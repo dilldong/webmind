@@ -4,8 +4,8 @@ import org.mind.framework.server.GracefulShutdown;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Async {
 
-    private static final ExecutorService executor;
+    private static final ThreadPoolExecutor executor;
 
     static {
         executor = ExecutorFactory.newThreadPoolExecutor(
@@ -25,12 +25,12 @@ public class Async {
                 Runtime.getRuntime().availableProcessors() << 3,
                 new SynchronousQueue<>());
 
-        new GracefulShutdown("Async-Graceful", Thread.currentThread(), executor)
+        GracefulShutdown.newShutdown("Async-Graceful", Thread.currentThread(), executor)
                 .waitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook();
     }
 
-    public static ExecutorService executorService(){
+    public static ThreadPoolExecutor synchronousExecutor(){
         return executor;
     }
 

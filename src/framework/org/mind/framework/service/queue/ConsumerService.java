@@ -8,14 +8,13 @@ import org.mind.framework.container.Destroyable;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.service.Updatable;
+import org.mind.framework.service.threads.Async;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -26,22 +25,16 @@ public class ConsumerService implements Updatable, Destroyable {
     private final Object executObject = new Object();
 
     @Setter
-    private int maxPoolSize = 10;
+    private int poolSize = Runtime.getRuntime().availableProcessors() << 3;
 
+    /**
+     * if taskCapacity = 0, then SynchronousQueue
+     */
     @Setter
-    private int corePoolSize = 2;
-
-    @Setter
-    private long keepAliveTime = 60L;
-
-    @Setter
-    private int taskCapacity = 768;
+    private int taskCapacity = 0;
 
     @Setter
     private int submitTaskCount = 5;
-
-    @Setter
-    private boolean coreThreadTimeOut = false;
 
     @Setter
     @Getter
@@ -51,9 +44,9 @@ public class ConsumerService implements Updatable, Destroyable {
     private volatile boolean running = false;
 
     @Setter
-    private QueueService queueService;
+    private transient QueueService queueService;
 
-    private transient volatile ThreadPoolExecutor executor;
+    private transient ThreadPoolExecutor executor;
 
     @Override
     public void doUpdate() {
@@ -69,35 +62,31 @@ public class ConsumerService implements Updatable, Destroyable {
                 }
                 return;
             }
-        }
 
-        this.execute();
+            this.execute();
+        }
     }
 
     public void initExecutorPool() {
         if (!this.useThreadPool || this.running)
             return;
 
-        BlockingQueue<Runnable> runnables =
-                taskCapacity > 0 ?
-                        new LinkedBlockingQueue<>(taskCapacity) :
-                        new SynchronousQueue<>();
+        if (taskCapacity > 0) {
+            executor = ExecutorFactory.newThreadPoolExecutor(
+                    0,
+                    poolSize,
+                    new ArrayBlockingQueue<>(taskCapacity));
 
-        executor = ExecutorFactory.newThreadPoolExecutor(
-                corePoolSize,
-                Math.max(maxPoolSize, corePoolSize),
-                keepAliveTime, TimeUnit.SECONDS, runnables);
+            GracefulShutdown.newShutdown("Consumer-Graceful", executor)
+                    .waitTime(15L, TimeUnit.SECONDS)
+                    .registerShutdownHook(signal -> {
+                        if (signal == ShutDownSignalEnum.IN)
+                            this.running = false;
+                    });
+        } else
+            executor = Async.synchronousExecutor();
 
-        executor.allowCoreThreadTimeOut(coreThreadTimeOut);
         running = true;
-
-        new GracefulShutdown("Consumer-Graceful", Thread.currentThread(), executor)
-                .waitTime(15L, TimeUnit.SECONDS)
-                        .registerShutdownHook(signal -> {
-                            if(signal == ShutDownSignalEnum.IN)
-                                this.running = false;
-                        });
-
         log.info("Initialize the thread pool consumer service: {}", this.simplePoolInfo());
     }
 
@@ -136,9 +125,7 @@ public class ConsumerService implements Updatable, Destroyable {
     public String toString() {
         if (this.useThreadPool) {
             return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                    .append("maxPoolSize", maxPoolSize)
-                    .append(" corePoolSize", corePoolSize)
-                    .append(" keepAliveTime", keepAliveTime)
+                    .append("poolSize", poolSize)
                     .append(" taskCapacity", taskCapacity)
                     .append(" submitTaskCount", submitTaskCount)
                     .append(" running", running)
@@ -153,11 +140,9 @@ public class ConsumerService implements Updatable, Destroyable {
                 .toString();
     }
 
-    private String simplePoolInfo(){
+    private String simplePoolInfo() {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                .append("maxPoolSize", maxPoolSize)
-                .append(" corePoolSize", corePoolSize)
-                .append(" keepAliveTime", keepAliveTime)
+                .append("poolSize", poolSize)
                 .append(" taskCapacity", taskCapacity)
                 .append(" submitTaskCount", submitTaskCount)
                 .toString();

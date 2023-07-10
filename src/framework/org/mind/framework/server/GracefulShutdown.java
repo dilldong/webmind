@@ -18,35 +18,41 @@ import java.util.function.Consumer;
 public class GracefulShutdown {
     protected static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
+    private final Object shutdownMonitor = new Object();
+
     @Getter
     private final String nameTag;
+
     @Getter
     private final Thread currentThread;
 
     @Getter
-    private long waitTime = 30L;// await 30s
+    private long waitTime;
+
     @Getter
     private TimeUnit waitTimeUnit;
 
     protected volatile ExecutorService executor;
     protected Consumer<ShutDownSignalEnum> consumer;
 
-    private final Object shutdownMonitor = new Object();
-
     protected GracefulShutdown(String nameTag, Thread currentThread) {
-        super();
         this.nameTag = nameTag;
         this.currentThread = currentThread;
+        this.waitTime = 30L;
         this.waitTimeUnit = TimeUnit.SECONDS;
     }
 
-    public GracefulShutdown(Thread currentThread, ExecutorService executor) {
-        this("Executor-Graceful", currentThread, executor);
-    }
-
-    public GracefulShutdown(String nameTag, Thread currentThread, ExecutorService executor) {
+    protected GracefulShutdown(String nameTag, Thread currentThread, ExecutorService executor) {
         this(nameTag, currentThread);
         this.executor = executor;
+    }
+
+    public static GracefulShutdown newShutdown(String name, ExecutorService executor) {
+        return new GracefulShutdown(name, Thread.currentThread(), executor);
+    }
+
+    public static GracefulShutdown newShutdown(String name, Thread currentThread, ExecutorService executor) {
+        return new GracefulShutdown(name, currentThread, executor);
     }
 
     public GracefulShutdown waitTime(long waitTime, TimeUnit waitTimeUnit) {
@@ -59,11 +65,11 @@ public class GracefulShutdown {
         this.registerShutdownHook(signal -> {});
     }
 
-    public void registerShutdownHook(Consumer<ShutDownSignalEnum> consumer){
+    public void registerShutdownHook(Consumer<ShutDownSignalEnum> consumer) {
         this.consumer = consumer;
         this.consumer.accept(ShutDownSignalEnum.UNSTARTED);
 
-        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread(nameTag, true, () -> {
+        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newDaemonThread(nameTag, () -> {
             synchronized (shutdownMonitor) {
                 log.info("Stopping the '{}' service ....", nameTag);
                 this.consumer.accept(ShutDownSignalEnum.IN);
@@ -111,6 +117,7 @@ public class GracefulShutdown {
                         waitTimeUnit.name());
                 executorService.shutdownNow();
             }
-        } catch (InterruptedException | IllegalStateException ignored) {}
+        } catch (InterruptedException | IllegalStateException ignored) {
+        }
     }
 }
