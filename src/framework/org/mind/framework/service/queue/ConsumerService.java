@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -75,7 +75,7 @@ public class ConsumerService implements Updatable, Destroyable {
             executor = ExecutorFactory.newThreadPoolExecutor(
                     0,
                     poolSize,
-                    new ArrayBlockingQueue<>(taskCapacity));
+                    new LinkedBlockingQueue<>(taskCapacity));
 
             GracefulShutdown.newShutdown("Consumer-Graceful", executor)
                     .waitTime(15L, TimeUnit.SECONDS)
