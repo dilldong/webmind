@@ -31,10 +31,13 @@ public class ConsumerService implements Updatable, Destroyable {
      * if taskCapacity = 0, then SynchronousQueue
      */
     @Setter
-    private int taskCapacity = 0;
+    private int taskCapacity;
 
+    /**
+     * The submitted worker threads
+     */
     @Setter
-    private int submitTaskCount = 5;
+    private int submitTask = 5;
 
     @Setter
     @Getter
@@ -52,7 +55,7 @@ public class ConsumerService implements Updatable, Destroyable {
     public void doUpdate() {
         synchronized (executObject) {
             if (this.useThreadPool) {
-                int wholeCount = Math.min(queueService.size(), submitTaskCount);
+                int wholeCount = Math.min(queueService.size(), submitTask);
                 if (wholeCount < 1)
                     return;
 
@@ -127,7 +130,7 @@ public class ConsumerService implements Updatable, Destroyable {
             return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                     .append("poolSize", poolSize)
                     .append(" taskCapacity", taskCapacity)
-                    .append(" submitTaskCount", submitTaskCount)
+                    .append(" submitTaskCount", submitTask)
                     .append(" running", running)
                     .append(" activeWorker", executor.getActiveCount())
                     .append(" completedTask", executor.getCompletedTaskCount())
@@ -144,7 +147,7 @@ public class ConsumerService implements Updatable, Destroyable {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("poolSize", poolSize)
                 .append(" taskCapacity", taskCapacity)
-                .append(" submitTaskCount", submitTaskCount)
+                .append(" submitTaskCount", submitTask)
                 .toString();
     }
 }
