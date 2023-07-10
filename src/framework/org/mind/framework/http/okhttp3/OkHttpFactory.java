@@ -316,7 +316,7 @@ public class OkHttpFactory {
      */
     private static void gracefulShutdown() {
         GracefulShutdown shutdown =
-                new GracefulShutdown(
+                GracefulShutdown.newShutdown(
                         "OkHttp-Graceful",
                         Thread.currentThread(),
                         HTTP_CLIENT.dispatcher().executorService())
