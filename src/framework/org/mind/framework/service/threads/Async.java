@@ -22,7 +22,9 @@ public class Async {
     static {
         executor = ExecutorFactory.newThreadPoolExecutor(
                 0,
-                Integer.MAX_VALUE >> 16,// 32767
+                128,
+                30,
+                TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 ExecutorFactory.newThreadFactory("async-group", "async-pool-"));
 
