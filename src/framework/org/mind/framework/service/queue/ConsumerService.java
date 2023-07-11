@@ -128,7 +128,8 @@ public class ConsumerService implements Updatable, Destroyable {
     public String toString() {
         if (this.useThreadPool) {
             return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                    .append("poolSize", poolSize)
+                    .append("corePoolSize", executor.getCorePoolSize())
+                    .append(" maxPoolSize", executor.getMaximumPoolSize())
                     .append(" taskCapacity", taskCapacity)
                     .append(" submitTaskCount", submitTask)
                     .append(" running", running)
@@ -145,7 +146,8 @@ public class ConsumerService implements Updatable, Destroyable {
 
     private String simplePoolInfo() {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                .append("poolSize", poolSize)
+                .append("corePoolSize", executor.getCorePoolSize())
+                .append(" maxPoolSize", executor.getMaximumPoolSize())
                 .append(" taskCapacity", taskCapacity)
                 .append(" submitTaskCount", submitTask)
                 .toString();

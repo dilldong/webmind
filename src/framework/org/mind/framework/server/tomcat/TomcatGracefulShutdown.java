@@ -16,7 +16,7 @@ import java.util.concurrent.Executor;
  * @date 2023/6/12
  */
 public class TomcatGracefulShutdown extends GracefulShutdown {
-    private volatile Tomcat tomcat;
+    private final Tomcat tomcat;
 
     public TomcatGracefulShutdown(Thread mainThread, Tomcat tomcat) {
         super("Tomcat-Graceful", mainThread);

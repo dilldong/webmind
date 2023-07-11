@@ -1,6 +1,8 @@
 package org.mind.framework.service.queue;
 
 import lombok.Setter;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +16,7 @@ public class QueueLittle implements QueueService {
     private final Object queueObject = new Object();
 
     @Setter
-    private transient volatile BlockingQueue<DelegateMessage> queueInstance;
+    private transient BlockingQueue<DelegateMessage> queueInstance;
 
     @Override
     public boolean producer(DelegateMessage message) {
@@ -40,7 +42,6 @@ public class QueueLittle implements QueueService {
         return Objects.isNull(queueInstance) ? 0 : queueInstance.size();
     }
 
-
     @Override
     public void destroy() {
         synchronized (queueObject) {
@@ -52,5 +53,12 @@ public class QueueLittle implements QueueService {
             if (size > 0)
                 this.queueInstance.clear();
         }
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+                .append("queueSize", this.size())
+                .toString();
     }
 }

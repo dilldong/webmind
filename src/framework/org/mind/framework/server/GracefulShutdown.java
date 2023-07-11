@@ -32,7 +32,7 @@ public class GracefulShutdown {
     @Getter
     private TimeUnit waitTimeUnit;
 
-    protected volatile ExecutorService executor;
+    protected ExecutorService executor;
     protected Consumer<ShutDownSignalEnum> consumer;
 
     protected GracefulShutdown(String nameTag, Thread currentThread) {

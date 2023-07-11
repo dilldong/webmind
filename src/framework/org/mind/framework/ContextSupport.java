@@ -16,7 +16,7 @@ import java.util.Objects;
 
 public final class ContextSupport {
 
-    private static volatile ApplicationContext applicationContext;
+    private static ApplicationContext applicationContext;
 
     public static AbstractXmlApplicationContext initSpringByFile(String ... configLocations) {
         for (int i = 0; i < configLocations.length; ++i)
