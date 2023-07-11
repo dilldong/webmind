@@ -115,6 +115,18 @@ public class ExecutorFactory {
         return new TaskThreadFactory(threadNamePrefix, daemon, priority);
     }
 
+    public static ThreadFactory newThreadFactory(String threadGroupName, String threadNamePrefix) {
+        return newThreadFactory(threadGroupName, threadNamePrefix, false);
+    }
+
+    public static ThreadFactory newThreadFactory(String threadGroupName, String threadNamePrefix, boolean daemon) {
+        return newThreadFactory(threadGroupName, threadNamePrefix, daemon, Thread.NORM_PRIORITY);
+    }
+
+    public static ThreadFactory newThreadFactory(String threadGroupName, String threadNamePrefix, boolean daemon, int priority) {
+        return new TaskThreadFactory(threadGroupName, threadNamePrefix, daemon, priority);
+    }
+
     public static Thread newDaemonThread(Runnable runnable) {
         return newDaemonThread(null, runnable);
     }

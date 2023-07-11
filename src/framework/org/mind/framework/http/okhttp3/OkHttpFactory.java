@@ -116,7 +116,7 @@ public class OkHttpFactory {
                         0,
                         config.getMaxRequests(),
                         new SynchronousQueue<>(),
-                        ExecutorFactory.newThreadFactory("okhttp3-exec-", false));
+                        ExecutorFactory.newThreadFactory("okhttp3-group", "okhttp3-exec-"));
 
         Dispatcher dispatcher = new Dispatcher(executorService);
         dispatcher.setMaxRequestsPerHost(config.getMaxRequestsPerHost());
@@ -316,18 +316,15 @@ public class OkHttpFactory {
      */
     private static void gracefulShutdown() {
         GracefulShutdown shutdown =
-                GracefulShutdown.newShutdown(
-                        "OkHttp-Graceful",
-                        Thread.currentThread(),
-                        HTTP_CLIENT.dispatcher().executorService())
-                        .waitTime(15L, TimeUnit.SECONDS);
+                GracefulShutdown.newShutdown("OkHttp-Graceful", HTTP_CLIENT.dispatcher().executorService());
 
-        shutdown.registerShutdownHook(signal -> {
-            if (signal == ShutDownSignalEnum.IN) {
-                log.info("Cancel OkHttpClient connections ....");
-                HTTP_CLIENT.dispatcher().cancelAll();
-            } else if (signal == ShutDownSignalEnum.OUT)
-                CONTENT_LENGTH_LOCAL.remove();
-        });
+        shutdown.waitTime(15L, TimeUnit.SECONDS)
+                .registerShutdownHook(signal -> {
+                    if (signal == ShutDownSignalEnum.IN) {
+                        log.info("Cancel OkHttpClient connections ....");
+                        HTTP_CLIENT.dispatcher().cancelAll();
+                    } else if (signal == ShutDownSignalEnum.OUT)
+                        CONTENT_LENGTH_LOCAL.remove();
+                });
     }
 }

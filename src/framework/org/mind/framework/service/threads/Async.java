@@ -22,15 +22,16 @@ public class Async {
     static {
         executor = ExecutorFactory.newThreadPoolExecutor(
                 0,
-                Runtime.getRuntime().availableProcessors() << 3,
-                new SynchronousQueue<>());
+                Integer.MAX_VALUE >> 16,// 32767
+                new SynchronousQueue<>(),
+                ExecutorFactory.newThreadFactory("async-group", "async-pool-"));
 
-        GracefulShutdown.newShutdown("Async-Graceful", Thread.currentThread(), executor)
+        GracefulShutdown.newShutdown("Async-Graceful", executor)
                 .waitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook();
     }
 
-    public static ThreadPoolExecutor synchronousExecutor(){
+    public static ThreadPoolExecutor synchronousExecutor() {
         return executor;
     }
 
