@@ -2,6 +2,8 @@ package org.mind.framework.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mind.framework.exception.ThrowProvider;
 
 import java.io.IOException;
@@ -15,8 +17,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * NIO Read/Write files
@@ -30,7 +38,7 @@ public class FileUtils {
     public static final int MAX_BUFFER_SIZE = 1024;
     public static final String UNIX_DIR = String.valueOf(IOUtils.DIR_SEPARATOR_UNIX);
     public static final String WINDOWS_DIR = String.valueOf(IOUtils.DIR_SEPARATOR_WINDOWS);
-    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+    public static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
 
     /**
      * Write file
@@ -73,7 +81,6 @@ public class FileUtils {
     public static int write(String filePath, String content, boolean sharedLock, boolean awaitAcquire) {
         return write(Paths.get(filePath), content, sharedLock, awaitAcquire);
     }
-
 
     /**
      * Write file
@@ -147,7 +154,8 @@ public class FileUtils {
 
                     try {
                         Thread.sleep(100L);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                     Thread.yield();
                 }
             } while (++tryCounter < 10);
@@ -225,10 +233,10 @@ public class FileUtils {
     }
 
     /**
-     * @param filePath              file absolute path
-     * @param sharedLock            true: shared lock, false: exclusive lock
-     * @param awaitAcquireOfTime    The waiting time for acquiring a lock (must be greater than 160 ms)
-     * @param awaitTimeUnit         The unit of time to wait for a lock
+     * @param filePath           file absolute path
+     * @param sharedLock         true: shared lock, false: exclusive lock
+     * @param awaitAcquireOfTime The waiting time for acquiring a lock (must be greater than 160 ms)
+     * @param awaitTimeUnit      The unit of time to wait for a lock
      * @return file content
      */
     public static String read(Path filePath, boolean sharedLock, long awaitAcquireOfTime, TimeUnit awaitTimeUnit) {
@@ -246,7 +254,7 @@ public class FileUtils {
         }
 
         long loopLimit;
-        if(awaitTimeUnit == TimeUnit.MILLISECONDS)
+        if (awaitTimeUnit == TimeUnit.MILLISECONDS)
             loopLimit = awaitAcquireOfTime > 0L ? awaitAcquireOfTime / 160L : 0L;
         else
             loopLimit = awaitAcquireOfTime > 0L ? awaitTimeUnit.toMillis(awaitAcquireOfTime) / 160L : 0L;
@@ -267,12 +275,60 @@ public class FileUtils {
 
                     try {
                         Thread.sleep(160L);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                     Thread.yield();
                 }
             } while (--loopLimit >= 0);
         } catch (IOException e) {
             log.error("FileChannel open or read exception: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    public static List<Path> get(String directory) {
+        return get(directory, null);
+    }
+
+    public static List<Path> get(String directory, @Nullable Function<Path, Boolean> filter) {
+        try (Stream<Path> streams = Files.list(Paths.get(directory))) {
+            if (Objects.isNull(filter))
+                return streams.collect(Collectors.toList());
+
+            return streams.filter(filter::apply).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("Read files is error, dir: {}, error: {}", directory, e.getMessage());
+        }
+        return Collections.emptyList();
+    }
+
+    public static void read(String directory, @NotNull Consumer<Path> content) {
+        read(directory, null, content);
+    }
+
+    public static void read(String directory,
+                            @Nullable Function<Path, Boolean> filter,
+                            @NotNull Consumer<Path> content) {
+        try (Stream<Path> streams = Files.list(Paths.get(directory))) {
+            if (Objects.isNull(filter))
+                streams.forEach(content);
+            else
+                streams.filter(filter::apply).forEach(content);
+        } catch (IOException e) {
+            log.error("Read files is error, dir: {}, error: {}", directory, e.getMessage());
+        }
+    }
+
+    public static BasicFileAttributes readAttributes(Path filePath) {
+        if (!Files.exists(filePath)) {
+            log.warn("You reading file doesn't exist. [{}]", filePath.toAbsolutePath());
+            return null;
+        }
+
+        try {
+            return Files.readAttributes(filePath, BasicFileAttributes.class);
+        } catch (IOException e) {
+            log.warn("You reading file doesn't exist. [{}]", filePath.toAbsolutePath());
         }
         return null;
     }
@@ -295,17 +351,4 @@ public class FileUtils {
         return stringJoiner.toString();
     }
 
-    private static BasicFileAttributes readAttributes(Path filePath) {
-        if (!Files.exists(filePath)) {
-            log.warn("You reading file doesn't exist. [{}]", filePath.toAbsolutePath());
-            return null;
-        }
-
-        try {
-            return Files.readAttributes(filePath, BasicFileAttributes.class);
-        } catch (IOException e) {
-            log.warn("You reading file doesn't exist. [{}]", filePath.toAbsolutePath());
-        }
-        return null;
-    }
 }
