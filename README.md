@@ -12,12 +12,12 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>4.5.1</version>
+    <version>4.5.2</version>
 </dependency>
 ```
 ## Gradle
 ```text
-implementation 'io.github.dilldong:webmind-framework:4.5.1'
+implementation 'io.github.dilldong:webmind-framework:4.5.2'
 ```
 ## Example
 ### 1. Mapping
@@ -93,10 +93,18 @@ public class InterceptorClass extends AbstractHandlerInterceptor {
 
 ### 3. Startup Application
 ```java
+@Import(AppConfiguration.class)
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+### or
+```java
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(
-                Application.class,
                 new String[]{"spring/springContext.xml"},
                 args);
     }

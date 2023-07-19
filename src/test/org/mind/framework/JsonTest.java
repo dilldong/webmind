@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.mind.framework.http.Response;
 import org.mind.framework.util.DateFormatUtils;
 import org.mind.framework.util.JsonUtils;
+import org.mind.framework.util.ViewResolver;
 import org.springframework.http.HttpStatus;
 
 import java.util.Arrays;

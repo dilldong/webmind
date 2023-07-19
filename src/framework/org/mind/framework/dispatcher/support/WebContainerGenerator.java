@@ -27,7 +27,7 @@ public final class WebContainerGenerator {
 
         try {
             obj = ClassUtils.newInstance(containerName);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
 
         try {
@@ -67,7 +67,7 @@ public final class WebContainerGenerator {
         Object obj = null;
         try {
             obj = ClassUtils.newInstance(templateName);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
 
         if (Objects.isNull(obj)) {

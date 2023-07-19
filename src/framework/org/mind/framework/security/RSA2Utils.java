@@ -50,11 +50,11 @@ public class RSA2Utils {
      */
     @SneakyThrows
     public static String encrypt(String content, String publicKey) {
-        byte[] publics = Base64.decodeBase64(publicKey);
+        byte[] keys = Base64.decodeBase64(publicKey);
         byte[] data = content.getBytes(StandardCharsets.UTF_8);
 
         KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-        PublicKey pbKey = factory.generatePublic(new X509EncodedKeySpec(publics));
+        PublicKey pbKey = factory.generatePublic(new X509EncodedKeySpec(keys));
         Cipher cipher = Cipher.getInstance(MODE);
         cipher.init(Cipher.ENCRYPT_MODE, pbKey);
         return Base64.encodeBase64String(cipher.doFinal(data));
@@ -69,10 +69,10 @@ public class RSA2Utils {
      */
     @SneakyThrows
     public static String decrypt(String content, String privateKey) {
-        byte[] privates = Base64.decodeBase64(privateKey);
+        byte[] keys = Base64.decodeBase64(privateKey);
 
         KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-        PrivateKey pvKey = factory.generatePrivate(new PKCS8EncodedKeySpec(privates));
+        PrivateKey pvKey = factory.generatePrivate(new PKCS8EncodedKeySpec(keys));
         Cipher cipher = Cipher.getInstance(MODE);
         cipher.init(Cipher.DECRYPT_MODE, pvKey);
         return new String(cipher.doFinal(Base64.decodeBase64(content)));
@@ -88,10 +88,10 @@ public class RSA2Utils {
     @SneakyThrows
     public static String sign(String encryptedContent, String privateKey) {
         byte[] data = encryptedContent.getBytes(StandardCharsets.UTF_8);
-        byte[] privates = Base64.decodeBase64(privateKey);
+        byte[] keys = Base64.decodeBase64(privateKey);
 
         KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-        PrivateKey pvKey = factory.generatePrivate(new PKCS8EncodedKeySpec(privates));
+        PrivateKey pvKey = factory.generatePrivate(new PKCS8EncodedKeySpec(keys));
         Signature sign = Signature.getInstance(KEY_RSA_SIGN);
         sign.initSign(pvKey);
         sign.update(data);
@@ -108,11 +108,11 @@ public class RSA2Utils {
      */
     @SneakyThrows
     public static boolean verify(String encryptedContent, String publicKey, String signStr) {
-        byte[] publics = Base64.decodeBase64(publicKey);
+        byte[] keys = Base64.decodeBase64(publicKey);
         byte[] data = encryptedContent.getBytes(StandardCharsets.UTF_8);
 
         KeyFactory factory = KeyFactory.getInstance(ALGORITHM);
-        PublicKey pbKey = factory.generatePublic(new X509EncodedKeySpec(publics));
+        PublicKey pbKey = factory.generatePublic(new X509EncodedKeySpec(keys));
         Signature signature = Signature.getInstance(KEY_RSA_SIGN);
         signature.initVerify(pbKey);
         signature.update(data);

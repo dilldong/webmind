@@ -53,9 +53,9 @@ public class LiteCookieManager implements Destroyable {
 
     /**
      * Retrieves and stores cookies returned by the host on the other side of
-     * the the open java.net.URLConnection.
+     * the open java.net.URLConnection.
      * <p>
-     * The connection MUST have been opened using the connect() method or a
+     * The connection MUST have been opened using to connect() method or a
      * IOException will be thrown.
      *
      * @param conn a java.net.URLConnection - must be open, or IOException will

@@ -1,16 +1,14 @@
 package org.mind.framework.server;
 
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.connector.Connector;
-import org.apache.catalina.startup.Tomcat;
-import org.apache.tomcat.util.threads.ThreadPoolExecutor;
-import org.mind.framework.service.ExecutorFactory;
+import lombok.Getter;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * @author Marcus
@@ -18,37 +16,43 @@ import java.util.concurrent.TimeUnit;
  * @date 2022-03-14
  */
 public class GracefulShutdown {
-    private static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
+    protected static final Logger log = LoggerFactory.getLogger(GracefulShutdown.class);
 
-    private final String nameTag;
-    private final Thread mainThread;
-    private volatile Tomcat tomcat;
-    private volatile Executor executor;
-    private long waitTime = 30L;// await 30s
-    private TimeUnit waitTimeUnit;
     private final Object shutdownMonitor = new Object();
-    private volatile boolean shutDownSignalReceived;
 
-    private GracefulShutdown(String nameTag, Thread mainThread) {
-        super();
+    @Getter
+    private final String nameTag;
+
+    @Getter
+    private final Thread currentThread;
+
+    @Getter
+    private long waitTime;
+
+    @Getter
+    private TimeUnit waitTimeUnit;
+
+    protected ExecutorService executor;
+    protected Consumer<ShutDownSignalEnum> consumer;
+
+    protected GracefulShutdown(String nameTag, Thread currentThread) {
         this.nameTag = nameTag;
-        this.mainThread = mainThread;
-        this.shutDownSignalReceived = false;
+        this.currentThread = currentThread;
+        this.waitTime = 30L;
         this.waitTimeUnit = TimeUnit.SECONDS;
     }
 
-    public GracefulShutdown(Thread mainThread, Tomcat tomcat) {
-        this("Tomcat-Graceful", mainThread);
-        this.tomcat = tomcat;
-    }
-
-    public GracefulShutdown(Thread mainThread, Executor executor) {
-        this("Executor-Graceful", mainThread, executor);
-    }
-
-    public GracefulShutdown(String nameTag, Thread mainThread, Executor executor) {
-        this(nameTag, mainThread);
+    protected GracefulShutdown(String nameTag, Thread currentThread, ExecutorService executor) {
+        this(nameTag, currentThread);
         this.executor = executor;
+    }
+
+    public static GracefulShutdown newShutdown(String name, ExecutorService executor) {
+        return new GracefulShutdown(name, Thread.currentThread(), executor);
+    }
+
+    public static GracefulShutdown newShutdown(String name, Thread currentThread, ExecutorService executor) {
+        return new GracefulShutdown(name, currentThread, executor);
     }
 
     public GracefulShutdown waitTime(long waitTime, TimeUnit waitTimeUnit) {
@@ -57,80 +61,63 @@ public class GracefulShutdown {
         return this;
     }
 
-    public boolean shutDownSignalReceived() {
-        return shutDownSignalReceived;
+    public void registerShutdownHook() {
+        this.registerShutdownHook(signal -> {});
     }
 
-    public void registerShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread(nameTag, true, () -> {
-            synchronized (shutdownMonitor) {
-                log.info("Stopping the {} service ....", nameTag);
-                this.shutDownSignalReceived = true;
-                this.onStoppingEvent();
-                try {
-                    mainThread.interrupt();
+    public void registerShutdownHook(Consumer<ShutDownSignalEnum> consumer) {
+        this.consumer = consumer;
+        this.consumer.accept(ShutDownSignalEnum.UNSTARTED);
 
-                    //当收到停止信号时，等待主线程的执行完成
-                    mainThread.join();
-                } catch (InterruptedException | IllegalStateException e) {
+        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newDaemonThread(nameTag, () -> {
+            synchronized (shutdownMonitor) {
+                log.info("Stopping the '{}' service ....", nameTag);
+                this.consumer.accept(ShutDownSignalEnum.IN);
+
+                this.onStoppingEvent();
+
+                this.consumer.accept(ShutDownSignalEnum.OUT);
+
+                try {
+                    currentThread.interrupt();
+                    currentThread.join();
+                } catch (InterruptedException | IllegalStateException ignored) {
                 } finally {
-                    log.info("Shutdown {} server completed.", nameTag);
+                    log.info("Shutdown '{}' server completed.", nameTag);
                 }
             }
         }));
     }
 
     protected void onStoppingEvent() {
-        if (Objects.nonNull(tomcat)) {
-            Connector connector = this.tomcat.getConnector();
-            log.info("Stopping connector is: {}", connector.toString());
-            connector.pause();
-            this.executor = connector.getProtocolHandler().getExecutor();
-        }
-
-        // This Executor object
         if (this.executor instanceof ThreadPoolExecutor) {
-            try {
-                ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-                log.info("{} request active count: [{}]", nameTag, threadPoolExecutor.getActiveCount());
-                threadPoolExecutor.shutdown();
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
-                log.info("Request active thread processing, waiting ....");
-                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit)) {
-                    log.warn("{} didn't shutdown gracefully within [{}] {}. Proceeding with forceful shutdown",
-                            nameTag,
-                            waitTime,
-                            waitTimeUnit.name());
-                    threadPoolExecutor.shutdownNow();
-                }
-            } catch (InterruptedException | IllegalStateException e) {
-            }
-        }else if(this.executor instanceof java.util.concurrent.ThreadPoolExecutor){
-            try {
-                java.util.concurrent.ThreadPoolExecutor threadPoolExecutor =
-                        (java.util.concurrent.ThreadPoolExecutor) executor;
-                log.info("{} request active count: [{}]", nameTag, threadPoolExecutor.getActiveCount());
-                threadPoolExecutor.shutdown();
-
-                log.info("Request active thread processing, waiting ....");
-                if (!threadPoolExecutor.awaitTermination(waitTime, waitTimeUnit)) {
-                    log.warn("{} didn't shutdown gracefully within [{}] {}. Proceeding with forceful shutdown",
-                            nameTag,
-                            waitTime,
-                            waitTimeUnit.name());
-                    threadPoolExecutor.shutdownNow();
-                }
-            } catch (InterruptedException | IllegalStateException e) {
-            }
+            long completed = threadPoolExecutor.getCompletedTaskCount();
+            log.info("'{}' active thread worker: {}, completed task: {}, remaining task: {}",
+                    nameTag,
+                    threadPoolExecutor.getActiveCount(),
+                    completed,
+                    threadPoolExecutor.getTaskCount() - completed);
+            this.shutdown(threadPoolExecutor);
+        } else {
+            this.shutdown(this.executor);
         }
+    }
 
-        // tomcat stopping(see TomcatServer: stop(), destroy())
-        if (Objects.nonNull(tomcat)) {
-            try {
-                tomcat.stop();
-                tomcat.destroy();
-            } catch (LifecycleException e) {
+    protected void shutdown(ExecutorService executorService) {
+        try {
+            executorService.shutdown();
+            this.consumer.accept(ShutDownSignalEnum.DOWN);
+
+            if (!executorService.awaitTermination(waitTime, waitTimeUnit)) {
+                log.warn("'{}' didn't shutdown gracefully within '{} {}'. Proceeding with forceful shutdown",
+                        nameTag,
+                        waitTime,
+                        waitTimeUnit.name());
+                executorService.shutdownNow();
             }
+        } catch (InterruptedException | IllegalStateException ignored) {
         }
     }
 }

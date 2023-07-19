@@ -4,6 +4,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.ToNumberStrategy;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +12,7 @@ import org.mind.framework.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -30,6 +32,12 @@ public class JsonUtils {
 
     // Delete spaces, carriage returns, newlines, and tabs in a string
     private static final Pattern REPLACE_PATT = Pattern.compile("\\s{2,}|\t|\r|\n");
+
+    // JSON attribute
+    private static final Pattern JSON_ATTR_PATTERN = Pattern.compile("['\":]*");
+
+    // JSON attribute
+    private static final Pattern JSON_OBJ_ATTR_PATTERN = Pattern.compile("^(['|\"]:)?");
 
     /**
      * Long type serialization maintains long type and will not be converted to double type
@@ -94,6 +102,44 @@ public class JsonUtils {
         return text.startsWith("{") && text.endsWith("}");
     }
 
+    /**
+     * 返回JSON中第一个name属性的值
+     */
+    public static String getAttribute(String name, String json) {
+        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
+            return StringUtils.EMPTY;
+
+        if (json.contains(name)) {
+            String result = StringUtils.substringBetween(json, name, ",");
+            if(StringUtils.isEmpty(result))
+                result = StringUtils.substringBetween(json, name, "}");
+
+            return JSON_ATTR_PATTERN.matcher(result).replaceAll(StringUtils.EMPTY).trim();
+        }
+        return StringUtils.EMPTY;
+    }
+
+    /**
+     * 返回JSON对象中第一层级的name对象
+     */
+    public static String getAttributeObject(String name, String json) {
+        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
+            return StringUtils.EMPTY;
+
+        if (json.contains(name)) {
+            JsonElement rootElement = JsonUtils.fromJson(json, JsonElement.class);
+            JsonElement element = null;
+
+            // only support json-object
+            if(rootElement.isJsonObject())
+                element = rootElement.getAsJsonObject().get(name);
+
+            if(Objects.nonNull(element) && !element.isJsonNull())
+                return element.toString();
+        }
+        return StringUtils.EMPTY;
+    }
+
     public static String toJson(Object target) {
         return toJson(target, false);
     }
@@ -140,7 +186,7 @@ public class JsonUtils {
                 .newBuilder()
                 .setExclusionStrategies(
                         new ExclusionStrategy() {
-                            Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
+                            final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
 
                             @Override
                             public boolean shouldSkipField(FieldAttributes field) {
@@ -173,7 +219,27 @@ public class JsonUtils {
             return null;
 
         try {
-            return getSingleton().fromJson(json, typeToken.getType());
+            return getSingleton().fromJson(json, typeToken);
+        } catch (Exception ex) {
+            if(printErrorStack)
+                log.error(ex.getMessage(), ex);
+            else
+                log.error(ex.getMessage());
+            return null;
+        }
+    }
+
+    public static <V> V fromJson(Reader jsonReader, Class<V> clazz) {
+        return fromJson(jsonReader, TypeToken.get(clazz));
+    }
+
+    public static <V> V fromJson(Reader jsonReader, TypeToken<V> typeToken) {
+        return fromJson(jsonReader, typeToken, true);
+    }
+
+    public static <V> V fromJson(Reader jsonReader, TypeToken<V> typeToken, boolean printErrorStack) {
+        try {
+            return getSingleton().fromJson(jsonReader, typeToken);
         } catch (Exception ex) {
             if(printErrorStack)
                 log.error(ex.getMessage(), ex);
@@ -196,7 +262,7 @@ public class JsonUtils {
     }
 
     private static String defaultEmpty(Object target) {
-        Class clazz = target.getClass();
+        Class<?> clazz = target.getClass();
         if (Collection.class.isAssignableFrom(clazz) || clazz.isArray())
             return EMPTY_JSON_ARRAY;
 

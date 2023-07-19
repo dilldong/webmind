@@ -1,5 +1,6 @@
 package org.mind.framework.util;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,14 +69,12 @@ public abstract class PropertiesUtils {
     public static Properties getProperties(InputStream in) {
         Properties props = new Properties();
         try {
-            try {
-                props.load(in);
-                return props;
-            } finally {
-                in.close();
-            }
+            props.load(in);
+            return props;
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
+        }finally {
+            IOUtils.closeQuietly(in);
         }
         return null;
     }

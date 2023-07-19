@@ -5,42 +5,39 @@ import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
-import org.mind.framework.service.ExecutorFactory;
-import org.mind.framework.service.Updateable;
+import org.mind.framework.server.GracefulShutdown;
+import org.mind.framework.server.ShutDownSignalEnum;
+import org.mind.framework.service.Updatable;
+import org.mind.framework.service.threads.Async;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class ConsumerService implements Updateable, Destroyable {
+public class ConsumerService implements Updatable, Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
     private final Object executObject = new Object();
 
     @Setter
-    private int maxPoolSize = 10;
+    private int poolSize = Runtime.getRuntime().availableProcessors() << 3;
 
+    /**
+     * if taskCapacity = 0, then SynchronousQueue
+     */
     @Setter
-    private int corePoolSize = 3;
+    private int taskCapacity;
 
+    /**
+     * The submitted worker threads
+     */
     @Setter
-    private long keepAliveTime = 60L;
-
-    @Setter
-    private int taskCapacity = 768;
-
-    @Setter
-    private int submitTaskCount = 5;
-
-    @Setter
-    private boolean coreThreadTimeOut = false;
+    private int submitTask = 5;
 
     @Setter
     @Getter
@@ -50,74 +47,62 @@ public class ConsumerService implements Updateable, Destroyable {
     private volatile boolean running = false;
 
     @Setter
-    private QueueService queueService;
+    private transient QueueService queueService;
 
-    private transient volatile ThreadPoolExecutor executor;
+    private transient ThreadPoolExecutor executor;
 
     @Override
     public void doUpdate() {
-        if (this.useThreadPool) {
-            if(executor.getQueue().size() >= queueService.size())
-                return;
+        synchronized (executObject) {
+            if (this.useThreadPool) {
+                int wholeCount = Math.min(queueService.size(), submitTask);
+                if (wholeCount < 1)
+                    return;
 
-            int wholeCount = Math.min(queueService.size(), submitTaskCount);
-            if (wholeCount <= 0)
+                if (running) {
+                    while ((--wholeCount) >= 0)
+                        this.submitTask(this::execute);
+                }
                 return;
-
-            if (running) {
-                while ((--wholeCount) >= 0)
-                    this.submitTask(() -> execute());
             }
-            return;
-        }
 
-        this.execute();
+            this.execute();
+        }
     }
 
-    protected void initExecutorPool() {
+    public void initExecutorPool() {
         if (!this.useThreadPool || this.running)
             return;
 
-        BlockingQueue<Runnable> runnables =
-                taskCapacity > 0 ?
-                        new LinkedBlockingQueue<>(taskCapacity) :
-                        new SynchronousQueue<>();
+        if (taskCapacity > 0) {
+            executor = ExecutorFactory.newThreadPoolExecutor(
+                    0,
+                    poolSize,
+                    new LinkedBlockingQueue<>(taskCapacity));
 
-        executor = ExecutorFactory.newThreadPoolExecutor(
-                corePoolSize,
-                Math.max(maxPoolSize, corePoolSize),
-                keepAliveTime, TimeUnit.SECONDS, runnables);
+            GracefulShutdown.newShutdown("Consumer-Graceful", executor)
+                    .waitTime(15L, TimeUnit.SECONDS)
+                    .registerShutdownHook(signal -> {
+                        if (signal == ShutDownSignalEnum.IN)
+                            this.running = false;
+                    });
+        } else
+            executor = Async.synchronousExecutor();
 
-        executor.allowCoreThreadTimeOut(coreThreadTimeOut);
         running = true;
-        log.info("Init ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
+        log.info("Initialize the thread pool consumer service: {}", this.simplePoolInfo());
     }
 
     @Override
     public void destroy() {
-        synchronized (executObject) {
-            if (this.useThreadPool && this.running) {
-                this.running = false;
-                log.info("Consumer-service active count: [{}]", executor.getActiveCount());
-                this.executor.shutdown();
-                try {
-                    if (!executor.awaitTermination(15L, TimeUnit.SECONDS))
-                        executor.shutdownNow();
-                } catch (InterruptedException e) {}
-                log.info("Destroy ConsumerService@{}: {}", Integer.toHexString(hashCode()), this);
-            }
-        }
+
     }
 
     private void submitTask(Runnable task) {
         if (Objects.isNull(task))
             return;
 
-        try {
-            executor.submit(task);
-        } catch (RejectedExecutionException e) {
-            log.error("Executor [{}] rejected task from: {}", executor.toString(), task);
-        }
+        executor.submit(task);
     }
 
     private void execute() {
@@ -126,7 +111,7 @@ public class ConsumerService implements Updateable, Destroyable {
             if (Objects.isNull(delegate))
                 return;
 
-            if(log.isDebugEnabled())
+            if (log.isDebugEnabled())
                 log.debug("Consumer queue message....");
 
             try {
@@ -143,20 +128,28 @@ public class ConsumerService implements Updateable, Destroyable {
     public String toString() {
         if (this.useThreadPool) {
             return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                    .append("maxPoolSize", maxPoolSize)
-                    .append(" corePoolSize", corePoolSize)
-                    .append(" keepAliveTime", keepAliveTime)
+                    .append("corePoolSize", executor.getCorePoolSize())
+                    .append(" maxPoolSize", executor.getMaximumPoolSize())
                     .append(" taskCapacity", taskCapacity)
-                    .append(" submitTaskCount", submitTaskCount)
+                    .append(" submitTaskCount", submitTask)
                     .append(" running", running)
                     .append(" activeWorker", executor.getActiveCount())
                     .append(" completedTask", executor.getCompletedTaskCount())
-                    .append(" uncompletedTask", executor.getQueue().size())
+                    .append(" remainingTask", executor.getTaskCount() - executor.getCompletedTaskCount())
                     .toString();
         }
 
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("queueService", queueService.toString())
+                .toString();
+    }
+
+    private String simplePoolInfo() {
+        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+                .append("corePoolSize", executor.getCorePoolSize())
+                .append(" maxPoolSize", executor.getMaximumPoolSize())
+                .append(" taskCapacity", taskCapacity)
+                .append(" submitTaskCount", submitTask)
                 .toString();
     }
 }

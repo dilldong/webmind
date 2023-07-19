@@ -35,7 +35,7 @@ public class Execution {
     private int argsNumber;
 
     // Output request call log on parent
-    private boolean requestLog;
+    private final boolean requestLog;
 
     public Execution(Object actionInstance, Method method, RequestMethod[] requestMethods, boolean requestLog) {
         this(actionInstance, method, null, requestMethods, requestLog);

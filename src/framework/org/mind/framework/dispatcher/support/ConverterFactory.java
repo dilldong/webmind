@@ -1,5 +1,6 @@
 package org.mind.framework.dispatcher.support;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.CharUtils;
 import org.mind.framework.exception.NotSupportedException;
 
@@ -19,27 +20,27 @@ public class ConverterFactory {
     private final Map<String, Converter<?>> converterMap;
 
     private ConverterFactory() {
-        Converter<Boolean> booleanConvert = value -> Boolean.parseBoolean(value);
+        Converter<Boolean> booleanConvert = BooleanUtils::toBoolean;
 
-        Converter<Long> longConvert = value -> Long.parseLong(value);
+        Converter<Long> longConvert = Long::parseLong;
 
-        Converter<Integer> intConvert = value -> Integer.parseInt(value);
+        Converter<Integer> intConvert = Integer::parseInt;
 
-        Converter<BigInteger> bigIntConvert = value -> new BigInteger(value);
+        Converter<BigInteger> bigIntConvert = BigInteger::new;
 
-        Converter<BigDecimal> bigDecimalConvert = value -> new BigDecimal(value);
+        Converter<BigDecimal> bigDecimalConvert = BigDecimal::new;
 
-        Converter<Float> floatConvert = value -> Float.parseFloat(value);
+        Converter<Float> floatConvert = Float::parseFloat;
 
-        Converter<Double> doubleConvert = value -> Double.parseDouble(value);
+        Converter<Double> doubleConvert = Double::parseDouble;
 
-        Converter<Short> shortConvert = value -> Short.parseShort(value);
+        Converter<Short> shortConvert = Short::parseShort;
 
-        Converter<Byte> byteConvert = value -> Byte.parseByte(value);
+        Converter<Byte> byteConvert = Byte::parseByte;
 
-        Converter<Character> charConvert = value -> CharUtils.toChar(value);
+        Converter<Character> charConvert = CharUtils::toChar;
 
-        this.converterMap = new HashMap<>(16);
+        this.converterMap = new HashMap<>(18);
         this.converterMap.put(boolean.class.getName(), booleanConvert);
         this.converterMap.put(Boolean.class.getName(), booleanConvert);
 

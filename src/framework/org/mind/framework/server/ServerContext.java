@@ -42,6 +42,7 @@ public abstract class ServerContext {
 
     private transient Set<String> springFileSet;
     private transient Set<String> resourceSet;
+    private transient Set<Class<?>> configClassSet;
 
     private final WebServerConfig serverConfig;
 
@@ -56,7 +57,7 @@ public abstract class ServerContext {
     protected abstract void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException;
 
     public ServerContext() {
-        this.serverConfig = WebServerConfig.init();
+        this.serverConfig = WebServerConfig.INSTANCE.initMimeMapping();
     }
 
     public void startup() throws WebServerException {
@@ -94,8 +95,19 @@ public abstract class ServerContext {
         }
     }
 
+    public ServerContext addConfigClass(Class<?> ... configClass){
+        if (ArrayUtils.isEmpty(configClass))
+            return this;
+
+        if (Objects.isNull(this.configClassSet))
+            this.configClassSet = new HashSet<>();
+
+        this.configClassSet.addAll(Arrays.asList(configClass));
+        return this;
+    }
+
     public ServerContext addSpringFile(String... filePath) {
-        if (filePath == null || filePath.length == 0)
+        if (ArrayUtils.isEmpty(filePath))
             return this;
 
         if (Objects.isNull(this.springFileSet))
@@ -106,7 +118,7 @@ public abstract class ServerContext {
     }
 
     public ServerContext addResource(String... resPath) {
-        if (resPath == null || resPath.length == 0)
+        if (ArrayUtils.isEmpty(resPath))
             return this;
 
         if (Objects.isNull(this.resourceSet))
@@ -119,6 +131,7 @@ public abstract class ServerContext {
     protected Tomcat creationServer() {
         serverConfig.setResourceSet(resourceSet);
         serverConfig.setSpringFileSet(springFileSet);
+        serverConfig.setSpringConfigClassSet(configClassSet);
 
         // Set Tomcat base-work-directory
         File baseDir;
@@ -130,11 +143,12 @@ public abstract class ServerContext {
             if(Files.notExists(path)){
                 try {
                     Files.createDirectories(path);
-                } catch (IOException e) {}
+                } catch (IOException ignored) {}
             }
             baseDir = path.toFile();
         }
 
+        Objects.requireNonNull(baseDir, "The tomcat work directory not exists.");
         serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
         WeakReference<ResourcePatternResolver> patternResolverWeakRef =
                 new WeakReference<>(new PathMatchingResourcePatternResolver());

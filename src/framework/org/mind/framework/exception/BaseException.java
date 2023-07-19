@@ -83,21 +83,18 @@ public class BaseException extends Exception {
     public static String getStackTrace(BaseException e) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
-        if (e.backStacks != null)
-            out.println(e.backStacks);
+        out.println(e.backStacks);
         e.printStackTrace(out);
         return sw.toString();
     }
 
     public void printStackTrace(PrintStream out) {
-        if (backStacks != null)
-            out.println(backStacks);
+        out.println(backStacks);
         super.printStackTrace(out);
     }
 
     public void printStackTrace(PrintWriter out) {
-        if (backStacks != null)
-            out.println(backStacks);
+        out.println(backStacks);
         super.printStackTrace(out);
     }
 

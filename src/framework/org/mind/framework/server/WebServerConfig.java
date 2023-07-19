@@ -13,6 +13,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -74,11 +75,22 @@ public class WebServerConfig {
 
     private String templateEngine = StringUtils.EMPTY;
 
+    // OkHttpClient settting
+    private int maxRequestsPerHost = 200;
+    private int maxRequests = 200;
+    private int connectTimeout = 15;// SECONDS
+    private int readTimeout = 15;   // SECONDS
+    private int writeTimeout = 15;  // SECONDS
+    private int pingInterval = 20;  // SECONDS
+
     @Setter
     private transient Set<String> springFileSet;
 
     @Setter
     private transient Set<String> resourceSet;
+
+    @Setter
+    private transient Set<Class<?>> springConfigClassSet;
 
     private WebServerConfig() {
         InputStream in;
@@ -95,7 +107,7 @@ public class WebServerConfig {
         }
 
         Properties properties = PropertiesUtils.getProperties(in);
-        if (properties != null) {
+        if (Objects.nonNull(properties)) {
             this.nioMode = properties.getProperty("server.nio.mode", contextPath);
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
@@ -118,14 +130,21 @@ public class WebServerConfig {
             this.staticSuffix = properties.getProperty("server.resourceSuffix", staticSuffix);
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
             this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
+
+            // OkHttpClient
+            this.maxRequestsPerHost = Integer.parseInt(properties.getProperty("okhttp.maxRequestsPerHost", String.valueOf(maxRequestsPerHost)));
+            this.maxRequests = Integer.parseInt(properties.getProperty("okhttp.maxRequests", String.valueOf(maxRequests)));
+            this.connectTimeout = Integer.parseInt(properties.getProperty("okhttp.connectTimeout", String.valueOf(connectTimeout)));
+            this.readTimeout = Integer.parseInt(properties.getProperty("okhttp.readTimeout", String.valueOf(readTimeout)));
+            this.writeTimeout = Integer.parseInt(properties.getProperty("okhttp.writeTimeout", String.valueOf(writeTimeout)));
+            this.pingInterval = Integer.parseInt(properties.getProperty("okhttp.pingInterval", String.valueOf(pingInterval)));
         }
     }
 
-    protected static WebServerConfig init() {
-        return new WebServerConfig().initMimeMapping();
-    }
+    protected WebServerConfig initMimeMapping() {
+        if(Objects.nonNull(mimeMapping) && !mimeMapping.isEmpty())
+            return this;
 
-    private WebServerConfig initMimeMapping() {
         mimeMapping = Collections.unmodifiableMap(
                 new HashMap<String, String>() {{
                     put("css", "text/css; charset=UTF-8");

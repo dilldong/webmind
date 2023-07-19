@@ -24,7 +24,7 @@ public class SpringContainerAware implements ContainerAware {
     }
 
     public void init(ServletConfig config) {
-        ContextSupport.initWebContext(config.getServletContext());
+        ContextSupport.initSpringByServlet(config.getServletContext());
     }
 
     public synchronized void destroy() {

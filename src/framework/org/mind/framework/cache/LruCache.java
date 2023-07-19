@@ -218,7 +218,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     @Override
     public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule) {
         if (this.isEmpty())
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
 
         List<CacheElement> removeList = new ArrayList<>();
         Iterator<Entry<String, CacheElement>> iterator = this.getEntries().iterator();
@@ -258,7 +258,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (!this.isEmpty()) {
             itemsMap.clear();
             itemsMap = null;
-            log.info("Destroy Cacheable@{}, clear all items.", Integer.toHexString(hashCode()));
+            log.info("Destroy Cacheable@{}, clear all items.", this.getClass().getSimpleName());
         }
     }
 

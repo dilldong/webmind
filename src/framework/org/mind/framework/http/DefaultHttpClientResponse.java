@@ -40,21 +40,20 @@ public class DefaultHttpClientResponse<T> extends HttpResponse<T> {
 
     @Override
     public String getHeader(String name) {
+        if(StringUtils.isEmpty(name))
+            return null;
+
         Header[] headers = this.httpResponse.getHeaders(name);
-        return Objects.nonNull(headers) && headers.length > 0 ? headers[0].getValue() : StringUtils.EMPTY;
+        return Objects.nonNull(headers) && headers.length > 0 ? headers[0].getValue() : null;
     }
 
     @Override
-    public String asString(Charset charset) {
-        if (StringUtils.isNotEmpty(this.responseAsString))
-            return this.responseAsString;
+    public String asString(Charset charset) throws IOException {
+        if (StringUtils.isNotEmpty(super.responseAsString))
+            return super.responseAsString;
 
-        try {
-            this.responseAsString = EntityUtils.toString(entity, charset);
-            streamConsumed = true;
-        } catch (IOException e) {
-            ThrowProvider.doThrow(e);
-        }
+        super.responseAsString = EntityUtils.toString(entity, charset);
+        super.streamConsumed = true;
         return this.responseAsString;
     }
 

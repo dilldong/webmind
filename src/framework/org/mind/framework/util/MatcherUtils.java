@@ -14,7 +14,7 @@ public class MatcherUtils {
     public static final String END = "$";
 
     /**
-     * Default match pattern, case sensitive
+     * Default match pattern, case-sensitive.
      */
     public static final int DEFAULT_EQ = Pattern.CANON_EQ;
 

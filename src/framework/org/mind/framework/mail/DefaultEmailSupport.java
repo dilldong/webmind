@@ -19,7 +19,7 @@ public class DefaultEmailSupport extends MailAbstract {
     protected Object velocityEngine;
 
     public DefaultEmailSupport() {
-        this((JavaMailSender) ContextSupport.getBean("mailSender", JavaMailSender.class));
+        this(ContextSupport.getBean("mailSender", JavaMailSender.class));
     }
 
     public DefaultEmailSupport(JavaMailSender sender) {

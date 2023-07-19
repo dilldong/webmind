@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.util.HttpUtils;
+import org.mind.framework.util.JsonUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -40,17 +41,10 @@ public interface HandlerResult {
         jsonObject.addProperty(REQUEST_METHOD, request.getMethod());
         jsonObject.addProperty(REQUEST_IP, HttpUtils.getRequestIP(request, true));
 
-        String str = HttpUtils.getJson(request);
-        jsonObject.addProperty(REQUEST_RAW_CONTENT, StringUtils.defaultIfEmpty(str, StringUtils.EMPTY));
+        String json = HttpUtils.getJson(request);
+        jsonObject.addProperty(REQUEST_RAW_CONTENT, StringUtils.defaultIfEmpty(json, StringUtils.EMPTY));
+        jsonObject.addProperty(JSON_METHOD, JsonUtils.getAttribute(JSON_RPC_METHOD, json));
 
-        if (StringUtils.isNotEmpty(str) && str.contains(JSON_RPC_TAG)) {
-            str = StringUtils.substringBetween(str, JSON_RPC_METHOD, ",");
-            if(StringUtils.isEmpty(str))
-                str = StringUtils.substringBetween(str, JSON_RPC_METHOD, "}");
-
-            str = str.replaceAll("[\'\":]*", StringUtils.EMPTY).trim();
-            jsonObject.addProperty(JSON_METHOD, str);
-        }
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
     }
 }

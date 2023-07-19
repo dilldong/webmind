@@ -2,6 +2,7 @@ package org.mind.framework.service;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +103,7 @@ public abstract class LoopWorkerService extends AbstractService {
                 if (spaceTime > 0) {
                     try {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
-                    } catch (InterruptedException e) {}
+                    } catch (InterruptedException ignored) {}
                     Thread.yield();
                 } else // jump out of the while loop with spaceTime<=0
                     break;

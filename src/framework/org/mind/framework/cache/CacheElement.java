@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 public class CacheElement {
@@ -84,7 +83,7 @@ public class CacheElement {
         Class<? extends Object> clazz = data.getClass();
         if (List.class.isAssignableFrom(clazz)) {
             List list = (List) data;
-            if (Objects.isNull(list) || list.isEmpty())
+            if (list.isEmpty())
                 return data;
 
             List copierList = new ArrayList(list.size());
@@ -92,7 +91,7 @@ public class CacheElement {
             return copierList;
         } else if (Map.class.isAssignableFrom(clazz)) {
             Map map = (Map) data;
-            if (Objects.isNull(map) || map.isEmpty())
+            if (map.isEmpty())
                 return data;
 
             Map copierMap = new HashMap(map.size());
@@ -102,7 +101,7 @@ public class CacheElement {
             return ((Cloneable) data).clone();
         } else if (Set.class.isAssignableFrom(clazz)) {
             Set set = (Set) data;
-            if (Objects.isNull(set) || set.isEmpty())
+            if (set.isEmpty())
                 return data;
 
             Set copierSet = new HashSet(set.size());

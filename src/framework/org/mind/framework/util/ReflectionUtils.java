@@ -513,7 +513,7 @@ public abstract class ReflectionUtils {
      */
     public static Method[] getAllDeclaredMethods(Class<?> leafClass) throws IllegalArgumentException {
         final List<Method> list = new ArrayList<>(32);
-        doWithMethods(leafClass, method -> list.add(method));
+        doWithMethods(leafClass, list::add);
         return list.toArray(new Method[0]);
     }
 

@@ -1,38 +1,52 @@
 package org.mind.framework.http.okhttp3;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.mind.framework.service.Cloneable;
 
 /**
  * @version 1.0
  * @auther Marcus
  * @date 2021-08-24
  */
-public class RequestError {
+@Getter
+@Setter
+public class RequestError implements Cloneable<RequestError> {
+    private static final RequestError INSTANCE = new RequestError();
     /**
      * Error code.
      */
-    private int code;
+    private Integer code;
 
     /**
      * Error message.
      */
     private String msg;
 
-    public int getCode() {
-        return code;
+    private RequestError() {
     }
 
-    public void setCode(int code) {
-        this.code = code;
+    public static RequestError newInstance(Integer code){
+        return newInstance(code, StringUtils.EMPTY);
     }
 
-    public String getMsg() {
-        return msg;
+    public static RequestError newInstance(Integer code, String message){
+        RequestError requestError = INSTANCE.clone();
+        requestError.setCode(code);
+        requestError.setMsg(message);
+        return requestError;
     }
 
-    public void setMsg(String msg) {
-        this.msg = msg;
+    @Override
+    public RequestError clone() {
+        try {
+            return (RequestError) super.clone();
+        } catch (CloneNotSupportedException ignored) {
+        }
+        return new RequestError();
     }
 
     @Override

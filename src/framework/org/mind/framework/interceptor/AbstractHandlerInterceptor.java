@@ -34,7 +34,7 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
      * Set the HTTP response status code.
      * The default is OK.
      * If you need to return the actual error code,
-     * you can it by setting response Status If Error.
+     * you can it's setting response Status If Error.
      */
     protected boolean render(Render render, int responseStatusIfError, HttpServletRequest request, HttpServletResponse response) {
         response.setStatus(responseStatusIfError);

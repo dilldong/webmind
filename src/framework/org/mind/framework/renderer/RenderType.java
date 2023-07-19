@@ -5,8 +5,8 @@ public enum RenderType {
     FORWARD("forward:", 8),
     SCRIPT("script:", 7);
 
-    public String keyName;
-    public int keyLength;
+    public final String keyName;
+    public final int keyLength;
 
     RenderType(String keyName, int length) {
         this.keyName = keyName;

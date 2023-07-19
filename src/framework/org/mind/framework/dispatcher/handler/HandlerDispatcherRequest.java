@@ -2,7 +2,6 @@ package org.mind.framework.dispatcher.handler;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.Action;
-import org.mind.framework.ViewResolver;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.dispatcher.support.Catcher;
@@ -18,6 +17,7 @@ import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
+import org.mind.framework.util.ViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;

@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -45,7 +46,7 @@ public class UploadFile {
         this.property = PropertiesUtils.getProperties();
 
         String dir = PropertiesUtils.getString(this.property, "upload.dir");
-        dir = dir.startsWith(IOUtils.DIR_SEPARATOR) ?
+        dir = Objects.requireNonNull(dir).startsWith(IOUtils.DIR_SEPARATOR) ?
                 dir :
                 request.getSession().getServletContext().getRealPath(IOUtils.DIR_SEPARATOR + dir);
 

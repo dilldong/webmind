@@ -22,7 +22,7 @@ import org.mind.framework.exception.WebServerException;
 import org.mind.framework.server.ServerContext;
 import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.server.XmlLoad4SpringContext;
-import org.mind.framework.service.ExecutorFactory;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.IOUtils;
 import org.slf4j.Logger;
@@ -33,6 +33,7 @@ import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.ResourcePropertySource;
 import org.springframework.web.context.ContextLoaderListener;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import java.io.File;
@@ -72,7 +73,7 @@ public class TomcatServer extends Tomcat {
 
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
-            if(log.isDebugEnabled())
+            if (log.isDebugEnabled())
                 log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
 
             ctx.addLifecycleListener(super.getDefaultWebXmlListener());
@@ -82,7 +83,7 @@ public class TomcatServer extends Tomcat {
             if (config instanceof ContextConfig)
                 ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
-            if(log.isDebugEnabled())
+            if (log.isDebugEnabled())
                 log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
 
             // create servlet
@@ -115,7 +116,7 @@ public class TomcatServer extends Tomcat {
         connector.setUseBodyEncodingForURI(true);
         connector.setThrowOnFailure(true);
 
-        AbstractHttp11JsseProtocol nioProtocol = (AbstractHttp11JsseProtocol) connector.getProtocolHandler();
+        AbstractHttp11JsseProtocol<?> nioProtocol = (AbstractHttp11JsseProtocol<?>) connector.getProtocolHandler();
         nioProtocol.setPort(serverConfig.getPort());
         nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
 
@@ -151,9 +152,8 @@ public class TomcatServer extends Tomcat {
         Thread awaitThread = null;
         try {
             super.start();
-            awaitThread = ExecutorFactory.newThread(
+            awaitThread = ExecutorFactory.newDaemonThread(
                     "tomcat-await-" + serverConfig.getPort(),
-                    true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
             awaitThread.start();
@@ -182,7 +182,7 @@ public class TomcatServer extends Tomcat {
     public void stop() {
         try {
             super.stop();
-        } catch (LifecycleException e) {
+        } catch (LifecycleException ignored) {
         }
     }
 
@@ -193,10 +193,10 @@ public class TomcatServer extends Tomcat {
     public void destroy() {
         try {
             super.destroy();
-        } catch (LifecycleException e) {
+        } catch (LifecycleException ignored) {
         }
 
-        if(log.isDebugEnabled())
+        if (log.isDebugEnabled())
             log.debug("Delete tomcat temp directory ....");
 
         try {
@@ -226,7 +226,17 @@ public class TomcatServer extends Tomcat {
 
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
-            log.warn("Spring's config file is not set.");
+            if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
+                AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
+                ac.register(serverConfig.getSpringConfigClassSet().toArray(new Class[0]));
+
+                // Listen when spring starts by ContextLoaderListener
+                ctx.addApplicationLifecycleListener(new ContextLoaderListener(ac));
+
+                // setting spring context
+                ContextSupport.setApplicationContext(ac);
+            } else
+                log.warn("Spring's config class or file is not found.");
         } else {
             // init spring by xml, XmlLoad4SpringContext is custom implementation
             XmlWebApplicationContext xmas = new XmlLoad4SpringContext();

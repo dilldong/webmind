@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * Render object to indicate how to rendering the http response.
+ * Render object to indicate how to render the http response.
  *
  * @author dp
  */
@@ -18,8 +18,6 @@ public abstract class Render {
     protected static final Logger log = LoggerFactory.getLogger(Render.class);
 
     protected String contentType;
-
-    public static final String MIME_JAVASCRIPT = "application/x-javascript";
 
     public static final String BAD_REQUEST_HTML = "<html><head><title>400 Bad Request</title></head><body bgcolor='white'><center><h1>400 Bad Request</h1></center><hr><center>Webmind Service</center></body></html>";
 
