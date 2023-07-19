@@ -151,9 +151,8 @@ public class TomcatServer extends Tomcat {
         Thread awaitThread = null;
         try {
             super.start();
-            awaitThread = ExecutorFactory.newThread(
+            awaitThread = ExecutorFactory.newDaemonThread(
                     "tomcat-await-" + serverConfig.getPort(),
-                    true,
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
             awaitThread.start();
