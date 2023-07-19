@@ -42,6 +42,7 @@ public abstract class ServerContext {
 
     private transient Set<String> springFileSet;
     private transient Set<String> resourceSet;
+    private transient Set<Class<?>> configClassSet;
 
     private final WebServerConfig serverConfig;
 
@@ -94,6 +95,17 @@ public abstract class ServerContext {
         }
     }
 
+    public ServerContext addConfigClass(Class<?> ... configClass){
+        if (ArrayUtils.isEmpty(configClass))
+            return this;
+
+        if (Objects.isNull(this.configClassSet))
+            this.configClassSet = new HashSet<>();
+
+        this.configClassSet.addAll(Arrays.asList(configClass));
+        return this;
+    }
+
     public ServerContext addSpringFile(String... filePath) {
         if (ArrayUtils.isEmpty(filePath))
             return this;
@@ -119,6 +131,7 @@ public abstract class ServerContext {
     protected Tomcat creationServer() {
         serverConfig.setResourceSet(resourceSet);
         serverConfig.setSpringFileSet(springFileSet);
+        serverConfig.setSpringConfigClassSet(configClassSet);
 
         // Set Tomcat base-work-directory
         File baseDir;

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration scan="false" scanPeriod="60 seconds">
+    <!-- log setting -->
+    <property name="log.root" value="info"/>
+    <property name="log.project" value="org.mind.framework"/>
+    <property name="log.project.level" value="debug"/>
+
+    <!-- console output log -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+        <encoder>
+            <pattern>
+                %d{MM-dd HH:mm:ss.SSS} [%highlight(%-5p)] [%yellow(%t)] %cyan(%c{0}.%M\(%L\)) - %m%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- the project log output -->
+    <logger name="${log.project}" additivity="true" level="${log.project.level}" />
+
+    <!-- root -->
+    <root level="${log.root}">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

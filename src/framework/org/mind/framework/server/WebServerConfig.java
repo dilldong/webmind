@@ -89,6 +89,9 @@ public class WebServerConfig {
     @Setter
     private transient Set<String> resourceSet;
 
+    @Setter
+    private transient Set<Class<?>> springConfigClassSet;
+
     private WebServerConfig() {
         InputStream in;
         URL url = ClassUtils.getResource(WebServer.class, SERVER_PROPERTIES);
