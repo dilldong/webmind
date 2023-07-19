@@ -93,10 +93,18 @@ public class InterceptorClass extends AbstractHandlerInterceptor {
 
 ### 3. Startup Application
 ```java
+@Import(AppConfiguration.class)
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+### or
+```java
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(
-                Application.class,
                 new String[]{"spring/springContext.xml"},
                 args);
     }
