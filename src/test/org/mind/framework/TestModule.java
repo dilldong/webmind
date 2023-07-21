@@ -8,11 +8,15 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.FileUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
+import org.mind.framework.util.WeightedNode;
+import org.mind.framework.util.WeightedRoundRobin;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -24,8 +28,32 @@ public class TestModule {
 
     @SneakyThrows
     @Test
+    public void test05() {
+        // 创建待选项列表，每个节点对应一个服务或节点，以及指定权重值
+        List<WeightedNode<String>> nodes = new ArrayList<>();
+        nodes.add(WeightedNode.newNode("server1", 3));
+        nodes.add(WeightedNode.newNode("server2", 2));
+        nodes.add(WeightedNode.newNode("server3"));
+
+        // 初始化加权轮询算法
+        WeightedRoundRobin<String> wrr = new WeightedRoundRobin<>(nodes);
+
+        // 依次获取下一个节点并输出
+        for (int x = 0; x < 2; ++x) {
+            ExecutorFactory.newThread("T-" + (x + 1), () -> {
+                for (int i = 0; i < 12; ++i) {
+                    WeightedNode<String> node = wrr.getNext();
+                    System.out.println(Thread.currentThread().getName() + " : " + node.getValue());
+                }
+            }).start();
+        }
+        System.in.read();
+    }
+
+    @SneakyThrows
+    @Test
     public void test04() {
-        for(int i=0; i<1; ++i) {
+        for (int i = 0; i < 1; ++i) {
             Thread t1 = ExecutorFactory.newThread(() -> {
                 while (true) {
                     readBy();
@@ -58,7 +86,7 @@ public class TestModule {
             streams.filter(p -> StringUtils.endsWith(p.getFileName().toString(), ".json"))
                     .forEach(path -> {
                         String content = FileUtils.read(path, false, false);
-                        System.out.println(path.getFileName().toString()+ ": "+ (content == null? "null" : content.length()));
+                        System.out.println(path.getFileName().toString() + ": " + (content == null ? "null" : content.length()));
                     });
         } catch (IOException e) {
             e.printStackTrace();
@@ -67,7 +95,7 @@ public class TestModule {
 
 
     @Test
-    public void test03(){
+    public void test03() {
         String source = "/home/${heelo}/xk/${count}";
         String param = "#{key}_#{value}#{key}";
         String r = MatcherUtils.convertURI(source);
@@ -76,12 +104,13 @@ public class TestModule {
         System.out.println(r1);
         System.out.println(MatcherUtils.checkCount(param, MatcherUtils.PARAM_MATCH_PATTERN));
         String key = "83m";
-        System.out.println(Pattern.compile("#\\{key\\}").matcher(param).replaceAll(key));;
+        System.out.println(Pattern.compile("#\\{key\\}").matcher(param).replaceAll(key));
+        ;
 
     }
 
     @Test
-    public void test02(){
+    public void test02() {
         String json = "\n" +
                 "  {  \n" +
                 "\n" +
@@ -108,10 +137,10 @@ public class TestModule {
     }
 
     @Test
-    public void test01(){
+    public void test01() {
         RedissonHelper helper = RedissonHelper.getInstance();
 
-        for(int i=0; i<10; ++i) {
+        for (int i = 0; i < 10; ++i) {
             System.out.println(helper.getIdForDate());
             System.out.println(helper.getId(0L, 1000L));
             System.out.println("--------------");
