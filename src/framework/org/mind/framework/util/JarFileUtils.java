@@ -38,17 +38,18 @@ public final class JarFileUtils {
 
         return urlString.substring(urlString.indexOf("file:") + 5, urlString.length() - CLASS_PATH.length());
     }
-    public static JarEntry getJarEntry(String fileName){
+
+    public static JarEntry getJarEntry(String fileName) {
         return getJarEntry(getRuntimePath(), fileName);
     }
 
-    public static JarEntry getJarEntry(String jarPath, String fileName){
-        try (JarFile jarFile = new JarFile(jarPath)){
+    public static JarEntry getJarEntry(String jarPath, String fileName) {
+        try (JarFile jarFile = new JarFile(jarPath)) {
             return jarFile.getJarEntry(fileName);
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
+            return null;
         }
-        return null;
     }
 
     public static String getJarEntryContent(String fileName) {
@@ -56,14 +57,11 @@ public final class JarFileUtils {
     }
 
     public static String getJarEntryContent(String jarPath, String fileName) {
-        InputStream in = getJarEntryStream(jarPath, fileName);
-        try {
+        try (InputStream in = getJarEntryStream(jarPath, fileName)) {
             return IOUtils.toString(Objects.requireNonNull(in), StandardCharsets.UTF_8);
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
             return null;
-        } finally {
-            IOUtils.closeQuietly(in);
         }
     }
 

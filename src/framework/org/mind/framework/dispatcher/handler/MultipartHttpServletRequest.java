@@ -159,7 +159,7 @@ public class MultipartHttpServletRequest extends HttpServletRequestWrapper {
 
         long size = 0;
         int read;
-        byte[] buf = new byte[8 * 1024];
+        byte[] buf = new byte[1024];
 
         ByteArrayOutputStream byteStream;
         try {

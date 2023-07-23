@@ -14,7 +14,6 @@ import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okio.GzipSource;
 import okio.Okio;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.http.NoContentResponse;
@@ -226,14 +225,11 @@ public class OkHttpFactory {
     }
 
     public static String requestString(Request request, Consumer<Headers> processHeaders) throws IOException {
-        InputStream in = requestStream(request, processHeaders);
-        if (Objects.isNull(in))
-            return StringUtils.EMPTY;
+        try (InputStream in = requestStream(request, processHeaders)) {
+            if (Objects.isNull(in))
+                return StringUtils.EMPTY;
 
-        try {
             return Okio.buffer(Okio.source(in)).readUtf8();
-        } finally {
-            IOUtils.closeQuietly(in);
         }
     }
 
