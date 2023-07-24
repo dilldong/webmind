@@ -15,7 +15,8 @@ public class VelocityTemplateFactory extends TemplateFactory {
     private VelocityEngine velocityEngine;
 
     public Template loadTemplate(String path) {
-        log.info("Load Velocity template '{}'", path);
+        if(log.isDebugEnabled())
+            log.debug("Load velocity template '{}'", path);
         return new VelocityTemplate(velocityEngine.getTemplate(path));
     }
 
