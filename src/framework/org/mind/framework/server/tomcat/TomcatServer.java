@@ -229,6 +229,7 @@ public class TomcatServer extends Tomcat {
             if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
                 AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
                 ac.register(serverConfig.getSpringConfigClassSet().toArray(new Class[0]));
+                ac.registerShutdownHook();
 
                 // Listen when spring starts by ContextLoaderListener
                 ctx.addApplicationLifecycleListener(new ContextLoaderListener(ac));
@@ -246,6 +247,8 @@ public class TomcatServer extends Tomcat {
 
             // load properties in spring
             loadResource(xmas.getEnvironment());
+
+            xmas.registerShutdownHook();
 
             // Listen when spring starts by ContextLoaderListener
             ctx.addApplicationLifecycleListener(new ContextLoaderListener(xmas));

@@ -122,12 +122,14 @@ public class RedissonHelper {
     }
 
     public <V> List<V> getList(String name, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.getList(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.getList(name);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -173,12 +175,14 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.set(name, list, expire, unit);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.set(name, list, expire, unit);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -206,12 +210,14 @@ public class RedissonHelper {
     }
 
     public <V> boolean appendList(String name, V v, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.appendList(name, v, expire, unit);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.appendList(name, v, expire, unit);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -238,11 +244,15 @@ public class RedissonHelper {
     }
 
     public <V> void clearList(String name, RLock lock) {
-        lock.lock();
-        try {
-            this.<V>clearList(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.<V>clearList(name);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -269,12 +279,15 @@ public class RedissonHelper {
     }
 
     public <V> void removeList(String name, int index, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            this.removeList(name, index);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.removeList(name, index);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -294,12 +307,14 @@ public class RedissonHelper {
     }
 
     public <K, V> V getMapValue(String name, K k, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.getMapValue(name, k);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.getMapValue(name, k);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -318,12 +333,14 @@ public class RedissonHelper {
     }
 
     public <K, V> Map<K, V> getMap(String name, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.getMap(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.getMap(name);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -369,12 +386,14 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.set(name, map, expire, unit);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.set(name, map, expire, unit);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -402,12 +421,14 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean appendMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.appendMap(name, k, v, expire, unit);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.appendMap(name, k, v, expire, unit);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -428,12 +449,15 @@ public class RedissonHelper {
     }
 
     public <K, V> void replaceMap(String name, K k, V v, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            this.replaceMap(name, k, v);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.replaceMap(name, k, v);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -463,11 +487,15 @@ public class RedissonHelper {
     }
 
     public <K, V> void clearMap(String name, RLock lock) {
-        lock.lock();
-        try {
-            this.<K, V>clearMap(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.<K, V>clearMap(name);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -500,12 +528,15 @@ public class RedissonHelper {
     }
 
     public <K, V> void removeMap(String name, K k, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            this.<K, V>removeMap(name, k);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.<K, V>removeMap(name, k);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -527,12 +558,14 @@ public class RedissonHelper {
     }
 
     public <V> Set<V> getSet(String name, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.getSet(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.getSet(name);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -578,12 +611,14 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.set(name, set, expire, unit);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.set(name, set, expire, unit);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -611,12 +646,14 @@ public class RedissonHelper {
     }
 
     public <V> boolean appendSet(String name, V v, long expire, TimeUnit unit, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.appendSet(name, v, expire, unit);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.appendSet(name, v, expire, unit);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -643,11 +680,15 @@ public class RedissonHelper {
     }
 
     public <V> void clearSet(String name, RLock lock) {
-        lock.lock();
-        try {
-            this.<V>clearSet(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.<V>clearSet(name);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -671,12 +712,15 @@ public class RedissonHelper {
     }
 
     public <V> void removeSet(String name, V v, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            this.removeSet(name, v);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.removeSet(name, v);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -693,12 +737,14 @@ public class RedissonHelper {
     }
 
     public <V> V get(String name, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.get(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.get(name);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -714,12 +760,14 @@ public class RedissonHelper {
     }
 
     public boolean remove(String name, RLock lock) {
-        // activating watch-dog
-        lock.lock();
-        try {
-            return this.remove(name);
-        } finally {
-            lock.unlock();
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    return this.remove(name);
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
@@ -749,13 +797,16 @@ public class RedissonHelper {
         this.set(name, value, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> void set(String name, V value, long expire, TimeUnit unit, RLock Lock) {
-        // activating watch-dog
-        Lock.lock();
-        try {
-            this.set(name, value, expire, unit);
-        } finally {
-            Lock.unlock();
+    public <V> void set(String name, V value, long expire, TimeUnit unit, RLock lock) {
+        while(true) {
+            if(lock.tryLock()) {
+                try {
+                    this.set(name, value, expire, unit);
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
         }
     }
 
