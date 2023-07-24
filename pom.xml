@@ -49,7 +49,7 @@
     </distributionManagement>
 
     <properties>
-        <spring.version>5.2.24.RELEASE</spring.version>
+        <spring.version>5.2.25.RELEASE</spring.version>
         <tomcat.version>9.0.75</tomcat.version>
         <okhttp3.version>4.11.0</okhttp3.version>
         <retrofit2.version>2.9.0</retrofit2.version>
