@@ -70,7 +70,7 @@ public final class RandomCodeUtil {
         return RandomStringUtils.random(length, letters, numbers);
     }
 
-    public static int getRandomNums(int max, int min) {
+    public static int getRandomNums(int min, int max) {
         return (int) Math.floor(Math.random() * (max - min) + min);
     }
 

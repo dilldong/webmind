@@ -54,7 +54,7 @@
         <okhttp3.version>4.11.0</okhttp3.version>
         <retrofit2.version>2.9.0</retrofit2.version>
         <httpclient.version>4.5.14</httpclient.version>
-        <redisson.version>3.22.0</redisson.version>
+        <redisson.version>3.23.1</redisson.version>
     </properties>
 
     <build>
