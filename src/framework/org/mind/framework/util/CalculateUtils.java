@@ -272,6 +272,10 @@ public class CalculateUtils {
         return formatPercent(amount, RoundingMode.HALF_UP, 2);
     }
 
+    public static String formatPercent(BigDecimal amount, boolean symbol) {
+        return formatPercent(amount, RoundingMode.HALF_UP,  2, symbol);
+    }
+
     public static String formatPercent(BigDecimal amount, RoundingMode mode, int scale) {
         return formatPercent(amount, mode, scale, false);
     }
@@ -284,6 +288,10 @@ public class CalculateUtils {
         return formatPercent(amount, RoundingMode.HALF_UP, 2);
     }
 
+    public static String formatPercent(Double amount, boolean symbol) {
+        return formatPercent(amount, RoundingMode.HALF_UP,  2, symbol);
+    }
+
     public static String formatPercent(Double amount, RoundingMode mode, int scale) {
         return formatPercent(amount, mode, scale, false);
     }
@@ -294,6 +302,10 @@ public class CalculateUtils {
 
     public static String formatPercent(Float amount) {
         return formatPercent(amount, RoundingMode.HALF_UP, 2);
+    }
+
+    public static String formatPercent(Float amount, boolean symbol) {
+        return formatPercent(amount, RoundingMode.HALF_UP,  2, symbol);
     }
 
     public static String formatPercent(Float amount, RoundingMode mode, int scale) {
