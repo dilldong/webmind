@@ -27,8 +27,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @auther Marcus
  * @date 2023/6/26
  */
-@EnableAsync
 @Configuration
+@EnableAsync
 @EnableScheduling
 @PropertySource("classpath:frame.properties")
 @ComponentScan(basePackages = {"org.mind.framework"})
@@ -51,7 +51,7 @@ public class AppConfiguration {
         return queue;
     }
 
-    @Bean(value = "maMnService", destroyMethod = "stop")
+    @Bean(destroyMethod = "stop")
     public MainService mainService(QueueService queueService) {
         ConsumerService consumerQueue = new ConsumerService();
         consumerQueue.setUseThreadPool(true);
@@ -68,7 +68,6 @@ public class AppConfiguration {
         loopService.addUpdater(consumerQueue);
 
         MainService mainService = new MainService();
-        mainService.setServiceName("MainService");
         mainService.setChildServices(Collections.singletonList(loopService));
         return mainService;
     }

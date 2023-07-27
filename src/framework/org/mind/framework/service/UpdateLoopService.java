@@ -9,6 +9,9 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * 循环更新服务
+ *
+ * @since 2011.06
  * @author dp
  */
 public class UpdateLoopService extends LoopWorkerService {

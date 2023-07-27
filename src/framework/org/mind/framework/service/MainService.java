@@ -9,8 +9,9 @@ import java.util.Objects;
 
 /**
  * 异步服务，允许使用多个相同的对象构建
- * @since 2011.06
+ *
  * @author dp
+ * @since 2011.06
  */
 public class MainService extends AbstractService {
 
@@ -24,31 +25,31 @@ public class MainService extends AbstractService {
 
     protected void startChildServices() {
         if (Objects.nonNull(childServices)) {
-            childServices.forEach(serv -> {
-                Async.synchronousExecutor().execute(() -> {
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Service {}@{} to starting ....",
-                                serv.getClass().getSimpleName(),
-                                Integer.toHexString(serv.hashCode()));
-                    }
-                    serv.start();
-                });
-            });
+            childServices.forEach(serv ->
+                    Async.synchronousExecutor().execute(() -> {
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Service {}@{} to starting ....",
+                                    serv.getClass().getSimpleName(),
+                                    Integer.toHexString(serv.hashCode()));
+                        }
+                        serv.start();
+                    })
+            );
         }
     }
 
     protected void stopChildServices() {
         if (Objects.nonNull(childServices)) {
-            childServices.forEach(serv -> {
-                Async.synchronousExecutor().execute(() -> {
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Service {}@{} to stopping ....",
-                                serv.getClass().getSimpleName(),
-                                Integer.toHexString(serv.hashCode()));
-                    }
-                    serv.stop();
-                });
-            });
+            childServices.forEach(serv ->
+                    Async.synchronousExecutor().execute(() -> {
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Service {}@{} to stopping ....",
+                                    serv.getClass().getSimpleName(),
+                                    Integer.toHexString(serv.hashCode()));
+                        }
+                        serv.stop();
+                    })
+            );
         }
     }
 

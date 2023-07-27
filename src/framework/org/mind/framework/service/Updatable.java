@@ -24,7 +24,7 @@ public interface Updatable {
     }
 
     static <T> T getEnvArgs(String key, Class<T> parseClazz){
-        String value = System.getProperty(key);
+        String value = getEnvArgs(key);
         if(StringUtils.isEmpty(value))
             return null;
 
