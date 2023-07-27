@@ -13,7 +13,7 @@ import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.service.WebMainService;
+import org.mind.framework.service.MainService;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.util.CalculateUtils;
 import org.mind.framework.util.DateFormatUtils;
@@ -100,7 +100,7 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void test09() {
-        this.applicationContext.getBean("mainService", WebMainService.class).start();
+        this.applicationContext.getBean("mainService", MainService.class).start();
 
         int i = 2000;
         while ((--i) >= 0) {

@@ -2,9 +2,8 @@ package org.mind.framework.config;
 
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
-import org.mind.framework.service.Service;
+import org.mind.framework.service.MainService;
 import org.mind.framework.service.UpdateLoopService;
-import org.mind.framework.service.WebMainService;
 import org.mind.framework.service.queue.ConsumerService;
 import org.mind.framework.service.queue.QueueLittle;
 import org.mind.framework.service.queue.QueueService;
@@ -20,6 +19,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -51,8 +51,8 @@ public class AppConfiguration {
         return queue;
     }
 
-    @Bean(value = "mainService", destroyMethod = "stop")
-    public WebMainService mainService(QueueService queueService) {
+    @Bean(value = "maMnService", destroyMethod = "stop")
+    public MainService mainService(QueueService queueService) {
         ConsumerService consumerQueue = new ConsumerService();
         consumerQueue.setUseThreadPool(true);
         //consumerQueue.setSubmitTask(10);
@@ -67,9 +67,9 @@ public class AppConfiguration {
         loopService.setDaemon(true);
         loopService.addUpdater(consumerQueue);
 
-        WebMainService mainService = new WebMainService();
+        MainService mainService = new MainService();
         mainService.setServiceName("MainService");
-        mainService.setChildServices(new Service[]{loopService});
+        mainService.setChildServices(Collections.singletonList(loopService));
         return mainService;
     }
 

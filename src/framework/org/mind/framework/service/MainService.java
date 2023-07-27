@@ -1,22 +1,22 @@
 package org.mind.framework.service;
 
-import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.service.threads.Async;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
- * 提供非WEB应用服务，不允许使用多个相同的对象构建服务
- *
+ * 异步服务，允许使用多个相同的对象构建
+ * @since 2011.06
  * @author dp
  */
 public class MainService extends AbstractService {
 
     static final Logger logger = LoggerFactory.getLogger(MainService.class);
 
-    private Set<Service> childServices;
+    private List<Service> childServices;
 
     public MainService() {
         setServiceName(getClass().getSimpleName());
@@ -25,7 +25,7 @@ public class MainService extends AbstractService {
     protected void startChildServices() {
         if (Objects.nonNull(childServices)) {
             childServices.forEach(serv -> {
-                Thread t = ExecutorFactory.newThread(serv.getServiceName(), () -> {
+                Async.synchronousExecutor().execute(() -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("Service {}@{} to starting ....",
                                 serv.getClass().getSimpleName(),
@@ -33,7 +33,6 @@ public class MainService extends AbstractService {
                     }
                     serv.start();
                 });
-                t.start();
             });
         }
     }
@@ -41,7 +40,7 @@ public class MainService extends AbstractService {
     protected void stopChildServices() {
         if (Objects.nonNull(childServices)) {
             childServices.forEach(serv -> {
-                Thread t = ExecutorFactory.newThread(serv.getServiceName(), () -> {
+                Async.synchronousExecutor().execute(() -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("Service {}@{} to stopping ....",
                                 serv.getClass().getSimpleName(),
@@ -49,7 +48,6 @@ public class MainService extends AbstractService {
                     }
                     serv.stop();
                 });
-                t.start();
             });
         }
     }
@@ -65,11 +63,11 @@ public class MainService extends AbstractService {
         System.gc();
     }
 
-    public Set<Service> getChildServices() {
+    public List<Service> getChildServices() {
         return childServices;
     }
 
-    public void setChildServices(Set<Service> childServices) {
+    public void setChildServices(List<Service> childServices) {
         this.childServices = childServices;
     }
 

@@ -52,30 +52,25 @@
         </property>
     </bean>
 
-    <!-- start MQ service -->
-    <bean id="startQueueService" class="org.mind.framework.service.UpdateLoopService">
-        <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
-        <property name="daemon" value="true"/><!-- daemon thread -->
-        <property name="updaters">
-            <list>
-                <bean class="org.mind.framework.service.queue.ConsumerService">
-                    <property name="queueService" ref="queueService"/>
-                </bean>
-
-                <!--利用线程池处理queueService-->
-                <bean class="org.mind.framework.service.queue.ConsumerService" init-method="initExecutorPool">
-                    <property name="useThreadPool" value="true"/>
-                    <property name="queueService" ref="executorQueueService"/>
-                </bean>
-            </list>
-        </property>
-    </bean>
-
     <!-- WEB main service -->
-    <bean id="mainService" class="org.mind.framework.service.WebMainService" destroy-method="stop">
+    <bean id="mainService" class="org.mind.framework.service.MainService" destroy-method="stop">
         <property name="childServices">
             <list>
-                <ref bean="startQueueService"/>
+                <!-- start MQ service -->
+                <bean class="org.mind.framework.service.UpdateLoopService">
+                    <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
+                    <property name="daemon" value="true"/><!-- daemon thread -->
+                    <property name="updaters">
+                        <list>
+                            <!--利用线程池处理queueService-->
+                            <bean class="org.mind.framework.service.queue.ConsumerService" init-method="initExecutorPool">
+                                <property name="useThreadPool" value="true"/>
+                                <property name="queueService" ref="executorQueueService"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
             </list>
         </property>
     </bean>
