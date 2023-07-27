@@ -62,6 +62,10 @@
                     <property name="daemon" value="true"/><!-- daemon thread -->
                     <property name="updaters">
                         <list>
+                            <bean class="org.mind.framework.service.queue.ConsumerService">
+                                <property name="queueService" ref="queueService"/>
+                            </bean>
+
                             <!--利用线程池处理queueService-->
                             <bean class="org.mind.framework.service.queue.ConsumerService" init-method="initExecutorPool">
                                 <property name="useThreadPool" value="true"/>
