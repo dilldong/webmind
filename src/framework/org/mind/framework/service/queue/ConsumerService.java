@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.service.Updatable;
@@ -22,10 +23,8 @@ public class ConsumerService implements Updatable, Destroyable {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
-    private final Object executObject = new Object();
-
     @Setter
-    private int poolSize = Runtime.getRuntime().availableProcessors() << 3;
+    private int poolSize = 8 + (Runtime.getRuntime().availableProcessors() << 2);
 
     /**
      * if taskCapacity = 0, then SynchronousQueue
@@ -47,27 +46,31 @@ public class ConsumerService implements Updatable, Destroyable {
     private volatile boolean running = false;
 
     @Setter
-    private transient QueueService queueService;
+    private QueueService queueService;
 
-    private transient ThreadPoolExecutor executor;
+    private ThreadPoolExecutor executor;
 
     @Override
     public void doUpdate() {
-        synchronized (executObject) {
-            if (this.useThreadPool) {
-                int wholeCount = Math.min(queueService.size(), submitTask);
-                if (wholeCount < 1)
-                    return;
+        if (queueService.size() == 0)
+            return;
 
-                if (running) {
-                    while ((--wholeCount) >= 0)
-                        this.submitTask(this::execute);
-                }
+        if (this.useThreadPool) {
+            int wholeCount = Math.min(queueService.size(), submitTask);
+            if (wholeCount < 1)
                 return;
-            }
 
-            this.execute();
+            if (running) {
+                while ((--wholeCount) > -1)
+                    this.executor.execute(this::execute);
+            }
+            return;
         }
+
+        if (Objects.isNull(this.executor))
+            Async.synchronousExecutor().execute(this::execute);
+        else
+            this.executor.execute(this::execute);
     }
 
     public void initExecutorPool() {
@@ -75,6 +78,10 @@ public class ConsumerService implements Updatable, Destroyable {
             return;
 
         if (taskCapacity > 0) {
+            if(submitTask < 1) {
+                ThrowProvider.doThrow(new IllegalArgumentException("'submitTask' must be greater than 0."));
+            }
+
             executor = ExecutorFactory.newThreadPoolExecutor(
                     0,
                     poolSize,
@@ -96,13 +103,6 @@ public class ConsumerService implements Updatable, Destroyable {
     @Override
     public void destroy() {
 
-    }
-
-    private void submitTask(Runnable task) {
-        if (Objects.isNull(task))
-            return;
-
-        executor.submit(task);
     }
 
     private void execute() {
