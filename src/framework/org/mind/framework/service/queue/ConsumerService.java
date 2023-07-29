@@ -46,9 +46,9 @@ public class ConsumerService implements Updatable, Destroyable {
     private volatile boolean running = false;
 
     @Setter
-    private QueueService queueService;
+    private transient QueueService queueService;
 
-    private ThreadPoolExecutor executor;
+    private transient ThreadPoolExecutor executor;
 
     @Override
     public void doUpdate() {
