@@ -46,9 +46,9 @@ public class ConsumerService implements Updatable, Destroyable {
     private volatile boolean running = false;
 
     @Setter
-    private transient QueueService queueService;
+    private QueueService queueService;
 
-    private transient ThreadPoolExecutor executor;
+    private ThreadPoolExecutor executor;
 
     @Override
     public void doUpdate() {
@@ -56,15 +56,13 @@ public class ConsumerService implements Updatable, Destroyable {
             return;
 
         if (this.useThreadPool) {
-            // tasks running at full capacity
-            if (executor.getActiveCount() >= poolSize) {
-                if (taskCapacity > 0
-                        && taskCapacity - (executor.getTaskCount() - executor.getCompletedTaskCount()) < submitTask) {
-                    return;
-                }
-            }
+            int wholeCount;
+            if (taskCapacity > 0 && executor.getActiveCount() == poolSize) {
+                int spacing = taskCapacity - ((int) (executor.getTaskCount() - executor.getCompletedTaskCount()));
+                wholeCount = Math.min(queueService.size(), Math.min(spacing, submitTask));
+            } else
+                wholeCount = Math.min(queueService.size(), submitTask);
 
-            int wholeCount = Math.min(queueService.size(), submitTask);
             if (wholeCount < 1)
                 return;
 
