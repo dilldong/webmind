@@ -5,7 +5,6 @@ import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
-import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.server.GracefulShutdown;
 import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.service.Updatable;
@@ -24,23 +23,12 @@ public class ConsumerService implements Updatable, Destroyable {
     private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
     @Setter
-    private int poolSize = 8 + (Runtime.getRuntime().availableProcessors() << 2);
-
-    /**
-     * if taskCapacity = 0, then SynchronousQueue
-     */
-    @Setter
-    private int taskCapacity;
-
-    /**
-     * The submitted worker threads
-     */
-    @Setter
-    private int submitTask = 5;
+    @Getter
+    private boolean useThreadPool = false;
 
     @Setter
     @Getter
-    private boolean useThreadPool = false;
+    private int maxPoolSize = 3;
 
     @Getter
     private volatile boolean running = false;
@@ -52,46 +40,39 @@ public class ConsumerService implements Updatable, Destroyable {
 
     @Override
     public void doUpdate() {
-        if (queueService.size() == 0)
+        if (queueService.isEmpty())
             return;
 
         if (this.useThreadPool) {
-            int wholeCount;
-            if (taskCapacity > 0 && executor.getActiveCount() == poolSize) {
-                int spacing = taskCapacity - ((int) (executor.getTaskCount() - executor.getCompletedTaskCount()));
-                wholeCount = Math.min(queueService.size(), Math.min(spacing, submitTask));
-            } else
-                wholeCount = Math.min(queueService.size(), submitTask);
+            int wholeCount = Math.min(queueService.size(), maxPoolSize);
 
             if (wholeCount < 1)
                 return;
 
             if (running) {
-                while ((--wholeCount) > -1)
+                while ((--wholeCount) > -1) {
+                    if(executor.getActiveCount() == maxPoolSize || executor.getQueue().remainingCapacity() == 0)
+                        continue;
+
+                    System.out.println("剩余容量: "+ this.executor.getQueue().remainingCapacity()+"\t活跃线程: "+executor.getActiveCount());
                     this.executor.execute(this::execute);
+                }
             }
             return;
         }
 
-        if (Objects.isNull(this.executor))
-            Async.synchronousExecutor().execute(this::execute);
-        else
-            this.executor.execute(this::execute);
+        this.execute();
     }
 
     public void initExecutorPool() {
         if (!this.useThreadPool || this.running)
             return;
 
-        if (taskCapacity > 0) {
-            if (submitTask < 1) {
-                ThrowProvider.doThrow(new IllegalArgumentException("'submitTask' must be greater than 0."));
-            }
-
+        if (maxPoolSize > 0) {
             executor = ExecutorFactory.newThreadPoolExecutor(
-                    0,
-                    poolSize,
-                    new LinkedBlockingQueue<>(taskCapacity));
+                    maxPoolSize, maxPoolSize,
+                    0, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<>(maxPoolSize));
 
             GracefulShutdown.newShutdown("Consumer-Graceful", executor)
                     .waitTime(15L, TimeUnit.SECONDS)
@@ -136,8 +117,8 @@ public class ConsumerService implements Updatable, Destroyable {
             return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                     .append("corePoolSize", executor.getCorePoolSize())
                     .append(" maxPoolSize", executor.getMaximumPoolSize())
-                    .append(" taskCapacity", taskCapacity)
-                    .append(" submitTaskCount", submitTask)
+                    .append(" remainingCapacity", executor.getQueue().remainingCapacity())
+                    .append(" submitTaskCount", maxPoolSize)
                     .append(" running", running)
                     .append(" activeWorker", executor.getActiveCount())
                     .append(" completedTask", executor.getCompletedTaskCount())
@@ -154,8 +135,8 @@ public class ConsumerService implements Updatable, Destroyable {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("corePoolSize", executor.getCorePoolSize())
                 .append(" maxPoolSize", executor.getMaximumPoolSize())
-                .append(" taskCapacity", taskCapacity)
-                .append(" submitTaskCount", submitTask)
+                .append(" remainingCapacity", executor.getQueue().remainingCapacity())
+                .append(" submitTaskCount", maxPoolSize)
                 .toString();
     }
 }

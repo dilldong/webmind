@@ -36,7 +36,7 @@
 
     <!-- MQ config -->
     <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
-        <property name="queueInstance">
+        <property name="workerQueue">
             <bean class="java.util.concurrent.LinkedBlockingQueue">
                 <constructor-arg name="capacity" type="int" value="1024"/>
             </bean>
@@ -45,7 +45,7 @@
 
     <!-- thread-pool processor MQ config -->
     <bean id="executorQueueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
-        <property name="queueInstance">
+        <property name="workerQueue">
             <bean class="java.util.concurrent.LinkedBlockingQueue">
                 <constructor-arg name="capacity" type="int" value="1024"/>
             </bean>
@@ -69,6 +69,7 @@
                             <!--利用线程池处理queueService-->
                             <bean class="org.mind.framework.service.queue.ConsumerService" init-method="initExecutorPool">
                                 <property name="useThreadPool" value="true"/>
+                                <property name="maxPoolSize" value="3"/>
                                 <property name="queueService" ref="executorQueueService"/>
                             </bean>
                         </list>

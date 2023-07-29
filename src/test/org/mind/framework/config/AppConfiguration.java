@@ -47,7 +47,7 @@ public class AppConfiguration {
     @Bean(value = "queueService", destroyMethod = "destroy")
     public QueueService queueService() {
         QueueLittle queue = new QueueLittle();
-        queue.setQueueInstance(new LinkedBlockingQueue<>(1024));
+        queue.setWorkerQueue(new LinkedBlockingQueue<>(1024));
         return queue;
     }
 
@@ -56,7 +56,7 @@ public class AppConfiguration {
         ConsumerService consumerQueue = new ConsumerService();
         consumerQueue.setUseThreadPool(true);
         //consumerQueue.setSubmitTask(10);
-        //consumerQueue.setPoolSize(48);
+//        consumerQueue.setMaxPoolSize(48);
 //        consumerQueue.setTaskCapacity(2048);
         consumerQueue.setQueueService(queueService);
         consumerQueue.initExecutorPool();
