@@ -57,8 +57,12 @@ public class ConsumerService implements Updatable, Destroyable {
 
         if (this.useThreadPool) {
             // tasks running at full capacity
-            if(poolSize == executor.getActiveCount())
-                return;
+            if (executor.getActiveCount() == poolSize) {
+                if (taskCapacity > 0
+                        && taskCapacity - (executor.getTaskCount() - executor.getCompletedTaskCount()) < submitTask) {
+                    return;
+                }
+            }
 
             int wholeCount = Math.min(queueService.size(), submitTask);
             if (wholeCount < 1)
@@ -82,7 +86,7 @@ public class ConsumerService implements Updatable, Destroyable {
             return;
 
         if (taskCapacity > 0) {
-            if(submitTask < 1) {
+            if (submitTask < 1) {
                 ThrowProvider.doThrow(new IllegalArgumentException("'submitTask' must be greater than 0."));
             }
 
