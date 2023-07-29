@@ -57,7 +57,7 @@ public class ConsumerService implements Updatable, Destroyable {
 
         if (this.useThreadPool) {
             // tasks running at full capacity
-            if (executor.getActiveCount() == poolSize) {
+            if (executor.getActiveCount() >= poolSize) {
                 if (taskCapacity > 0
                         && taskCapacity - (executor.getTaskCount() - executor.getCompletedTaskCount()) < submitTask) {
                     return;
