@@ -116,12 +116,12 @@ public class ConsumerService implements Updatable, Destroyable {
             return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                     .append("corePoolSize", executor.getCorePoolSize())
                     .append(" maxPoolSize", executor.getMaximumPoolSize())
-                    .append(" remainingCapacity", executor.getQueue().remainingCapacity())
+                    .append(" workerCapacity", maxPoolSize)
                     .append(" submitTaskCount", maxPoolSize)
                     .append(" running", running)
                     .append(" activeWorker", executor.getActiveCount())
                     .append(" completedTask", executor.getCompletedTaskCount())
-                    .append(" remainingTask", executor.getTaskCount() - executor.getCompletedTaskCount())
+                    .append(" remainingTask", executor.getQueue().size())
                     .toString();
         }
 
@@ -134,7 +134,7 @@ public class ConsumerService implements Updatable, Destroyable {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("corePoolSize", executor.getCorePoolSize())
                 .append(" maxPoolSize", executor.getMaximumPoolSize())
-                .append(" remainingCapacity", executor.getQueue().remainingCapacity())
+                .append(" workerCapacity", maxPoolSize)
                 .append(" submitTaskCount", maxPoolSize)
                 .toString();
     }
