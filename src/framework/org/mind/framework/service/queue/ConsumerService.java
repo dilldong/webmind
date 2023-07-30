@@ -50,9 +50,8 @@ public class ConsumerService implements Updatable, Destroyable {
 
             if (running) {
                 while ((--wholeCount) > -1) {
-                    if(executor.getActiveCount() == maxPoolSize && executor.getQueue().remainingCapacity() == 0)
+                    if(executor.getQueue().remainingCapacity() == 0)
                         continue;
-
                     this.executor.execute(this::consumption);
                 }
             }

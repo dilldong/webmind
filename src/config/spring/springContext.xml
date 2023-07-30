@@ -58,8 +58,9 @@
             <list>
                 <!-- start MQ service -->
                 <bean class="org.mind.framework.service.UpdateLoopService">
+                    <property name="serviceName" value="Loop-Queue-Svc"/>
                     <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
-                    <property name="daemon" value="true"/><!-- daemon thread -->
+                    <property name="daemon" value="false"/><!-- daemon thread -->
                     <property name="updaters">
                         <list>
                             <bean class="org.mind.framework.service.queue.ConsumerService">

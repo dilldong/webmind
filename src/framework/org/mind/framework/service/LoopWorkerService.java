@@ -21,10 +21,14 @@ public abstract class LoopWorkerService extends AbstractService {
     private volatile boolean isLoop = true;
 
     private Thread workerMainThread;
+    private Thread monitorThread;
 
+    /**
+     * default: 15ms
+     */
     @Getter
     @Setter
-    private long spaceTime;
+    private long spaceTime = 15L;
 
     @Getter
     @Setter
@@ -34,9 +38,8 @@ public abstract class LoopWorkerService extends AbstractService {
         super();
     }
 
-    public LoopWorkerService(long spaceTime) {
-        super();
-        this.spaceTime = spaceTime;
+    public LoopWorkerService(String serviceName) {
+        super.setServiceName(serviceName);
     }
 
     @Override
@@ -50,8 +53,7 @@ public abstract class LoopWorkerService extends AbstractService {
         if (spaceTime <= 0)
             logger.warn("The space time is {}(ms)", spaceTime);
 
-        if (!workerMainThread.isAlive())
-            workerMainThread.start();
+        this.monitorAndRestart();
     }
 
     @Override
@@ -60,14 +62,36 @@ public abstract class LoopWorkerService extends AbstractService {
         prepareStop();
         isLoop = false;
 
-        if (workerMainThread != null && workerMainThread.isAlive())
-            workerMainThread.interrupt();
+        if (Objects.nonNull(workerMainThread) && workerMainThread.isAlive()) {
+            try {
+                workerMainThread.interrupt();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    protected void monitorAndRestart() {
+        monitorThread = ExecutorFactory.newDaemonThread("Loop-Monitor", () -> {
+            while (true) {
+                if (!workerMainThread.isAlive())
+                    workerMainThread.start();
+
+                try {
+                    TimeUnit.SECONDS.sleep(30L);
+                } catch (InterruptedException ignored) {}
+            }
+        });
+        monitorThread.start();
     }
 
     protected void prepareStart() {
     }
 
     protected void prepareStop() {
+        if (Objects.nonNull(monitorThread) && monitorThread.isAlive()) {
+            try {
+                monitorThread.interrupt();
+            } catch (Exception ignored) {}
+        }
     }
 
     /**
@@ -103,8 +127,8 @@ public abstract class LoopWorkerService extends AbstractService {
                 if (spaceTime > 0) {
                     try {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
-                    } catch (InterruptedException ignored) {}
-                    Thread.yield();
+                    } catch (InterruptedException ignored) {
+                    }
                 } else // jump out of the while loop with spaceTime<=0
                     break;
             }

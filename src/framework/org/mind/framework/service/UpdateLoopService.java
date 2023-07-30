@@ -20,6 +20,14 @@ public class UpdateLoopService extends LoopWorkerService {
     @Setter
     private List<Updatable> updaters;
 
+    public UpdateLoopService() {
+        super();
+    }
+
+    public UpdateLoopService(String serviceName) {
+        super(serviceName);
+    }
+
     @Override
     protected void doLoopWork() {
         if (updaters != null && !updaters.isEmpty()) {
