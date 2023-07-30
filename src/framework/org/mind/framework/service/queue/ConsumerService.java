@@ -45,22 +45,21 @@ public class ConsumerService implements Updatable, Destroyable {
 
         if (this.useThreadPool) {
             int wholeCount = Math.min(queueService.size(), maxPoolSize);
-
             if (wholeCount < 1)
                 return;
 
             if (running) {
                 while ((--wholeCount) > -1) {
-                    if(executor.getActiveCount() == maxPoolSize || executor.getQueue().remainingCapacity() == 0)
+                    if(executor.getActiveCount() == maxPoolSize && executor.getQueue().remainingCapacity() == 0)
                         continue;
 
-                    this.executor.execute(this::execute);
+                    this.executor.execute(this::consumption);
                 }
             }
             return;
         }
 
-        this.execute();
+        this.consumption();
     }
 
     public void initExecutorPool() {
@@ -91,7 +90,7 @@ public class ConsumerService implements Updatable, Destroyable {
 
     }
 
-    private void execute() {
+    private void consumption() {
         try {
             DelegateMessage delegate = queueService.consumer();
             if (Objects.isNull(delegate))
