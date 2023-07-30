@@ -69,7 +69,6 @@
                             <!--利用线程池处理queueService-->
                             <bean class="org.mind.framework.service.queue.ConsumerService" init-method="initExecutorPool">
                                 <property name="useThreadPool" value="true"/>
-                                <property name="maxPoolSize" value="3"/>
                                 <property name="queueService" ref="executorQueueService"/>
                             </bean>
                         </list>
