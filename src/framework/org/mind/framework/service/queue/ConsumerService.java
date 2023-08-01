@@ -1,7 +1,9 @@
 package org.mind.framework.service.queue;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.container.Destroyable;
@@ -10,17 +12,15 @@ import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.service.Updatable;
 import org.mind.framework.service.threads.Async;
 import org.mind.framework.service.threads.ExecutorFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
+@NoArgsConstructor
 public class ConsumerService implements Updatable, Destroyable {
-
-    private static final Logger log = LoggerFactory.getLogger(ConsumerService.class);
 
     @Setter
     @Getter
@@ -37,6 +37,10 @@ public class ConsumerService implements Updatable, Destroyable {
     private QueueService queueService;
 
     private ThreadPoolExecutor executor;
+
+    public ConsumerService(QueueService queueService) {
+        this.queueService = queueService;
+    }
 
     @Override
     public void doUpdate() {
