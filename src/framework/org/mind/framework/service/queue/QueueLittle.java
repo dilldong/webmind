@@ -19,6 +19,12 @@ public class QueueLittle implements QueueService {
     @Setter
     private BlockingQueue<DelegateMessage> workerQueue;
 
+    @Setter
+    private int awaitSeconds = 15;
+
+    @Setter
+    private boolean waitTasksToCompleteOnShutdown = false;
+
     @Override
     public boolean producer(DelegateMessage message) {
         // LinkedBlockingQueue is thread safety
@@ -63,6 +69,13 @@ public class QueueLittle implements QueueService {
         synchronized (queueObject) {
             if (Objects.isNull(workerQueue) || workerQueue.isEmpty())
                 return;
+
+            // wait for tasks to complate
+            if(waitTasksToCompleteOnShutdown && awaitSeconds > 0){
+                try {
+                    TimeUnit.SECONDS.sleep(awaitSeconds);
+                } catch (InterruptedException ignored) {}
+            }
 
             int size = this.size();
             log.info("Destroy QueueLittle@{} elements: [{}]", Integer.toHexString(hashCode()), size);
