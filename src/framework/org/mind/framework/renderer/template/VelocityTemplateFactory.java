@@ -12,14 +12,16 @@ import javax.servlet.ServletContext;
  */
 public class VelocityTemplateFactory extends TemplateFactory {
 
-    private VelocityEngine velocityEngine;
-
     public Template loadTemplate(String path) {
-        log.info("Load Velocity template '{}'", path);
-        return new VelocityTemplate(velocityEngine.getTemplate(path));
+        if(log.isDebugEnabled())
+            log.debug("Load velocity template '{}'", path);
+
+        return new VelocityTemplate(
+                ContextSupport.getBean("velocityEngine", VelocityEngine.class).getTemplate(path));
     }
 
     public void init(ServletContext context) {
-        this.velocityEngine = ContextSupport.getBean("velocityEngine", VelocityEngine.class);
+        if (log.isDebugEnabled())
+            log.debug("VelocityTemplateFactory init success.");
     }
 }

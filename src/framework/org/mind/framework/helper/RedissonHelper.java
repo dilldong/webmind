@@ -65,6 +65,7 @@ public class RedissonHelper {
     public static final String UNIQUE_ID = "UNIQUE:ID";
     private final RedissonClient redissonClient;
     private final Cacheable cacheable;
+    private List<RedissonShutdownListener> shutdownEvents;
 
     private static class Helper {
         private static final RedissonHelper INSTANCE = new RedissonHelper();
@@ -91,12 +92,16 @@ public class RedissonHelper {
         // Used to store the key added to redis
         cacheable = LruCache.initCache();
         redissonClient = Redisson.create(config);
+
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Redisson-Gracefully", true, () -> {
             if (!redissonClient.isShutdown()) {
                 log.info("Redisson-Gracefully is shutdown ....");
+                if (Objects.nonNull(shutdownEvents) && !shutdownEvents.isEmpty())
+                    shutdownEvents.forEach(event -> event.accept(redissonClient));
+
                 try {
                     redissonClient.shutdown(10L, 15L, TimeUnit.SECONDS);// timeout should >= quietPeriod
-                }catch (RedissonShutdownException e){
+                } catch (RedissonShutdownException e) {
                     log.error("Redisson shutdown exception: {}", e.getMessage());
                 }
             }
@@ -109,6 +114,26 @@ public class RedissonHelper {
 
     public static RedissonClient getClient() {
         return getInstance().redissonClient;
+    }
+
+    public void addShutdownEvent(RedissonShutdownListener listener){
+        if(Objects.isNull(listener))
+            return;
+
+        if(Objects.isNull(shutdownEvents))
+            shutdownEvents = new ArrayList<>();
+
+        shutdownEvents.add(listener);
+    }
+
+    public void addShutdownEvent(List<RedissonShutdownListener> listeners){
+        if(Objects.isNull(listeners) || listeners.isEmpty())
+            return;
+
+        if(Objects.isNull(shutdownEvents))
+            shutdownEvents = new ArrayList<>();
+
+        shutdownEvents.addAll(listeners);
     }
 
     public <V> List<V> getList(String name) {

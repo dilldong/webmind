@@ -3,23 +3,30 @@ package org.mind.framework.service;
 import lombok.Getter;
 import lombok.Setter;
 import org.mind.framework.container.Destroyable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * 循环更新服务
+ *
+ * @since 2011.06
  * @author dp
  */
 public class UpdateLoopService extends LoopWorkerService {
 
-    private static final Logger log = LoggerFactory.getLogger(UpdateLoopService.class);
-
     @Getter
     @Setter
     private List<Updatable> updaters;
+
+    public UpdateLoopService() {
+        super();
+    }
+
+    public UpdateLoopService(String serviceName) {
+        super(serviceName);
+    }
 
     @Override
     protected void doLoopWork() {

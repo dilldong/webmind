@@ -268,41 +268,52 @@ public class CalculateUtils {
                 result.substring(1);
     }
 
-
-    public static String formatPercent(String amount) {
-        return formatPercent(amount, 2);
-    }
-
     public static String formatPercent(BigDecimal amount) {
-        return formatPercent(amount, 2);
+        return formatPercent(amount, RoundingMode.HALF_UP, 2);
     }
 
-    public static String formatPercent(String amount, int scale) {
-        return formatPercent(amount, scale, Locale.getDefault());
+    public static String formatPercent(BigDecimal amount, boolean symbol) {
+        return formatPercent(amount, RoundingMode.HALF_UP,  2, symbol);
     }
 
-    public static String formatPercent(BigDecimal amount, int scale) {
-        return formatPercent(amount, scale, Locale.getDefault());
+    public static String formatPercent(BigDecimal amount, RoundingMode mode, int scale) {
+        return formatPercent(amount, mode, scale, false);
     }
 
-    public static String formatPercent(String amount, int scale, boolean symbol) {
-        return formatPercent(amount, scale, symbol, Locale.getDefault());
+    public static String formatPercent(BigDecimal amount, RoundingMode mode, int scale, boolean symbol) {
+        return formatPercent(amount, mode, scale, symbol, Locale.getDefault());
     }
 
-    public static String formatPercent(BigDecimal amount, int scale, boolean symbol) {
-        return formatPercent(amount, scale, symbol, Locale.getDefault());
+    public static String formatPercent(Double amount) {
+        return formatPercent(amount, RoundingMode.HALF_UP, 2);
     }
 
-    public static String formatPercent(String amount, int scale, Locale locale) {
-        return formatPercent(amount, scale, false, locale);
+    public static String formatPercent(Double amount, boolean symbol) {
+        return formatPercent(amount, RoundingMode.HALF_UP,  2, symbol);
     }
 
-    public static String formatPercent(BigDecimal amount, int scale, Locale locale) {
-        return formatPercent(amount, scale, false, locale);
+    public static String formatPercent(Double amount, RoundingMode mode, int scale) {
+        return formatPercent(amount, mode, scale, false);
     }
 
-    public static String formatPercent(String amount, int scale, boolean symbol, Locale locale) {
-        return formatPercent(new BigDecimal(amount), scale, symbol, locale);
+    public static String formatPercent(Double amount, RoundingMode mode, int scale, boolean symbol) {
+        return formatPercent(amount, mode, scale, symbol, Locale.getDefault());
+    }
+
+    public static String formatPercent(Float amount) {
+        return formatPercent(amount, RoundingMode.HALF_UP, 2);
+    }
+
+    public static String formatPercent(Float amount, boolean symbol) {
+        return formatPercent(amount, RoundingMode.HALF_UP,  2, symbol);
+    }
+
+    public static String formatPercent(Float amount, RoundingMode mode, int scale) {
+        return formatPercent(amount, mode, scale, false);
+    }
+
+    public static String formatPercent(Float amount, RoundingMode mode, int scale, boolean symbol) {
+        return formatPercent(amount, mode, scale, symbol, Locale.getDefault());
     }
 
     /**
@@ -314,9 +325,10 @@ public class CalculateUtils {
      * @param locale
      * @return
      */
-    public static String formatPercent(BigDecimal amount, int scale, boolean symbol, Locale locale) {
+    public static String formatPercent(Object amount, RoundingMode mode, int scale, boolean symbol, Locale locale) {
         NumberFormat percent = NumberFormat.getPercentInstance(locale);
         percent.setMaximumFractionDigits(scale); //Maximum decimals
+        percent.setRoundingMode(mode);
         String result = percent.format(amount);
         return symbol ? result : StringUtils.substringBeforeLast(result, "%");
     }

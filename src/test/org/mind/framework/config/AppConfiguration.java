@@ -2,9 +2,8 @@ package org.mind.framework.config;
 
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
-import org.mind.framework.service.Service;
+import org.mind.framework.service.MainService;
 import org.mind.framework.service.UpdateLoopService;
-import org.mind.framework.service.WebMainService;
 import org.mind.framework.service.queue.ConsumerService;
 import org.mind.framework.service.queue.QueueLittle;
 import org.mind.framework.service.queue.QueueService;
@@ -20,6 +19,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -27,8 +27,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @auther Marcus
  * @date 2023/6/26
  */
-@EnableAsync
 @Configuration
+@EnableAsync
 @EnableScheduling
 @PropertySource("classpath:frame.properties")
 @ComponentScan(basePackages = {"org.mind.framework"})
@@ -47,16 +47,16 @@ public class AppConfiguration {
     @Bean(value = "queueService", destroyMethod = "destroy")
     public QueueService queueService() {
         QueueLittle queue = new QueueLittle();
-        queue.setQueueInstance(new LinkedBlockingQueue<>(1024));
+        queue.setWorkerQueue(new LinkedBlockingQueue<>(1024));
         return queue;
     }
 
-    @Bean(value = "mainService", destroyMethod = "stop")
-    public WebMainService mainService(QueueService queueService) {
+    @Bean(destroyMethod = "stop")
+    public MainService mainService(QueueService queueService) {
         ConsumerService consumerQueue = new ConsumerService();
         consumerQueue.setUseThreadPool(true);
         //consumerQueue.setSubmitTask(10);
-        //consumerQueue.setPoolSize(48);
+//        consumerQueue.setMaxPoolSize(48);
 //        consumerQueue.setTaskCapacity(2048);
         consumerQueue.setQueueService(queueService);
         consumerQueue.initExecutorPool();
@@ -67,9 +67,8 @@ public class AppConfiguration {
         loopService.setDaemon(true);
         loopService.addUpdater(consumerQueue);
 
-        WebMainService mainService = new WebMainService();
-        mainService.setServiceName("MainService");
-        mainService.setChildServices(new Service[]{loopService});
+        MainService mainService = new MainService();
+        mainService.setChildServices(Collections.singletonList(loopService));
         return mainService;
     }
 

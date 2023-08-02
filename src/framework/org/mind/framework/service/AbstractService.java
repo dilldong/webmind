@@ -3,11 +3,12 @@ package org.mind.framework.service;
 /**
  * 服务模板类
  *
+ * @since 2011.06
  * @author dp
  */
 public abstract class AbstractService implements Service {
 
-    protected String serviceName = getClass().getSimpleName();
+    protected String serviceName;
 
     protected volatile int serviceState;
 
@@ -18,10 +19,10 @@ public abstract class AbstractService implements Service {
     public static final int STOPPED = 2;
 
     public AbstractService() {
+        serviceName = getClass().getSimpleName();
     }
 
     public AbstractService(String serviceName) {
-        super();
         this.serviceName = serviceName;
     }
 

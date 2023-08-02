@@ -22,8 +22,6 @@ public abstract class TemplateFactory {
 	 */
 	public static void setTemplateFactory(TemplateFactory instanceFactory){
 		tf = instanceFactory;
-		if(log.isDebugEnabled())
-			log.debug("Template factory: {}", tf.getClass().getName());
 	}
 	
 	public static TemplateFactory getTemplateFactory(){

@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>4.5.2</version>
+    <version>4.5.3</version>
 
     <licenses>
         <license>
@@ -49,12 +49,12 @@
     </distributionManagement>
 
     <properties>
-        <spring.version>5.2.24.RELEASE</spring.version>
+        <spring.version>5.2.25.RELEASE</spring.version>
         <tomcat.version>9.0.75</tomcat.version>
         <okhttp3.version>4.11.0</okhttp3.version>
         <retrofit2.version>2.9.0</retrofit2.version>
         <httpclient.version>4.5.14</httpclient.version>
-        <redisson.version>3.22.0</redisson.version>
+        <redisson.version>3.23.1</redisson.version>
     </properties>
 
     <build>

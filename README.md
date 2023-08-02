@@ -12,12 +12,12 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>4.5.2</version>
+    <version>4.5.3</version>
 </dependency>
 ```
 ## Gradle
 ```text
-implementation 'io.github.dilldong:webmind-framework:4.5.2'
+implementation 'io.github.dilldong:webmind-framework:4.5.3'
 ```
 ## Example
 ### 1. Mapping
@@ -91,7 +91,7 @@ public class InterceptorClass extends AbstractHandlerInterceptor {
 }
 ```
 
-### 3. Startup Application
+### 3. Startup Web Application
 ```java
 @Import(AppConfiguration.class)
 public class Application {
@@ -110,6 +110,41 @@ public class Application {
     }
 }
 ```
+### 4. Startup Non-Web Application
+```java
+@Import(AppConfiguration.class)
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication application = SpringApplication.runApplication(Application.class, args);
 
+        ContextSupport.getBeans(StartService.class).forEach((k, v) -> {
+            // start your business
+            v.doStart();
+        });
+
+        // waiting
+        application.waiting(20L, TimeUnit.SECONDS);
+    }
+}
+```
+### or
+```java
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication application =
+                SpringApplication.runApplication(
+                        new String[]{"spring/springContext.xml", "spring/businessConfig.xml"},
+                        args);
+                        
+        ContextSupport.getBeans(StartService.class).forEach((k, v) -> {
+            // start your business
+            v.doStart();
+        });
+
+        // waiting
+        application.waiting(20L, TimeUnit.SECONDS);
+    }
+}
+```
 ## License
 The Webmind Framework is released under version 2.0 of the Apache License.

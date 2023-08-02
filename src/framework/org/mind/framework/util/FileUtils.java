@@ -2,6 +2,7 @@ package org.mind.framework.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mind.framework.exception.ThrowProvider;
@@ -204,11 +205,14 @@ public class FileUtils {
         if (Objects.isNull(attributes))
             return null;
 
-        long fileSize = attributes.size();
         if (!attributes.isRegularFile()) {
             log.warn("You reading file doesn't exist or is directory. [{}]", filePath.toAbsolutePath());
             return null;
         }
+
+        long fileSize = attributes.size();
+        if (fileSize < 1)
+            return StringUtils.EMPTY;
 
         try (FileChannel channel = FileChannel.open(filePath, StandardOpenOption.READ)) {
             return readBuffer(channel, fileSize);
@@ -247,11 +251,14 @@ public class FileUtils {
         if (Objects.isNull(attributes))
             return null;
 
-        long fileSize = attributes.size();
         if (!attributes.isRegularFile()) {
             log.warn("You reading file doesn't exist or is directory. [{}]", filePath.toAbsolutePath());
             return null;
         }
+
+        long fileSize = attributes.size();
+        if (fileSize < 1)
+            return StringUtils.EMPTY;
 
         long loopLimit;
         if (awaitTimeUnit == TimeUnit.MILLISECONDS)
@@ -334,21 +341,20 @@ public class FileUtils {
     }
 
     private static String readBuffer(FileChannel channel, long size) throws IOException {
-        if (size == -1L || size > MAX_BUFFER_SIZE)
-            size = MAX_BUFFER_SIZE;
+        boolean nonRange = size < 1L || size > MAX_BUFFER_SIZE;
 
-        ByteBuffer buffer = ByteBuffer.allocate((int) size);
-        StringBuilder stringJoiner = new StringBuilder(buffer.capacity());
+        ByteBuffer buffer = ByteBuffer.allocate(nonRange ? MAX_BUFFER_SIZE : (int) size);
+        StringBuilder strBuilder = new StringBuilder(buffer.capacity());
 
         while (channel.read(buffer) > -1) {
             buffer.flip();
-            stringJoiner.append(
+            strBuilder.append(
                     new String(buffer.array(),
                             buffer.position(),
                             buffer.limit(),
                             StandardCharsets.UTF_8));
         }
-        return stringJoiner.toString();
+        return strBuilder.toString();
     }
 
 }

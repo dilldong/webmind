@@ -13,7 +13,7 @@ import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.service.WebMainService;
+import org.mind.framework.service.MainService;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.util.CalculateUtils;
 import org.mind.framework.util.DateFormatUtils;
@@ -52,8 +52,11 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @Resource
     private QueueService executorQueueService;
 
+    @Resource
+    private QueueService queueService;
+
     @Test
-    public void test10(){
+    public void test10() {
         parseDateValue("Sun, 06 Nov 1994 08:49:37 GMT");
         System.out.println("------------------");
         parseDateValue("Sunday, 06-Nov-94 08:49:37 GMT");
@@ -79,14 +82,14 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
                     LocalDateTime localDateTime =
                             LocalDateTime.parse(headerValue, DateTimeFormatter.ofPattern(dateFormat, Locale.US));
                     long mills = localDateTime.atZone(DateFormatUtils.UTC).toEpochSecond() * 1000L;
-                    System.out.println("1: "+ mills);
+                    System.out.println("1: " + mills);
                     break;
-                } catch (DateTimeParseException | IllegalArgumentException e){
+                } catch (DateTimeParseException | IllegalArgumentException e) {
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
                     simpleDateFormat.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
                     try {
                         long mills = simpleDateFormat.parse(headerValue).getTime();
-                        System.out.println("2: "+ mills);
+                        System.out.println("2: " + mills);
                         break;
                     } catch (ParseException ex) {
                         // ignore exception
@@ -100,13 +103,19 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void test09() {
-        this.applicationContext.getBean("mainService", WebMainService.class).start();
+        this.applicationContext.getBean("mainService", MainService.class).start();
 
-        int i = 2000;
+        int i = 10;
         while ((--i) >= 0) {
             A a = A.builder().field01("" + (i + 1)).build();
-            executorQueueService.producer(() -> {
-                System.out.println(a.field01);
+            queueService.producer(() -> {
+                try {
+                    System.out.println(Thread.currentThread().getName() + "\tblocking");
+                    Thread.sleep(3_000L);
+                } catch (InterruptedException ignored) {
+                }
+                System.out.println(Thread.currentThread().getName() + "\t" + a.field01);
+
             });
         }
 

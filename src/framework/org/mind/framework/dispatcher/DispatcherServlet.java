@@ -154,7 +154,7 @@ public class DispatcherServlet extends HttpServlet {
             Service serv = ContextSupport.getBean("mainService", Service.class);
             serv.start();
         } catch (NoSuchBeanDefinitionException e) {
-            log.warn("Queue and Thread services are not running: {}", e.getMessage());
+            log.warn("Message Queuing service failed to start, {}.", e.getMessage());
         }
     }
 }

@@ -89,7 +89,7 @@ public class DateFormatUtils {
      */
     public static long beforeAtStartOfDay(int days, ZoneId zoneId) {
         long timestamp = before(days);
-        return timestamp == -1 ? timestamp : startOfDayMillis(dateAt(timestamp, zoneId));
+        return timestamp == -1 ? timestamp : startOfDayMillis(dateAt(timestamp, zoneId), zoneId);
     }
 
 
