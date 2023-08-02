@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 唯一id
  */
 public class IdUtils {
+    private static final String SIMPLE_DATE_PATTERN = "yyMMdd";
 
     private static final Logger logger = LoggerFactory.getLogger(IdUtils.class);
 
@@ -24,13 +25,13 @@ public class IdUtils {
     public static long getUniqueId() {
         try {
             ObjectId objId = ObjectId.get();
-            String date = DateFormatUtils.format(objId.getDate(), "yyMMdd");
+            String date = DateUtils.format(objId.getDate(), SIMPLE_DATE_PATTERN);
             String counter = String.valueOf(objId.getCounter());
             int length = counter.length();
             if (length > 6)
                 counter = StringUtils.substring(counter, length - 6);
 
-            return Long.parseLong(String.format("%s%s", date, counter));
+            return Long.parseLong(date + counter);
         } catch (NumberFormatException e) {
             logger.error(e.getMessage());
             return System.currentTimeMillis() + atomicInteger.incrementAndGet();
@@ -60,16 +61,16 @@ public class IdUtils {
             Long machine = Long.parseLong(objId.substring(8, 14), 16);
             Long pid = Long.parseLong(objId.substring(14, 18), 16);
             Long inc = Long.parseLong(objId.substring(18), 16);
-            return String.format("%d%d%d", machine, pid, inc);
+            return String.join(StringUtils.EMPTY, machine.toString(), pid.toString(), inc.toString());
         } catch (NumberFormatException e) {
             logger.error(e.getMessage());
-            return String.format("%d", System.currentTimeMillis() + atomicInteger.incrementAndGet());
+            return String.valueOf(System.currentTimeMillis() + atomicInteger.incrementAndGet());
         }
     }
 
     public static int generateId() {
         int atomic = atomicInteger.incrementAndGet();
-        long timeMillis = DateFormatUtils.getMillis();
+        long timeMillis = DateUtils.getMillis();
         String value = StringUtils.substring(String.valueOf(timeMillis + atomic), 5);
         return Integer.parseInt(value);
     }

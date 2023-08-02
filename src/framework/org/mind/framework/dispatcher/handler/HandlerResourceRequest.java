@@ -1,7 +1,7 @@
 package org.mind.framework.dispatcher.handler;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +146,7 @@ public class HandlerResourceRequest implements HandlerResult {
         } else if (this.expires > 0) {
             response.setHeader(HttpHeaders.CACHE_CONTROL, maxAge);
             // Reset HTTP 1.0 Expires header if present
-            response.setDateHeader(HttpHeaders.EXPIRES, DateFormatUtils.getMillis() + this.expires);
+            response.setDateHeader(HttpHeaders.EXPIRES, DateUtils.getMillis() + this.expires);
         }
 
         // should download?
@@ -192,12 +192,12 @@ public class HandlerResourceRequest implements HandlerResult {
                     return
                             LocalDateTime
                                     .parse(headerValue, DateTimeFormatter.ofPattern(dateFormat, Locale.US))
-                                    .atZone(DateFormatUtils.UTC)
+                                    .atZone(DateUtils.UTC)
                                     .toEpochSecond() * 1_000L;
                 } catch (DateTimeParseException | IllegalArgumentException e){
                     // parse exception, with SimpleDateFormat parsing
                     SimpleDateFormat sdf = new SimpleDateFormat(dateFormat, Locale.US);
-                    sdf.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
+                    sdf.setTimeZone(DateUtils.UTC_TIMEZONE);
                     try {
                        return sdf.parse(headerValue).getTime();
                     } catch (ParseException ex) {

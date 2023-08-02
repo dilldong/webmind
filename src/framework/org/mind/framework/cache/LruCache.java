@@ -29,7 +29,7 @@ package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,7 +169,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (Objects.isNull(element))
             return null;
 
-        if (interval > 0 && (DateFormatUtils.getMillis() - element.getFirstTime()) > interval) {
+        if (interval > 0 && (DateUtils.getMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
             log.warn("Remove Cache key, The access time interval expires. key = {}", key);
             return null;
@@ -179,7 +179,7 @@ public class LruCache extends AbstractCache implements Cacheable {
             if (write.tryLock()) {
                 try {
                     element.recordVisited();// record count of visit
-                    element.recordTime(DateFormatUtils.getMillis()); // record time of visit
+                    element.recordTime(DateUtils.getMillis()); // record time of visit
                     return element;
                 } finally {
                     write.unlock();

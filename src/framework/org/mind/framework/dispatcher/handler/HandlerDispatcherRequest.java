@@ -12,7 +12,7 @@ import org.mind.framework.interceptor.HandlerInterceptor;
 import org.mind.framework.renderer.Render;
 import org.mind.framework.renderer.TextRender;
 import org.mind.framework.util.ClassUtils;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JsonUtils;
@@ -152,7 +152,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        long begin = DateFormatUtils.getMillis();
+        long begin = DateUtils.getMillis();
         final String path = HttpUtils.getURI(request);
 
         /*
@@ -319,7 +319,7 @@ public class HandlerDispatcherRequest implements HandlerRequest, HandlerResult {
         } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
-                log.info("Used time(ms): {}", DateFormatUtils.getMillis() - begin);
+                log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
                 log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
             }
         }

@@ -8,7 +8,7 @@ import org.mind.framework.cache.LruCache;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.redisson.Redisson;
 import org.redisson.RedissonShutdownException;
@@ -793,7 +793,7 @@ public class RedissonHelper {
     }
 
     public long getIdForDate(ZoneId zone, String dateFormat) {
-        String date = DateFormatUtils.dateNow(zone).format(DateTimeFormatter.ofPattern(dateFormat));
+        String date = DateUtils.dateNow(zone).format(DateTimeFormatter.ofPattern(dateFormat));
         return Long.parseLong(String.format("%s%d", date, getId()));
     }
 

@@ -1,7 +1,7 @@
 package org.mind.framework.metric;
 
 import lombok.extern.slf4j.Slf4j;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +36,7 @@ public abstract class AbstractBucket {
     }
 
     public Indicator current() {
-        return current(DateFormatUtils.getMillis());
+        return current(DateUtils.getMillis());
     }
 
     public Indicator current(long currTimeMills) {
@@ -75,7 +75,7 @@ public abstract class AbstractBucket {
 
 
     public List<Indicator> getValuesByPeriod() {
-        return getValuesByPeriod(DateFormatUtils.getMillis());
+        return getValuesByPeriod(DateUtils.getMillis());
     }
 
     public List<Indicator> getValuesByPeriod(long timeMills) {

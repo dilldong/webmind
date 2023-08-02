@@ -1,10 +1,10 @@
 package org.mind.framework.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -21,10 +21,8 @@ import java.util.TimeZone;
  *
  * @author dp
  */
-public class DateFormatUtils {
-
-    static final Logger log = LoggerFactory.getLogger(DateFormatUtils.class);
-
+@Slf4j
+public class DateUtils {
     public static final ZoneId ZONE_DEFAULT = ZoneId.systemDefault();
     public static final ZoneId UTC = ZoneId.of("UTC");
     public static final ZoneId UTC8 = ZoneId.of("UTC+8");
@@ -33,6 +31,20 @@ public class DateFormatUtils {
     public static final long ONE_DAY_MILLIS = 86_400_000L;
     public static final long ONE_HOUR_MILLIS = 3_600_000L;
 
+    public static final String DATE_PATTERN = "yyyy-MM-dd";
+    public static final String ENS_DATE_PATTERN = "MM/dd/yyyy";
+    public static final String TIME_PATTERN = "HH:mm:ss";
+    public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
+    private static class DateHelper {
+        private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREADLOCAL;
+        private static final ThreadLocal<SimpleDateFormat> DATE_TIME_FORMAT_THREADLOCAL;
+
+        static {
+            DATE_FORMAT_THREADLOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat(DATE_PATTERN));
+            DATE_TIME_FORMAT_THREADLOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat(DATE_TIME_PATTERN));
+        }
+    }
 
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
@@ -53,7 +65,6 @@ public class DateFormatUtils {
     public static long getSeconds() {
         return getMillis() / 1000L;
     }
-
 
 
     /**
@@ -92,24 +103,27 @@ public class DateFormatUtils {
         return timestamp == -1 ? timestamp : startOfDayMillis(dateAt(timestamp, zoneId), zoneId);
     }
 
+    public static String format(long timemillis, String pattern){
+        return org.apache.commons.lang3.time.DateFormatUtils.format(timemillis, pattern);
+    }
 
     /**
      * 将指定特殊的格式，返回格式化的时间；
      * 如果不是特别的日期格式，请使用该类的其它方法.
      *
      * @param date
-     * @param format
+     * @param pattern
      * @return
      * @author dp
      */
-    public static String format(Date date, String format) {
+    public static String format(Date date, String pattern) {
         if (Objects.isNull(date))
             date = currentDate();
 
-        if (StringUtils.isEmpty(format))
-            return getDateTime(date);
+        if (StringUtils.isEmpty(pattern))
+            return formatDateTime(date);
 
-        return new SimpleDateFormat(format).format(date);
+        return new SimpleDateFormat(pattern).format(date);
     }
 
     /**
@@ -124,36 +138,40 @@ public class DateFormatUtils {
         return format(date, null);
     }
 
-    public static String getDate() {
-        return getDate(currentDate());
+    public static String formatDate() {
+        return formatDate(currentDate());
     }
 
-    public static String getDate(Date date) {
-        return java.text.DateFormat.getDateInstance().format(date);
+    public static String formatDate(Date date) {
+        return DateHelper.DATE_FORMAT_THREADLOCAL.get().format(date);
     }
 
-    public static String getDateTime() {
-        return getDateTime(currentDate());
+    public static String formatDate(long timemillis) {
+        return DateHelper.DATE_FORMAT_THREADLOCAL.get().format(new Date(timemillis));
     }
 
-    public static String getDateTime(Date date) {
-        return java.text.DateFormat.getDateTimeInstance().format(date);
+    public static String formatTime() {
+        return formatTime(currentDate());
     }
 
-    public static String getTime() {
-        return getTime(currentDate());
+    public static String formatTime(Date date) {
+        return org.apache.commons.lang3.time.DateFormatUtils.format(date, TIME_PATTERN);
     }
 
-    public static String getTime(Date date) {
-        return java.text.DateFormat.getTimeInstance().format(date);
+    public static String formatTime(long timemillis) {
+        return org.apache.commons.lang3.time.DateFormatUtils.format(timemillis, TIME_PATTERN);
     }
 
-    public static String getFullDate() {
-        return getFullDate(currentDate());
+    public static String formatDateTime() {
+        return formatDateTime(currentDate());
     }
 
-    public static String getFullDate(Date date) {
-        return java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL).format(date);
+    public static String formatDateTime(Date date) {
+        return DateHelper.DATE_TIME_FORMAT_THREADLOCAL.get().format(date);
+    }
+
+    public static String formatDateTime(long timemillis) {
+        return DateHelper.DATE_TIME_FORMAT_THREADLOCAL.get().format(new Date(timemillis));
     }
 
     public static Date currentDate() {
@@ -255,7 +273,7 @@ public class DateFormatUtils {
     }
 
     public static long endOfDaysMillis(LocalDate localDate, ZoneId zoneId) {
-        return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1_000L;
+        return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1000L;
     }
 
 
@@ -263,9 +281,9 @@ public class DateFormatUtils {
      * 将指定的字符串日期转化成java.util.Date类型<br>
      * <b>注意字符日期格式必须是：yyyy-MM-dd</b>
      */
-    public static Date toDate(String source) {
+    public static Date parseDate(String source) {
         try {
-            return java.text.DateFormat.getDateInstance().parse(source);
+            return DateHelper.DATE_FORMAT_THREADLOCAL.get().parse(source);
         } catch (ParseException e) {
             log.error(e.getMessage(), e);
         }
@@ -276,9 +294,9 @@ public class DateFormatUtils {
      * 将指定的字符串日期转化成java.util.Date类型<br>
      * <b>注意字符日期格式必须是：yyyy-MM-dd HH:mm:ss</b>
      */
-    public static Date toDateTime(String source) {
+    public static Date parseDateTime(String source) {
         try {
-            return java.text.DateFormat.getDateTimeInstance().parse(source);
+            return DateHelper.DATE_TIME_FORMAT_THREADLOCAL.get().parse(source);
         } catch (ParseException e) {
             log.error(e.getMessage(), e);
         }
@@ -289,8 +307,8 @@ public class DateFormatUtils {
      * 将指定的字符串日期转化成java.util.Date类型，
      * 这里的字符日期格式必须可以是pattern参数指定的任何格式
      */
-    public static Date toDateTime(String source, String pattern) {
-        java.text.DateFormat df = new SimpleDateFormat(pattern);
+    public static Date parse(String source, String pattern) {
+        DateFormat df = new SimpleDateFormat(pattern);
         try {
             return df.parse(source);
         } catch (ParseException e) {

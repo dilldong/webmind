@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest;
 import org.mind.framework.dispatcher.handler.MultipartHttpServletRequest.FileItem;
 import org.mind.framework.exception.NotSupportedException;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.PropertiesUtils;
@@ -104,7 +104,7 @@ public class UploadFile {
                     String.format("上传的文件大小: %d, 限制大小: %d",
                             this.request.getRequestContentLength(), this.request.getDefaultSize()));
 
-        long currentTime = DateFormatUtils.getMillis();
+        long currentTime = DateUtils.getMillis();
 
         /*
          * 默认初始化6个上传文件大小

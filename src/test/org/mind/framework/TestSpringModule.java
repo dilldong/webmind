@@ -16,7 +16,7 @@ import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.MainService;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.util.CalculateUtils;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
@@ -81,12 +81,12 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
                 try {
                     LocalDateTime localDateTime =
                             LocalDateTime.parse(headerValue, DateTimeFormatter.ofPattern(dateFormat, Locale.US));
-                    long mills = localDateTime.atZone(DateFormatUtils.UTC).toEpochSecond() * 1000L;
+                    long mills = localDateTime.atZone(DateUtils.UTC).toEpochSecond() * 1000L;
                     System.out.println("1: " + mills);
                     break;
                 } catch (DateTimeParseException | IllegalArgumentException e) {
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat, Locale.US);
-                    simpleDateFormat.setTimeZone(DateFormatUtils.UTC_TIMEZONE);
+                    simpleDateFormat.setTimeZone(DateUtils.UTC_TIMEZONE);
                     try {
                         long mills = simpleDateFormat.parse(headerValue).getTime();
                         System.out.println("2: " + mills);
