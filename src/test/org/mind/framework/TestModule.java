@@ -136,15 +136,59 @@ public class TestModule {
         System.out.println(json);
     }
 
+    @SneakyThrows
     @Test
     public void test01() {
-        RedissonHelper helper = RedissonHelper.getInstance();
+        ExecutorFactory.newThread(() -> {
+            while (true) {
+                long sum = read();
+                System.out.println(keyName + "\t" + sum);
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                }
+            }
+        }).start();
 
-        for (int i = 0; i < 10; ++i) {
-            System.out.println(helper.getIdForDate());
-            System.out.println(helper.getId(0L, 1000L));
-            System.out.println("--------------");
-        }
+        ExecutorFactory.newThread(() -> {
+            while (true) {
+                written();
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                }
+            }
+        }).start();
+
+        addEvent();
+
+//        RedissonHelper helper = RedissonHelper.getInstance();
+//        for (int i = 0; i < 10; ++i) {
+//            System.out.println(helper.getIdForDate());
+//            System.out.println(helper.getId(0L, 1000L));
+//            System.out.println("--------------");
+//        }
+        System.in.read();
+    }
+
+    String keyName = "orgid:20230725:751";
+
+    private long read() {
+        RedissonHelper helper = RedissonHelper.getInstance();
+        helper.increment(keyName);
+        return helper.sum(keyName);
+    }
+
+    private void written() {
+        RedissonHelper.getInstance().increment(keyName);
+    }
+
+    private void addEvent() {
+        RedissonHelper.getInstance().addShutdownEvent(redissonClient -> {
+            long sum = read();
+            redissonClient.getAtomicLong("shutdown:adder").set(sum);
+            System.out.println("shutdown: " + sum);
+        });
     }
 }
 
