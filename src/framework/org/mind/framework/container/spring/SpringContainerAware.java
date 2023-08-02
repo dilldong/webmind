@@ -19,7 +19,7 @@ public class SpringContainerAware implements ContainerAware {
         //get defined name by spring
         String[] names = ContextSupport.getBeanNames();
         List<Object> beans = new ArrayList<>(names.length);
-        Arrays.stream(names).parallel().forEach(name -> beans.add(ContextSupport.getBean(name)));
+        Arrays.stream(names).forEach(name -> beans.add(ContextSupport.getBean(name)));
         return beans;
     }
 
@@ -27,7 +27,7 @@ public class SpringContainerAware implements ContainerAware {
         ContextSupport.initSpringByServlet(config.getServletContext());
     }
 
-    public synchronized void destroy() {
+    public void destroy() {
         // nothing to do, let spring destroy all beans.
     }
 
