@@ -20,7 +20,7 @@ public class QueueLittle implements QueueService {
     private BlockingQueue<DelegateMessage> workerQueue;
 
     @Setter
-    private int awaitSeconds = 15;
+    private long awaitSeconds = 15L;
 
     @Setter
     private boolean waitTasksToCompleteOnShutdown = false;
@@ -66,12 +66,12 @@ public class QueueLittle implements QueueService {
 
     @Override
     public void destroy() {
-        synchronized (queueObject) {
-            if (Objects.isNull(workerQueue) || workerQueue.isEmpty())
-                return;
+        if (Objects.isNull(workerQueue) || workerQueue.isEmpty())
+            return;
 
+        synchronized (queueObject) {
             // wait for tasks to complate
-            if(waitTasksToCompleteOnShutdown && awaitSeconds > 0){
+            if(waitTasksToCompleteOnShutdown && awaitSeconds > 0L){
                 try {
                     TimeUnit.SECONDS.sleep(awaitSeconds);
                 } catch (InterruptedException ignored) {}
