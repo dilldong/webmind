@@ -2,6 +2,7 @@ package org.mind.framework.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -104,7 +105,7 @@ public class DateUtils {
     }
 
     public static String format(long timemillis, String pattern){
-        return org.apache.commons.lang3.time.DateFormatUtils.format(timemillis, pattern);
+        return DateFormatUtils.format(timemillis, pattern);
     }
 
     /**
@@ -123,7 +124,7 @@ public class DateUtils {
         if (StringUtils.isEmpty(pattern))
             return formatDateTime(date);
 
-        return new SimpleDateFormat(pattern).format(date);
+        return DateFormatUtils.format(date, pattern);
     }
 
     /**
