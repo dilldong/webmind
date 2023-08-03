@@ -11,8 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 唯一id
  */
 public class IdUtils {
-    private static final String SIMPLE_DATE_PATTERN = "yyMMdd";
-
     private static final Logger logger = LoggerFactory.getLogger(IdUtils.class);
 
     private static final AtomicInteger atomicInteger = new AtomicInteger(0);
@@ -23,9 +21,18 @@ public class IdUtils {
      * @return
      */
     public static long getUniqueId() {
+        return getUniqueId(DateUtils.SIMPLE_DATE_PATTERN);
+    }
+
+    /**
+     * 按日期格式 + ObjectId的自增计数器(取后6位长度)
+     *
+     * @return
+     */
+    public static long getUniqueId(String pattern) {
         try {
             ObjectId objId = ObjectId.get();
-            String date = DateUtils.format(objId.getDate(), SIMPLE_DATE_PATTERN);
+            String date = DateUtils.format(objId.getDate(), pattern);
             String counter = String.valueOf(objId.getCounter());
             int length = counter.length();
             if (length > 6)
@@ -37,6 +44,7 @@ public class IdUtils {
             return System.currentTimeMillis() + atomicInteger.incrementAndGet();
         }
     }
+
 
     /**
      * 20位长度的随机数ID

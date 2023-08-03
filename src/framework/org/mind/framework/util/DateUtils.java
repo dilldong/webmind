@@ -32,6 +32,7 @@ public class DateUtils {
     public static final long ONE_DAY_MILLIS = 86_400_000L;
     public static final long ONE_HOUR_MILLIS = 3_600_000L;
 
+    public static final String SIMPLE_DATE_PATTERN = "yyMMdd";
     public static final String DATE_PATTERN = "yyyy-MM-dd";
     public static final String ENS_DATE_PATTERN = "MM/dd/yyyy";
     public static final String TIME_PATTERN = "HH:mm:ss";
