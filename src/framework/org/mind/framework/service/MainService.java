@@ -32,7 +32,7 @@ public class MainService extends AbstractService {
                 Async.synchronousExecutor().execute(() -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("Service {}@{} to starting ....",
-                                serv.getClass().getSimpleName(),
+                                serv.getServiceName(),
                                 Integer.toHexString(serv.hashCode()));
                     }
                     serv.start();
@@ -48,7 +48,7 @@ public class MainService extends AbstractService {
                 ExecutorFactory.newThread(() -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("Service {}@{} to stopping ....",
-                                serv.getClass().getSimpleName(),
+                                serv.getServiceName(),
                                 Integer.toHexString(serv.hashCode()));
                     }
                     serv.stop();
