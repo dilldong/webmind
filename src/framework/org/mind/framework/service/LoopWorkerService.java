@@ -43,7 +43,7 @@ public abstract class LoopWorkerService extends AbstractService {
     }
 
     @Override
-    public final void start() {
+    public void start() {
         serviceState = STARTED;
         prepareStart();
 
@@ -57,10 +57,10 @@ public abstract class LoopWorkerService extends AbstractService {
     }
 
     @Override
-    public final void stop() {
+    public void stop() {
         serviceState = STOPPED;
-        prepareStop();
         isLoop = false;
+        prepareStop();
 
         if (Objects.nonNull(workerMainThread) && workerMainThread.isAlive()) {
             try {
@@ -127,8 +127,7 @@ public abstract class LoopWorkerService extends AbstractService {
                 if (spaceTime > 0) {
                     try {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
-                    } catch (InterruptedException ignored) {
-                    }
+                    } catch (InterruptedException ignored) {}
                 } else // jump out of the while loop with spaceTime<=0
                     break;
             }
