@@ -789,7 +789,7 @@ public class RedissonHelper {
     }
 
     public long getIdForDate(ZoneId zone) {
-        return getIdForDate(zone, "yyMMdd");
+        return getIdForDate(zone, DateUtils.SIMPLE_DATE_PATTERN);
     }
 
     public long getIdForDate(ZoneId zone, String dateFormat) {
