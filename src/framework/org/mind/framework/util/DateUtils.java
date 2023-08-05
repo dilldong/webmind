@@ -128,6 +128,10 @@ public class DateUtils {
         return DateFormatUtils.format(date, pattern);
     }
 
+    public static String formatUTC(Date date, String pattern) {
+        return DateFormatUtils.formatUTC(date, pattern);
+    }
+
     /**
      * 需要指定日期，如果该值为null，将返回当前日期下的时间值，
      * 格式类型是：yyyy-MM-dd HH:mm:ss
@@ -138,6 +142,10 @@ public class DateUtils {
      */
     public static String format(Date date) {
         return format(date, null);
+    }
+
+    public static String formatUTC(Date date) {
+        return formatUTC(date, DATE_TIME_PATTERN);
     }
 
     public static String formatDate() {

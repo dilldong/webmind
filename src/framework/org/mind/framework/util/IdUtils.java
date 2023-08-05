@@ -24,25 +24,21 @@ public class IdUtils {
         return getUniqueId(DateUtils.SIMPLE_DATE_PATTERN);
     }
 
+    public static long getUniqueIdPrefixUTC() {
+        return getUniqueId(DateUtils.SIMPLE_DATE_PATTERN, true);
+    }
+
     /**
      * 按日期格式 + ObjectId的自增计数器(取后6位长度)
      *
      * @return
      */
     public static long getUniqueId(String pattern) {
-        try {
-            ObjectId objId = ObjectId.get();
-            String date = DateUtils.format(objId.getDate(), pattern);
-            String counter = String.valueOf(objId.getCounter());
-            int length = counter.length();
-            if (length > 6)
-                counter = StringUtils.substring(counter, length - 6);
+        return getUniqueId(pattern, false);
+    }
 
-            return Long.parseLong(date + counter);
-        } catch (NumberFormatException e) {
-            logger.error(e.getMessage());
-            return System.currentTimeMillis() + atomicInteger.incrementAndGet();
-        }
+    public static long getUniqueIdPrefixUTC(String pattern) {
+        return getUniqueId(pattern, true);
     }
 
 
@@ -81,5 +77,21 @@ public class IdUtils {
         long timeMillis = DateUtils.getMillis();
         String value = StringUtils.substring(String.valueOf(timeMillis + atomic), 5);
         return Integer.parseInt(value);
+    }
+
+    private static long getUniqueId(String pattern, boolean isUTC) {
+        try {
+            ObjectId objId = ObjectId.get();
+            String date = DateUtils.format(objId.getDate(), pattern);
+            String counter = String.valueOf(objId.getCounter());
+            int length = counter.length();
+            if (length > 6)
+                counter = StringUtils.substring(counter, length - 6);
+
+            return Long.parseLong(date + counter);
+        } catch (NumberFormatException e) {
+            logger.error(e.getMessage());
+            return System.currentTimeMillis() + atomicInteger.incrementAndGet();
+        }
     }
 }
