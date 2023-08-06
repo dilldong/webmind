@@ -31,7 +31,7 @@ public class MainService extends AbstractService {
         childServices.forEach(serv ->
                 Async.synchronousExecutor().execute(() -> {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Service {}@{} to starting ....",
+                        logger.info("Service [{}@{}] to starting ....",
                                 serv.getServiceName(),
                                 Integer.toHexString(serv.hashCode()));
                     }
@@ -47,7 +47,7 @@ public class MainService extends AbstractService {
         childServices.forEach(serv ->
                 ExecutorFactory.newThread(() -> {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Service {}@{} to stopping ....",
+                        logger.info("Service [{}@{}] to stopping ....",
                                 serv.getServiceName(),
                                 Integer.toHexString(serv.hashCode()));
                     }
