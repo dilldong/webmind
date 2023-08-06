@@ -14,10 +14,11 @@ import org.redisson.Redisson;
 import org.redisson.RedissonShutdownException;
 import org.redisson.api.LockOptions;
 import org.redisson.api.RBucket;
+import org.redisson.api.RExpirable;
+import org.redisson.api.RFuture;
 import org.redisson.api.RIdGenerator;
 import org.redisson.api.RList;
 import org.redisson.api.RLock;
-import org.redisson.api.RLongAdder;
 import org.redisson.api.RMap;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReadWriteLock;
@@ -25,7 +26,9 @@ import org.redisson.api.RSet;
 import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisException;
 import org.redisson.config.Config;
+import org.redisson.misc.CompletableFutureWrapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,13 +41,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.mind.framework.server.WebServerConfig.JAR_IN_CLASSES;
@@ -93,7 +96,7 @@ public class RedissonHelper {
         cacheable = LruCache.initCache();
         redissonClient = Redisson.create(config);
 
-        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newThread("Redisson-Gracefully", true, () -> {
+        Runtime.getRuntime().addShutdownHook(ExecutorFactory.newDaemonThread("Redisson-Gracefully", () -> {
             if (!redissonClient.isShutdown()) {
                 log.info("Redisson-Gracefully is shutdown ....");
                 if (Objects.nonNull(shutdownEvents) && !shutdownEvents.isEmpty())
@@ -116,34 +119,30 @@ public class RedissonHelper {
         return getInstance().redissonClient;
     }
 
-    public void addShutdownEvent(RedissonShutdownListener listener){
-        if(Objects.isNull(listener))
-            return;
+    public RedissonHelper addShutdownEvent(RedissonShutdownListener listener) {
+        if (Objects.isNull(listener))
+            return this;
 
-        if(Objects.isNull(shutdownEvents))
+        if (Objects.isNull(shutdownEvents))
             shutdownEvents = new ArrayList<>();
 
         shutdownEvents.add(listener);
+        return this;
     }
 
-    public void addShutdownEvent(List<RedissonShutdownListener> listeners){
-        if(Objects.isNull(listeners) || listeners.isEmpty())
-            return;
+    public RedissonHelper addShutdownEvent(List<RedissonShutdownListener> listeners) {
+        if (Objects.isNull(listeners) || listeners.isEmpty())
+            return this;
 
-        if(Objects.isNull(shutdownEvents))
+        if (Objects.isNull(shutdownEvents))
             shutdownEvents = new ArrayList<>();
 
         shutdownEvents.addAll(listeners);
+        return this;
     }
 
     public <V> List<V> getList(String name) {
-        RList<V> rList = this.rList(name);
-        if (rList.isEmpty())
-            return Collections.emptyList();
-
-        List<V> list = new ArrayList<>(rList.size());
-        list.addAll(rList);
-        return list;
+        return new ArrayList<>(this.rList(name));
     }
 
     public <V> List<V> getList(String name, RLock lock) {
@@ -160,41 +159,22 @@ public class RedissonHelper {
         return this.getList(name, getReadLock(name));
     }
 
-    public <V> void setAsync(String name, List<V> list, long expire, TimeUnit unit) {
+    public <V> RFuture<Boolean> setAsync(String name, List<V> list, long expire, TimeUnit unit) {
         if (Objects.isNull(list) || list.isEmpty())
-            return;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RList<V> rList = this.rList(name);
-        if (!rList.isEmpty())
-            rList.clear();
-
-        rList.addAllAsync(list);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
-        this.putLocal(name, list.getClass());
+        CompletionStage<Boolean> completionStage = rList.deleteAsync().thenApplyAsync(fn -> {
+            RFuture<Boolean> future = rList.addAllAsync(list);
+            this.setExpireAsync(rList, expire, unit);
+            this.putLocal(name, list.getClass());
+            return this.<Boolean>get(future);
+        });
+        return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit) {
-        if (Objects.isNull(list) || list.isEmpty())
-            return false;
-
-        RList<V> rList = this.rList(name);
-        if (!rList.isEmpty())
-            rList.clear();
-
-        boolean flag = rList.addAll(list);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
-        this.putLocal(name, list.getClass());
-        return flag;
+        return this.<Boolean>get(this.setAsync(name, list, expire, unit));
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit, RLock lock) {
@@ -211,111 +191,110 @@ public class RedissonHelper {
         return this.set(name, list, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> boolean appendList(String name, V v, long expire, TimeUnit unit) {
+    public <V> RFuture<Boolean> addByListAsync(String name, V v, long expire, TimeUnit unit) {
         if (Objects.isNull(v))
-            return false;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RList<V> rList = this.rList(name);
-        if (rList.isExists())
-            return rList.add(v);
-
-        rList.add(v);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rList.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
+        this.setExpireIfNotSetAsync(rList, expire, unit);
+        RFuture<Boolean> future = rList.addAsync(v);
         this.putLocal(name, ArrayList.class);
-        return true;
+        return future;
     }
 
-    public <V> boolean appendList(String name, V v, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean addByList(String name, V v, long expire, TimeUnit unit) {
+        return this.<Boolean>get(this.addByListAsync(name, v, expire, unit));
+    }
+
+    public <V> boolean addByList(String name, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendList(name, v, expire, unit);
+            return this.addByList(name, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean appendListWithLock(String name, V v, long expire, TimeUnit unit) {
-        return this.appendList(name, v, expire, unit, this.getWriteLock(name));
+    public <V> boolean addByListWithLock(String name, V v, long expire, TimeUnit unit) {
+        return this.addByList(name, v, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> void clearListAsync(String name) {
-        RList<V> rList = this.rList(name);
-        if (rList.isEmpty())
-            return;
-
-        rList.deleteAsync();
+    public RFuture<Boolean> deleteListAsync(String name) {
+        RFuture<Boolean> future = this.rList(name).deleteAsync();
         this.removeLocal(name);
+        return future;
     }
 
-    public <V> void clearList(String name) {
-        RList<V> rList = this.rList(name);
-        if (rList.isEmpty())
-            return;
-
-        rList.clear();
-        this.removeLocal(name);
+    public boolean deleteList(String name) {
+        return this.<Boolean>get(this.deleteListAsync(name));
     }
 
-    public <V> void clearList(String name, RLock lock) {
+    public boolean deleteList(String name, RLock lock) {
         lock.lock();
         try {
-            this.<V>clearList(name);
+            return this.deleteList(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void clearListWithLock(String name) {
-        this.<V>clearList(name, this.getWriteLock(name));
+    public boolean deleteListWithLock(String name) {
+        return this.deleteList(name, this.getWriteLock(name));
     }
 
-    public <V> void removeListAsync(String name, int index) {
+    public <V> RFuture<V> removeByListAsync(String name, int index) {
         if (index < 0)
-            return;
+            return new CompletableFutureWrapper<>((V) null);
 
-        RList<V> rList = this.rList(name);
-        if (rList.size() > index)
-            rList.removeAsync(index);
+        return this.<V>rList(name).removeAsync(index);
     }
 
-    public <V> void removeList(String name, int index) {
-        if (index < 0)
-            return;
-
-        RList<V> rList = this.rList(name);
-        if (rList.size() > index)
-            rList.remove(index);
+    public <V> V removeByList(String name, int index) {
+        return this.get(this.removeByListAsync(name, index));
     }
 
-    public <V> void removeList(String name, int index, RLock lock) {
+    public <V> V removeByList(String name, int index, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.removeList(name, index);
+            return this.removeByList(name, index);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void removeListWithLock(String name, int index) {
-        if (index < 0)
-            return;
+    public <V> V removeByListWithLock(String name, int index) {
+        return this.removeByList(name, index, this.getWriteLock(name));
+    }
 
-        this.removeList(name, index, this.getWriteLock(name));
+    public <V> RFuture<Boolean> removeByListAsync(String name, V v) {
+        if (Objects.isNull(v))
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
+
+        return this.<V>rList(name).removeAsync(v);
+    }
+
+    public <V> boolean removeByList(String name, V v) {
+        return this.<Boolean>get(removeByListAsync(name, v));
+    }
+
+    public <V> boolean removeByList(String name, V v, RLock lock) {
+        // activating watch-dog
+        lock.lock();
+        try {
+            return this.removeByList(name, v);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public <V> boolean removeByListWithLock(String name, V v) {
+        return this.removeByList(name, v, this.getWriteLock(name));
     }
 
     public <K, V> V getMapValue(String name, K k) {
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return null;
-
-        return rMap.get(k);
+        return this.<K, V>rMap(name).get(k);
     }
 
     public <K, V> V getMapValue(String name, K k, RLock lock) {
@@ -333,13 +312,7 @@ public class RedissonHelper {
     }
 
     public <K, V> Map<K, V> getMap(String name) {
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return Collections.emptyMap();
-
-        Map<K, V> map = new HashMap<>(rMap.size());
-        map.putAll(rMap);
-        return map;
+        return new HashMap<>(this.rMap(name));
     }
 
     public <K, V> Map<K, V> getMap(String name, RLock lock) {
@@ -356,41 +329,23 @@ public class RedissonHelper {
         return this.getMap(name, getReadLock(name));
     }
 
-    public <K, V> void setAsync(String name, Map<K, V> map, long expire, TimeUnit unit) {
+    public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map, long expire, TimeUnit unit) {
         if (Objects.isNull(map) || map.isEmpty())
-            return;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RMap<K, V> rMap = this.rMap(name);
-        if (!rMap.isEmpty())
-            rMap.clear();
+        CompletionStage<Boolean> completionStage = rMap.deleteAsync().thenApplyAsync(fn -> {
+            rMap.putAllAsync(map);
+            this.setExpireAsync(rMap, expire, unit);
+            this.putLocal(name, map.getClass());
+            return Boolean.TRUE;
+        });
 
-        rMap.putAllAsync(map);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rMap.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
-        this.putLocal(name, map.getClass());
+        return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit) {
-        if (Objects.isNull(map) || map.isEmpty())
-            return false;
-
-        RMap<K, V> rMap = this.rMap(name);
-        if (!rMap.isEmpty())
-            rMap.clear();
-
-        rMap.putAll(map);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rMap.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
-        this.putLocal(name, map.getClass());
-        return true;
+        return this.<Boolean>get(setAsync(name, map, expire, unit));
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
@@ -407,148 +362,111 @@ public class RedissonHelper {
         return set(name, map, expire, unit, this.getWriteLock(name));
     }
 
-    public <K, V> boolean appendMap(String name, K k, V v, long expire, TimeUnit unit) {
+    public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v, long expire, TimeUnit unit) {
         if (Objects.isNull(k))
-            return false;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isExists())
-            return rMap.fastPut(k, v);
-
-        boolean flag = rMap.fastPut(k, v);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rMap.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
+        this.setExpireIfNotSetAsync(rMap, expire, unit);
+        RFuture<Boolean> future = rMap.fastPutAsync(k, v);
         this.putLocal(name, HashMap.class);
-        return flag;
+        return future;
     }
 
-    public <K, V> boolean appendMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
+    public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit) {
+        return this.<Boolean>get(putByMapAsync(name, k, v, expire, unit));
+    }
+
+    public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendMap(name, k, v, expire, unit);
+            return this.putByMap(name, k, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> boolean appendMapWithLock(String name, K k, V v, long expire, TimeUnit unit) {
-        return this.appendMap(name, k, v, expire, unit, this.getWriteLock(name));
+    public <K, V> boolean putByMapWithLock(String name, K k, V v, long expire, TimeUnit unit) {
+        return this.putByMap(name, k, v, expire, unit, this.getWriteLock(name));
     }
 
-    public <K, V> void replaceMap(String name, K k, V v) {
+    public <K, V> RFuture<Boolean> replaceByMapAsync(String name, K k, V v) {
         if (Objects.isNull(k))
-            return;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return;
-
-        if (rMap.containsKey(k))
-            rMap.replace(k, v);
+        return this.<K, V>rMap(name).fastReplaceAsync(k, v);
     }
 
-    public <K, V> void replaceMap(String name, K k, V v, RLock lock) {
+    public <K, V> boolean replaceByMap(String name, K k, V v) {
+        return this.<Boolean>get(replaceByMapAsync(name, k, v));
+    }
+
+    public <K, V> boolean replaceByMap(String name, K k, V v, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.replaceMap(name, k, v);
+            return this.replaceByMap(name, k, v);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> void replaceMapWithLock(String name, K k, V v) {
-        if (Objects.isNull(k))
-            return;
-
-        this.replaceMap(name, k, v, this.getWriteLock(name));
+    public <K, V> boolean replaceByMapWithLock(String name, K k, V v) {
+        return this.replaceByMap(name, k, v, this.getWriteLock(name));
     }
 
-    public <K, V> void clearMapAsync(String name) {
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return;
-
-        rMap.deleteAsync();
+    public RFuture<Boolean> deleteMapAsync(String name) {
+        RFuture<Boolean> future = this.rMap(name).deleteAsync();
         this.removeLocal(name);
+        return future;
     }
 
-    public <K, V> void clearMap(String name) {
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return;
-
-        rMap.clear();
-        this.removeLocal(name);
+    public boolean deleteMap(String name) {
+        return this.<Boolean>get(deleteMapAsync(name));
     }
 
-    public <K, V> void clearMap(String name, RLock lock) {
+    public boolean deleteMap(String name, RLock lock) {
         lock.lock();
         try {
-            this.<K, V>clearMap(name);
+            return this.deleteMap(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> void clearMapWithLock(String name) {
-        this.<K, V>clearMap(name, this.getWriteLock(name));
+    public boolean deleteMapWithLock(String name) {
+        return this.deleteMap(name, this.getWriteLock(name));
     }
 
-    public <K, V> void removeMapAsync(String name, K k) {
+    public <K> RFuture<Long> removeByMapAsync(String name, K... k) {
         if (Objects.isNull(k))
-            return;
+            return new CompletableFutureWrapper<>(0L);
 
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return;
-
-        if (rMap.containsKey(k))
-            rMap.removeAsync(k);
+        return this.rMap(name).fastRemoveAsync(k);
     }
 
 
-    public <K, V> void removeMap(String name, K k) {
-        if (Objects.isNull(k))
-            return;
-
-        RMap<K, V> rMap = this.rMap(name);
-        if (rMap.isEmpty())
-            return;
-
-        rMap.remove(k);
+    public <K> long removeByMap(String name, K k) {
+        return this.<Long>get(removeByMapAsync(name, k));
     }
 
-    public <K, V> void removeMap(String name, K k, RLock lock) {
-        // activating watch-dog
+    public <K> long removeByMap(String name, K k, RLock lock) {
+        // activating watch-dosg
         lock.lock();
         try {
-            this.<K, V>removeMap(name, k);
+            return this.removeByMap(name, k);
         } finally {
             lock.unlock();
         }
     }
 
-    public <K, V> void removeMapWithLock(String name, K k) {
-        if (Objects.isNull(k))
-            return;
-
-        this.<K, V>removeMap(name, k, this.getWriteLock(name));
+    public <K> long removeByMapWithLock(String name, K k) {
+        return this.removeByMap(name, k, this.getWriteLock(name));
     }
 
     public <V> Set<V> getSet(String name) {
-        RSet<V> rSet = this.rSet(name);
-        if (rSet.isEmpty())
-            return Collections.emptySet();
-
-        Set<V> set = new HashSet<>(rSet.size());
-        set.addAll(rSet);
-        return set;
+        return new HashSet<>(this.rSet(name));
     }
 
     public <V> Set<V> getSet(String name, RLock lock) {
@@ -565,41 +483,23 @@ public class RedissonHelper {
         return this.getSet(name, getReadLock(name));
     }
 
-    public <V> void setAsync(String name, Set<V> set, long expire, TimeUnit unit) {
+    public <V> RFuture<Boolean> setAsync(String name, Set<V> set, long expire, TimeUnit unit) {
         if (Objects.isNull(set) || set.isEmpty())
-            return;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RSet<V> rSet = this.rSet(name);
-        if (!rSet.isEmpty())
-            rSet.clear();
+        CompletionStage<Boolean> completionStage = rSet.deleteAsync().thenApplyAsync(fn -> {
+            rSet.addAllAsync(set);
+            this.setExpireAsync(rSet, expire, unit);
+            this.putLocal(name, set.getClass());
+            return Boolean.TRUE;
+        });
 
-        rSet.addAllAsync(set);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
-        this.putLocal(name, set.getClass());
+        return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit) {
-        if (Objects.isNull(set) || set.isEmpty())
-            return false;
-
-        RSet<V> rSet = this.rSet(name);
-        if (!rSet.isEmpty())
-            rSet.clear();
-
-        boolean flag = rSet.addAll(set);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
-        this.putLocal(name, set.getClass());
-        return flag;
+        return this.<Boolean>get(setAsync(name, set, expire, unit));
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit, RLock lock) {
@@ -616,101 +516,82 @@ public class RedissonHelper {
         return this.set(name, set, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> boolean appendSet(String name, V v, long expire, TimeUnit unit) {
+    public <V> RFuture<Boolean> addBySetAsync(String name, V v, long expire, TimeUnit unit) {
         if (Objects.isNull(v))
-            return false;
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RSet<V> rSet = this.rSet(name);
-        if (rSet.isExists())
-            return rSet.add(v);
-
-        boolean flag = rSet.add(v);
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rSet.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
-        }
+        this.setExpireIfNotSetAsync(rSet, expire, unit);
+        RFuture<Boolean> future = rSet.addAsync(v);
         this.putLocal(name, HashSet.class);
-        return flag;
+        return future;
     }
 
-    public <V> boolean appendSet(String name, V v, long expire, TimeUnit unit, RLock lock) {
+    public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit) {
+        return this.<Boolean>get(addBySetAsync(name, v, expire, unit));
+    }
+
+    public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.appendSet(name, v, expire, unit);
+            return this.addBySet(name, v, expire, unit);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> boolean appendSetWithLock(String name, V v, long expire, TimeUnit unit) {
-        return this.appendSet(name, v, expire, unit, this.getWriteLock(name));
+    public <V> boolean addBySetWithLock(String name, V v, long expire, TimeUnit unit) {
+        return this.addBySet(name, v, expire, unit, this.getWriteLock(name));
     }
 
-    public <V> void clearSetAsync(String name) {
-        RSet<V> rSet = this.rSet(name);
-        if (rSet.isEmpty())
-            return;
-
-        rSet.deleteAsync();
+    public RFuture<Boolean> deleteSetAsync(String name) {
+        RFuture<Boolean> future = this.rSet(name).deleteAsync();
         this.removeLocal(name);
+        return future;
     }
 
-    public <V> void clearSet(String name) {
-        RSet<V> rSet = this.rSet(name);
-        if (rSet.isEmpty())
-            return;
-
-        rSet.clear();
-        this.removeLocal(name);
+    public boolean deleteSet(String name) {
+        return this.<Boolean>get(deleteSetAsync(name));
     }
 
-    public <V> void clearSet(String name, RLock lock) {
+    public boolean deleteSet(String name, RLock lock) {
         lock.lock();
         try {
-            this.<V>clearSet(name);
+            return this.deleteSet(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void clearSetWithLock(String name) {
-        this.<V>clearSet(name, this.getWriteLock(name));
+    public boolean deleteSetWithLock(String name) {
+        return this.deleteSet(name, this.getWriteLock(name));
     }
 
-    public <V> void removeSetAsync(String name, int index) {
-        if (index < 0)
-            return;
-
-        RSet<V> rSet = this.rSet(name);
-        if (rSet.size() > index)
-            rSet.removeAsync(index);
+    public <V> RFuture<Boolean> removeBySetAsync(String name, V v) {
+        return this.rSet(name).removeAsync(v);
     }
 
-    public <V> void removeSet(String name, V v) {
-        RSet<V> rSet = this.rSet(name);
-        if (!rSet.isEmpty())
-            rSet.remove(v);
+    public <V> boolean removeBySet(String name, V v) {
+        return this.<Boolean>get(removeBySetAsync(name, v));
     }
 
-    public <V> void removeSet(String name, V v, RLock lock) {
+    public <V> boolean removeBySet(String name, V v, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            this.removeSet(name, v);
+            return this.removeBySet(name, v);
         } finally {
             lock.unlock();
         }
     }
 
-    public <V> void removeSetWithLock(String name, V v) {
-        this.removeSet(name, v, this.getWriteLock(name));
+    public <V> boolean removeBySetWithLock(String name, V v) {
+        return this.removeBySet(name, v, this.getWriteLock(name));
     }
 
     public <V> V get(String name) {
-        return (V) getClient().getBucket(name).get();
+        return getClient().<V>getBucket(name).get();
     }
 
     public <V> V getWithLock(String name) {
@@ -727,47 +608,41 @@ public class RedissonHelper {
         }
     }
 
-    public void removeAsync(String name) {
-        getClient().getBucket(name).deleteAsync();
+    public RFuture<Boolean> deleteAsync(String name) {
+        RFuture<Boolean> future = getClient().getBucket(name).deleteAsync();
         this.removeLocal(name);
+        return future;
     }
 
-    public boolean remove(String name) {
-        boolean flag = getClient().getBucket(name).delete();
-        this.removeLocal(name);
-        return flag;
+    public boolean delete(String name) {
+        return this.<Boolean>get(deleteAsync(name));
     }
 
-    public boolean remove(String name, RLock lock) {
+    public boolean delete(String name, RLock lock) {
         // activating watch-dog
         lock.lock();
         try {
-            return this.remove(name);
+            return this.delete(name);
         } finally {
             lock.unlock();
         }
     }
 
-    public boolean removeWithLock(String name) {
-        return this.remove(name, this.getWriteLock(name));
+    public boolean deleteWithLock(String name) {
+        return this.delete(name, this.getWriteLock(name));
     }
 
-    public <V> void setAsync(String name, V value, long expire, TimeUnit unit) {
+    public <V> RFuture<Void> setAsync(String name, V value, long expire, TimeUnit unit) {
         RBucket<V> rBucket = getClient().getBucket(name);
-        if (expire > 0)
-            rBucket.setAsync(value, expire, unit);
-        else
-            rBucket.setAsync(value);
+        RFuture<Void> future = expire > 0 ?
+                rBucket.setAsync(value, expire, unit) :
+                rBucket.setAsync(value);
         this.putLocal(name, value.getClass());
+        return future;
     }
 
     public <V> void set(String name, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = getClient().getBucket(name);
-        if (expire > 0)
-            rBucket.set(value, expire, unit);
-        else
-            rBucket.set(value);
-        this.putLocal(name, value.getClass());
+        this.get(setAsync(name, value, expire, unit));
     }
 
     public <V> void setWithLock(String name, V value, long expire, TimeUnit unit) {
@@ -803,58 +678,23 @@ public class RedissonHelper {
 
     public long getId(long start, long allocationSize) {
         RIdGenerator idGenerator = getClient().getIdGenerator(UNIQUE_ID);
-        idGenerator.tryInit(start, allocationSize);
+        idGenerator.isExistsAsync().whenComplete((exists, ex) -> {
+            if (!exists) {
+                try {
+                    idGenerator.tryInit(start, allocationSize);
+                } catch (Exception ignored) {}
+            }
+        });
         return idGenerator.nextId();
     }
 
-    public void increment(String name) {
-        this.increment(name, 1L);
-    }
-
-    public void increment(String name, long add) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        adder.add(add);
-    }
-
-    public void decrement(String name) {
-        this.decrement(name, 1L);
-    }
-
-    public void decrement(String name, long value) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        adder.add(-value);
-    }
-
-    public void reset(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        adder.reset();
-    }
-
-    public void resetAsync(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        adder.resetAsync();
-    }
-
-    public long sum(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        return adder.sum();
-    }
-
-    public Future<Long> sumAsync(String name) {
-        RLongAdder adder = getClient().getLongAdder(INCREMENT_PREFIX + name);
-        return adder.sumAsync();
-    }
-
-    public RRateLimiter getRateLimiter(String name, long rate, long interval, TimeUnit unit) {
-        RRateLimiter rl = getClient().getRateLimiter(RATE_LIMITED_PREFIX + name);
-        if (rl.isExists())
-            return rl;
-
-        if (TimeUnit.SECONDS != unit)
-            interval = unit.toSeconds(interval);
-
-        rl.trySetRate(RateType.OVERALL, rate, interval, RateIntervalUnit.SECONDS);
-        return rl;
+    public RRateLimiter getRateLimiter(String name, long rate, long intervalSeconds) {
+        RRateLimiter rLimiter = getClient().getRateLimiter(RATE_LIMITED_PREFIX + name);
+        rLimiter.isExistsAsync().whenComplete((exists, ex) -> {
+            if (!exists)
+                rLimiter.trySetRate(RateType.OVERALL, rate, intervalSeconds, RateIntervalUnit.SECONDS);
+        });
+        return rLimiter;
     }
 
     public RLock getLock(String name) {
@@ -895,20 +735,18 @@ public class RedissonHelper {
         if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
             return;
 
-        Iterator<Map.Entry<String, Class<?>>> iterator = redisKeys.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Class<?>> entry = iterator.next();
-            if (StringUtils.contains(entry.getKey(), keyPart)) {
-                if (List.class.isAssignableFrom(entry.getValue()))
-                    this.clearListAsync(entry.getKey());
-                else if (Map.class.isAssignableFrom(entry.getValue()))
-                    this.clearMapAsync(entry.getKey());
-                else if (Set.class.isAssignableFrom(entry.getValue()))
-                    this.clearSetAsync(entry.getKey());
+        redisKeys.forEach((k, v) -> {
+            if (StringUtils.contains(k, keyPart)) {
+                if (List.class.isAssignableFrom(v))
+                    this.deleteListAsync(k);
+                else if (Map.class.isAssignableFrom(v))
+                    this.deleteMapAsync(k);
+                else if (Set.class.isAssignableFrom(v))
+                    this.deleteSetAsync(k);
                 else
-                    this.removeAsync(entry.getKey());
+                    this.deleteAsync(k);
             }
-        }
+        });
     }
 
     public List<String> getLocalKeys(Class<?> clazzType) {
@@ -965,9 +803,43 @@ public class RedissonHelper {
         if (Objects.isNull(keysMap) || keysMap.isEmpty())
             return Collections.emptyMap();
 
-        Map<String, Class<?>> resultMap = new HashMap<>(keysMap.size());
-        resultMap.putAll(keysMap);
-        return resultMap;
+        return new HashMap<>(keysMap);
+    }
+
+    public void setExpireAsync(RExpirable rObject, long expire, TimeUnit unit) {
+        if (expire > 0L) {
+            long newExpire = expire;
+            if (TimeUnit.MILLISECONDS != unit)
+                newExpire = unit.toMillis(expire);
+            rObject.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
+        }
+    }
+
+    public void setExpireIfNotSetAsync(RExpirable rObject, long expire, TimeUnit unit) {
+        if (expire > 0L) {
+            rObject.isExistsAsync().whenComplete((exists, ex) -> {
+                if (!exists)
+                    setExpireAsync(rObject, expire, unit);
+            });
+        }
+    }
+
+    /**
+     * see #org.redisson.command.CommandAsyncService
+     */
+    public <V> V get(RFuture<V> future) {
+        try {
+            return future.toCompletableFuture().get();
+        } catch (InterruptedException e) {
+            future.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new RedisException(e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof RedisException)
+                throw (RedisException) e.getCause();
+
+            throw new RedisException(e.getCause());
+        }
     }
 
     private void removeLocal(String name) {

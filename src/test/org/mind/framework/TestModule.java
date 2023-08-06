@@ -10,6 +10,7 @@ import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.WeightedNode;
 import org.mind.framework.util.WeightedRoundRobin;
+import org.redisson.api.RLongAdder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -105,8 +106,6 @@ public class TestModule {
         System.out.println(MatcherUtils.checkCount(param, MatcherUtils.PARAM_MATCH_PATTERN));
         String key = "83m";
         System.out.println(Pattern.compile("#\\{key\\}").matcher(param).replaceAll(key));
-        ;
-
     }
 
     @Test
@@ -174,13 +173,13 @@ public class TestModule {
     String keyName = "orgid:20230725:751";
 
     private long read() {
-        RedissonHelper helper = RedissonHelper.getInstance();
-        helper.increment(keyName);
-        return helper.sum(keyName);
+        RLongAdder adder = RedissonHelper.getClient().getLongAdder(keyName);
+        adder.increment();
+        return adder.sum();
     }
 
     private void written() {
-        RedissonHelper.getInstance().increment(keyName);
+        RedissonHelper.getClient().getLongAdder(keyName).increment();
     }
 
     private void addEvent() {
@@ -191,4 +190,3 @@ public class TestModule {
         });
     }
 }
-
