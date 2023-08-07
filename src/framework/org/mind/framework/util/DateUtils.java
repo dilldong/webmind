@@ -7,7 +7,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,16 +36,6 @@ public class DateUtils {
     public static final String ENS_DATE_PATTERN = "MM/dd/yyyy";
     public static final String TIME_PATTERN = "HH:mm:ss";
     public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-
-    private static class DateHelper {
-        private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREADLOCAL;
-        private static final ThreadLocal<SimpleDateFormat> DATE_TIME_FORMAT_THREADLOCAL;
-
-        static {
-            DATE_FORMAT_THREADLOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat(DATE_PATTERN));
-            DATE_TIME_FORMAT_THREADLOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat(DATE_TIME_PATTERN));
-        }
-    }
 
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
@@ -115,11 +104,11 @@ public class DateUtils {
         return format(date, null);
     }
 
-    public static String format(long timemillis, String pattern){
+    public static String format(long timemillis, String pattern) {
         return DateFormatUtils.format(timemillis, pattern);
     }
 
-    public static String formatUTC(long timemillis, String pattern){
+    public static String formatUTC(long timemillis, String pattern) {
         return DateFormatUtils.formatUTC(timemillis, pattern);
     }
 
@@ -132,11 +121,11 @@ public class DateUtils {
     }
 
     public static String formatDate(Date date) {
-        return DateHelper.DATE_FORMAT_THREADLOCAL.get().format(date);
+        return DateFormat.getDateInstance().format(date);
     }
 
     public static String formatDate(long timemillis) {
-        return DateHelper.DATE_FORMAT_THREADLOCAL.get().format(new Date(timemillis));
+        return formatDate(new Date(timemillis));
     }
 
     public static String formatTime() {
@@ -144,11 +133,11 @@ public class DateUtils {
     }
 
     public static String formatTime(Date date) {
-        return org.apache.commons.lang3.time.DateFormatUtils.format(date, TIME_PATTERN);
+        return DateFormat.getTimeInstance().format(date);
     }
 
     public static String formatTime(long timemillis) {
-        return org.apache.commons.lang3.time.DateFormatUtils.format(timemillis, TIME_PATTERN);
+        return DateFormatUtils.format(timemillis, TIME_PATTERN);
     }
 
     public static String formatDateTime() {
@@ -156,11 +145,11 @@ public class DateUtils {
     }
 
     public static String formatDateTime(Date date) {
-        return DateHelper.DATE_TIME_FORMAT_THREADLOCAL.get().format(date);
+        return DateFormat.getDateTimeInstance().format(date);
     }
 
     public static String formatDateTime(long timemillis) {
-        return DateHelper.DATE_TIME_FORMAT_THREADLOCAL.get().format(new Date(timemillis));
+        return formatDateTime(new Date(timemillis));
     }
 
     public static Date currentDate() {
@@ -259,14 +248,12 @@ public class DateUtils {
         return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1000L;
     }
 
-
     /**
-     * 将指定的字符串日期转化成java.util.Date类型<br>
-     * <b>注意字符日期格式必须是：yyyy-MM-dd</b>
+     * 将指定的字符串日期转化成java.util.Date类型
      */
     public static Date parseDate(String source) {
         try {
-            return DateHelper.DATE_FORMAT_THREADLOCAL.get().parse(source);
+            return DateFormat.getDateInstance().parse(source);
         } catch (ParseException e) {
             log.error(e.getMessage(), e);
         }
@@ -274,12 +261,11 @@ public class DateUtils {
     }
 
     /**
-     * 将指定的字符串日期转化成java.util.Date类型<br>
-     * <b>注意字符日期格式必须是：yyyy-MM-dd HH:mm:ss</b>
+     * 将指定的字符串日期转化成java.util.Date类型
      */
     public static Date parseDateTime(String source) {
         try {
-            return DateHelper.DATE_TIME_FORMAT_THREADLOCAL.get().parse(source);
+            return DateFormat.getDateTimeInstance().parse(source);
         } catch (ParseException e) {
             log.error(e.getMessage(), e);
         }
@@ -291,13 +277,41 @@ public class DateUtils {
      * 这里的字符日期格式必须可以是pattern参数指定的任何格式
      */
     public static Date parse(String source, String pattern) {
-        DateFormat df = new SimpleDateFormat(pattern);
         try {
-            return df.parse(source);
+            return org.apache.commons.lang3.time.DateUtils.parseDate(source, pattern);
         } catch (ParseException e) {
             log.error(e.getMessage(), e);
         }
         return null;
     }
 
+    public static long ofMinutes(long timestamp, ZoneId zone) {
+        return ofMinutes(dateTimeAt(timestamp, zone), zone);
+    }
+
+    public static long ofMinutes(Date date, ZoneId zone) {
+        return ofMinutes(date.getTime(), zone);
+    }
+
+    /**
+     * 将localTime的时间转成所在的分钟数:
+     * e.g: 2022.10.08 10:03:42.938 -> 2022.10.08 10:03:00 的毫秒数
+     *
+     * @return 分钟毫秒数
+     */
+    public static long ofMinutes(LocalDateTime localTime, ZoneId zone) {
+        long seconds = localTime.atZone(zone).toEpochSecond();
+        return (seconds - localTime.getSecond()) * 1_000L;
+    }
+
+    /**
+     * 将localTime的时间转成所在的小时数:
+     * e.g: 2022.10.08 10:03:42.938 -> 2022.10.08 10:00:00 的毫秒数
+     *
+     * @return 小时毫秒数
+     */
+    public static long ofHours(LocalDateTime localTime, ZoneId zone) {
+        long timemillis = ofMinutes(localTime, zone);
+        return timemillis - localTime.getMinute() * 60L * 1_000L;
+    }
 }
