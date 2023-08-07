@@ -50,9 +50,6 @@ public class DateUtils {
 
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
-     *
-     * @return
-     * @author dp
      */
     public static long getMillis() {
         return System.currentTimeMillis();
@@ -60,9 +57,6 @@ public class DateUtils {
 
     /**
      * 返回时间的秒数
-     *
-     * @return
-     * @author dp
      */
     public static long getSeconds() {
         return getMillis() / 1000L;
@@ -71,9 +65,6 @@ public class DateUtils {
 
     /**
      * 返回某天之前的时间戳
-     *
-     * @param days
-     * @return
      */
     public static long before(int days) {
         if (days < 1)
@@ -83,9 +74,6 @@ public class DateUtils {
 
     /**
      * 返回某天之前的起始时间戳
-     *
-     * @param days
-     * @return
      */
     public static long beforeAtStartOfDay(int days) {
         if (days < 1)
@@ -95,28 +83,15 @@ public class DateUtils {
 
     /**
      * 指定时区, 返回某天之前的起始时间戳
-     *
-     * @param days
-     * @param zoneId
-     * @return
      */
     public static long beforeAtStartOfDay(int days, ZoneId zoneId) {
         long timestamp = before(days);
         return timestamp == -1 ? timestamp : startOfDayMillis(dateAt(timestamp, zoneId), zoneId);
     }
 
-    public static String format(long timemillis, String pattern){
-        return DateFormatUtils.format(timemillis, pattern);
-    }
-
     /**
      * 将指定特殊的格式，返回格式化的时间；
      * 如果不是特别的日期格式，请使用该类的其它方法.
-     *
-     * @param date
-     * @param pattern
-     * @return
-     * @author dp
      */
     public static String format(Date date, String pattern) {
         if (Objects.isNull(date))
@@ -135,13 +110,17 @@ public class DateUtils {
     /**
      * 需要指定日期，如果该值为null，将返回当前日期下的时间值，
      * 格式类型是：yyyy-MM-dd HH:mm:ss
-     *
-     * @param date
-     * @return
-     * @author dp
      */
     public static String format(Date date) {
         return format(date, null);
+    }
+
+    public static String format(long timemillis, String pattern){
+        return DateFormatUtils.format(timemillis, pattern);
+    }
+
+    public static String formatUTC(long timemillis, String pattern){
+        return DateFormatUtils.formatUTC(timemillis, pattern);
     }
 
     public static String formatUTC(Date date) {
@@ -251,9 +230,6 @@ public class DateUtils {
     /**
      * 获取某一天开始的毫秒数.
      * <br/>2022-12-12 16:32:00 -> 2022-12-12 00:00:00,000 的毫秒数
-     *
-     * @param localDate
-     * @return
      */
     public static long utcStartOfDayMillis(LocalDate localDate) {
         return startOfDayMillis(localDate, UTC);
@@ -270,9 +246,6 @@ public class DateUtils {
     /**
      * 获取某一天结束的毫秒数.
      * <br/>2022-12-12 16:32:00 -> 2022-12-12 23:59:59,999 的毫秒数
-     *
-     * @param localDate
-     * @return
      */
     public static long utcEndOfDaysMillis(LocalDate localDate) {
         return endOfDaysMillis(localDate, UTC);
