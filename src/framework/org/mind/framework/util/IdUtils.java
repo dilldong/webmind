@@ -66,7 +66,7 @@ public class IdUtils {
             Long pid = Long.parseLong(objId.substring(14, 18), 16);
             Long inc = Long.parseLong(objId.substring(18), 16);
             return String.join(StringUtils.EMPTY, machine.toString(), pid.toString(), inc.toString());
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             logger.error(e.getMessage());
             return String.valueOf(System.currentTimeMillis() + atomicInteger.incrementAndGet());
         }
@@ -91,7 +91,7 @@ public class IdUtils {
                 counter = StringUtils.substring(counter, length - 6);
 
             return Long.parseLong(date + counter);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             logger.error(e.getMessage());
             return System.currentTimeMillis() + atomicInteger.incrementAndGet();
         }
