@@ -82,7 +82,9 @@ public class IdUtils {
     private static long getUniqueId(String pattern, boolean isUTC) {
         try {
             ObjectId objId = ObjectId.get();
-            String date = DateUtils.format(objId.getDate(), pattern);
+            String date = isUTC?
+                    DateUtils.formatUTC(objId.getDate(), pattern) :
+                    DateUtils.format(objId.getDate(), pattern);
             String counter = String.valueOf(objId.getCounter());
             int length = counter.length();
             if (length > 6)
