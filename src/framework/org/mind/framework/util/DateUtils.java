@@ -168,22 +168,6 @@ public class DateUtils {
         return new Timestamp(timeMillis);
     }
 
-    public static long utcTimeMillis(Timestamp timestamp){
-        return utcTimeMillis(dateTimeAt(timestamp.getTime()));
-    }
-
-    public static long utcTimeMillis(Date date){
-        return utcTimeMillis(dateTimeAt(date.getTime()));
-    }
-
-    public static long utcTimeMillis(LocalDateTime dateTime){
-        return dateTime.atZone(UTC).toEpochSecond() * 1_000L;
-    }
-
-    public static long utcTimeMillis(LocalDate localDate){
-        return startOfDayMillis(localDate);
-    }
-
     public static LocalDate dateNow() {
         return dateNow(ZONE_DEFAULT);
     }
