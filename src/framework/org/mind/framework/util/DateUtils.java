@@ -285,14 +285,6 @@ public class DateUtils {
         return null;
     }
 
-    public static long ofMinutes(long timestamp, ZoneId zone) {
-        return ofMinutes(dateTimeAt(timestamp, zone), zone);
-    }
-
-    public static long ofMinutes(Date date, ZoneId zone) {
-        return ofMinutes(date.getTime(), zone);
-    }
-
     /**
      * 将localTime的时间转成所在的分钟数:
      * e.g: 2022.10.08 10:03:42.938 -> 2022.10.08 10:03:00 的毫秒数
@@ -304,6 +296,14 @@ public class DateUtils {
         return (seconds - localTime.getSecond()) * 1_000L;
     }
 
+    public static long ofMinutes(long timestamp, ZoneId zone) {
+        return ofMinutes(dateTimeAt(timestamp, zone), zone);
+    }
+
+    public static long ofMinutes(Date date, ZoneId zone) {
+        return ofMinutes(date.getTime(), zone);
+    }
+
     /**
      * 将localTime的时间转成所在的小时数:
      * e.g: 2022.10.08 10:03:42.938 -> 2022.10.08 10:00:00 的毫秒数
@@ -313,5 +313,13 @@ public class DateUtils {
     public static long ofHours(LocalDateTime localTime, ZoneId zone) {
         long timemillis = ofMinutes(localTime, zone);
         return timemillis - localTime.getMinute() * 60L * 1_000L;
+    }
+
+    public static long ofHours(long timestamp, ZoneId zone) {
+        return ofHours(dateTimeAt(timestamp, zone), zone);
+    }
+
+    public static long ofHours(Date date, ZoneId zone) {
+        return ofHours(date.getTime(), zone);
     }
 }
