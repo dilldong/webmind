@@ -236,15 +236,15 @@ public class DateUtils {
      * 获取某一天结束的毫秒数.
      * <br/>2022-12-12 16:32:00 -> 2022-12-12 23:59:59,999 的毫秒数
      */
-    public static long utcEndOfDaysMillis(LocalDate localDate) {
-        return endOfDaysMillis(localDate, UTC);
+    public static long utcEndOfDayMillis(LocalDate localDate) {
+        return endOfDayMillis(localDate, UTC);
     }
 
-    public static long endOfDaysMillis(LocalDate localDate) {
-        return endOfDaysMillis(localDate, ZONE_DEFAULT);
+    public static long endOfDayMillis(LocalDate localDate) {
+        return endOfDayMillis(localDate, ZONE_DEFAULT);
     }
 
-    public static long endOfDaysMillis(LocalDate localDate, ZoneId zoneId) {
+    public static long endOfDayMillis(LocalDate localDate, ZoneId zoneId) {
         return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1000L;
     }
 
