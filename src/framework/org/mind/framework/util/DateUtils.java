@@ -296,12 +296,12 @@ public class DateUtils {
         return (seconds - localTime.getSecond()) * 1_000L;
     }
 
-    public static long ofMinutes(long timestamp, ZoneId zone) {
-        return ofMinutes(dateTimeAt(timestamp, zone), zone);
+    public static long ofMinutes(long timestamp) {
+        return ofMinutes(utcDateTimeAt(timestamp), UTC);
     }
 
-    public static long ofMinutes(Date date, ZoneId zone) {
-        return ofMinutes(date.getTime(), zone);
+    public static long ofMinutes(Date date) {
+        return ofMinutes(date.getTime());
     }
 
     /**
@@ -315,11 +315,11 @@ public class DateUtils {
         return timemillis - localTime.getMinute() * 60L * 1_000L;
     }
 
-    public static long ofHours(long timestamp, ZoneId zone) {
-        return ofHours(dateTimeAt(timestamp, zone), zone);
+    public static long ofHours(long timestamp) {
+        return ofHours(utcDateTimeAt(timestamp), UTC);
     }
 
-    public static long ofHours(Date date, ZoneId zone) {
-        return ofHours(date.getTime(), zone);
+    public static long ofHours(Date date) {
+        return ofHours(date.getTime());
     }
 }
