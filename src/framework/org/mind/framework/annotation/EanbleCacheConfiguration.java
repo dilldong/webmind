@@ -39,8 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @auther Marcus
  * @date 2022/9/5
  */
-//@Component
-//@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
     public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.EanbleCacheConfiguration";
 
