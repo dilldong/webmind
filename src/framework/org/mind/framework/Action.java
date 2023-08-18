@@ -170,9 +170,9 @@ public final class Action {
         return ACTION_THREAD_LOCAL.get();
     }
 
-    public static void setActionContext(ServletContext context, HttpServletRequest request, HttpServletResponse response) {
+    public static void setActionContext(HttpServletRequest request, HttpServletResponse response) {
         Action action = new Action();
-        action.context = context;
+        action.context = request.getServletContext();
         action.request = request;
         action.response = response;
         ACTION_THREAD_LOCAL.set(action);

@@ -50,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.mind.framework.server.WebServerConfig.JAR_IN_CLASSES;
+import static org.mind.framework.web.server.WebServerConfig.JAR_IN_CLASSES;
 
 /**
  * @version 1.0

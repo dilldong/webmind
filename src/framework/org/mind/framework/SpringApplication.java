@@ -3,12 +3,12 @@ package org.mind.framework;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.server.WebServer;
-import org.mind.framework.server.WebServerConfig;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JarFileUtils;
+import org.mind.framework.web.server.WebServer;
+import org.mind.framework.web.server.WebServerConfig;
 
 import java.io.InputStream;
 import java.net.URL;

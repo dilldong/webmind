@@ -1,9 +1,10 @@
 package org.mind.framework.annotation;
 
 import org.aopalliance.aop.Advice;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.cache.Cacheable;
-import org.mind.framework.interceptor.CacheinAnnotationAwareInterceptor;
 import org.mind.framework.util.ReflectionUtils;
+import org.mind.framework.web.interceptor.CacheinAnnotationAwareInterceptor;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.IntroductionAdvisor;
 import org.springframework.aop.MethodMatcher;
@@ -19,11 +20,8 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Role;
 import org.springframework.core.OrderComparator;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
 import java.lang.annotation.Annotation;
@@ -41,9 +39,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @auther Marcus
  * @date 2022/9/5
  */
-@Component
-@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//@Component
+//@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+    public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.EanbleCacheConfiguration";
+
     private Pointcut pointcut;
     private Advice advice;
     private Cacheable cacheable;
@@ -74,7 +74,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
@@ -159,7 +159,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Method method, Class<?> targetClass) {
+        public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
             return getClassFilter().matches(targetClass) || this.methodResolver.matches(method, targetClass);
         }
 
@@ -185,7 +185,7 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Class<?> clazz) {
+        public boolean matches(@NotNull Class<?> clazz) {
             return super.matches(clazz) || this.methodResolver.hasAnnotatedMethods(clazz);
         }
     }

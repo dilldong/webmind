@@ -1,4 +1,5 @@
 Manifest-Version: 1.0
 Built-By: Marcus
-Created-By: IntelliJ IDEA
 Build-Jdk: 1.8
+Implementation-Title: webmind-framework
+Implementation-Version: 4.5.4

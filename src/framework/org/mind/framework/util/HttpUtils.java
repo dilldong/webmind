@@ -4,7 +4,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.BaseException;
-import org.mind.framework.server.WebServerConfig;
+import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletRequest;

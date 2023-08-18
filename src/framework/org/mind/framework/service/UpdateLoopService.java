@@ -2,7 +2,7 @@ package org.mind.framework.service;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.mind.framework.container.Destroyable;
+import org.mind.framework.web.container.Destroyable;
 
 import java.util.List;
 import java.util.Objects;

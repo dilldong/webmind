@@ -1,14 +1,14 @@
 package org.mind.framework.util;
 
 import org.mind.framework.http.Response;
-import org.mind.framework.renderer.BinaryRender;
-import org.mind.framework.renderer.FileRenderer;
-import org.mind.framework.renderer.JavaScriptRender;
-import org.mind.framework.renderer.NullRender;
-import org.mind.framework.renderer.Render;
-import org.mind.framework.renderer.RenderType;
-import org.mind.framework.renderer.TemplateRender;
-import org.mind.framework.renderer.TextRender;
+import org.mind.framework.web.renderer.BinaryRender;
+import org.mind.framework.web.renderer.FileRenderer;
+import org.mind.framework.web.renderer.JavaScriptRender;
+import org.mind.framework.web.renderer.NullRender;
+import org.mind.framework.web.renderer.Render;
+import org.mind.framework.web.renderer.RenderType;
+import org.mind.framework.web.renderer.TemplateRender;
+import org.mind.framework.web.renderer.TextRender;
 import org.springframework.http.HttpStatus;
 
 import java.io.File;

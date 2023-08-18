@@ -1,6 +1,6 @@
 package org.mind.framework.service.threads;
 
-import org.mind.framework.server.GracefulShutdown;
+import org.mind.framework.web.server.GracefulShutdown;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;

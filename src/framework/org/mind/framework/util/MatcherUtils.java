@@ -85,6 +85,13 @@ public class MatcherUtils {
         return toPattern(uri, URI_PARAM_PATTERN);
     }
 
+    public static String convertURIIfExists(String uri) {
+        if(MatcherUtils.checkCount(uri, URI_PARAM_PATTERN) > 0)
+            return MatcherUtils.convertURI(uri);
+
+        return uri;
+    }
+
     public static String convertParam(String uri) {
         return toPattern(uri, PARAM_MATCH_PATTERN);
     }
@@ -100,4 +107,5 @@ public class MatcherUtils {
                 .append(END)
                 .toString();
     }
+
 }
