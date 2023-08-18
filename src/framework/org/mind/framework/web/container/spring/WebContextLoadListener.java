@@ -15,7 +15,6 @@ import org.springframework.web.context.WebApplicationContext;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
-import java.util.Objects;
 
 /**
  * @version 1.0
@@ -59,17 +58,16 @@ public class WebContextLoadListener extends ContextLoaderListener {
      */
     private void registerCustomBean(ConfigurableWebApplicationContext applicationContext) {
         ConfigurableListableBeanFactory beanFactory = applicationContext.getBeanFactory();
-        EanbleCacheConfiguration cacheConfiguration = null;
         try {
-            cacheConfiguration = beanFactory.getBean(EanbleCacheConfiguration.ATTR_BEAN_NAME, EanbleCacheConfiguration.class);
-        } catch (NoSuchBeanDefinitionException ignored) {}
+            beanFactory.getBean(EanbleCacheConfiguration.ATTR_BEAN_NAME, EanbleCacheConfiguration.class);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            throw new IllegalStateException("Cannot register 'EanbleCacheConfiguration' to Spring.");
+        }
 
-        if (Objects.isNull(cacheConfiguration))
-            beanFactory.registerSingleton(EanbleCacheConfiguration.ATTR_BEAN_NAME, new EanbleCacheConfiguration());
-
-        try{
+        try {
             BeanDefinition beanDefinition = beanFactory.getBeanDefinition(EanbleCacheConfiguration.ATTR_BEAN_NAME);
-            beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+            if (beanDefinition.getRole() != BeanDefinition.ROLE_INFRASTRUCTURE)
+                beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
         } catch (NoSuchBeanDefinitionException ignored) {}
 
         // Manually create AOP proxy

@@ -20,6 +20,8 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Role;
 import org.springframework.core.OrderComparator;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ObjectUtils;
@@ -39,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @auther Marcus
  * @date 2022/9/5
  */
+@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
     public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.EanbleCacheConfiguration";
 
@@ -146,7 +149,6 @@ public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements
         interceptor.setDefaultCache(cacheable);
         return interceptor;
     }
-
 
     private static class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {
         private final MethodMatcher methodResolver;
