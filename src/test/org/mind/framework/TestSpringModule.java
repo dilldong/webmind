@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
+import org.mind.framework.config.AppConfiguration;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.MainService;
@@ -40,7 +41,8 @@ import java.util.Locale;
  * @auther Marcus
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+@ContextConfiguration(classes = AppConfiguration.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Resource
@@ -70,9 +72,12 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
             return -1;// No header value sent at all
 
         String[] DATE_FORMATS = new String[]{
-                "EEE, dd MMM yyyy HH:mm:ss z",
-                "EEEEEE, dd-MMM-yy HH:mm:ss zzz",
-                "EEE MMMM d HH:mm:ss yyyy"
+//                "EEE, dd MMM yyyy HH:mm:ss z",
+//                "EEEEEE, dd-MMM-yy HH:mm:ss zzz",
+//                "EEE MMMM d HH:mm:ss yyyy"
+                "EEE, dd MMM yyyy HH:mm:ss zzz",
+                "EEE, dd-MMM-yy HH:mm:ss zzz",
+                "EEE MMM dd HH:mm:ss yyyy"
         };
 
         if (headerValue.length() >= 3) {

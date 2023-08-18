@@ -22,7 +22,7 @@ public class TestServiceImpl implements TestService {
     private static final String CACHE_KEY = "user_by_id";
 
     @Override
-    @Cachein(cacheable = "cacheManager", prefix = CACHE_KEY, suffix = "#{userId}_#{vars}", strategy = Cloneable.CloneType.ORIGINAL)
+    @Cachein(prefix = CACHE_KEY, suffix = "#{userId}_#{vars}", strategy = Cloneable.CloneType.ORIGINAL)
     public List<Object> get(String vars, long userId){
         log.debug("--------------执行方法: get");
         return Arrays.asList(234L, 32, 32);
@@ -30,7 +30,7 @@ public class TestServiceImpl implements TestService {
 
 
     @Override
-    @Cachein(cacheable = "cacheManager", suffix = "#{userId}")
+    @Cachein(suffix = "#{userId}")
     public String byCache(long userId){
         log.debug("--------------执行方法: byCache");
         return "bycache_"+ userId;

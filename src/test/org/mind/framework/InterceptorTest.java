@@ -2,7 +2,7 @@ package org.mind.framework;
 
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Interceptor;
-import org.mind.framework.interceptor.AbstractHandlerInterceptor;
+import org.mind.framework.web.interceptor.AbstractHandlerInterceptor;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Slf4j
 @Component
-@Interceptor(excludes = {"/error/*"}, order = 1)
+@Interceptor(excludes = {"/error/*"})
 public class InterceptorTest extends AbstractHandlerInterceptor {
 
     @Override

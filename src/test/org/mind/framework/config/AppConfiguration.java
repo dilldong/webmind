@@ -37,14 +37,14 @@ public class AppConfiguration {
     @Resource
     private Environment environment;
 
-    @Bean(value = "cacheable", destroyMethod = "destroy")
+    @Bean(destroyMethod = "destroy")
     public Cacheable cacheable() {
         Cacheable cacheable = LruCache.initCache();
         cacheable.setCapacity(1024);
         return cacheable;
     }
 
-    @Bean(value = "queueService", destroyMethod = "destroy")
+    @Bean(destroyMethod = "destroy")
     public QueueService queueService() {
         QueueLittle queue = new QueueLittle();
         queue.setWorkerQueue(new LinkedBlockingQueue<>(1024));
