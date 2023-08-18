@@ -96,8 +96,6 @@ public class SpringContainerAware implements ContainerAware {
 
     /**
      * Initialize all Bean objects, and {@link Mapping} increased URI mapping.
-     *
-     * @param bean
      */
     @Override
     public void loadMapping(Object bean, BiConsumer<String, Execution> biConsumer) {

@@ -51,7 +51,7 @@ public class FilterRegistrationSupport {
 
         list.forEach(filter -> {
             servletContext
-                    .addFilter(filter.getName(), filter.getHander())
+                    .addFilter(filter.getName(), filter.getHandler())
                     .addMappingForUrlPatterns(
                             EnumSet.copyOf(filter.getDispatcherTypes()),
                             filter.isMatchAfter(),

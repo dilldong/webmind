@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.mind.framework.Action;
 import org.mind.framework.util.JsonUtils;
+import org.mind.framework.web.Action;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Objects;

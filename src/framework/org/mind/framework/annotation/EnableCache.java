@@ -1,5 +1,6 @@
 package org.mind.framework.annotation;
 
+import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
@@ -17,7 +18,7 @@ import java.lang.annotation.Target;
  * @version 1.0
  * @date 2022/9/4
  */
-@Import({EanbleCacheConfiguration.class})
+@Import({EnableCacheConfiguration.class})
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @EnableAspectJAutoProxy

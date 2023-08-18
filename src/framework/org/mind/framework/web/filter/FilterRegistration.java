@@ -29,13 +29,13 @@ public class FilterRegistration implements Comparable<FilterRegistration> {
 
     private List<DispatcherType> dispatcherTypes;
 
-    private HandlerFilter hander;
+    private HandlerFilter handler;
 
     private String[] uriPatterns;
 
-    public FilterRegistration(String name, Filter annotation, HandlerFilter hander) {
+    public FilterRegistration(String name, Filter annotation, HandlerFilter handler) {
         this.name = name;
-        this.hander = hander;
+        this.handler = handler;
         this.order = annotation.order();
         this.uriPatterns = annotation.value();
         this.matchAfter = annotation.matchAfter();

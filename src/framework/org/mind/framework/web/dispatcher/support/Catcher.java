@@ -13,18 +13,18 @@ import org.mind.framework.web.interceptor.HandlerInterceptor;
 @Getter
 @Setter
 public class Catcher implements Comparable<Catcher> {
-    protected final HandlerInterceptor hander;
+    protected final HandlerInterceptor handler;
 
     protected int order;
 
     protected String[] uriRegex;
 
-    public Catcher(HandlerInterceptor hander) {
-        this.hander = hander;
+    public Catcher(HandlerInterceptor handler) {
+        this.handler = handler;
     }
 
-    public Catcher(String[] uriRegex, HandlerInterceptor hander) {
-        this(hander);
+    public Catcher(String[] uriRegex, HandlerInterceptor handler) {
+        this(handler);
         this.setUriRegex(uriRegex);
     }
 

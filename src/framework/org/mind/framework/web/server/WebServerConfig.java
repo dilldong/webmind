@@ -77,7 +77,7 @@ public class WebServerConfig {
 
     private String templateEngine = StringUtils.EMPTY;
 
-    // OkHttpClient settting
+    // OkHttpClient setting
     private int maxRequestsPerHost = 200;
     private int maxRequests = 200;
     private int connectTimeout = 15;// SECONDS

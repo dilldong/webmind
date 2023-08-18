@@ -22,8 +22,8 @@ import java.util.Arrays;
 public class CatcherMapping extends Catcher {
     private String[] excludesRegex;
 
-    public CatcherMapping(Interceptor annotation, HandlerInterceptor hander) {
-        super(annotation.value(), hander);
+    public CatcherMapping(Interceptor annotation, HandlerInterceptor handler) {
+        super(annotation.value(), handler);
         this.order = annotation.order();
         this.excludesRegex = this.parseUriPattern(annotation.excludes());
     }

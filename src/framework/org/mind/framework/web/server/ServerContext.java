@@ -50,7 +50,6 @@ public abstract class ServerContext {
     /**
      * Register tomcat-server you custom
      *
-     * @param tomcat
      * @throws LifecycleException
      */
     protected abstract void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException;
@@ -89,7 +88,6 @@ public abstract class ServerContext {
                 throw new WebServerException("Unable to start embedded Tomcat", e);
             } finally {
                 stopWatch.stop();
-                stopWatch = null;
             }
         }
     }

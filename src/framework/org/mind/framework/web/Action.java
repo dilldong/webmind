@@ -1,4 +1,4 @@
-package org.mind.framework;
+package org.mind.framework.web;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -48,7 +48,6 @@ public final class Action {
     /**
      * Get the byte[] content of the post request
      *
-     * @return
      * @throws IOException
      */
     public byte[] getPostBytes() throws IOException {
@@ -58,7 +57,6 @@ public final class Action {
     /**
      * Get the content of the post request
      *
-     * @return
      * @throws IOException
      */
     public String getPostString() throws IOException {

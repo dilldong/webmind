@@ -2,7 +2,7 @@ package org.mind.framework.web.container.spring;
 
 import org.apache.catalina.Context;
 import org.jetbrains.annotations.NotNull;
-import org.mind.framework.annotation.EanbleCacheConfiguration;
+import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.web.dispatcher.support.FilterRegistrationSupport;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -34,7 +34,7 @@ public class WebContextLoadListener extends ContextLoaderListener {
     public void contextInitialized(@NotNull ServletContextEvent event) {
         super.contextInitialized(event);
 
-        // Filter registration by spring loaded.
+        // filter registration by Spring.
         try {
             new FilterRegistrationSupport(getCurrentWebApplicationContext()).registration(context.getServletContext());
         } catch (ServletException e) {
@@ -59,16 +59,12 @@ public class WebContextLoadListener extends ContextLoaderListener {
     private void registerCustomBean(ConfigurableWebApplicationContext applicationContext) {
         ConfigurableListableBeanFactory beanFactory = applicationContext.getBeanFactory();
         try {
-            beanFactory.getBean(EanbleCacheConfiguration.ATTR_BEAN_NAME, EanbleCacheConfiguration.class);
-        } catch (NoSuchBeanDefinitionException ignored) {
-            throw new IllegalStateException("Cannot register 'EanbleCacheConfiguration' to Spring.");
-        }
-
-        try {
-            BeanDefinition beanDefinition = beanFactory.getBeanDefinition(EanbleCacheConfiguration.ATTR_BEAN_NAME);
+            BeanDefinition beanDefinition = beanFactory.getBeanDefinition(EnableCacheConfiguration.ATTR_BEAN_NAME);
             if (beanDefinition.getRole() != BeanDefinition.ROLE_INFRASTRUCTURE)
                 beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
-        } catch (NoSuchBeanDefinitionException ignored) {}
+        } catch (NoSuchBeanDefinitionException ignored) {
+            throw new IllegalStateException("Cannot register 'EnableCacheConfiguration' to Spring.");
+        }
 
         // Manually create AOP proxy
         // Object proxy = AopProxyUtils.ultimateTargetClass(cacheConfiguration);

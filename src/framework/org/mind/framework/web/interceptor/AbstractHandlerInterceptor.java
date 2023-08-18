@@ -26,8 +26,8 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
         HttpUtils.clearSetting(request);
     }
 
-    protected boolean render(Render render, HttpServletRequest request, HttpServletResponse response) {
-        return render(render, HttpServletResponse.SC_OK, request, response);
+    protected boolean renderToFinish(Render render, HttpServletRequest request, HttpServletResponse response) {
+        return renderToFinish(render, HttpServletResponse.SC_OK, request, response);
     }
 
     /**
@@ -36,7 +36,7 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
      * If you need to return the actual error code,
      * you can it's setting response Status If Error.
      */
-    protected boolean render(Render render, int responseStatusIfError, HttpServletRequest request, HttpServletResponse response) {
+    protected boolean renderToFinish(Render render, int responseStatusIfError, HttpServletRequest request, HttpServletResponse response) {
         response.setStatus(responseStatusIfError);
 
         try {

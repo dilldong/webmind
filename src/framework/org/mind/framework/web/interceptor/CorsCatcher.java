@@ -8,7 +8,7 @@ import org.mind.framework.web.dispatcher.support.Catcher;
  * @date 2023/8/13
  */
 public class CorsCatcher extends Catcher {
-    public CorsCatcher(String[] uriRegex, HandlerInterceptor hander) {
-        super(uriRegex, hander);
+    public CorsCatcher(String[] uriRegex, HandlerInterceptor handler) {
+        super(uriRegex, handler);
     }
 }

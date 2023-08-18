@@ -1,8 +1,8 @@
 package org.mind.framework.web.renderer;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.Action;
 import org.mind.framework.util.ResponseUtils;
+import org.mind.framework.web.Action;
 import org.springframework.http.MediaType;
 
 import javax.servlet.ServletContext;

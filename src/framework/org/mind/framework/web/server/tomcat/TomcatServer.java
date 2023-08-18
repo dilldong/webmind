@@ -232,7 +232,7 @@ public class TomcatServer extends Tomcat {
             if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
                 AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
                 ac.register(serverConfig.getSpringConfigClassSet().toArray(new Class[0]));
-                // by web-contanier destroy
+                // by web-container destroy
                 // ac.registerShutdownHook();
 
                 // Listen when spring starts by ContextLoaderListener
@@ -252,7 +252,7 @@ public class TomcatServer extends Tomcat {
             // load properties in spring
             loadResource(xmas.getEnvironment());
 
-            // by web-contanier destroy
+            // by web-container destroy
             // xmas.registerShutdownHook();
 
             // Listen when spring starts by ContextLoaderListener

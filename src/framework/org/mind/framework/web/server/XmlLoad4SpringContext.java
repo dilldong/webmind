@@ -1,6 +1,7 @@
 package org.mind.framework.web.server;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.util.JarFileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +24,12 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
     private static final Logger log = LoggerFactory.getLogger(XmlLoad4SpringContext.class);
 
     @Override
-    protected void initBeanDefinitionReader(XmlBeanDefinitionReader beanDefinitionReader) {
+    protected void initBeanDefinitionReader(@NotNull XmlBeanDefinitionReader beanDefinitionReader) {
         super.initBeanDefinitionReader(beanDefinitionReader);
     }
 
     @Override
-    protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws IOException {
+    protected void loadBeanDefinitions(@NotNull XmlBeanDefinitionReader reader) throws IOException {
         final String[] configLocations = super.getConfigLocations();
         if (configLocations == null)
             return;

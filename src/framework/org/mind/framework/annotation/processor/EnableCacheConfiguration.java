@@ -1,10 +1,10 @@
-package org.mind.framework.annotation;
+package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
 import org.jetbrains.annotations.NotNull;
+import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
-import org.mind.framework.web.interceptor.CacheinAnnotationAwareInterceptor;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.IntroductionAdvisor;
 import org.springframework.aop.MethodMatcher;
@@ -42,8 +42,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2022/9/5
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public class EanbleCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
-    public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.EanbleCacheConfiguration";
+public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+    public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.processor.EnableCacheConfiguration";
 
     private Pointcut pointcut;
     private Advice advice;

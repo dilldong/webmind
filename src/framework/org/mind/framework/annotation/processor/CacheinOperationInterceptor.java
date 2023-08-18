@@ -1,4 +1,4 @@
-package org.mind.framework.web.interceptor;
+package org.mind.framework.annotation.processor;
 
 import lombok.NoArgsConstructor;
 import lombok.Setter;

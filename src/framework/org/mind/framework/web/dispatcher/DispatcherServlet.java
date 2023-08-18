@@ -132,8 +132,6 @@ public class DispatcherServlet extends HttpServlet {
     /**
      * Process requests.
      *
-     * @param request
-     * @param response
      * @throws IOException
      * @throws ServletException
      */

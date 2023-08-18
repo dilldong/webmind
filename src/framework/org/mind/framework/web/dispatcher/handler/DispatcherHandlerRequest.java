@@ -1,7 +1,6 @@
 package org.mind.framework.web.dispatcher.handler;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.Action;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.http.Response;
@@ -10,6 +9,7 @@ import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.ViewResolver;
+import org.mind.framework.web.Action;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.support.Catcher;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
@@ -160,7 +160,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                 if (!catcher.matchOne(requestURI, MatcherUtils.DEFAULT_EQ))// not-match
                     continue;
 
-                HandlerInterceptor interceptor = catcher.getHander();
+                HandlerInterceptor interceptor = catcher.getHandler();
 
                 // Interceptor doBefore
                 // return false, Return to the request page
