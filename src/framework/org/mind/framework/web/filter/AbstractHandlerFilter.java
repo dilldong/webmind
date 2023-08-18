@@ -14,7 +14,7 @@ import java.io.IOException;
  * @auther Marcus
  * @date 2023/8/11
  */
-public abstract class AbstractHandlerFilter extends OncePerRequestFilter implements HandlerFilter{
+public abstract class AbstractHandlerFilter extends OncePerRequestFilter implements HandlerFilter {
 
     @Override
     public abstract void doStart(HttpServletRequest request,
@@ -23,8 +23,8 @@ public abstract class AbstractHandlerFilter extends OncePerRequestFilter impleme
 
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest request,
-                                             @NotNull HttpServletResponse response,
-                                             @NotNull FilterChain filterChain) throws ServletException, IOException{
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
         this.doStart(request, response, filterChain);
     }
 }
