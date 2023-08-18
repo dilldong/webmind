@@ -1,10 +1,12 @@
 package org.mind.framework.web.interceptor;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.mind.framework.ContextSupport;
+import org.mind.framework.util.HttpUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsProcessor;
 import org.springframework.web.cors.CorsUtils;
@@ -21,12 +23,20 @@ import java.util.Objects;
  * @date 2023/8/13
  */
 @Slf4j
-@RequiredArgsConstructor
 public class CorsInterceptor extends AbstractHandlerInterceptor {
 
     private final CorsConfiguration config;
 
-    private final CorsProcessor processor = new DefaultCorsProcessor();
+    private CorsProcessor processor;
+
+    public CorsInterceptor(CorsConfiguration config) {
+        this.config = config;
+        try {
+            processor = ContextSupport.getBean(DefaultCorsProcessor.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            processor = new CorsRegexProcessor();
+        }
+    }
 
     @Override
     public boolean doBefore(HttpServletRequest request, HttpServletResponse response) {
@@ -34,7 +44,7 @@ public class CorsInterceptor extends AbstractHandlerInterceptor {
         try {
             isValid = this.processor.processRequest(config, request, response);
         } catch (IOException e) {
-            log.error("[{}] - Cors processor filter an exception: {}", request.getRequestURI(), e.getMessage());
+            log.error("[{}] - Cors processor filter an exception: {}", HttpUtils.getURI(request, true), e.getMessage());
             return false;
         }
 

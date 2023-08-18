@@ -1,15 +1,23 @@
 package org.mind.framework.util;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.annotation.Mapping;
+import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MatcherUtils {
+    private static final String URL_SCHEMA_SEP = "://";
     private static final String URL_SEP = "([^\\/]+)";
     private static final String ANY_CHAR = "\\\\S*";
     private static final String URI_SEP = "\\\\/";
+
+    private static final String DOMAIN_DOT = "\\\\.";
+    private static final String DOMAIN_ANY = "^(https?:\\\\/\\\\/)?(www\\\\.)?[a-zA-Z0-9_-]+";
+    private static final String DOMAIN_ANY_END = "(\\/[\\S]*)?$";
+
     public static final String START = "^";
     public static final String END = "$";
 
@@ -28,6 +36,8 @@ public class MatcherUtils {
     public static final Pattern PARAM_MATCH_PATTERN = Pattern.compile("(#\\{)\\w+\\}");
 
     public static final Pattern ANY_PATTERN = Pattern.compile("\\*");
+
+    public static final Pattern REPLACE_DOMAIN_SEP = Pattern.compile("\\.");
 
     public static final Pattern URI_SEP_PATTERN = Pattern.compile("\\/");
 
@@ -75,6 +85,26 @@ public class MatcherUtils {
         return count;
     }
 
+    public static boolean matchURL(String urlWithWildcard, String searchUrl) {
+        if (urlWithWildcard.contains(CorsConfiguration.ALL)) {
+            int search = urlWithWildcard.indexOf(URL_SCHEMA_SEP);
+            if (search > -1)
+                urlWithWildcard = urlWithWildcard.substring(search + 3);
+
+            String regex = REPLACE_DOMAIN_SEP.matcher(urlWithWildcard).replaceAll(DOMAIN_DOT);
+            regex = MatcherUtils.ANY_PATTERN.matcher(regex).replaceAll(DOMAIN_ANY) + DOMAIN_ANY_END;
+            System.out.println(regex);
+            return MatcherUtils.matcher(searchUrl, regex, MatcherUtils.IGNORECASE_EQ).matches();
+        }
+
+        if (urlWithWildcard.contains(URL_SCHEMA_SEP) && !searchUrl.contains(URL_SCHEMA_SEP)) {
+            int search = urlWithWildcard.indexOf(URL_SCHEMA_SEP);
+            urlWithWildcard = urlWithWildcard.substring(search + 3);
+        }
+
+        return StringUtils.containsIgnoreCase(searchUrl, urlWithWildcard);
+    }
+
     /**
      * 将{@link Mapping} value 转换为正则表达式
      *
@@ -86,7 +116,7 @@ public class MatcherUtils {
     }
 
     public static String convertURIIfExists(String uri) {
-        if(MatcherUtils.checkCount(uri, URI_PARAM_PATTERN) > 0)
+        if (MatcherUtils.checkCount(uri, URI_PARAM_PATTERN) > 0)
             return MatcherUtils.convertURI(uri);
 
         return uri;
@@ -107,5 +137,4 @@ public class MatcherUtils {
                 .append(END)
                 .toString();
     }
-
 }
