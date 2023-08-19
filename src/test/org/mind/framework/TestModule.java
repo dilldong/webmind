@@ -103,8 +103,10 @@ public class TestModule {
         String r1 = MatcherUtils.convertParam(param);
         System.out.println(r);
         System.out.println(r1);
+        System.out.println(MatcherUtils.checkCount(source, MatcherUtils.URI_PARAM_PATTERN));
         System.out.println(MatcherUtils.checkCount(param, MatcherUtils.PARAM_MATCH_PATTERN));
         String key = "83m";
+        System.out.println(MatcherUtils.matcher("/home/#/xk/3", r));
         System.out.println(Pattern.compile("#\\{key\\}").matcher(param).replaceAll(key));
     }
 
