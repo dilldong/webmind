@@ -1,11 +1,12 @@
 package org.mind.framework.web.interceptor;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.util.MatcherUtils;
-import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.DefaultCorsProcessor;
+
+import java.util.Objects;
 
 /**
  * @version 1.0
@@ -16,21 +17,18 @@ public class CorsRegexProcessor extends DefaultCorsProcessor {
 
     @Override
     protected String checkOrigin(@NotNull CorsConfiguration config, String requestOrigin) {
-        if (!StringUtils.hasText(requestOrigin))
+        if (StringUtils.isEmpty(requestOrigin)
+                || Objects.isNull(config.getAllowedOrigins())
+                || config.getAllowedOrigins().isEmpty()) {
             return null;
-
-        if (ObjectUtils.isEmpty(config.getAllowedOrigins()))
-            return null;
-
-        if (config.getAllowedOrigins().contains(CorsConfiguration.ALL)) {
-            if (config.getAllowCredentials() != Boolean.TRUE)
-                return CorsConfiguration.ALL;
-            return requestOrigin;
         }
 
         for (String allowedOrigin : config.getAllowedOrigins()) {
-            if (requestOrigin.equalsIgnoreCase(allowedOrigin))
+            if (CorsConfiguration.ALL.equals(allowedOrigin)) {
+                if (config.getAllowCredentials() != Boolean.TRUE)
+                    return CorsConfiguration.ALL;
                 return requestOrigin;
+            }
 
             // Regex pattern match: (CrossOrigin(origins = {"*.abc.com"}) )
             if (MatcherUtils.matchURL(allowedOrigin, requestOrigin))
