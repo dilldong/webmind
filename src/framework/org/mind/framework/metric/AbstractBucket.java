@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractBucket {
     private final int duration;
     private final int bucketSize;
-    private final int intervalInMills;
+    private final int intervalInMillis;
     private final AtomicReferenceArray<Indicator> indicatorArray;
 
     private transient final Lock lock = new ReentrantLock();
@@ -28,9 +28,9 @@ public abstract class AbstractBucket {
 
     protected abstract Indicator resetIndicator(Indicator old, long startTime);
 
-    public AbstractBucket(int bucketSize, int intervalInMills) {
-        this.duration = intervalInMills / bucketSize;
-        this.intervalInMills = intervalInMills;
+    public AbstractBucket(int bucketSize, int intervalInMillis) {
+        this.duration = intervalInMillis / bucketSize;
+        this.intervalInMillis = intervalInMillis;
         this.bucketSize = bucketSize;
         indicatorArray = new AtomicReferenceArray<>(bucketSize);
     }
@@ -39,12 +39,12 @@ public abstract class AbstractBucket {
         return current(DateUtils.getMillis());
     }
 
-    public Indicator current(long currTimeMills) {
-        if (currTimeMills < 0)
+    public Indicator current(long currTimeMillis) {
+        if (currTimeMillis < 0)
             return null;
 
-        int bucketIndex = getBucketIndex(currTimeMills);
-        long startTime = startTimeInBucket(currTimeMills);
+        int bucketIndex = getBucketIndex(currTimeMillis);
+        long startTime = startTimeInBucket(currTimeMillis);
 
         // Get the Indicator at the specified time from the AtomicReferenceArray
         while (true) {
@@ -78,15 +78,15 @@ public abstract class AbstractBucket {
         return getValuesByPeriod(DateUtils.getMillis());
     }
 
-    public List<Indicator> getValuesByPeriod(long timeMills) {
-        if (timeMills < 0)
+    public List<Indicator> getValuesByPeriod(long timeMillis) {
+        if (timeMillis < 0)
             return Collections.emptyList();
 
         final int size = indicatorArray.length();
         List<Indicator> resultList = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
             Indicator indicator = indicatorArray.get(i);
-            if (indicator == null || isDiscard(timeMills, indicator))
+            if (indicator == null || isDiscard(timeMillis, indicator))
                 continue;
 
             resultList.add(indicator);
@@ -95,17 +95,17 @@ public abstract class AbstractBucket {
         return resultList;
     }
 
-    // Discard after intervalInMills time
-    private boolean isDiscard(long timeMills, Indicator indicator) {
-        return timeMills - indicator.getStartTimeOfBucket() > intervalInMills;
+    // Discard after intervalInMillis time
+    private boolean isDiscard(long timeMillis, Indicator indicator) {
+        return timeMillis - indicator.getStartTimeOfBucket() > intervalInMillis;
     }
 
-    private int getBucketIndex(long currMills) {
-        long timeId = currMills / duration;
+    private int getBucketIndex(long currMillis) {
+        long timeId = currMillis / duration;
         return (int) (timeId % bucketSize);
     }
 
-    private long startTimeInBucket(long currMills) {
-        return currMills - currMills % duration;
+    private long startTimeInBucket(long currMillis) {
+        return currMillis - currMillis % duration;
     }
 }

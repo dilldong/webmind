@@ -36,9 +36,9 @@ public class Indicator {
     @Getter
     private long startTimeOfBucket;
 
-    public Indicator(long duration, long startMills) {
+    public Indicator(long duration, long startMillis) {
         this.duration = duration;
-        this.startTimeOfBucket = startMills;
+        this.startTimeOfBucket = startMillis;
 
         int size = MetricEvent.size();
         this.counters = new LongAdder[size];
@@ -46,8 +46,8 @@ public class Indicator {
             counters[i] = new LongAdder();
     }
 
-    public Indicator reset(long startMills) {
-        this.startTimeOfBucket = startMills;
+    public Indicator reset(long startMillis) {
+        this.startTimeOfBucket = startMillis;
 
         int size = MetricEvent.size();
         for (int i = 0; i < size; ++i)
