@@ -12,7 +12,9 @@ import java.lang.annotation.Target;
 /**
  * Intercept the execution of a handler.
  *
- * @author dp
+ * @author Marcus
+ * @version 1.0
+ * @date 2023/8/12
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
