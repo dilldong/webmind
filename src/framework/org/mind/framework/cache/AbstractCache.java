@@ -1,7 +1,7 @@
 package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.web.container.Destroyable;
+import org.mind.framework.web.Destroyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

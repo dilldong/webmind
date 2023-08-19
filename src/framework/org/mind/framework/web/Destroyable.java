@@ -1,4 +1,4 @@
-package org.mind.framework.web.container;
+package org.mind.framework.web;
 
 /**
  * Object which has resource to release should implement this interface.

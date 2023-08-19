@@ -1,7 +1,7 @@
 package org.mind.framework.web.dispatcher.handler;
 
+import org.mind.framework.web.Destroyable;
 import org.mind.framework.web.container.ContainerAware;
-import org.mind.framework.web.container.Destroyable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

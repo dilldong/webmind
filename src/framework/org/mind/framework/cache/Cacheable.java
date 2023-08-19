@@ -1,7 +1,7 @@
 package org.mind.framework.cache;
 
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.web.container.Destroyable;
+import org.mind.framework.web.Destroyable;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;

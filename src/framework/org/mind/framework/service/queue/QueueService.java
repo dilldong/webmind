@@ -1,6 +1,6 @@
 package org.mind.framework.service.queue;
 
-import org.mind.framework.web.container.Destroyable;
+import org.mind.framework.web.Destroyable;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
