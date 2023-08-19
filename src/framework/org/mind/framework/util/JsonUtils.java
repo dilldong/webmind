@@ -28,8 +28,6 @@ public class JsonUtils {
 
     public static final String EMPTY_JSON_ARRAY = "[]";
 
-    public static final String DEFAULT_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
-
     // Delete spaces, carriage returns, newlines, and tabs in a string
     private static final Pattern REPLACE_PATT = Pattern.compile("\\s{2,}|\t|\r|\n");
 
@@ -57,7 +55,7 @@ public class JsonUtils {
 
         private static final Gson GSON_INSTANCE =
                 new GsonBuilder()
-                        .setDateFormat(DEFAULT_DATE_PATTERN)
+                        .setDateFormat(DateUtils.DATE_TIME_PATTERN)
                         .disableHtmlEscaping()
                         .setObjectToNumberStrategy(OBJECT_TO_NUMBER)
                         .create();
@@ -69,7 +67,7 @@ public class JsonUtils {
 
         private static final Gson GSON_INSTANCE =
                 new GsonBuilder()
-                        .setDateFormat(DEFAULT_DATE_PATTERN)
+                        .setDateFormat(DateUtils.DATE_TIME_PATTERN)
                         .disableHtmlEscaping()
                         .excludeFieldsWithoutExposeAnnotation()
                         .setObjectToNumberStrategy(OBJECT_TO_NUMBER)

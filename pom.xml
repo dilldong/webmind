@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>4.5.3</version>
+    <version>4.5.4</version>
 
     <licenses>
         <license>
@@ -60,6 +60,15 @@
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
         <sourceDirectory>src/framework</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>META-INF</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>**/**</include>
+                </includes>
+            </resource>
+        </resources>
 
         <plugins>
             <plugin>

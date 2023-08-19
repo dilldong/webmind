@@ -11,6 +11,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletContext;
+import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Objects;
 
@@ -18,7 +19,7 @@ public final class ContextSupport {
 
     private static ApplicationContext applicationContext;
 
-    public static AbstractXmlApplicationContext initSpringByFile(String ... configLocations) {
+    public static AbstractXmlApplicationContext initSpringByFile(String... configLocations) {
         for (int i = 0; i < configLocations.length; ++i)
             if (!configLocations[i].startsWith("file:"))
                 configLocations[i] = String.format("file:%s", configLocations[i]);
@@ -29,14 +30,14 @@ public final class ContextSupport {
         return context;
     }
 
-    public static AbstractXmlApplicationContext initSpringByClassPathFile(String ... configLocations) {
+    public static AbstractXmlApplicationContext initSpringByClassPathFile(String... configLocations) {
         AbstractXmlApplicationContext context = new ClassPathXmlApplicationContext(configLocations);
         context.registerShutdownHook();
         setApplicationContext(context);
         return context;
     }
 
-    public static AbstractApplicationContext initSpringByAnnotationClass(Class<?> ... componentClasses){
+    public static AbstractApplicationContext initSpringByAnnotationClass(Class<?>... componentClasses) {
         AbstractApplicationContext context = new AnnotationConfigApplicationContext(componentClasses);
         context.registerShutdownHook();
         setApplicationContext(context);
@@ -54,9 +55,10 @@ public final class ContextSupport {
         return context;
     }
 
-    public static void setApplicationContext(ApplicationContext applicationContext){
+    public static void setApplicationContext(ApplicationContext applicationContext) {
         synchronized (ContextSupport.class) {
-            ContextSupport.applicationContext = applicationContext;
+            if (Objects.isNull(ContextSupport.applicationContext))
+                ContextSupport.applicationContext = applicationContext;
         }
     }
 
@@ -68,7 +70,7 @@ public final class ContextSupport {
      * @author dp
      */
     public static Object getBean(String name) {
-        if(StringUtils.isEmpty(name))
+        if (StringUtils.isEmpty(name))
             throw new NullPointerException("Get bean 'name' must not be null");
 
         Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
@@ -105,6 +107,10 @@ public final class ContextSupport {
         return applicationContext.getBeansOfType(requiredType);
     }
 
+    public static Map<String, Object> getBeansByAnnotation(Class<? extends Annotation> annotationType) {
+        return applicationContext.getBeansWithAnnotation(annotationType);
+    }
+
     public static String[] getBeanNames() {
         return applicationContext.getBeanDefinitionNames();
     }
@@ -113,7 +119,7 @@ public final class ContextSupport {
         return applicationContext.getStartupDate();
     }
 
-    public static ApplicationContext getApplicationContext(){
+    public static ApplicationContext getApplicationContext() {
         return applicationContext;
     }
 

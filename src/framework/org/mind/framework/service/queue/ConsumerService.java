@@ -6,12 +6,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.mind.framework.container.Destroyable;
-import org.mind.framework.server.GracefulShutdown;
-import org.mind.framework.server.ShutDownSignalEnum;
 import org.mind.framework.service.Updatable;
 import org.mind.framework.service.threads.Async;
 import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.web.Destroyable;
+import org.mind.framework.web.server.GracefulShutdown;
+import org.mind.framework.web.server.ShutDownSignalEnum;
 
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;

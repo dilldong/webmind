@@ -1,7 +1,7 @@
 package org.mind.framework.metric;
 
 import lombok.Getter;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 
 import java.util.Comparator;
 
@@ -21,7 +21,7 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long success() {
-        return success(DateFormatUtils.getMillis());
+        return success(DateUtils.getMillis());
     }
 
     public long success(long timeMills) {
@@ -37,7 +37,7 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long exception() {
-        return exception(DateFormatUtils.getMillis());
+        return exception(DateUtils.getMillis());
     }
 
     public long exception(long timeMills) {
@@ -54,7 +54,7 @@ public class DefaultMetric implements Metric {
     @Override
     public long rt() {
         // Make sure the bucket at the current time is not empty
-        long timeMills = DateFormatUtils.getMillis();
+        long timeMills = DateUtils.getMillis();
         bucket.current(timeMills);
 
         return
@@ -67,7 +67,7 @@ public class DefaultMetric implements Metric {
     @Override
     public long minRt() {
         // Make sure the bucket at the current time is not empty
-        long timeMills = DateFormatUtils.getMillis();
+        long timeMills = DateUtils.getMillis();
         bucket.current(timeMills);
         return
                 bucket.getValuesByPeriod(timeMills)
@@ -80,7 +80,7 @@ public class DefaultMetric implements Metric {
     @Override
     public long maxRt() {
         // Make sure the bucket at the current time is not empty
-        long timeMills = DateFormatUtils.getMillis();
+        long timeMills = DateUtils.getMillis();
         bucket.current(timeMills);
 
         return
@@ -108,7 +108,7 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long countByPeriod() {
-        final long time = DateFormatUtils.getMillis();
+        final long time = DateUtils.getMillis();
         return success(time) + exception(time);
     }
 }

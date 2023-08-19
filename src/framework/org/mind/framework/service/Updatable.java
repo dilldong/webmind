@@ -2,7 +2,7 @@ package org.mind.framework.service;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.dispatcher.support.ConverterFactory;
+import org.mind.framework.web.dispatcher.support.ConverterFactory;
 
 public interface Updatable {
 

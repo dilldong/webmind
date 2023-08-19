@@ -1,6 +1,7 @@
 package org.mind.framework.service;
 
 import org.mind.framework.service.threads.Async;
+import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,33 +25,35 @@ public class MainService extends AbstractService {
     }
 
     protected void startChildServices() {
-        if (Objects.nonNull(childServices)) {
-            childServices.forEach(serv ->
-                    Async.synchronousExecutor().execute(() -> {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Service {}@{} to starting ....",
-                                    serv.getClass().getSimpleName(),
-                                    Integer.toHexString(serv.hashCode()));
-                        }
-                        serv.start();
-                    })
-            );
-        }
+        if(Objects.isNull(childServices) || childServices.isEmpty())
+            return;
+
+        childServices.forEach(serv ->
+                Async.synchronousExecutor().execute(() -> {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Service [{}@{}] to starting ....",
+                                serv.getServiceName(),
+                                Integer.toHexString(serv.hashCode()));
+                    }
+                    serv.start();
+                })
+        );
     }
 
     protected void stopChildServices() {
-        if (Objects.nonNull(childServices)) {
-            childServices.forEach(serv ->
-                    Async.synchronousExecutor().execute(() -> {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Service {}@{} to stopping ....",
-                                    serv.getClass().getSimpleName(),
-                                    Integer.toHexString(serv.hashCode()));
-                        }
-                        serv.stop();
-                    })
-            );
-        }
+        if(Objects.isNull(childServices) || childServices.isEmpty())
+            return;
+
+        childServices.forEach(serv ->
+                ExecutorFactory.newThread(() -> {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Service [{}@{}] to stopping ....",
+                                serv.getServiceName(),
+                                Integer.toHexString(serv.hashCode()));
+                    }
+                    serv.stop();
+                }).start()
+        );
     }
 
     public final void start() {
@@ -61,7 +64,6 @@ public class MainService extends AbstractService {
     public final void stop() {
         stopChildServices();
         serviceState = STOPPED;
-        System.gc();
     }
 
     public List<Service> getChildServices() {

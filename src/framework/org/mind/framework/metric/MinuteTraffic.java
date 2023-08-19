@@ -1,6 +1,6 @@
 package org.mind.framework.metric;
 
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 
 /**
  * @author Marcus
@@ -17,7 +17,7 @@ public class MinuteTraffic extends BaseTraffic {
     }
 
     public long getRequestCurrent() {
-        final Indicator indicator = ((DefaultMetric) metric).getBucket().current(DateFormatUtils.getMillis());
+        final Indicator indicator = ((DefaultMetric) metric).getBucket().current(DateUtils.getMillis());
         return indicator.success() + indicator.exception();
     }
 

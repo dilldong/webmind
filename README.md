@@ -12,13 +12,14 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>4.5.3</version>
+    <version>4.5.4</version>
 </dependency>
 ```
 ## Gradle
 ```text
-implementation 'io.github.dilldong:webmind-framework:4.5.3'
+implementation 'io.github.dilldong:webmind-framework:4.5.4'
 ```
+
 ## Example
 ### 1. Mapping
 ```java
@@ -27,19 +28,19 @@ public class HelloController {
     
     @Mapping
     public String first() {
-        return "Welcome usage mind-framework.";
+        return "Welcome usage Webmind-Framework.";
     }
 
     // Spec a GET request, text response.
     @Mapping(value = "/request/text", method = RequestMethod.GET)
     public String withText() {
-        return "Hello,This is mind-framework.";
+        return "Hello,This is Webmind-Framework.";
     }
     
     // Spec a URL parameter, text response.
     @Mapping(value = "/request/text/${name}", method = RequestMethod.GET)
     public String withText(String name) {
-        return "Hello "+ name +",This is mind-framework.";
+        return "Hello "+ name +",This is Webmind-Framework.";
     }
 
     // Json response
@@ -49,10 +50,10 @@ public class HelloController {
     }
 
     // Json body response
-    @Mapping("/request/json01")
+    @Mapping("/request/json2")
     public String withJsonResult() {
         return new Response<Map<String, Object>>(HttpStatus.SC_OK, "OK")
-                .setResult(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
+                .setResult(ImmutableMap.of("nickName", "Smith", "age", 26, "gender", "Male"))
                 .toJson();
     }
 
@@ -77,7 +78,7 @@ public class HelloController {
     // velocity template engine
     @Mapping("/request/velocity")
     public Render velocity() {
-        return new TemplateRender("/template/index.htm");
+        return new TemplateRender("/template/index.vm");
     }
 }
 ```
@@ -91,7 +92,29 @@ public class InterceptorClass extends AbstractHandlerInterceptor {
 }
 ```
 
-### 3. Startup Web Application
+### 3. Filter
+```java
+@Component
+@Filter(value = {"/*"})
+public class WebFilter extends AbstractHandlerFilter {
+    // Processing your business
+}
+```
+
+### 4. CrossOrigin `Spring-based CrossOrigin annotation`
+```java
+@Controller
+public class GithubController {
+
+    @Mapping
+    @CrossOrigin("*.github.com")
+    public String fromGithub() {
+        // Processing your business
+    }
+}
+```
+
+### 5. Startup Web Application
 ```java
 @Import(AppConfiguration.class)
 public class Application {
@@ -105,24 +128,24 @@ public class Application {
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(
-                new String[]{"spring/springContext.xml"},
+                new String[]{"springContext.xml", "mybatisplusConfig.xml"},
                 args);
     }
 }
 ```
-### 4. Startup Non-Web Application
+### 6. Startup Non-Web Application
 ```java
 @Import(AppConfiguration.class)
 public class Application {
     public static void main(String[] args) {
         SpringApplication application = SpringApplication.runApplication(Application.class, args);
-
+        
+        // start your business
         ContextSupport.getBeans(StartService.class).forEach((k, v) -> {
-            // start your business
             v.doStart();
         });
 
-        // waiting
+        // shutdown for waiting
         application.waiting(20L, TimeUnit.SECONDS);
     }
 }
@@ -133,15 +156,15 @@ public class Application {
     public static void main(String[] args) {
         SpringApplication application =
                 SpringApplication.runApplication(
-                        new String[]{"spring/springContext.xml", "spring/businessConfig.xml"},
+                        new String[]{"springContext.xml", "mybatisplusConfig.xml"},
                         args);
                         
+        // start your business                
         ContextSupport.getBeans(StartService.class).forEach((k, v) -> {
-            // start your business
             v.doStart();
         });
 
-        // waiting
+        // shutdown for waiting
         application.waiting(20L, TimeUnit.SECONDS);
     }
 }

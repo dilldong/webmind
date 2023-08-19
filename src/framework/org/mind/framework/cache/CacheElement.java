@@ -4,7 +4,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.util.DateFormatUtils;
+import org.mind.framework.util.DateUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +50,7 @@ public class CacheElement {
     }
 
     public CacheElement(Object data, String key, Cloneable.CloneType type) {
-        this(data, key, DateFormatUtils.getMillis(), 0, type);
+        this(data, key, DateUtils.getMillis(), 0, type);
     }
 
     public CacheElement(Object data, String key) {

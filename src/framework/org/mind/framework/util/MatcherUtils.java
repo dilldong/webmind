@@ -1,15 +1,24 @@
 package org.mind.framework.util;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.annotation.Mapping;
+import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MatcherUtils {
-    private static final String URL_SEP = "([^\\/]+)";
+    private static final String URL_SCHEMA_SEP = "://";
+    private static final String URL_SEP = "([^\\/]+?)";
     private static final String ANY_CHAR = "\\\\S*";
     private static final String URI_SEP = "\\\\/";
+
+    private static final String DOMAIN_DOT = "\\\\.";
+    private static final String DOMAIN_PREFIX = "^(https?:\\/\\/)?";
+    private static final String DOMAIN_ANY = "(?:[a-zA-Z0-9_-]+\\\\.)*";
+    private static final String DOMAIN_ANY_END = "(\\/[\\S]*)?$";
+
     public static final String START = "^";
     public static final String END = "$";
 
@@ -23,11 +32,13 @@ public class MatcherUtils {
      */
     public static final int IGNORECASE_EQ = Pattern.CASE_INSENSITIVE;
 
-    public static final Pattern URI_PARAM_PATTERN = Pattern.compile("(\\$\\{)\\w+\\}");
+    public static final Pattern URI_PARAM_PATTERN = Pattern.compile("(\\$\\{)[^/]+?\\}");
 
-    public static final Pattern PARAM_MATCH_PATTERN = Pattern.compile("(#\\{)\\w+\\}");
+    public static final Pattern PARAM_MATCH_PATTERN = Pattern.compile("(#\\{)[^/]+?\\}");
 
     public static final Pattern ANY_PATTERN = Pattern.compile("\\*");
+
+    public static final Pattern REPLACE_DOMAIN_SEP = Pattern.compile("\\.");
 
     public static final Pattern URI_SEP_PATTERN = Pattern.compile("\\/");
 
@@ -75,6 +86,29 @@ public class MatcherUtils {
         return count;
     }
 
+    public static boolean matchURL(String urlWithWildcard, String searchUrl) {
+        int search = urlWithWildcard.indexOf(URL_SCHEMA_SEP);
+        if (search > -1)
+            urlWithWildcard = urlWithWildcard.substring(search + 3);
+
+        int anyIndex = urlWithWildcard.indexOf(CorsConfiguration.ALL);
+        if (anyIndex > -1) {
+            // Check the '*' back is '.'
+            if(IOUtils.DOT_SEPARATOR.equals(urlWithWildcard.substring(anyIndex + 1, anyIndex + 2)))
+                urlWithWildcard = urlWithWildcard.substring(0, anyIndex + 1) + urlWithWildcard.substring(anyIndex + 2);
+
+            String regex = REPLACE_DOMAIN_SEP.matcher(urlWithWildcard).replaceAll(DOMAIN_DOT);
+            regex = String.join(
+                    StringUtils.EMPTY,
+                    DOMAIN_PREFIX,
+                    MatcherUtils.ANY_PATTERN.matcher(regex).replaceAll(DOMAIN_ANY),
+                    DOMAIN_ANY_END);
+            return MatcherUtils.matcher(searchUrl, regex, MatcherUtils.IGNORECASE_EQ).matches();
+        }
+
+        return StringUtils.containsIgnoreCase(searchUrl, urlWithWildcard);
+    }
+
     /**
      * 将{@link Mapping} value 转换为正则表达式
      *
@@ -83,6 +117,13 @@ public class MatcherUtils {
      */
     public static String convertURI(String uri) {
         return toPattern(uri, URI_PARAM_PATTERN);
+    }
+
+    public static String convertURIIfExists(String uri) {
+        if (MatcherUtils.checkCount(uri, URI_PARAM_PATTERN) > 0)
+            return MatcherUtils.convertURI(uri);
+
+        return uri;
     }
 
     public static String convertParam(String uri) {
@@ -100,4 +141,5 @@ public class MatcherUtils {
                 .append(END)
                 .toString();
     }
+
 }
