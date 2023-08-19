@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,6 +55,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     // MultipartResolver object in the bean factory
     private static final String MULTIPART_RESOLVER_BEAN_NAME = "multipartResolver";
 
+    // ResourceRequest object in the bean factory
+    private static final String RESOURCE_HANDLER_BEAN_NAME = "resourceHandlerRequest";
+
     private Map<String, Execution> actions;// URI regex mapping object
     private List<String> urisRegex; // URI regex list
 
@@ -70,7 +74,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     public void init(ContainerAware container) throws ServletException {
         this.urisRegex = new ArrayList<>();
         this.interceptorsCatcher = new ArrayList<>();
-        this.resourceRequest = new ResourceHandlerRequest(container.getServletConfig());
 
         // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
         this.actions = new HashMap<String, Execution>() {
@@ -115,14 +118,26 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
         // init MultipartResolver
         this.initMultipartResolver();
+
+        // init ResourceHandler
+        this.initResourceHanlder(container.getServletConfig());
     }
 
-    private void initMultipartResolver() {
+    protected void initMultipartResolver() {
         try {
             this.multipartResolver = ContextSupport.getBean(MULTIPART_RESOLVER_BEAN_NAME, MultipartResolver.class);
         } catch (NoSuchBeanDefinitionException e) {
             // Default is no multipart resolver.
             this.multipartResolver = null;
+        }
+    }
+
+    protected void initResourceHanlder(ServletConfig servletConfig) {
+        try {
+            this.resourceRequest = ContextSupport.getBean(RESOURCE_HANDLER_BEAN_NAME, ResourceRequest.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            // Default is ResourceHandlerRequest resolver.
+            this.resourceRequest = new ResourceHandlerRequest(servletConfig);
         }
     }
 
@@ -214,7 +229,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
          */
         if (Objects.isNull(execution)) {
             log.warn("The requested URL (404) Not found: {}", requestURI);
-            this.sendError(
+            this.renderError(
                     HttpServletResponse.SC_NOT_FOUND,
                     "The requested URL (404) Not found",
                     Render.NOT_FOUND_HTML,
@@ -229,7 +244,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         if (!execution.isSupportMethod(request.getMethod())) {
             log.warn("[{}] - HTTP method {} is not supported by this URI, specified as: {}",
                     requestURI, request.getMethod(), execution.methodString());
-            this.sendError(
+            this.renderError(
                     HttpServletResponse.SC_METHOD_NOT_ALLOWED,
                     String.format("This URL does not support the HTTP method '%s'", request.getMethod()),
                     Render.METHOD_NOT_ALLOWED_HTML,
@@ -400,7 +415,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         return null;
     }
 
-    protected void sendError(int statusCode, String jsonMessage, String htmlMessage, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void renderError(int statusCode, String jsonMessage, String htmlMessage, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setStatus(statusCode);
         String contentType = request.getContentType();
         // json body
@@ -409,7 +424,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     .render(request, response);
         else// html body
             ViewResolver.text(htmlMessage).render(request, response);
-
     }
 
 }

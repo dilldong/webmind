@@ -1,6 +1,7 @@
 package org.mind.framework.web.renderer;
 
 import org.mind.framework.util.IOUtils;
+import org.mind.framework.web.dispatcher.handler.HandlerResult;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -52,6 +53,7 @@ public class NullRender extends Render {
 
                 RequestDispatcher rd = request.getRequestDispatcher(uri);
                 if (Objects.isNull(rd)) {
+                    HandlerResult.setRequestAttribute(request);
                     response.sendError(
                             HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                             String.format("Not forward path: %s", uri));

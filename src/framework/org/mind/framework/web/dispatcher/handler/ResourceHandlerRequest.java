@@ -6,6 +6,8 @@ import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.ResponseUtils;
+import org.mind.framework.util.ViewResolver;
+import org.mind.framework.web.renderer.Render;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -110,16 +112,14 @@ public class ResourceHandlerRequest implements ResourceRequest {
 
         if (forbidden) {
             log.warn("[{}]{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN, uri);
-            HandlerResult.setRequestAttribute(request);
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "(403) Forbidden access.");
+            this.renderError(HttpServletResponse.SC_FORBIDDEN, Render.FORBIDDEN_HTML, request, response);
             return;
         }
 
         Path path = Paths.get(this.servletContext.getRealPath(uri));
         if (!Files.exists(path)) {
             log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, uri);
-            HandlerResult.setRequestAttribute(request);
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is (404) not found.");
+            this.renderError(HttpServletResponse.SC_NOT_FOUND, Render.NOT_FOUND_HTML, request, response);
             return;
         }
 
@@ -128,8 +128,7 @@ public class ResourceHandlerRequest implements ResourceRequest {
 
         if (!readAttributes.isRegularFile()) {
             log.warn("[{}]{} - Access resource is not found.", HttpServletResponse.SC_NOT_FOUND, uri);
-            HandlerResult.setRequestAttribute(request);
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Access resource is (404) not found.");
+            this.renderError(HttpServletResponse.SC_NOT_FOUND, Render.NOT_FOUND_HTML, request, response);
             return;
         }
 
@@ -174,7 +173,7 @@ public class ResourceHandlerRequest implements ResourceRequest {
         ResponseUtils.write(response.getOutputStream(), path);
     }
 
-    private String generateETag(long contentLength, long lastModified) {
+    protected String generateETag(long contentLength, long lastModified) {
         if (contentLength >= 0L || lastModified >= 0L) {
             return new StringBuilder("W/\"")
                     .append(contentLength)
@@ -186,4 +185,9 @@ public class ResourceHandlerRequest implements ResourceRequest {
         return null;
     }
 
+    protected void renderError(int statusCode, String htmlMessage, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setStatus(statusCode);
+        // html body
+        ViewResolver.text(htmlMessage).render(request, response);
+    }
 }
