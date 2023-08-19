@@ -74,7 +74,7 @@ public class TomcatServer extends Tomcat {
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
             if (log.isDebugEnabled())
-                log.debug("Load Web-Server config: {}", serverConfig.getWebXml());
+                log.debug("Load Web-Server config: [{}]", serverConfig.getWebXml());
 
             ctx.addLifecycleListener(super.getDefaultWebXmlListener());
             LifecycleListener config = this.getContextListener(host);
@@ -84,7 +84,7 @@ public class TomcatServer extends Tomcat {
                 ((ContextConfig) config).setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
             if (log.isDebugEnabled())
-                log.debug("Creation mind-framework servlet: [{}]", ServerContext.SERVLET_CLASS);
+                log.debug("Creation default servlet: [{}]", DispatcherServlet.class.getName());
 
             // create servlet
             this.createServlet(host, ctx);

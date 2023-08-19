@@ -37,7 +37,6 @@ import java.util.Set;
 public abstract class ServerContext {
     static final Logger log = LoggerFactory.getLogger(ServerContext.class);
     public static final String SERVLET_NAME = "webmindServlet";
-    public static final String SERVLET_CLASS = "org.mind.framework.dispatcher.DispatcherServlet";
 
     private transient Set<String> springFileSet;
     private transient Set<String> resourceSet;
