@@ -10,12 +10,13 @@ import java.util.regex.Pattern;
 
 public class MatcherUtils {
     private static final String URL_SCHEMA_SEP = "://";
-    private static final String URL_SEP = "([^\\/]+)";
+    private static final String URL_SEP = "([^\\/]+?)";
     private static final String ANY_CHAR = "\\\\S*";
     private static final String URI_SEP = "\\\\/";
 
     private static final String DOMAIN_DOT = "\\\\.";
-    private static final String DOMAIN_ANY = "^(https?:\\\\/\\\\/)?(www\\\\.)?[a-zA-Z0-9_-]+";
+    private static final String DOMAIN_PREFIX = "^(https?:\\/\\/)?";
+    private static final String DOMAIN_ANY = "(?:[a-zA-Z0-9_-]+\\\\.)*";
     private static final String DOMAIN_ANY_END = "(\\/[\\S]*)?$";
 
     public static final String START = "^";
@@ -31,9 +32,9 @@ public class MatcherUtils {
      */
     public static final int IGNORECASE_EQ = Pattern.CASE_INSENSITIVE;
 
-    public static final Pattern URI_PARAM_PATTERN = Pattern.compile("(\\$\\{)\\w+\\}");
+    public static final Pattern URI_PARAM_PATTERN = Pattern.compile("(\\$\\{)[^/]+?\\}");
 
-    public static final Pattern PARAM_MATCH_PATTERN = Pattern.compile("(#\\{)\\w+\\}");
+    public static final Pattern PARAM_MATCH_PATTERN = Pattern.compile("(#\\{)[^/]+?\\}");
 
     public static final Pattern ANY_PATTERN = Pattern.compile("\\*");
 
@@ -86,20 +87,23 @@ public class MatcherUtils {
     }
 
     public static boolean matchURL(String urlWithWildcard, String searchUrl) {
-        if (urlWithWildcard.contains(CorsConfiguration.ALL)) {
-            int search = urlWithWildcard.indexOf(URL_SCHEMA_SEP);
-            if (search > -1)
-                urlWithWildcard = urlWithWildcard.substring(search + 3);
+        int search = urlWithWildcard.indexOf(URL_SCHEMA_SEP);
+        if (search > -1)
+            urlWithWildcard = urlWithWildcard.substring(search + 3);
+
+        int anyIndex = urlWithWildcard.indexOf(CorsConfiguration.ALL);
+        if (anyIndex > -1) {
+            // Check the '*' back is '.'
+            if(IOUtils.DOT_SEPARATOR.equals(urlWithWildcard.substring(anyIndex + 1, anyIndex + 2)))
+                urlWithWildcard = urlWithWildcard.substring(0, anyIndex + 1) + urlWithWildcard.substring(anyIndex + 2);
 
             String regex = REPLACE_DOMAIN_SEP.matcher(urlWithWildcard).replaceAll(DOMAIN_DOT);
-            regex = MatcherUtils.ANY_PATTERN.matcher(regex).replaceAll(DOMAIN_ANY) + DOMAIN_ANY_END;
-            System.out.println(regex);
+            regex = String.join(
+                    StringUtils.EMPTY,
+                    DOMAIN_PREFIX,
+                    MatcherUtils.ANY_PATTERN.matcher(regex).replaceAll(DOMAIN_ANY),
+                    DOMAIN_ANY_END);
             return MatcherUtils.matcher(searchUrl, regex, MatcherUtils.IGNORECASE_EQ).matches();
-        }
-
-        if (urlWithWildcard.contains(URL_SCHEMA_SEP) && !searchUrl.contains(URL_SCHEMA_SEP)) {
-            int search = urlWithWildcard.indexOf(URL_SCHEMA_SEP);
-            urlWithWildcard = urlWithWildcard.substring(search + 3);
         }
 
         return StringUtils.containsIgnoreCase(searchUrl, urlWithWildcard);
@@ -137,4 +141,5 @@ public class MatcherUtils {
                 .append(END)
                 .toString();
     }
+
 }
