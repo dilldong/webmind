@@ -228,7 +228,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
          * Status code (404) indicating that the requested resource is not available.
          */
         if (Objects.isNull(execution)) {
-            log.warn("The requested URL (404) Not found: {}", requestURI);
+            log.warn("The requested URL (404) Not found: [{}]", requestURI);
             this.renderError(
                     HttpServletResponse.SC_NOT_FOUND,
                     "The requested URL (404) Not found",
@@ -254,7 +254,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
 
         if (execution.isRequestLog()) {
-            log.info("Action is: {}.{}, [{}]",
+            log.info("Action is: {}.{} - [{}]",
                     execution.getActionInstance().getClass().getSimpleName(),
                     execution.getMethod().getName(),
                     requestURI);
@@ -294,8 +294,10 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
-                log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
-                log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+                log.info("End method: {}.{} - {}ms",
+                        execution.getActionInstance().getClass().getSimpleName(),
+                        execution.getMethod().getName(),
+                        DateUtils.getMillis() - begin);
             }
 
             // Clean up any resources used by a multipart request.
