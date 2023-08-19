@@ -294,10 +294,8 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
-                log.info("End method: {}.{} - {}ms",
-                        execution.getActionInstance().getClass().getSimpleName(),
-                        execution.getMethod().getName(),
-                        DateUtils.getMillis() - begin);
+                log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
+                log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
             }
 
             // Clean up any resources used by a multipart request.
