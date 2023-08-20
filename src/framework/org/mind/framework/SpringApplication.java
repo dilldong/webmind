@@ -9,6 +9,7 @@ import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.web.server.WebServer;
 import org.mind.framework.web.server.WebServerConfig;
+import org.springframework.context.support.AbstractApplicationContext;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -99,6 +100,10 @@ public class SpringApplication {
             try {
                 if (await > 0L)
                     timeUnit.sleep(await);
+
+                // shutdown on Spring
+                if(ContextSupport.getApplicationContext() instanceof AbstractApplicationContext)
+                    ((AbstractApplicationContext) ContextSupport.getApplicationContext()).close();
 
                 mainThread.interrupt();
                 // When received a stop signal,
