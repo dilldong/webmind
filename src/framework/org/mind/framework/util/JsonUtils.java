@@ -4,7 +4,9 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.ToNumberStrategy;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +29,14 @@ public class JsonUtils {
     public static final String EMPTY_JSON_OBJECT = "{}";
 
     public static final String EMPTY_JSON_ARRAY = "[]";
+
+    public static final String BEGIN_BRACKETS = "{";
+
+    public static final String END_BRACKETS = "}";
+
+    public static final String BEGIN_ARRARYS = "[";
+
+    public static final String END_ARRARYS = "]";
 
     // Delete spaces, carriage returns, newlines, and tabs in a string
     private static final Pattern REPLACE_PATT = Pattern.compile("\\s{2,}|\t|\r|\n");
@@ -90,52 +100,88 @@ public class JsonUtils {
         if (StringUtils.isBlank(text))
             return false;
 
-        return text.startsWith("[") && text.endsWith("]");
+        return text.startsWith(BEGIN_ARRARYS) && text.endsWith(END_ARRARYS);
     }
 
     public static boolean isJsonObject(String text) {
         if (StringUtils.isBlank(text))
             return false;
 
-        return text.startsWith("{") && text.endsWith("}");
+        return text.startsWith(BEGIN_BRACKETS) && text.endsWith(END_BRACKETS);
     }
 
     /**
      * 返回JSON中第一个name属性的值
      */
-    public static String getAttribute(String name, String json) {
-        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
+    public static String getAttribute(String searchName, String json) {
+        if (StringUtils.isEmpty(searchName) || StringUtils.isEmpty(json))
             return StringUtils.EMPTY;
 
-        if (json.contains(name)) {
-            String result = StringUtils.substringBetween(json, name, ",");
-            if(StringUtils.isEmpty(result))
-                result = StringUtils.substringBetween(json, name, "}");
+        int index = json.indexOf("\"" + searchName + "\":");
+        if (index > -1) {
+            String result = StringUtils.substringBetween(json, searchName, ",");
+            if (StringUtils.isEmpty(result))
+                result = StringUtils.substringBetween(json, searchName, END_BRACKETS);
 
             return JSON_ATTR_PATTERN.matcher(result).replaceAll(StringUtils.EMPTY).trim();
         }
+
         return StringUtils.EMPTY;
     }
 
     /**
      * 返回JSON对象中第一层级的name对象
      */
-    public static String getAttributeObject(String name, String json) {
-        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(json))
+    public static String getAttributeObject(String searchName, String json) {
+        if (StringUtils.isEmpty(searchName) || StringUtils.isEmpty(json))
             return StringUtils.EMPTY;
 
-        if (json.contains(name)) {
+        int index = json.indexOf("\"" + searchName + "\":");
+        if (index > -1) {
             JsonElement rootElement = JsonUtils.fromJson(json, JsonElement.class);
-            JsonElement element = null;
+            JsonElement element = each(rootElement, searchName);
+            if (Objects.isNull(element))
+                return StringUtils.EMPTY;
 
-            // only support json-object
-            if(rootElement.isJsonObject())
-                element = rootElement.getAsJsonObject().get(name);
+            element = element.getAsJsonObject().get(searchName);
 
-            if(Objects.nonNull(element) && !element.isJsonNull())
+            if (Objects.nonNull(element) && !element.isJsonNull())
                 return element.toString();
         }
         return StringUtils.EMPTY;
+    }
+
+    private static JsonElement each(JsonElement element, String searchName) {
+        if (element.isJsonObject()) {
+            JsonObject obj = element.getAsJsonObject();
+            for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                if (entry.getKey().equals(searchName))
+                    return obj;
+
+                JsonElement value = entry.getValue();
+                if (value.isJsonObject()) {
+                    JsonObject result = (JsonObject) entry.getValue();
+                    if (result.has(searchName))
+                        return result;
+                } else if (value.isJsonArray()) {
+                    JsonArray result = (JsonArray) entry.getValue();
+                    for (JsonElement jsonElement : result) {
+                        JsonElement child = each(jsonElement, searchName);
+                        if (Objects.nonNull(child))
+                            return child;
+                    }
+                }
+            }
+        } else if (element.isJsonArray()) {
+            JsonArray result = element.getAsJsonArray();
+            for (JsonElement jsonElement : result) {
+                JsonElement child = each(jsonElement, searchName);
+                if (Objects.nonNull(child))
+                    return child;
+            }
+        }
+
+        return null;
     }
 
     public static String toJson(Object target) {
@@ -166,7 +212,7 @@ public class JsonUtils {
     }
 
     public static String toJson(Object target, boolean isShowField, String... fieldName) {
-        return toJson(target,false, isShowField, fieldName);
+        return toJson(target, false, isShowField, fieldName);
     }
 
     public static String toJson(Object target, boolean excludesFieldsWithoutExpose, boolean isShowField, String... fieldName) {
@@ -174,7 +220,7 @@ public class JsonUtils {
     }
 
     public static String toJson(Object target, Type type, boolean excludesFieldsWithoutExpose, boolean isShowField, String... fieldName) {
-        final String fieldNameString = StringUtils.substringBetween(Arrays.toString(fieldName), "[", "]");
+        final String fieldNameString = StringUtils.substringBetween(Arrays.toString(fieldName), BEGIN_ARRARYS, END_ARRARYS);
         if (StringUtils.isEmpty(fieldNameString))
             return toJson(target, type, excludesFieldsWithoutExpose);
 
@@ -219,7 +265,7 @@ public class JsonUtils {
         try {
             return getSingleton().fromJson(json, typeToken);
         } catch (Exception ex) {
-            if(printErrorStack)
+            if (printErrorStack)
                 log.error(ex.getMessage(), ex);
             else
                 log.error(ex.getMessage());
@@ -239,7 +285,7 @@ public class JsonUtils {
         try {
             return getSingleton().fromJson(jsonReader, typeToken);
         } catch (Exception ex) {
-            if(printErrorStack)
+            if (printErrorStack)
                 log.error(ex.getMessage(), ex);
             else
                 log.error(ex.getMessage());
@@ -249,11 +295,12 @@ public class JsonUtils {
 
     /**
      * Delete spaces, carriage returns, newlines, and tabs in a string
+     *
      * @param source origin string
      * @return the deleted string
      */
-    public static String deletionBlank(String source){
-        if(StringUtils.isEmpty(source))
+    public static String deletionBlank(String source) {
+        if (StringUtils.isEmpty(source))
             return StringUtils.EMPTY;
 
         return REPLACE_PATT.matcher(source).replaceAll(StringUtils.EMPTY);
