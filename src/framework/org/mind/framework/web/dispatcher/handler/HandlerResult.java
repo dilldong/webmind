@@ -12,7 +12,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -41,14 +40,14 @@ public interface HandlerResult {
         JsonObject jsonObject = new JsonObject();
         String queryString = request.getQueryString();
 
-        try {
-            queryString = URLDecoder.decode(queryString, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {}
-
         if (StringUtils.isEmpty(queryString))
             jsonObject.addProperty(REQUEST_URL, HttpUtils.getURL(request, true));
-        else
+        else {
+            try {
+                queryString = URLDecoder.decode(queryString, StandardCharsets.UTF_8.name());
+            } catch (Exception ignored) {}
             jsonObject.addProperty(REQUEST_URL, HttpUtils.getURL(request, true) + "?" + queryString);
+        }
 
         jsonObject.addProperty(REQUEST_METHOD, request.getMethod());
         jsonObject.addProperty(REQUEST_IP, HttpUtils.getRequestIP(request, true));
