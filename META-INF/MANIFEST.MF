@@ -2,4 +2,4 @@ Manifest-Version: 1.0
 Built-By: Marcus
 Build-Jdk: 1.8
 Implementation-Title: webmind-framework
-Implementation-Version: 4.5.5
+Implementation-Version: 4.5.5.RELEASE
