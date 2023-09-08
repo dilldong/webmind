@@ -62,14 +62,14 @@
                     <property name="daemon" value="false"/><!-- daemon thread -->
                     <property name="updaters">
                         <list>
-                            <bean class="org.mind.framework.service.queue.ConsumerService">
-                                <property name="queueService" ref="queueService"/>
+                            <bean class="org.mind.framework.service.queue.SingleTaskConsumerService">
+                                <constructor-arg name="queueService" ref="queueService"/>
                             </bean>
 
                             <!--利用线程池处理queueService-->
-                            <bean class="org.mind.framework.service.queue.ConsumerService" init-method="initExecutorPool">
-                                <property name="useThreadPool" value="true"/>
-                                <property name="queueService" ref="executorQueueService"/>
+                            <bean class="org.mind.framework.service.queue.MultiTaskConsumerService">
+                                <constructor-arg name="maxPoolSize" value="1"/>
+                                <constructor-arg name="queueService" ref="executorQueueService"/>
                             </bean>
                         </list>
                     </property>

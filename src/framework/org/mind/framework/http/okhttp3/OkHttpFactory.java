@@ -21,7 +21,7 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.server.GracefulShutdown;
-import org.mind.framework.web.server.ShutDownSignalEnum;
+import org.mind.framework.web.server.ShutDownSignalStatus;
 import org.mind.framework.web.server.WebServerConfig;
 import retrofit2.Call;
 import retrofit2.Converter;
@@ -316,10 +316,10 @@ public class OkHttpFactory {
 
         shutdown.waitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook(signal -> {
-                    if (signal == ShutDownSignalEnum.IN) {
+                    if (signal == ShutDownSignalStatus.IN) {
                         log.info("Cancel OkHttpClient connections ....");
                         HTTP_CLIENT.dispatcher().cancelAll();
-                    } else if (signal == ShutDownSignalEnum.OUT)
+                    } else if (signal == ShutDownSignalStatus.OUT)
                         CONTENT_LENGTH_LOCAL.remove();
                 });
     }

@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @ToString
 @AllArgsConstructor
-public enum ShutDownSignalEnum {
+public enum ShutDownSignalStatus {
     UNSTARTED(0),
     IN(1),
     PAUSE(2),
@@ -14,9 +14,9 @@ public enum ShutDownSignalEnum {
 
     public final int code;
 
-    public static ShutDownSignalEnum find(int code){
-        ShutDownSignalEnum[] signalArray = ShutDownSignalEnum.values();
-        for(ShutDownSignalEnum signal : signalArray){
+    public static ShutDownSignalStatus find(int code){
+        ShutDownSignalStatus[] signalArray = ShutDownSignalStatus.values();
+        for(ShutDownSignalStatus signal : signalArray){
             if(signal.code == code)
                 return signal;
         }
