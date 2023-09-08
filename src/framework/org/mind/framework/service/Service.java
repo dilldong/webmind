@@ -11,7 +11,7 @@ public interface Service {
 	String SVC_REPLICA_NAME = "svc.replica";
 
 	/**
-	 * 开始服务
+	 * 开启服务
 	 * 
 	 * @author dp
 	 */

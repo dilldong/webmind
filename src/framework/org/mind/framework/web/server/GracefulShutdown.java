@@ -33,7 +33,7 @@ public class GracefulShutdown {
     private TimeUnit waitTimeUnit;
 
     protected ExecutorService executor;
-    protected Consumer<ShutDownSignalEnum> consumer;
+    protected Consumer<ShutDownSignalStatus> consumer;
 
     protected GracefulShutdown(String nameTag, Thread currentThread) {
         this.nameTag = nameTag;
@@ -65,18 +65,18 @@ public class GracefulShutdown {
         this.registerShutdownHook(signal -> {});
     }
 
-    public void registerShutdownHook(Consumer<ShutDownSignalEnum> consumer) {
+    public void registerShutdownHook(Consumer<ShutDownSignalStatus> consumer) {
         this.consumer = consumer;
-        this.consumer.accept(ShutDownSignalEnum.UNSTARTED);
+        this.consumer.accept(ShutDownSignalStatus.UNSTARTED);
 
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newDaemonThread(nameTag, () -> {
             synchronized (shutdownMonitor) {
                 log.info("Stopping the '{}' service ....", nameTag);
-                this.consumer.accept(ShutDownSignalEnum.IN);
+                this.consumer.accept(ShutDownSignalStatus.IN);
 
                 this.onStoppingEvent();
 
-                this.consumer.accept(ShutDownSignalEnum.OUT);
+                this.consumer.accept(ShutDownSignalStatus.OUT);
 
                 try {
                     currentThread.interrupt();
@@ -108,7 +108,7 @@ public class GracefulShutdown {
     protected void shutdown(ExecutorService executorService) {
         try {
             executorService.shutdown();
-            this.consumer.accept(ShutDownSignalEnum.DOWN);
+            this.consumer.accept(ShutDownSignalStatus.DOWN);
 
             if (!executorService.awaitTermination(waitTime, waitTimeUnit)) {
                 log.warn("'{}' didn't shutdown gracefully within '{} {}'. Proceeding with forceful shutdown",

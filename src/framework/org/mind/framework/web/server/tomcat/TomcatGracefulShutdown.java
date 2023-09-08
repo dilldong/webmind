@@ -5,7 +5,7 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 import org.mind.framework.web.server.GracefulShutdown;
-import org.mind.framework.web.server.ShutDownSignalEnum;
+import org.mind.framework.web.server.ShutDownSignalStatus;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -30,7 +30,7 @@ public class TomcatGracefulShutdown extends GracefulShutdown {
             Connector connector = this.tomcat.getConnector();
             log.info("Stopping connector is: {}", connector.toString());
             connector.pause();
-            super.consumer.accept(ShutDownSignalEnum.PAUSE);
+            super.consumer.accept(ShutDownSignalStatus.PAUSE);
             executor = connector.getProtocolHandler().getExecutor();
         }
 

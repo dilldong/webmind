@@ -14,6 +14,7 @@ import org.springframework.web.context.support.XmlWebApplicationContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author Marcus
@@ -30,8 +31,8 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
 
     @Override
     protected void loadBeanDefinitions(@NotNull XmlBeanDefinitionReader reader) throws IOException {
-        final String[] configLocations = super.getConfigLocations();
-        if (configLocations == null)
+        String[] configLocations = super.getConfigLocations();
+        if (Objects.isNull(configLocations))
             return;
 
         boolean showLog = false;

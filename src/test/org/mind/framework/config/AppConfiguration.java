@@ -4,9 +4,10 @@ import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.service.MainService;
 import org.mind.framework.service.UpdateLoopService;
-import org.mind.framework.service.queue.ConsumerService;
+import org.mind.framework.service.queue.MultiTaskConsumerService;
 import org.mind.framework.service.queue.QueueLittle;
 import org.mind.framework.service.queue.QueueService;
+import org.mind.framework.service.queue.SingleTaskConsumerService;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -51,21 +52,21 @@ public class AppConfiguration {
         return queue;
     }
 
-    @Bean(destroyMethod = "stop")
-    public MainService mainService(QueueService queueService) {
-        ConsumerService consumerQueue = new ConsumerService();
-        consumerQueue.setUseThreadPool(true);
-        //consumerQueue.setSubmitTask(10);
-//        consumerQueue.setMaxPoolSize(48);
-//        consumerQueue.setTaskCapacity(2048);
-        consumerQueue.setQueueService(queueService);
-        consumerQueue.initExecutorPool();
+    @Bean(destroyMethod = "destroy")
+    public QueueService executorQueueService() {
+        QueueLittle queue = new QueueLittle();
+        queue.setWorkerQueue(new LinkedBlockingQueue<>(1024));
+        return queue;
+    }
 
+    @Bean(destroyMethod = "stop")
+    public MainService mainService(QueueService queueService, QueueService executorQueueService) {
         UpdateLoopService loopService = new UpdateLoopService();
         loopService.setServiceName("Loop-Queue-Svc");
         loopService.setSpaceTime(5L);
         loopService.setDaemon(true);
-        loopService.addUpdater(consumerQueue);
+        loopService.addUpdater(new SingleTaskConsumerService(queueService));
+        loopService.addUpdater(new MultiTaskConsumerService(2, executorQueueService));
 
         MainService mainService = new MainService();
         mainService.setChildServices(Collections.singletonList(loopService));

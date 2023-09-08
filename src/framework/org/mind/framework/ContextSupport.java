@@ -25,21 +25,18 @@ public final class ContextSupport {
                 configLocations[i] = String.format("file:%s", configLocations[i]);
 
         AbstractXmlApplicationContext context = new FileSystemXmlApplicationContext(configLocations);
-        context.registerShutdownHook();
         setApplicationContext(context);
         return context;
     }
 
     public static AbstractXmlApplicationContext initSpringByClassPathFile(String... configLocations) {
         AbstractXmlApplicationContext context = new ClassPathXmlApplicationContext(configLocations);
-        context.registerShutdownHook();
         setApplicationContext(context);
         return context;
     }
 
     public static AbstractApplicationContext initSpringByAnnotationClass(Class<?>... componentClasses) {
         AbstractApplicationContext context = new AnnotationConfigApplicationContext(componentClasses);
-        context.registerShutdownHook();
         setApplicationContext(context);
         return context;
     }
@@ -49,7 +46,6 @@ public final class ContextSupport {
      */
     public static WebApplicationContext initSpringByServlet(ServletContext sc) {
         Objects.requireNonNull(sc, "HttpServlet ServletContext is null");
-        // ContextLoaderListener
         WebApplicationContext context = WebApplicationContextUtils.getRequiredWebApplicationContext(sc);
         setApplicationContext(context);
         return context;

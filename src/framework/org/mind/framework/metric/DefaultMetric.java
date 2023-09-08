@@ -15,8 +15,8 @@ public class DefaultMetric implements Metric {
     @Getter
     private final AbstractBucket bucket;
 
-    public DefaultMetric(int bucketSize, int intervalInMills) {
-        this.bucket = new DefaultMetricBucket(bucketSize, intervalInMills);
+    public DefaultMetric(int bucketSize, int intervalInMillis) {
+        this.bucket = new DefaultMetricBucket(bucketSize, intervalInMillis);
     }
 
     @Override
@@ -24,12 +24,12 @@ public class DefaultMetric implements Metric {
         return success(DateUtils.getMillis());
     }
 
-    public long success(long timeMills) {
+    public long success(long timeMillis) {
         // Make sure the bucket at the current time is not empty
-        bucket.current(timeMills);
+        bucket.current(timeMillis);
 
         return
-                bucket.getValuesByPeriod(timeMills)
+                bucket.getValuesByPeriod(timeMillis)
                         .parallelStream()
                         .mapToLong(Indicator::success)
                         .sum();
@@ -40,12 +40,12 @@ public class DefaultMetric implements Metric {
         return exception(DateUtils.getMillis());
     }
 
-    public long exception(long timeMills) {
+    public long exception(long timeMillis) {
         // Make sure the bucket at the current time is not empty
-        bucket.current(timeMills);
+        bucket.current(timeMillis);
 
         return
-                bucket.getValuesByPeriod(timeMills)
+                bucket.getValuesByPeriod(timeMillis)
                         .parallelStream()
                         .mapToLong(Indicator::exception)
                         .sum();
@@ -54,11 +54,11 @@ public class DefaultMetric implements Metric {
     @Override
     public long rt() {
         // Make sure the bucket at the current time is not empty
-        long timeMills = DateUtils.getMillis();
-        bucket.current(timeMills);
+        long timeMillis = DateUtils.getMillis();
+        bucket.current(timeMillis);
 
         return
-                bucket.getValuesByPeriod(timeMills)
+                bucket.getValuesByPeriod(timeMillis)
                         .parallelStream()
                         .mapToLong(Indicator::time)
                         .sum();
@@ -67,10 +67,10 @@ public class DefaultMetric implements Metric {
     @Override
     public long minRt() {
         // Make sure the bucket at the current time is not empty
-        long timeMills = DateUtils.getMillis();
-        bucket.current(timeMills);
+        long timeMillis = DateUtils.getMillis();
+        bucket.current(timeMillis);
         return
-                bucket.getValuesByPeriod(timeMills)
+                bucket.getValuesByPeriod(timeMillis)
                         .parallelStream()
                         .min(Comparator.comparing(Indicator::minTime))
                         .get()
@@ -80,11 +80,11 @@ public class DefaultMetric implements Metric {
     @Override
     public long maxRt() {
         // Make sure the bucket at the current time is not empty
-        long timeMills = DateUtils.getMillis();
-        bucket.current(timeMills);
+        long timeMillis = DateUtils.getMillis();
+        bucket.current(timeMillis);
 
         return
-                bucket.getValuesByPeriod(timeMills)
+                bucket.getValuesByPeriod(timeMillis)
                         .parallelStream()
                         .max(Comparator.comparing(Indicator::maxTime))
                         .get()
