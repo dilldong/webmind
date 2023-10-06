@@ -886,23 +886,17 @@ public class RedissonHelper {
     }
 
     private long getId4Day(ZoneId zone) {
+        String currentDate =
+                DateUtils.format(
+                        DateUtils.getMillis(),
+                        DateUtils.FULL_DATE_PATTERN,
+                        TimeZone.getTimeZone(zone));
+
         RIdGenerator idGenerator = getClient().getIdGenerator(PERDAY_UNIQUE_ID);
-        idGenerator.isExistsAsync().whenComplete((exists, ex) -> {
-            String currentDate =
-                    DateUtils.format(
-                            DateUtils.getMillis(),
-                            DateUtils.FULL_DATE_PATTERN,
-                            TimeZone.getTimeZone(zone));
-            log.info("------currentDate: {}", currentDate);
+        String reset4day = get(RESET_ID4DAY);
+        if(StringUtils.isEmpty(reset4day) || !currentDate.equals(reset4day))
+            resetId4Day(idGenerator, currentDate, zone);
 
-            if (exists) {
-                String reset4day = get(RESET_ID4DAY);
-                if (currentDate.equals(reset4day))
-                    return;
-            }
-
-            this.resetId4Day(idGenerator, currentDate, zone);
-        });
         return idGenerator.nextId();
     }
 
