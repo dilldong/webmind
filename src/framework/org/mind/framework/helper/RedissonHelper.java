@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -66,6 +68,8 @@ public class RedissonHelper {
     public static final String RATE_LIMITED_PREFIX = "RL:";
     public static final String INCREMENT_PREFIX = "ICR:";
     public static final String UNIQUE_ID = "UNIQUE:ID";
+    public static final String PERDAY_UNIQUE_ID = "DAY:UNIQUE:ID";
+    public static final String RESET_ID4DAY = "RESET:ID4DAY";
     private final RedissonClient redissonClient;
     private final Cacheable cacheable;
     private List<RedissonShutdownListener> shutdownEvents;
@@ -669,7 +673,7 @@ public class RedissonHelper {
 
     public long getIdForDate(ZoneId zone, String dateFormat) {
         String date = DateUtils.dateNow(zone).format(DateTimeFormatter.ofPattern(dateFormat));
-        return Long.parseLong(String.format("%s%d", date, getId()));
+        return Long.parseLong(String.format("%s%d", date, getId4Day(zone)));
     }
 
     public long getId() {
@@ -879,5 +883,44 @@ public class RedissonHelper {
 
     private <V> RSet<V> rSet(String name) {
         return getClient().getSet(name);
+    }
+
+    private long getId4Day(ZoneId zone) {
+        RIdGenerator idGenerator = getClient().getIdGenerator(PERDAY_UNIQUE_ID);
+        idGenerator.isExistsAsync().whenComplete((exists, ex) -> {
+            String currentDate =
+                    DateUtils.format(
+                            DateUtils.getMillis(),
+                            DateUtils.FULL_DATE_PATTERN,
+                            TimeZone.getTimeZone(zone));
+
+            if (exists) {
+                String reset4day = get(RESET_ID4DAY);
+                if(currentDate.equals(reset4day))
+                    return;
+
+                // reset
+                this.resetId4Day(idGenerator, currentDate, zone);
+            } else {
+                // init
+                this.resetId4Day(idGenerator, currentDate, zone);
+            }
+        });
+        return idGenerator.nextId();
+    }
+
+    private void resetId4Day(RIdGenerator idGenerator, String currentDate, ZoneId zone){
+        // Time difference in seconds from midnight
+        long duration =
+                DateUtils.endOfRemaining(DateUtils.dateTimeNow(zone), LocalTime.MIDNIGHT)
+                        .getSeconds();
+
+        try {
+            setAsync(RESET_ID4DAY, currentDate, duration, TimeUnit.SECONDS);
+        } catch (Exception ignored) {}
+
+        try {
+            idGenerator.tryInit(100_000L, 100L);
+        } catch (Exception ignored) {}
     }
 }
