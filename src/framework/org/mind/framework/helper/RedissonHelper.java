@@ -456,7 +456,7 @@ public class RedissonHelper {
     }
 
     public <K> long removeByMap(String name, K k, RLock lock) {
-        // activating watch-dosg
+        // activating watch-dog
         lock.lock();
         try {
             return this.removeByMap(name, k);
@@ -673,11 +673,23 @@ public class RedissonHelper {
 
     public long getIdForDate(ZoneId zone, String dateFormat) {
         String date = DateUtils.dateNow(zone).format(DateTimeFormatter.ofPattern(dateFormat));
-        return Long.parseLong(String.format("%s%d", date, getId4Day(zone)));
+        long generateId = getId4Day(zone) / 10_000L;
+        StringBuilder joiner = new StringBuilder();
+
+        int length = 6 - String.valueOf(generateId).length();
+        if(length > 0) {
+            for (int i = 0; i < length; ++i)
+                joiner.append("0");
+        }
+
+        if(joiner.length() > 0)
+            return Long.parseLong(String.format("%s%s%d", date, joiner, generateId));
+
+        return Long.parseLong(String.format("%s%d", date, generateId));
     }
 
     public long getId() {
-        return getId(100_000L, 1_000L);
+        return getId(100_000L, 10_000L);
     }
 
     public long getId(long start, long allocationSize) {
@@ -689,7 +701,19 @@ public class RedissonHelper {
                 } catch (Exception ignored) {}
             }
         });
-        return idGenerator.nextId();
+
+        long generateId = idGenerator.nextId() / 10_000L;
+        StringBuilder joiner = new StringBuilder();
+
+        int length = 6 - String.valueOf(generateId).length();
+        if(length > 0) {
+            joiner.append("1");
+            for (int i = 1; i < length; ++i)
+                joiner.append("0");
+        }
+
+        joiner.append(generateId);
+        return Long.parseLong(joiner.toString());
     }
 
     public RRateLimiter getRateLimiter(String name, long rate, long intervalSeconds) {
@@ -902,7 +926,7 @@ public class RedissonHelper {
 
     private void resetId4Day(RIdGenerator idGenerator, String currentDate, ZoneId zone){
         try {
-            idGenerator.tryInit(100_000L, 1_000L);
+            idGenerator.tryInit(100_000L, 10_000L);
         } catch (Exception ignored) {}
 
         // Time difference in seconds from midnight
