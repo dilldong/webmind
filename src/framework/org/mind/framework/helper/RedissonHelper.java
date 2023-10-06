@@ -893,6 +893,7 @@ public class RedissonHelper {
                             DateUtils.getMillis(),
                             DateUtils.FULL_DATE_PATTERN,
                             TimeZone.getTimeZone(zone));
+            log.info("------currentDate: {}", currentDate);
 
             if (exists) {
                 String reset4day = get(RESET_ID4DAY);
@@ -906,17 +907,16 @@ public class RedissonHelper {
     }
 
     private void resetId4Day(RIdGenerator idGenerator, String currentDate, ZoneId zone){
+        try {
+            idGenerator.tryInit(100_000L, 1_000L);
+        } catch (Exception ignored) {}
+
         // Time difference in seconds from midnight
         long duration =
                 DateUtils.endOfRemaining(DateUtils.dateTimeNow(zone), LocalTime.MIDNIGHT)
                         .getSeconds();
-
         try {
-            set(RESET_ID4DAY, currentDate, duration, TimeUnit.SECONDS);
-        } catch (Exception ignored) {}
-
-        try {
-            idGenerator.tryInit(100_000L, 100L);
+            setAsync(RESET_ID4DAY, currentDate, duration, TimeUnit.SECONDS);
         } catch (Exception ignored) {}
     }
 }
