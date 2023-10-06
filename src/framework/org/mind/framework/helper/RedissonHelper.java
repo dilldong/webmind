@@ -896,15 +896,11 @@ public class RedissonHelper {
 
             if (exists) {
                 String reset4day = get(RESET_ID4DAY);
-                if(currentDate.equals(reset4day))
+                if (currentDate.equals(reset4day))
                     return;
-
-                // reset
-                this.resetId4Day(idGenerator, currentDate, zone);
-            } else {
-                // init
-                this.resetId4Day(idGenerator, currentDate, zone);
             }
+
+            this.resetId4Day(idGenerator, currentDate, zone);
         });
         return idGenerator.nextId();
     }
@@ -916,7 +912,7 @@ public class RedissonHelper {
                         .getSeconds();
 
         try {
-            setAsync(RESET_ID4DAY, currentDate, duration, TimeUnit.SECONDS);
+            set(RESET_ID4DAY, currentDate, duration, TimeUnit.SECONDS);
         } catch (Exception ignored) {}
 
         try {
