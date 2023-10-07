@@ -10,6 +10,7 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.JarFileUtils;
+import org.mind.framework.util.JsonUtils;
 import org.redisson.Redisson;
 import org.redisson.RedissonShutdownException;
 import org.redisson.api.LockOptions;
@@ -68,7 +69,6 @@ public class RedissonHelper {
     public static final String RATE_LIMITED_PREFIX = "RL:";
     public static final String INCREMENT_PREFIX = "ICR:";
     public static final String UNIQUE_ID = "UNIQUE:ID";
-    public static final String PERDAY_UNIQUE_ID = "DAY:UNIQUE:ID";
     public static final String RESET_ID4DAY = "RESET:ID4DAY";
     private final RedissonClient redissonClient;
     private final Cacheable cacheable;
@@ -916,7 +916,8 @@ public class RedissonHelper {
                         DateUtils.FULL_DATE_PATTERN,
                         TimeZone.getTimeZone(zone));
 
-        RIdGenerator idGenerator = getClient().getIdGenerator(PERDAY_UNIQUE_ID);
+        String idKey = String.join(JsonUtils.COLON_SEPARATOR, UNIQUE_ID, currentDate);
+        RIdGenerator idGenerator = getClient().getIdGenerator(idKey);
         String reset4day = get(RESET_ID4DAY);
         if(StringUtils.isEmpty(reset4day) || !currentDate.equals(reset4day))
             resetId4Day(idGenerator, currentDate, zone);
@@ -925,16 +926,15 @@ public class RedissonHelper {
     }
 
     private void resetId4Day(RIdGenerator idGenerator, String currentDate, ZoneId zone){
+        // Time difference in seconds from midnight
+        Duration duration = DateUtils.endOfRemaining(DateUtils.dateTimeNow(zone), LocalTime.MIDNIGHT);
         try {
             idGenerator.tryInit(100_000L, 10_000L);
+            idGenerator.expireAsync(duration);
         } catch (Exception ignored) {}
 
-        // Time difference in seconds from midnight
-        long duration =
-                DateUtils.endOfRemaining(DateUtils.dateTimeNow(zone), LocalTime.MIDNIGHT)
-                        .getSeconds();
         try {
-            setAsync(RESET_ID4DAY, currentDate, duration, TimeUnit.SECONDS);
+            setAsync(RESET_ID4DAY, currentDate, duration.getSeconds(), TimeUnit.SECONDS);
         } catch (Exception ignored) {}
     }
 }
