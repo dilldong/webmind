@@ -38,7 +38,6 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -834,21 +833,21 @@ public class RedissonHelper {
         return new HashMap<>(keysMap);
     }
 
-    public void setExpireAsync(RExpirable rObject, long expire, TimeUnit unit) {
+    public void setExpireAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
         if (expire > 0L) {
             long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
                 newExpire = unit.toMillis(expire);
-            rObject.expireAsync(Duration.of(newExpire, ChronoUnit.MILLIS));
+            rExpirable.expireAsync(Duration.ofMillis(newExpire));
         }
     }
 
-    public void setExpireIfNotSetAsync(RExpirable rObject, long expire, TimeUnit unit) {
+    public void setExpireIfNotSetAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
         if (expire > 0L) {
-            rObject.isExistsAsync().whenComplete((exists, ex) -> {
-                if (!exists)
-                    setExpireAsync(rObject, expire, unit);
-            });
+            long newExpire = expire;
+            if (TimeUnit.MILLISECONDS != unit)
+                newExpire = unit.toMillis(expire);
+            rExpirable.expireIfNotSetAsync(Duration.ofMillis(newExpire));
         }
     }
 
