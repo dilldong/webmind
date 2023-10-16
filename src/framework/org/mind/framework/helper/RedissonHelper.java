@@ -205,14 +205,29 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RList<V> rList = this.rList(name);
-        CompletionStage<Boolean> completionStage = rList.addAsync(v).thenApplyAsync(added -> {
-            if (added) {
-                putLocal(name, ArrayList.class);
-                setExpireIfNotSet(rList, expire, unit);
-                return Boolean.TRUE;
-            }
-            return Boolean.FALSE;
-        });
+        CompletionStage<Boolean> completionStage =
+                rList.isExistsAsync().thenApplyAsync(exists -> {
+                    boolean added = rList.add(v);
+                    if (added) {
+                        putLocal(name, ArrayList.class);
+                        if (!exists)
+                            setExpire(rList, expire, unit);
+                        return Boolean.TRUE;
+                    }
+                    return Boolean.FALSE;
+                });
+
+        /*
+         * Redis 7.0+
+         */
+//        CompletionStage<Boolean> completionStage = rList.addAsync(v).thenApplyAsync(added -> {
+//            if (added) {
+//                putLocal(name, ArrayList.class);
+//                setExpireIfNotSet(rList, expire, unit);
+//                return Boolean.TRUE;
+//            }
+//            return Boolean.FALSE;
+//        });
 
         return new CompletableFutureWrapper<>(completionStage);
     }
@@ -350,10 +365,9 @@ public class RedissonHelper {
 
         RMap<K, V> rMap = this.rMap(name);
         CompletionStage<Boolean> completionStage = rMap.deleteAsync().thenApplyAsync(deleted -> {
-            rMap.putAllAsync(map).thenAcceptAsync(fn -> {
-                putLocal(name, map.getClass());
-                setExpire(rMap, expire, unit);
-            });
+            rMap.putAll(map);
+            putLocal(name, map.getClass());
+            setExpire(rMap, expire, unit);
             return Boolean.TRUE;
         });
 
@@ -383,14 +397,17 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RMap<K, V> rMap = this.rMap(name);
-        CompletionStage<Boolean> completionStage = rMap.fastPutAsync(k, v).thenApplyAsync(puted -> {
-            if (puted) {
-                putLocal(name, HashMap.class);
-                setExpireIfNotSetAsync(rMap, expire, unit);
-                return Boolean.TRUE;
-            }
-            return Boolean.FALSE;
-        });
+        CompletionStage<Boolean> completionStage =
+                rMap.isExistsAsync().thenApplyAsync(exists -> {
+                    boolean puted = rMap.fastPut(k, v);
+                    if (puted) {
+                        putLocal(name, HashMap.class);
+                        if (!exists)
+                            setExpire(rMap, expire, unit);
+                        return Boolean.TRUE;
+                    }
+                    return Boolean.FALSE;
+                });
         return new CompletableFutureWrapper<>(completionStage);
     }
 
@@ -509,16 +526,14 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RSet<V> rSet = this.rSet(name);
-        CompletionStage<Boolean> completionStage = rSet.deleteAsync().thenApplyAsync(fn -> {
-            CompletionStage<Boolean> addStage = rSet.addAllAsync(set).thenApplyAsync(added -> {
-                if (added) {
-                    putLocal(name, set.getClass());
-                    setExpire(rSet, expire, unit);
-                    return Boolean.TRUE;
-                }
-                return Boolean.FALSE;
-            });
-            return this.getBooleanByStage(addStage);
+        CompletionStage<Boolean> completionStage = rSet.deleteAsync().thenApplyAsync(deleted -> {
+            boolean added = rSet.addAll(set);
+            if (added) {
+                putLocal(name, set.getClass());
+                setExpire(rSet, expire, unit);
+                return Boolean.TRUE;
+            }
+            return Boolean.FALSE;
         });
 
         return new CompletableFutureWrapper<>(completionStage);
@@ -547,14 +562,18 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RSet<V> rSet = this.rSet(name);
-        CompletionStage<Boolean> completionStage = rSet.addAsync(v).thenApplyAsync(added -> {
-            if (added) {
-                putLocal(name, HashSet.class);
-                setExpireIfNotSet(rSet, expire, unit);
-                return Boolean.TRUE;
-            }
-            return Boolean.FALSE;
-        });
+        CompletionStage<Boolean> completionStage =
+                rSet.isExistsAsync().thenApplyAsync(exists -> {
+                    boolean added = rSet.add(v);
+                    if (added) {
+                        putLocal(name, HashSet.class);
+                        if(!exists)
+                            setExpire(rSet, expire, unit);
+                        return Boolean.TRUE;
+                    }
+                    return Boolean.FALSE;
+                });
+
         return new CompletableFutureWrapper<>(completionStage);
     }
 
@@ -862,44 +881,41 @@ public class RedissonHelper {
         return new HashMap<>(keysMap);
     }
 
-    public void setExpire(RExpirable rExpirable, long expire, TimeUnit unit) {
+    public boolean setExpire(RExpirable rExpirable, long expire, TimeUnit unit) {
+        return this.<Boolean>get(this.setExpireAsync(rExpirable, expire, unit));
+    }
+
+    public RFuture<Boolean> setExpireAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
         if (expire > 0L) {
             long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
                 newExpire = unit.toMillis(expire);
-            rExpirable.expire(Duration.ofMillis(newExpire));
+            return rExpirable.expireAsync(Duration.ofMillis(newExpire));
         }
+        return new CompletableFutureWrapper<>(Boolean.FALSE);
     }
 
-    public void setExpireAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            rExpirable.expireAsync(Duration.ofMillis(newExpire));
-        }
+    /**
+     * Redis 7.0+
+     */
+    public boolean setExpireIfNotSet(RExpirable rExpirable, long expire, TimeUnit unit) {
+        return this.<Boolean>get(this.setExpireIfNotSetAsync(rExpirable, expire, unit));
     }
 
-    public void setExpireIfNotSet(RExpirable rExpirable, long expire, TimeUnit unit) {
+    /**
+     * Redis 7.0+
+     */
+    public RFuture<Boolean> setExpireIfNotSetAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
         if (expire > 0L) {
             long newExpire = expire;
             if (TimeUnit.MILLISECONDS != unit)
                 newExpire = unit.toMillis(expire);
 
             // Redis 7.0+
-            rExpirable.expireIfNotSet(Duration.ofMillis(newExpire));
+            return rExpirable.expireIfNotSetAsync(Duration.ofMillis(newExpire));
         }
-    }
 
-    public void setExpireIfNotSetAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            
-            // Redis 7.0+
-            rExpirable.expireIfNotSetAsync(Duration.ofMillis(newExpire));
-        }
+        return new CompletableFutureWrapper<>(Boolean.FALSE);
     }
 
     /**
@@ -995,10 +1011,12 @@ public class RedissonHelper {
         try {
             idGenerator.tryInit(100_000L, 10_000L);
             idGenerator.expireAsync(duration);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         try {
             setAsync(RESET_ID4DAY, currentDate, duration.getSeconds(), TimeUnit.SECONDS);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 }
