@@ -163,27 +163,37 @@ public class RedissonHelper {
         return this.getList(name, getReadLock(name));
     }
 
+    public <V> RFuture<Boolean> setAsync(String name, List<V> list) {
+        return this.setAsync(name, list, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> RFuture<Boolean> setAsync(String name, List<V> list, long expire, TimeUnit unit) {
         if (Objects.isNull(list) || list.isEmpty())
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RList<V> rList = this.rList(name);
         CompletionStage<Boolean> completionStage = rList.deleteAsync().thenApplyAsync(fn -> {
-            CompletionStage<Boolean> addStage = rList.addAllAsync(list).thenApplyAsync(added -> {
-                if (added) {
-                    putLocal(name, list.getClass());
-                    setExpire(rList, expire, unit);
-                    return Boolean.TRUE;
-                }
-                return Boolean.FALSE;
-            });
-            return this.getBooleanByStage(addStage);
+            boolean added = rList.addAll(list);
+            if (added) {
+                putLocal(name, list.getClass());
+                setExpire(rList, expire, unit);
+                return Boolean.TRUE;
+            }
+            return Boolean.FALSE;
         });
         return new CompletableFutureWrapper<>(completionStage);
     }
 
+    public <V> boolean set(String name, List<V> list) {
+        return this.set(name, list, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit) {
         return this.<Boolean>get(this.setAsync(name, list, expire, unit));
+    }
+
+    public <V> boolean set(String name, List<V> list, RLock lock) {
+        return this.set(name, list, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit, RLock lock) {
@@ -196,8 +206,16 @@ public class RedissonHelper {
         }
     }
 
+    public <V> boolean setWithLock(String name, List<V> list) {
+        return this.setWithLock(name, list, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> boolean setWithLock(String name, List<V> list, long expire, TimeUnit unit) {
         return this.set(name, list, expire, unit, this.getWriteLock(name));
+    }
+
+    public <V> RFuture<Boolean> addByListAsync(String name, V v) {
+        return this.addByListAsync(name, v, 0, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> addByListAsync(String name, V v, long expire, TimeUnit unit) {
@@ -232,8 +250,16 @@ public class RedissonHelper {
         return new CompletableFutureWrapper<>(completionStage);
     }
 
+    public <V> boolean addByList(String name, V v) {
+        return this.addByList(name, v, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> boolean addByList(String name, V v, long expire, TimeUnit unit) {
         return this.<Boolean>get(this.addByListAsync(name, v, expire, unit));
+    }
+
+    public <V> boolean addByList(String name, V v, RLock lock) {
+        return this.addByList(name, v, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean addByList(String name, V v, long expire, TimeUnit unit, RLock lock) {
@@ -244,6 +270,10 @@ public class RedissonHelper {
         } finally {
             lock.unlock();
         }
+    }
+
+    public <V> boolean addByListWithLock(String name, V v) {
+        return this.addByListWithLock(name, v, 0, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addByListWithLock(String name, V v, long expire, TimeUnit unit) {
@@ -359,6 +389,10 @@ public class RedissonHelper {
         return this.getMap(name, getReadLock(name));
     }
 
+    public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map) {
+        return this.setAsync(name, map, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map, long expire, TimeUnit unit) {
         if (Objects.isNull(map) || map.isEmpty())
             return new CompletableFutureWrapper<>(Boolean.FALSE);
@@ -374,8 +408,16 @@ public class RedissonHelper {
         return new CompletableFutureWrapper<>(completionStage);
     }
 
+    public <K, V> boolean set(String name, Map<K, V> map) {
+        return this.set(name, map, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit) {
         return this.<Boolean>get(setAsync(name, map, expire, unit));
+    }
+
+    public <K, V> boolean set(String name, Map<K, V> map, RLock lock) {
+        return this.set(name, map, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
@@ -388,8 +430,16 @@ public class RedissonHelper {
         }
     }
 
+    public <K, V> boolean setWithLock(String name, Map<K, V> map) {
+        return this.setWithLock(name, map, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <K, V> boolean setWithLock(String name, Map<K, V> map, long expire, TimeUnit unit) {
         return set(name, map, expire, unit, this.getWriteLock(name));
+    }
+
+    public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v) {
+        return this.putByMapAsync(name, k, v, 0, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v, long expire, TimeUnit unit) {
@@ -411,8 +461,16 @@ public class RedissonHelper {
         return new CompletableFutureWrapper<>(completionStage);
     }
 
+    public <K, V> boolean putByMap(String name, K k, V v) {
+        return this.putByMap(name, k, v, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit) {
         return this.<Boolean>get(putByMapAsync(name, k, v, expire, unit));
+    }
+
+    public <K, V> boolean putByMap(String name, K k, V v, RLock lock) {
+        return this.putByMap(name, k, v, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
@@ -423,6 +481,10 @@ public class RedissonHelper {
         } finally {
             lock.unlock();
         }
+    }
+
+    public <K, V> boolean putByMapWithLock(String name, K k, V v) {
+        return this.putByMapWithLock(name, k, v, 0, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean putByMapWithLock(String name, K k, V v, long expire, TimeUnit unit) {
@@ -484,7 +546,6 @@ public class RedissonHelper {
         return this.rMap(name).fastRemoveAsync(k);
     }
 
-
     public <K> long removeByMap(String name, K k) {
         return this.<Long>get(removeByMapAsync(name, k));
     }
@@ -521,6 +582,10 @@ public class RedissonHelper {
         return this.getSet(name, getReadLock(name));
     }
 
+    public <V> RFuture<Boolean> setAsync(String name, Set<V> set) {
+        return this.setAsync(name, set, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> RFuture<Boolean> setAsync(String name, Set<V> set, long expire, TimeUnit unit) {
         if (Objects.isNull(set) || set.isEmpty())
             return new CompletableFutureWrapper<>(Boolean.FALSE);
@@ -539,8 +604,16 @@ public class RedissonHelper {
         return new CompletableFutureWrapper<>(completionStage);
     }
 
+    public <V> boolean set(String name, Set<V> set) {
+        return set(name, set, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit) {
         return this.<Boolean>get(setAsync(name, set, expire, unit));
+    }
+
+    public <V> boolean set(String name, Set<V> set, RLock lock) {
+        return set(name, set, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit, RLock lock) {
@@ -553,8 +626,16 @@ public class RedissonHelper {
         }
     }
 
+    public <V> boolean setWithLock(String name, Set<V> set) {
+        return setWithLock(name, set, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> boolean setWithLock(String name, Set<V> set, long expire, TimeUnit unit) {
         return this.set(name, set, expire, unit, this.getWriteLock(name));
+    }
+
+    public <V> RFuture<Boolean> addBySetAsync(String name, V v) {
+        return addBySetAsync(name, v, 0, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> addBySetAsync(String name, V v, long expire, TimeUnit unit) {
@@ -567,7 +648,7 @@ public class RedissonHelper {
                     boolean added = rSet.add(v);
                     if (added) {
                         putLocal(name, HashSet.class);
-                        if(!exists)
+                        if (!exists)
                             setExpire(rSet, expire, unit);
                         return Boolean.TRUE;
                     }
@@ -577,8 +658,16 @@ public class RedissonHelper {
         return new CompletableFutureWrapper<>(completionStage);
     }
 
+    public <V> boolean addBySet(String name, V v) {
+        return addBySet(name, v, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit) {
         return this.<Boolean>get(addBySetAsync(name, v, expire, unit));
+    }
+
+    public <V> boolean addBySet(String name, V v, RLock lock) {
+        return addBySet(name, v, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit, RLock lock) {
@@ -589,6 +678,10 @@ public class RedissonHelper {
         } finally {
             lock.unlock();
         }
+    }
+
+    public <V> boolean addBySetWithLock(String name, V v) {
+        return addBySetWithLock(name, v, 0, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addBySetWithLock(String name, V v, long expire, TimeUnit unit) {
@@ -682,6 +775,10 @@ public class RedissonHelper {
         return this.delete(name, this.getWriteLock(name));
     }
 
+    public <V> RFuture<Void> setAsync(String name, V value) {
+        return setAsync(name, value, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> RFuture<Void> setAsync(String name, V value, long expire, TimeUnit unit) {
         RBucket<V> rBucket = getClient().getBucket(name);
         RFuture<Void> future = expire > 0 ?
@@ -691,12 +788,24 @@ public class RedissonHelper {
         return future;
     }
 
+    public <V> void set(String name, V value) {
+        set(name, value, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> void set(String name, V value, long expire, TimeUnit unit) {
         this.get(setAsync(name, value, expire, unit));
     }
 
+    public <V> void setWithLock(String name, V value) {
+        setWithLock(name, value, 0, TimeUnit.MILLISECONDS);
+    }
+
     public <V> void setWithLock(String name, V value, long expire, TimeUnit unit) {
         this.set(name, value, expire, unit, this.getWriteLock(name));
+    }
+
+    public <V> void set(String name, V value, RLock lock) {
+        set(name, value, 0, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> void set(String name, V value, long expire, TimeUnit unit, RLock Lock) {
