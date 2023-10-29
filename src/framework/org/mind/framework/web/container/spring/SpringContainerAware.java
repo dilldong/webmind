@@ -110,10 +110,7 @@ public class SpringContainerAware implements ContainerAware {
                 continue;
 
             Mapping mapping = method.getAnnotation(Mapping.class);
-            biConsumer.accept(
-                    mapping.value(),
-                    new Execution(bean, method, mapping.method(), mapping.requestLog()));
-
+            biConsumer.accept(mapping.value(), new Execution(bean, method, mapping));
             joiner.add(mapping.value());
         }
 

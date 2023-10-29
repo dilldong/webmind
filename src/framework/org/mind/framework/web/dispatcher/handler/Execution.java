@@ -1,5 +1,8 @@
 package org.mind.framework.web.dispatcher.handler;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.mind.framework.annotation.Mapping;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -23,6 +26,8 @@ public class Execution {
     private final Method method;
 
     // Http request method
+    @Getter
+    @Setter
     private RequestMethod[] requestMethods;
 
     // Method's arguments types
@@ -35,19 +40,25 @@ public class Execution {
     private int argsNumber;
 
     // Output request call log on parent
+    @Getter
     private final boolean requestLog;
 
-    public Execution(Object actionInstance, Method method, RequestMethod[] requestMethods, boolean requestLog) {
-        this(actionInstance, method, null, requestMethods, requestLog);
+    // Simple one line logging
+    @Getter
+    private final boolean simpleLogging;
+
+    public Execution(Object actionInstance, Method method, Mapping mapping) {
+        this(actionInstance, method, null, mapping);
     }
 
-    public Execution(Object actionInstance, Method method, Object[] arguments, RequestMethod[] requestMethods, boolean requestLog) {
+    public Execution(Object actionInstance, Method method, Object[] arguments, Mapping mapping) {
         this.actionInstance = actionInstance;
         this.method = method;
         this.parameterTypes = method.getParameterTypes();
         this.arguments = arguments;
-        this.requestMethods = requestMethods;
-        this.requestLog = requestLog;
+        this.requestMethods = mapping.method();
+        this.requestLog = mapping.requestLog();
+        this.simpleLogging = mapping.simpleLogging();
     }
 
     public Object execute() {
@@ -80,18 +91,6 @@ public class Execution {
 
     protected void setArgsNumber(int argsNumber) {
         this.argsNumber = argsNumber;
-    }
-
-    public RequestMethod[] getRequestMethods() {
-        return requestMethods;
-    }
-
-    public void setRequestMethods(RequestMethod[] requestMethods) {
-        this.requestMethods = requestMethods;
-    }
-
-    public boolean isRequestLog() {
-        return requestLog;
     }
 
     public boolean isSupportMethod(String method) {
