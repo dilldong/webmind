@@ -63,7 +63,7 @@ public class WebContextLoadListener extends ContextLoaderListener {
             if (beanDefinition.getRole() != BeanDefinition.ROLE_INFRASTRUCTURE)
                 beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
         } catch (NoSuchBeanDefinitionException ignored) {
-            throw new IllegalStateException("Cannot register 'EnableCacheConfiguration' to Spring.");
+
         }
 
         // Manually create AOP proxy

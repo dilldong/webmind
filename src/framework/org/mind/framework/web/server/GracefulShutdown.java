@@ -5,6 +5,7 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +91,9 @@ public class GracefulShutdown {
     }
 
     protected void onStoppingEvent() {
+        if(Objects.isNull(this.executor))
+            return;
+
         if (this.executor instanceof ThreadPoolExecutor) {
             ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
