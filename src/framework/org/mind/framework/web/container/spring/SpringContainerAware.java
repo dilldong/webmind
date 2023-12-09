@@ -177,8 +177,11 @@ public class SpringContainerAware implements ContainerAware {
     public void destroy() {
         // Let Spring destroy all beans.
         // Only call close() on WebApplicationContext
-        if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext)
-            ((ConfigurableApplicationContext) ContextSupport.getApplicationContext()).close();
+        if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext) {
+            ConfigurableApplicationContext context = (ConfigurableApplicationContext) ContextSupport.getApplicationContext();
+            if(context.isActive())
+                context.close();
+        }
     }
 
     private CorsConfiguration initCorsConfiguration(CrossOrigin cross, RequestMethod[] requestMethods) {

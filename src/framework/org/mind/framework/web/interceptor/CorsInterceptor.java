@@ -44,7 +44,7 @@ public class CorsInterceptor extends AbstractHandlerInterceptor {
         try {
             isValid = this.processor.processRequest(config, request, response);
         } catch (IOException e) {
-            log.error("[{}] - Cors processor filter an exception: {}", HttpUtils.getURI(request, true), e.getMessage());
+            log.error("[{}] - Cors processor filter an exception: {}", HttpUtils.getURI(request), e.getMessage());
             return false;
         }
 

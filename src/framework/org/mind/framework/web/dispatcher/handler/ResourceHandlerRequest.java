@@ -78,7 +78,7 @@ public class ResourceHandlerRequest implements ResourceRequest {
 
     @Override
     public boolean checkStaticResource(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        final String requestURI = HttpUtils.getURI(request, true);
+        final String requestURI = HttpUtils.getURI(request);
         int subIndex = requestURI.lastIndexOf(IOUtils.DOT_SEPARATOR);
         if (subIndex != -1) {
             String suffix = requestURI.substring(subIndex + 1);

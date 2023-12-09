@@ -160,7 +160,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         final long begin = DateUtils.getMillis();
-        final String requestURI = HttpUtils.getURI(request);
+        final String requestURI = HttpUtils.getURI(request, false);
 
         /*
          * Global interceptors for application containers
@@ -295,7 +295,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
                 if(execution.isSimpleLogging()){
-                    log.info("Action is: {}.{} - [{}] - [{} ms]",
+                    log.info("{}.{} - [{}] - [{} ms]",
                             execution.getActionInstance().getClass().getSimpleName(),
                             execution.getMethod().getName(),
                             requestURI,

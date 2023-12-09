@@ -50,7 +50,7 @@ public class HttpUtils {
      * @param request The servlet request we are processing
      */
     public static String getURI(HttpServletRequest request, boolean ... forAttr) {
-        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+        if(ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
             String uri = (String) request.getAttribute(REQUEST_URI);
             if (StringUtils.isNotEmpty(uri))
                 return uri;
@@ -100,7 +100,7 @@ public class HttpUtils {
         if(StringUtils.isNotEmpty(contextPath))
             urlBuilder.append(contextPath);
 
-        String url = urlBuilder.append(getURI(request, true)).toString();
+        String url = urlBuilder.append(getURI(request)).toString();
         request.setAttribute(REQUEST_URL, url);
         return url;
     }
