@@ -98,14 +98,12 @@ public abstract class LoopWorkerService extends AbstractService {
      * 服务线程刚开始时调用的方法，若需做一些初始化操作可覆盖此方法来添加
      */
     protected void toStart() {
-        logger.info("service [{}@{}] is to start ....", serviceName, Integer.toHexString(hashCode()));
     }
 
     /**
      * 服务线程将要结束时调用的方法，若需做一些清理操作可覆盖此方法来添加
      */
     protected void toEnd() {
-        logger.info("service [{}@{}] is to end ....", serviceName, Integer.toHexString(hashCode()));
     }
 
     @Override

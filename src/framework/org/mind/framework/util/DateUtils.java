@@ -7,11 +7,13 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjuster;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -25,12 +27,13 @@ import java.util.TimeZone;
 public class DateUtils {
     public static final ZoneId ZONE_DEFAULT = ZoneId.systemDefault();
     public static final ZoneId UTC = ZoneId.of("UTC");
-    public static final ZoneId UTC8 = ZoneId.of("UTC+8");
+    public static final ZoneId UTC8 = ZoneId.of("GMT+8");
     public static final TimeZone UTC_TIMEZONE = TimeZone.getTimeZone(UTC);
     public static final TimeZone UTC8_TIMEZONE = TimeZone.getTimeZone(UTC8);
     public static final long ONE_DAY_MILLIS = 86_400_000L;
     public static final long ONE_HOUR_MILLIS = 3_600_000L;
 
+    public static final String FULL_DATE_PATTERN = "yyyyMMdd";
     public static final String SIMPLE_DATE_PATTERN = "yyMMdd";
     public static final String DATE_PATTERN = "yyyy-MM-dd";
     public static final String ENS_DATE_PATTERN = "MM/dd/yyyy";
@@ -92,6 +95,16 @@ public class DateUtils {
         return DateFormatUtils.format(date, pattern);
     }
 
+    public static String format(Date date, String pattern, TimeZone zone) {
+        if (Objects.isNull(date))
+            date = currentDate();
+
+        if (StringUtils.isEmpty(pattern))
+            return formatDateTime(date, zone);
+
+        return DateFormatUtils.format(date, pattern, zone);
+    }
+
     public static String formatUTC(Date date, String pattern) {
         return DateFormatUtils.formatUTC(date, pattern);
     }
@@ -108,6 +121,10 @@ public class DateUtils {
         return DateFormatUtils.format(timemillis, pattern);
     }
 
+    public static String format(long timemillis, String pattern, TimeZone zone) {
+        return DateFormatUtils.format(timemillis, pattern, zone);
+    }
+
     public static String formatUTC(long timemillis, String pattern) {
         return DateFormatUtils.formatUTC(timemillis, pattern);
     }
@@ -120,12 +137,26 @@ public class DateUtils {
         return formatDate(currentDate());
     }
 
+    public static String formatDate(TimeZone zone) {
+        return formatDate(currentDate(), zone);
+    }
+
     public static String formatDate(Date date) {
         return DateFormat.getDateInstance().format(date);
     }
 
+    public static String formatDate(Date date, TimeZone zone) {
+        DateFormat df = DateFormat.getDateInstance();
+        df.setTimeZone(zone);
+        return df.format(date);
+    }
+
     public static String formatDate(long timemillis) {
         return formatDate(new Date(timemillis));
+    }
+
+    public static String formatDate(long timemillis, TimeZone zone) {
+        return formatDate(new Date(timemillis), zone);
     }
 
     public static String formatTime() {
@@ -144,8 +175,18 @@ public class DateUtils {
         return formatDateTime(currentDate());
     }
 
+    public static String formatDateTime(TimeZone zone) {
+        return formatDateTime(currentDate(), zone);
+    }
+
     public static String formatDateTime(Date date) {
         return DateFormat.getDateTimeInstance().format(date);
+    }
+
+    public static String formatDateTime(Date date, TimeZone zone) {
+        DateFormat df = DateFormat.getDateTimeInstance();
+        df.setTimeZone(zone);
+        return df.format(date);
     }
 
     public static String formatDateTime(long timemillis) {
@@ -246,6 +287,14 @@ public class DateUtils {
 
     public static long endOfDayMillis(LocalDate localDate, ZoneId zoneId) {
         return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1000L;
+    }
+
+    /**
+     * 计算两个时间之差
+     */
+    public static Duration endOfRemaining(LocalDateTime start, TemporalAdjuster endOf){
+        LocalDateTime nextMidnight = start.with(endOf).plusDays(1L);
+        return Duration.between(start, nextMidnight);
     }
 
     /**

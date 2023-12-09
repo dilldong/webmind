@@ -120,7 +120,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         this.initMultipartResolver();
 
         // init ResourceHandler
-        this.initResourceHanlder(container.getServletConfig());
+        this.initResourceHandler(container.getServletConfig());
     }
 
     protected void initMultipartResolver() {
@@ -132,7 +132,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
     }
 
-    protected void initResourceHanlder(ServletConfig servletConfig) {
+    protected void initResourceHandler(ServletConfig servletConfig) {
         try {
             this.resourceRequest = ContextSupport.getBean(RESOURCE_HANDLER_BEAN_NAME, ResourceRequest.class);
         } catch (NoSuchBeanDefinitionException e) {
@@ -160,7 +160,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         final long begin = DateUtils.getMillis();
-        final String requestURI = HttpUtils.getURI(request);
+        final String requestURI = HttpUtils.getURI(request, false);
 
         /*
          * Global interceptors for application containers
@@ -253,7 +253,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if (execution.isRequestLog()) {
+        if (execution.isRequestLog() && !execution.isSimpleLogging()) {
             log.info("Action is: {}.{} - [{}]",
                     execution.getActionInstance().getClass().getSimpleName(),
                     execution.getMethod().getName(),
@@ -294,8 +294,18 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
-                log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
-                log.info("End method: {}.{}", execution.getActionInstance().getClass().getSimpleName(), execution.getMethod().getName());
+                if(execution.isSimpleLogging()){
+                    log.info("{}.{} - [{}] - [{} ms]",
+                            execution.getActionInstance().getClass().getSimpleName(),
+                            execution.getMethod().getName(),
+                            requestURI,
+                            DateUtils.getMillis() - begin);
+                } else {
+                    log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
+                    log.info("End method: {}.{}",
+                            execution.getActionInstance().getClass().getSimpleName(),
+                            execution.getMethod().getName());
+                }
             }
 
             // Clean up any resources used by a multipart request.

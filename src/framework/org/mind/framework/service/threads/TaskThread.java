@@ -2,6 +2,7 @@ package org.mind.framework.service.threads;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.mind.framework.util.DateUtils;
 
 /**
  * A Thread implementation that records the time at which it was created.
@@ -12,13 +13,12 @@ public class TaskThread extends Thread {
     private final long creationTime;
 
     public TaskThread(ThreadGroup group, Runnable target, String name) {
-        super(group, new WrappingRunnable(target), name);
-        this.creationTime = System.currentTimeMillis();
+        this(group, target, name, 0L);
     }
 
     public TaskThread(ThreadGroup group, Runnable target, String name, long stackSize) {
         super(group, new WrappingRunnable(target), name, stackSize);
-        this.creationTime = System.currentTimeMillis();
+        this.creationTime = DateUtils.getMillis();
     }
 
     /**

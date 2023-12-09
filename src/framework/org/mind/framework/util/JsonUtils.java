@@ -38,6 +38,8 @@ public class JsonUtils {
 
     public static final String END_ARRARYS = "]";
 
+    public static final String COLON_SEPARATOR = ":";
+
     // Delete spaces, carriage returns, newlines, and tabs in a string
     private static final Pattern REPLACE_PATT = Pattern.compile("\\s{2,}|\t|\r|\n");
 

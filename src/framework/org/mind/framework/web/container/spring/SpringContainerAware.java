@@ -110,10 +110,7 @@ public class SpringContainerAware implements ContainerAware {
                 continue;
 
             Mapping mapping = method.getAnnotation(Mapping.class);
-            biConsumer.accept(
-                    mapping.value(),
-                    new Execution(bean, method, mapping.method(), mapping.requestLog()));
-
+            biConsumer.accept(mapping.value(), new Execution(bean, method, mapping));
             joiner.add(mapping.value());
         }
 
@@ -180,8 +177,11 @@ public class SpringContainerAware implements ContainerAware {
     public void destroy() {
         // Let Spring destroy all beans.
         // Only call close() on WebApplicationContext
-        if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext)
-            ((ConfigurableApplicationContext) ContextSupport.getApplicationContext()).close();
+        if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext) {
+            ConfigurableApplicationContext context = (ConfigurableApplicationContext) ContextSupport.getApplicationContext();
+            if(context.isActive())
+                context.close();
+        }
     }
 
     private CorsConfiguration initCorsConfiguration(CrossOrigin cross, RequestMethod[] requestMethods) {

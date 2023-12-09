@@ -23,5 +23,13 @@ public @interface Mapping {
 
     RequestMethod[] method() default {};
 
+    /**
+     * Enable request logging
+     */
     boolean requestLog() default true;
+
+    /**
+     * Simple one line logging
+     */
+    boolean simpleLogging() default false;
 }
