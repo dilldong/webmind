@@ -51,6 +51,9 @@ public class CalculateUtils {
         if (Objects.isNull(augends) || augends.length == 0)
             return "0";
 
+        if(augends.length == 1)
+            return augends[0];
+
         BigDecimal total = BigDecimal.ZERO;
         for (String augend : augends)
             total = add(total, new BigDecimal(augend));
@@ -61,6 +64,9 @@ public class CalculateUtils {
     public static BigDecimal add(BigDecimal... augends) {
         if (Objects.isNull(augends) || augends.length == 0)
             return BigDecimal.ZERO;
+
+        if(augends.length == 1)
+            return augends[0];
 
         BigDecimal total = BigDecimal.ZERO;
         for (BigDecimal augend : augends)
@@ -124,6 +130,9 @@ public class CalculateUtils {
         if (Objects.isNull(multiplicands) || multiplicands.length == 0)
             return "0";
 
+        if(multiplicands.length == 1)
+            return multiplicands[0];
+
         BigDecimal total = BigDecimal.ZERO;
         for (String multiplicand : multiplicands)
             total = multiply(total, new BigDecimal(multiplicand));
@@ -134,6 +143,9 @@ public class CalculateUtils {
     public static BigDecimal multiply(BigDecimal... multiplicands) {
         if (Objects.isNull(multiplicands) || multiplicands.length == 0)
             return BigDecimal.ZERO;
+
+        if(multiplicands.length == 1)
+            return multiplicands[0];
 
         BigDecimal total = BigDecimal.ONE;
         for (BigDecimal multiplicand : multiplicands)

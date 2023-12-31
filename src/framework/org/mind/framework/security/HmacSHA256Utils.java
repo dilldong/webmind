@@ -1,8 +1,8 @@
 package org.mind.framework.security;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.Objects;
 
 /**
  * Utility class to sign messages using HMAC-SHA256.
@@ -35,10 +34,7 @@ public class HmacSHA256Utils {
      */
     public static String encryptBase64(String message, String secret) {
         byte[] bytes = encrypt(message, secret);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Base64.encodeBase64String(bytes);
+        return new String(Base64.encode(bytes), StandardCharsets.UTF_8);
     }
 
     /**
@@ -50,17 +46,14 @@ public class HmacSHA256Utils {
      */
     public static String encryptHex(String message, String secret) {
         byte[] bytes = encrypt(message, secret);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Hex.encodeHexString(bytes);
+        return new String(Hex.encode(bytes), StandardCharsets.UTF_8);
     }
 
     /**
      * Sign the given message using the given secret.
      *
-     * @param message message to sign
-     * @param secretKey  secret key
+     * @param message   message to sign
+     * @param secretKey secret key
      * @return a signed message from byte array
      */
     public static byte[] encrypt(String message, String secretKey) {
@@ -71,52 +64,45 @@ public class HmacSHA256Utils {
 
             return sha256Hmac.doFinal(message.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            throw new DecoderException(e.getMessage(), e);
         }
-        return null;
     }
 
     /**
      * Hex encode the SecretKey
      *
      * @param password
-     * @param salt     random letters
+     * @param salt           random letters
      * @param iterationCount the iteration count.
-     * @param keyLength   the to-be-derived key length. ranges: 128/192/256
+     * @param keyLength      the to-be-derived key length. ranges: 128/192/256
      * @return hex string
      */
     public static String generateKeyHex(String password, String salt, int iterationCount, int keyLength) {
         byte[] bytes = generateKey(password, salt, iterationCount, keyLength);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Hex.encodeHexString(bytes);
+        return new String(Hex.encode(bytes), StandardCharsets.UTF_8);
     }
 
     /**
      * Base64 encode the SecretKey
      *
      * @param password
-     * @param salt     random letters
+     * @param salt           random letters
      * @param iterationCount the iteration count.
-     * @param keyLength   the to-be-derived key length. ranges: 128/192/256
+     * @param keyLength      the to-be-derived key length. ranges: 128/192/256
      * @return base64 string
      */
     public static String generateKeyBase64(String password, String salt, int iterationCount, int keyLength) {
         byte[] bytes = generateKey(password, salt, iterationCount, keyLength);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Base64.encodeBase64String(bytes);
+        return new String(Base64.encode(bytes), StandardCharsets.UTF_8);
     }
 
     /**
      * Using password, salt, iteration count, and key length for generating PBEKey of variable-key-size PBE ciphers.
      *
      * @param password
-     * @param salt     random letters
+     * @param salt           random letters
      * @param iterationCount the iteration count.
-     * @param keyLength   the to-be-derived key length. ranges: 128/192/256
+     * @param keyLength      the to-be-derived key length. ranges: 128/192/256
      * @return byte array
      */
     public static byte[] generateKey(String password, String salt, int iterationCount, int keyLength) {
@@ -134,9 +120,7 @@ public class HmacSHA256Utils {
 
             return originalKey.getEncoded();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            log.error(e.getMessage(), e);
+            throw new DecoderException(e.getMessage(), e);
         }
-
-        return null;
     }
 }
