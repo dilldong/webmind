@@ -1,6 +1,7 @@
 package org.mind.framework.helper;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
@@ -909,26 +910,39 @@ public class RedissonHelper {
         return getClient().getSpinLock(LOCK_PREFIX + name, backOff);
     }
 
-    public void removeContainsFromLocalKeys(String keyPart) {
+    public void removeContainsKeys(String keyPart, boolean... useLock) {
         CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
         if (Objects.isNull(element))
             return;
 
-        Map<String, Class<?>> redisKeys =
-                (Map<String, Class<?>>) element.getValue();
+        Map<String, Class<?>> redisKeys = (Map<String, Class<?>>) element.getValue();
         if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
             return;
 
+        final boolean lock = ArrayUtils.isNotEmpty(useLock) && useLock[0];
         redisKeys.forEach((k, v) -> {
             if (StringUtils.contains(k, keyPart)) {
-                if (List.class.isAssignableFrom(v))
-                    this.deleteListAsync(k);
-                else if (Map.class.isAssignableFrom(v))
-                    this.deleteMapAsync(k);
-                else if (Set.class.isAssignableFrom(v))
-                    this.deleteSetAsync(k);
-                else
-                    this.deleteAsync(k);
+                if (List.class.isAssignableFrom(v)) {
+                    if (lock)
+                        this.deleteListWithLock(k);
+                    else
+                        this.deleteListAsync(k);
+                } else if (Map.class.isAssignableFrom(v)) {
+                    if (lock)
+                        this.deleteMapWithLock(k);
+                    else
+                        this.deleteMapAsync(k);
+                } else if (Set.class.isAssignableFrom(v)) {
+                    if (lock)
+                        this.deleteSetWithLock(k);
+                    else
+                        this.deleteSetAsync(k);
+                } else {
+                    if (lock)
+                        this.deleteWithLock(k);
+                    else
+                        this.deleteAsync(k);
+                }
             }
         });
     }
@@ -1064,8 +1078,7 @@ public class RedissonHelper {
         if (Objects.isNull(element))
             return;
 
-        Map<String, Class<?>> localKeys =
-                (Map<String, Class<?>>) element.getValue();
+        Map<String, Class<?>> localKeys = (Map<String, Class<?>>) element.getValue();
         if (Objects.isNull(localKeys) || localKeys.isEmpty())
             return;
 

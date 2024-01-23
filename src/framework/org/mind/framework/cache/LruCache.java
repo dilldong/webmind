@@ -144,7 +144,8 @@ public class LruCache extends AbstractCache implements Cacheable {
 
         if (interval > 0 && (DateUtils.getMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
-            log.warn("Remove Cache key, The access time interval expires. key = {}", key);
+            if (log.isDebugEnabled())
+                log.debug("Remove Cache key, The access time interval expires. key = {}", key);
             return null;
         }
 
