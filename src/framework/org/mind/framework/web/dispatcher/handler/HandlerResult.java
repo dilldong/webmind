@@ -26,6 +26,7 @@ public interface HandlerResult {
     String REQUEST_URL = "URL";
     String REQUEST_METHOD = "Method";
     String REQUEST_IP = "Request IP";
+    String CHECK_MULTIPART = "check_multipart_request";
 
     String JSON_METHOD = "Json Method";
     String REQUEST_RAW_CONTENT = "Raw Content";

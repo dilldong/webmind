@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Objects;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -23,11 +24,18 @@ import java.util.Enumeration;
 public final class Action {
     private static final ThreadLocal<Action> ACTION_THREAD_LOCAL = new ThreadLocal<>();
 
-    private ServletContext context;
-    private HttpServletRequest request;
-    private HttpServletResponse response;
 
-    public String getRemoteIp(boolean ... forAttr) {
+    private final ServletContext context;
+    private final HttpServletRequest request;
+    private final HttpServletResponse response;
+
+    private Action(HttpServletRequest request, HttpServletResponse response) {
+        this.context = request.getServletContext();
+        this.request = request;
+        this.response = response;
+    }
+
+    public String getRemoteIp(boolean... forAttr) {
         return HttpUtils.getRequestIP(request, forAttr);
     }
 
@@ -43,6 +51,61 @@ public final class Action {
      */
     public HttpServletRequest getRequest() {
         return request;
+    }
+
+    public void setAttribute(String name, Object value) {
+        getRequest().setAttribute(name, value);
+    }
+
+    public <T> T getAttribute(String name) {
+        return getAttribute(name, null);
+    }
+
+    public <T> T getAttribute(String name, T defaultValue) {
+        Object value = getRequest().getAttribute(name);
+        if (Objects.isNull(value))
+            return defaultValue;
+
+        return (T) value;
+    }
+
+    public void removeAttribute(String name) {
+        getRequest().removeAttribute(name);
+    }
+
+    /**
+     * check current request
+     */
+    public boolean isMultipartRequest(){
+        return HttpUtils.isMultipartRequest(getRequest());
+    }
+
+    /**
+     * Whether the request is POST method?
+     */
+    public boolean isPostMehod() {
+        return HttpUtils.isPostMehod(getRequest());
+    }
+
+    /**
+     * Whether the request is GET method?
+     */
+    public boolean isGetMehod() {
+        return HttpUtils.isGetMehod(getRequest());
+    }
+
+    /**
+     * Whether the request is PUT method?
+     */
+    public boolean isPutMehod() {
+        return HttpUtils.isPutMehod(getRequest());
+    }
+
+    /**
+     * Whether the request is DELETE method?
+     */
+    public boolean isDeleteMehod() {
+        return HttpUtils.isDeleteMehod(getRequest());
     }
 
     /**
@@ -169,11 +232,7 @@ public final class Action {
     }
 
     public static void setActionContext(HttpServletRequest request, HttpServletResponse response) {
-        Action action = new Action();
-        action.context = request.getServletContext();
-        action.request = request;
-        action.response = response;
-        ACTION_THREAD_LOCAL.set(action);
+        ACTION_THREAD_LOCAL.set(new Action(request, response));
     }
 
     public static void removeActionContext() {

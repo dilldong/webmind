@@ -15,6 +15,12 @@ import java.io.IOException;
  */
 public interface HandlerRequest extends Destroyable {
 
+    // MultipartResolver object in the bean factory
+    String MULTIPART_RESOLVER_BEAN_NAME = "multipartResolver";
+
+    // ResourceRequest object in the bean factory
+    String RESOURCE_HANDLER_BEAN_NAME = "resourceHandlerRequest";
+
     void init(ContainerAware container) throws ServletException;
 
     void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;

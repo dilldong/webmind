@@ -3,17 +3,21 @@ package org.mind.framework.web.server.tomcat;
 import org.apache.catalina.Container;
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
+import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Manager;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.session.StandardManager;
 import org.apache.catalina.startup.ContextConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.coyote.http11.AbstractHttp11JsseProtocol;
+import org.apache.coyote.http2.Http2Protocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
@@ -86,6 +90,9 @@ public class TomcatServer extends Tomcat {
             if (log.isDebugEnabled())
                 log.debug("Creation default servlet: [{}]", DispatcherServlet.class.getName());
 
+            // Allow parsing multipartform-data in non-POST requests
+            ctx.setAllowCasualMultipartParsing(true);
+
             // create servlet
             this.createServlet(host, ctx);
 
@@ -102,6 +109,28 @@ public class TomcatServer extends Tomcat {
             ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/500"));
         }
 
+        /*
+            往 Servlet 容器的请求处理管道（pipeline）中添加一个 Valve（阀门）。
+            org.apache.catalina.Valve 是 Tomcat 中用于处理请求的一个拦截器，
+            如: 日志记录器、IP 黑白名单过滤、请求头处理、安全性增强、性能监控和调优。
+         */
+        // ctx.getPipeline().addValve();
+        // super.getEngine().getPipeline().addValve();
+
+        /*
+         * Disable persistence in the StandardManager.
+         * a LifecycleListener is used so not to interfere with Tomcat's default manager creation logic.
+         */
+        ctx.addLifecycleListener(event -> {
+            if (event.getType().equals(Lifecycle.START_EVENT)) {
+                Context context = (Context) event.getLifecycle();
+                Manager manager = context.getManager();
+                if (manager instanceof StandardManager) {
+                    ((StandardManager) manager).setPathname(null);
+                }
+            }
+        });
+
         host.addChild(ctx);
         return ctx;
     }
@@ -117,14 +146,28 @@ public class TomcatServer extends Tomcat {
         connector.setThrowOnFailure(true);
 
         AbstractHttp11JsseProtocol<?> nioProtocol = (AbstractHttp11JsseProtocol<?>) connector.getProtocolHandler();
-        nioProtocol.setPort(serverConfig.getPort());
+        nioProtocol.setPort(Math.max(serverConfig.getPort(), 0));
+        if (StringUtils.isNotEmpty(serverConfig.getServerName()))
+            connector.setProperty("server", serverConfig.getServerName());
+
+        if(Objects.nonNull(serverConfig.getBindAddress()))
+            nioProtocol.setAddress(serverConfig.getBindAddress());
+
+        // Don't bind to the socket prematurely if ApplicationContext is slow to start
+        connector.setProperty("bindOnInit", "false");
+
+        if(serverConfig.isHttp2Enabled())
+            nioProtocol.addUpgradeProtocol(new Http2Protocol());
+
+        // config SSL, As: TomcatServletWebServerFactory
+
         nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
 
         if ("on".equalsIgnoreCase(serverConfig.getCompression())) {
-            nioProtocol.setCompression(serverConfig.getCompression());
+            nioProtocol.setCompression("on");
             nioProtocol.setCompressionMinSize(serverConfig.getCompressionMinSize());
             nioProtocol.setCompressibleMimeType(serverConfig.getCompressibleMimeType());
-            // compression当为on时, 需要与sendfile互斥, 两者取其一
+            // compression为on时, 需要与sendfile互斥, 两者取其一
             nioProtocol.setUseSendfile(false);
         }
 
@@ -277,7 +320,7 @@ public class TomcatServer extends Tomcat {
             try {
                 propertySources.addFirst(new ResourcePropertySource(new ClassPathResource(res)));
             } catch (IOException e) {
-                ThrowProvider.doThrow(e);
+                throw new WebServerException(e.getMessage(), e);
             }
         });
 

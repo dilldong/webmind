@@ -165,7 +165,7 @@ public abstract class ServerContext {
                                 new File(String.format("%s/%s", serverConfig.getTomcatBaseDir(), resource.getFilename())));
                     }
                 } catch (IOException e) {
-                    ThrowProvider.doThrow(e);
+                    throw new WebServerException(e.getMessage(), e);
                 }
             }
         }
@@ -197,7 +197,7 @@ public abstract class ServerContext {
                 } else
                     log.warn("Static resource directory does not exist: '{}'", serverConfig.getResourceDir());
             } catch (IOException e) {
-                ThrowProvider.doThrow(e);
+                throw new WebServerException(e.getMessage(), e);
             }
         }
 

@@ -52,12 +52,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     private static final Logger log = LoggerFactory.getLogger("RequestHandler");
 
-    // MultipartResolver object in the bean factory
-    private static final String MULTIPART_RESOLVER_BEAN_NAME = "multipartResolver";
-
-    // ResourceRequest object in the bean factory
-    private static final String RESOURCE_HANDLER_BEAN_NAME = "resourceHandlerRequest";
-
     private Map<String, Execution> actions;// URI regex mapping object
     private List<String> urisRegex; // URI regex list
 
@@ -160,7 +154,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         final long begin = DateUtils.getMillis();
-        final String requestURI = HttpUtils.getURI(request, false);
+        // check request is multipart request.
+        HttpServletRequest processedRequest = this.checkMultipart(request);
+        final String requestURI = HttpUtils.getURI(processedRequest, false);
 
         /*
          * Global interceptors for application containers
@@ -179,7 +175,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
                 // Interceptor doBefore
                 // return false, Return to the request page
-                if (!interceptor.doBefore(request, response)) {
+                if (!interceptor.doBefore(processedRequest, response)) {
                     if (log.isDebugEnabled())
                         log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
                     return;
@@ -191,11 +187,11 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
 
         // set default character encoding to "utf-8" if encoding is not set:
-        if (StringUtils.isEmpty(request.getCharacterEncoding()))
-            request.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        if (StringUtils.isEmpty(processedRequest.getCharacterEncoding()))
+            processedRequest.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         // static resource
-        if (this.resourceRequest.checkStaticResource(request, response))
+        if (this.resourceRequest.checkStaticResource(processedRequest, response))
             return;
 
         // set response no-cache
@@ -233,7 +229,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     HttpServletResponse.SC_NOT_FOUND,
                     "The requested URL (404) Not found",
                     Render.NOT_FOUND_HTML,
-                    request,
+                    processedRequest,
                     response);
             return;
         }
@@ -241,14 +237,14 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         /*
          * validation request method
          */
-        if (!execution.isSupportMethod(request.getMethod())) {
+        if (!execution.isSupportMethod(processedRequest.getMethod())) {
             log.warn("[{}] - HTTP method {} is not supported by this URI, specified as: {}",
-                    requestURI, request.getMethod(), execution.methodString());
+                    requestURI, processedRequest.getMethod(), execution.methodString());
             this.renderError(
                     HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                    String.format("This URL does not support the HTTP method '%s'", request.getMethod()),
+                    String.format("This URL does not support the HTTP method '%s'", processedRequest.getMethod()),
                     Render.METHOD_NOT_ALLOWED_HTML,
-                    request,
+                    processedRequest,
                     response);
             return;
         }
@@ -259,10 +255,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     execution.getMethod().getName(),
                     requestURI);
         }
-
-        // check request is multipart request.
-        HttpServletRequest processedRequest = this.checkMultipart(request);
-        boolean supportMultipartRequest = processedRequest != request;
 
         // execute action
         try {
@@ -292,9 +284,10 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             else
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
+            boolean supportMultipartRequest = Action.getActionContext().isMultipartRequest();
             Action.removeActionContext();
             if (execution.isRequestLog()) {
-                if(execution.isSimpleLogging()){
+                if (execution.isSimpleLogging()) {
                     log.info("{}.{} - [{}] - [{} ms]",
                             execution.getActionInstance().getClass().getSimpleName(),
                             execution.getMethod().getName(),
@@ -323,14 +316,18 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
      * @see MultipartResolver#resolveMultipart
      */
     protected HttpServletRequest checkMultipart(HttpServletRequest request) throws MultipartException {
-        if (Objects.isNull(this.multipartResolver)
-                || request.getDispatcherType() != DispatcherType.REQUEST
-                || !this.multipartResolver.isMultipart(request)) {
-            // return original request
+        if (Objects.isNull(this.multipartResolver))
             return request;
+
+        if (request.getDispatcherType() == DispatcherType.REQUEST
+                && this.multipartResolver.isMultipart(request)) {
+            MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
+            multipartRequest.setAttribute(CHECK_MULTIPART, true);
+            return multipartRequest;
         }
 
-        return this.multipartResolver.resolveMultipart(request);
+        // return original request
+        return request;
     }
 
     /**

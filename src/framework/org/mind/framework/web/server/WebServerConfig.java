@@ -4,12 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.WebServerException;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.util.PropertiesUtils;
 
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +48,12 @@ public class WebServerConfig {
 
     private String serverName = "Tomcat";
 
-    private int port = 10030;
+    private int port = 8080;
+
+    // if non-setting, listen on all available network
+    private String bindAddress;
+
+    private boolean http2Enabled;
 
     private int connectionTimeout = 20_000;
 
@@ -110,13 +118,13 @@ public class WebServerConfig {
 
         Properties properties = PropertiesUtils.getProperties(in);
         if (Objects.nonNull(properties)) {
+            this.serverName = properties.getProperty("server", serverName);
             this.nioMode = properties.getProperty("server.nio.mode", contextPath);
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
             this.resourceDir = properties.getProperty("server.resourceDirectory", resourceDir);
             this.resourceRootFiles = properties.getProperty("server.resourceRootFiles", resourceRootFiles);
             this.webXml = properties.getProperty("server.webXml", webXml);
-            this.serverName = properties.getProperty("server", serverName);
             this.port = Integer.parseInt(properties.getProperty("server.port", String.valueOf(port)));
             this.connectionTimeout = Integer.parseInt(properties.getProperty("server.connectionTimeout", String.valueOf(connectionTimeout)));
             this.maxConnections = Integer.parseInt(properties.getProperty("server.maxConnections", String.valueOf(maxConnections)));
@@ -124,6 +132,9 @@ public class WebServerConfig {
             this.minSpareThreads = Integer.parseInt(properties.getProperty("server.minThreads", String.valueOf(minSpareThreads)));
             this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
             this.tldSkipPatterns = properties.getProperty("server.tldSkipPatterns", tldSkipPatterns);
+
+            this.bindAddress = properties.getProperty("server.bind-address");
+            this.http2Enabled = Boolean.parseBoolean(properties.getProperty("server.http2.enabled", "false"));
 
             this.compression = properties.getProperty("server.compression", compression);
             this.compressionMinSize = Integer.parseInt(properties.getProperty("server.compression.minSize", String.valueOf(compressionMinSize)));
@@ -141,6 +152,17 @@ public class WebServerConfig {
             this.readTimeout = Integer.parseInt(properties.getProperty("okhttp.readTimeout", String.valueOf(readTimeout)));
             this.writeTimeout = Integer.parseInt(properties.getProperty("okhttp.writeTimeout", String.valueOf(writeTimeout)));
             this.pingInterval = Integer.parseInt(properties.getProperty("okhttp.pingInterval", String.valueOf(pingInterval)));
+        }
+    }
+
+    public InetAddress getBindAddress(){
+        if(StringUtils.isEmpty(this.bindAddress))
+            return null;
+
+        try {
+            return InetAddress.getByName(this.bindAddress);
+        } catch (UnknownHostException e) {
+            throw new WebServerException(e.getMessage(), e);
         }
     }
 
