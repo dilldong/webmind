@@ -55,6 +55,7 @@ public class WebServerConfig {
 
     private boolean http2Enabled;
 
+    // ms, Maximum wait time when a client connects to a Tomcat server
     private int connectionTimeout = 20_000;
 
     private int maxConnections = 1024;
@@ -91,7 +92,7 @@ public class WebServerConfig {
     private int connectTimeout = 15;// SECONDS
     private int readTimeout = 15;   // SECONDS
     private int writeTimeout = 15;  // SECONDS
-    private int pingInterval = 20;  // SECONDS
+    private int pingInterval = -1;  // SECONDS
 
     @Setter
     private transient Set<String> springFileSet;

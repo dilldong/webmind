@@ -177,7 +177,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             attrKey =
                     attrKey.replaceAll(
                             "#\\{" + methodVarNames[i] + "\\}",
-                            EnumFace.class.isAssignableFrom(params[i].getClass()) ?
+                            params[i] instanceof EnumFace ?
                                     String.valueOf(((EnumFace<? extends Serializable>) params[i]).getValue()) :
                                     String.valueOf(params[i]));
         }

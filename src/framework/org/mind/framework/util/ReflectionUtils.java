@@ -31,6 +31,13 @@ import java.util.Map;
 public abstract class ReflectionUtils {
 
     /**
+     * Pre-built FieldFilter that matches all non-static, non-final fields.
+     */
+    public static final FieldFilter COPYABLE_FIELDS =
+            field -> !(Modifier.isStatic(field.getModifiers())
+                    || Modifier.isFinal(field.getModifiers()));
+
+    /**
      * Attempt to find a {@link Field field} on the supplied {@link Class} with
      * the supplied <code>name</code>. Searches all superclasses up to {@link Object}.
      *
@@ -642,13 +649,4 @@ public abstract class ReflectionUtils {
          */
         boolean matches(Field field);
     }
-
-
-    /**
-     * Pre-built FieldFilter that matches all non-static, non-final fields.
-     */
-    public static final FieldFilter COPYABLE_FIELDS =
-            field -> !(Modifier.isStatic(field.getModifiers())
-                    || Modifier.isFinal(field.getModifiers()));
-
 }

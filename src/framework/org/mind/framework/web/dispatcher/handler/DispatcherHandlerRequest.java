@@ -33,7 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -272,8 +271,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
             // Interceptor renderCompletion
             if (!currentInterceptors.isEmpty())
-                for (HandlerInterceptor interceptor : currentInterceptors)
-                    interceptor.renderCompletion(processedRequest, response);
+                currentInterceptors.forEach(interceptor -> interceptor.renderCompletion(processedRequest, response));
 
         } catch (IOException | ServletException e) {
             throw e;
@@ -284,7 +282,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             else
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
-            boolean supportMultipartRequest = Action.getActionContext().isMultipartRequest();
             Action.removeActionContext();
             if (execution.isRequestLog()) {
                 if (execution.isSimpleLogging()) {
@@ -300,10 +297,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                             execution.getMethod().getName());
                 }
             }
-
-            // Clean up any resources used by a multipart request.
-            if (supportMultipartRequest)
-                cleanupMultipart(processedRequest);
         }
     }
 
@@ -330,44 +323,36 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         return request;
     }
 
-    /**
-     * Clean up any resources used by the given multipart request (if any).
-     *
-     * @param request current HTTP request
-     */
-    protected void cleanupMultipart(HttpServletRequest request) {
+    @Override
+    public void clear(HttpServletRequest request) {
         if (Objects.isNull(this.multipartResolver))
             return;
 
-        this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) request);
+        // Clean up any resources used by the given multipart request (if any).
+        if(HttpUtils.isMultipartRequest(request)) {
+            request.removeAttribute(CHECK_MULTIPART);
+            if(request instanceof MultipartHttpServletRequest)
+                this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) request);
+        }
     }
-
 
     @Override
     public void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         if (Objects.isNull(result))
             return;
 
-        Class<?> clazz = result.getClass();
         ConverterFactory converterFactory = ConverterFactory.getInstance();
-        if (converterFactory.isConvert(clazz)) {
+        if (converterFactory.isConvert(result.getClass())) {
             Render.stringRender(result.toString()).render(request, response);
             return;
         }
 
-        if (Render.class.isAssignableFrom(clazz)) {
+        if (result instanceof Render) {
             ((Render) result).render(request, response);
             return;
         }
 
-        if (Collection.class.isAssignableFrom(clazz)
-                || Map.class.isAssignableFrom(clazz)
-                || Object.class.isAssignableFrom(clazz)) {
-            new TextRender(JsonUtils.toJson(result)).render(request, response);
-            return;
-        }
-
-        throw new ServletException(String.format("Cannot handle result with type '%s'", result.getClass().getName()));
+        new TextRender(JsonUtils.toJson(result)).render(request, response);
     }
 
     /**

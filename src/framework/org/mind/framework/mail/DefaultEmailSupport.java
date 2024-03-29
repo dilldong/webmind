@@ -31,8 +31,6 @@ public class DefaultEmailSupport extends MailAbstract {
         this.velocityEngine = velocityEngine;
     }
 
-
-    @SuppressWarnings({"unchecked"})
     @Override
     public String loadContent(MailType mailType) throws Exception {
 
@@ -58,6 +56,8 @@ public class DefaultEmailSupport extends MailAbstract {
                     logger.debug("Loading email text planning...");
 
                 return (String) this.getModel();
+            default:
+                break;
         }
 
         return StringUtils.EMPTY;

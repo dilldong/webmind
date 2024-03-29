@@ -57,6 +57,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public void validateInterfaces() throws IllegalArgumentException {
+        // do nothing
     }
 
     @Override
@@ -93,6 +94,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public void afterSingletonsInstantiated() {
+        // do nothing
     }
 
     private <T> List<T> findBeans(Class<? extends T> type) {

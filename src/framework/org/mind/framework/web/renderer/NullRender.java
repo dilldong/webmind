@@ -37,13 +37,13 @@ public class NullRender extends Render {
                 if (uri.startsWith(IOUtils.DIR_SEPARATOR))
                     uri = String.format("%s%s", request.getContextPath(), uri);
 
-                if(log.isDebugEnabled())
+                if (log.isDebugEnabled())
                     log.debug("Redirect path: {}", uri);
                 response.sendRedirect(response.encodeRedirectURL(uri));
                 break;
 
             case FORWARD:
-                if(log.isDebugEnabled())
+                if (log.isDebugEnabled())
                     log.debug("Forward path: {}", uri);
 
                 // 	Unwrap the multipart request, if there is one.
@@ -61,6 +61,8 @@ public class NullRender extends Render {
                 }
 
                 rd.forward(request, response);
+                break;
+            default:
                 break;
         }
     }

@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.mind.framework.annotation.Filter;
-import org.mind.framework.web.filter.AbstractHandlerFilter;
 import org.mind.framework.web.filter.FilterRegistration;
 import org.mind.framework.web.filter.HandlerFilter;
 import org.springframework.web.context.WebApplicationContext;
@@ -36,13 +35,10 @@ public class FilterRegistrationSupport {
         List<FilterRegistration> list = new ArrayList<>();
         filterOfType.forEach((k, v) -> {
             Class<?> clazz = v.getClass();
-            if (clazz.isAnnotationPresent(Filter.class)) {
-                if (AbstractHandlerFilter.class.isAssignableFrom(clazz) || HandlerFilter.class.isAssignableFrom(clazz)) {
-                    Filter filter = clazz.getAnnotation(Filter.class);
-                    if (ArrayUtils.isNotEmpty(filter.value())) {
-                        list.add(new FilterRegistration(k, filter, v));
-                    }
-                }
+            if (clazz.isAnnotationPresent(Filter.class) && HandlerFilter.class.isAssignableFrom(clazz)) {
+                Filter filter = clazz.getAnnotation(Filter.class);
+                if (ArrayUtils.isNotEmpty(filter.value()))
+                    list.add(new FilterRegistration(k, filter, v));
             }
         });
 

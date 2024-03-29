@@ -112,7 +112,7 @@ public class GuiceContainerAware implements ContainerAware {
     public synchronized void destroy() {
         List<Object> beans = this.loadBeans();
         for (Object bean : beans) {
-            if (Destroyable.class.isAssignableFrom(bean.getClass()))
+            if (bean instanceof Destroyable)
                 ((Destroyable) bean).destroy();
         }
     }

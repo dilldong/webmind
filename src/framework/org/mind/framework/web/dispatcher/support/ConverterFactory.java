@@ -71,8 +71,6 @@ public class ConverterFactory {
 
     private static class ConverterHolder {
         private static final ConverterFactory CONVERTER_FACTORY = new ConverterFactory();
-        private ConverterHolder() {
-        }
     }
 
     public static ConverterFactory getInstance() {
@@ -88,9 +86,8 @@ public class ConverterFactory {
     public Object convert(Class<?> clazz, String value) {
         if (this.converterMap.containsKey(clazz.getName())) {
             Converter<?> convert = this.converterMap.get(clazz.getName());
-            if (Objects.isNull(convert))
-                throw new NotSupportedException("The parameter conversion type failed, Only supports basic data types.");
-            return convert.convert(value);
+            if (Objects.nonNull(convert))
+                return convert.convert(value);
         }
         throw new NotSupportedException("The parameter conversion type failed, Only supports basic data types.");
     }

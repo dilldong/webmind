@@ -3,16 +3,25 @@ package org.mind.framework.web;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Objects;
 
@@ -23,7 +32,6 @@ import java.util.Objects;
  */
 public final class Action {
     private static final ThreadLocal<Action> ACTION_THREAD_LOCAL = new ThreadLocal<>();
-
 
     private final ServletContext context;
     private final HttpServletRequest request;
@@ -53,6 +61,42 @@ public final class Action {
         return request;
     }
 
+    public String urlEncode(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public String urlDecode(String value) {
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public MultipartFile getFirstFile(String... keys) {
+        MultiValueMap<String, MultipartFile> filesMap = getMultiValueMap();
+        if (Objects.isNull(filesMap))
+            return null;
+
+        if (ArrayUtils.isEmpty(keys)) {
+            String key = filesMap.containsKey("file[0]") ? "file[0]" : "file";
+            return filesMap.getFirst(key);
+        }
+        return filesMap.getFirst(keys[0]);
+    }
+
+    public MultiValueMap<String, MultipartFile> getMultiValueMap() {
+        if (isMultipartRequest())
+            return ((MultipartHttpServletRequest) getRequest()).getMultiFileMap();
+        return null;
+    }
+
     public void setAttribute(String name, Object value) {
         getRequest().setAttribute(name, value);
     }
@@ -76,7 +120,7 @@ public final class Action {
     /**
      * check current request
      */
-    public boolean isMultipartRequest(){
+    public boolean isMultipartRequest() {
         return HttpUtils.isMultipartRequest(getRequest());
     }
 
@@ -131,10 +175,11 @@ public final class Action {
     }
 
     public JsonObject getJsonObject() {
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>(){});
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>() {});
     }
-    public JsonArray getJsonArray(){
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>(){});
+
+    public JsonArray getJsonArray() {
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>() {});
     }
 
     public String getString(String name) {

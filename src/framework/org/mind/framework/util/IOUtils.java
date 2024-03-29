@@ -304,6 +304,8 @@ public class IOUtils {
                 return 0x0E;
             case 'f':
                 return 0x0F;
+            default:
+                break;
         }
         return 0x00;
     }

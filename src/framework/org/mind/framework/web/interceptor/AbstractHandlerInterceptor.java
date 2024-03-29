@@ -19,6 +19,7 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void doAfter(HttpServletRequest request, HttpServletResponse response) {
+
     }
 
     @Override

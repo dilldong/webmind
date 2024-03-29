@@ -62,9 +62,6 @@ public class JsonUtils {
     };
 
     private static class SingletonHolder {
-        private SingletonHolder() {
-        }
-
         private static final Gson GSON_INSTANCE =
                 new GsonBuilder()
                         .setDateFormat(DateUtils.DATE_TIME_PATTERN)
@@ -74,9 +71,6 @@ public class JsonUtils {
     }
 
     private static class SingletonExposedHolder {
-        private SingletonExposedHolder() {
-        }
-
         private static final Gson GSON_INSTANCE =
                 new GsonBuilder()
                         .setDateFormat(DateUtils.DATE_TIME_PATTERN)

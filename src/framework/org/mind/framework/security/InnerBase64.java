@@ -13,21 +13,20 @@ import java.nio.charset.StandardCharsets;
  * @author dp
  * @date May 2, 2010
  */
-final class _Base64 {
+final class InnerBase64 {
 
+    // ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@*=
     private static final String KEY_STR = "Aa9Bb8Cc7Dd6Ee5Ff4Gg3Hh2Ii1Jj0Kk_Ll@Mm$NnOoPpQqRrSsTtUuVvWwXxYyZz";
-//	private static final String KEY_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@*=";
 
-    private _Base64() {
-
+    private InnerBase64() {
     }
 
     private static class Base64Holder {
-        private static final _Base64 instance = new _Base64();
+        private static final InnerBase64 INSTANCE = new InnerBase64();
     }
 
-    public static _Base64 getInstance() {
-        return Base64Holder.instance;
+    public static InnerBase64 getInstance() {
+        return Base64Holder.INSTANCE;
     }
 
     /**

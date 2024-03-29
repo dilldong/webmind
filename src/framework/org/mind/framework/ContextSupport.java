@@ -1,6 +1,5 @@
 package org.mind.framework;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -20,9 +19,10 @@ public final class ContextSupport {
     private static ApplicationContext applicationContext;
 
     public static AbstractXmlApplicationContext initSpringByFile(String... configLocations) {
-        for (int i = 0; i < configLocations.length; ++i)
+        for (int i = 0; i < configLocations.length; ++i) {
             if (!configLocations[i].startsWith("file:"))
                 configLocations[i] = String.format("file:%s", configLocations[i]);
+        }
 
         AbstractXmlApplicationContext context = new FileSystemXmlApplicationContext(configLocations);
         setApplicationContext(context);
@@ -52,9 +52,11 @@ public final class ContextSupport {
     }
 
     public static void setApplicationContext(ApplicationContext applicationContext) {
-        synchronized (ContextSupport.class) {
-            if (Objects.isNull(ContextSupport.applicationContext))
-                ContextSupport.applicationContext = applicationContext;
+        if (Objects.isNull(ContextSupport.applicationContext)){
+            synchronized (ContextSupport.class) {
+                if (Objects.isNull(ContextSupport.applicationContext))
+                    ContextSupport.applicationContext = applicationContext;
+            }
         }
     }
 
@@ -66,9 +68,6 @@ public final class ContextSupport {
      * @author dp
      */
     public static Object getBean(String name) {
-        if (StringUtils.isEmpty(name))
-            throw new NullPointerException("Get bean 'name' must not be null");
-
         Objects.requireNonNull(applicationContext, "Spring ApplicationContext is null.");
         return applicationContext.getBean(name);
     }
