@@ -13,9 +13,12 @@ import org.mind.framework.web.Action;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.support.Catcher;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
+import org.mind.framework.web.interceptor.DefaultUploadErrorInterceptor;
+import org.mind.framework.web.interceptor.ErrorInterceptor;
 import org.mind.framework.web.interceptor.HandlerInterceptor;
 import org.mind.framework.web.renderer.Render;
 import org.mind.framework.web.renderer.TextRender;
+import org.mind.framework.web.server.WebServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -62,6 +65,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     // MultipartResolver used by this servlet
     private MultipartResolver multipartResolver;
+
+    // upload size exceeded exception
+    private ErrorInterceptor multipartException;
 
     @Override
     public void init(ContainerAware container) throws ServletException {
@@ -111,6 +117,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
         // init MultipartResolver
         this.initMultipartResolver();
+        this.initMultipartException();
 
         // init ResourceHandler
         this.initResourceHandler(container.getServletConfig());
@@ -122,6 +129,15 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         } catch (NoSuchBeanDefinitionException e) {
             // Default is no multipart resolver.
             this.multipartResolver = null;
+        }
+    }
+
+    protected void initMultipartException() {
+        try {
+            this.multipartException = ContextSupport.getBean(MULTIPART_EXCEPTION, ErrorInterceptor.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            // Default is ResourceHandlerRequest resolver.
+            this.multipartException = new DefaultUploadErrorInterceptor();
         }
     }
 
@@ -152,9 +168,14 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        this.customizeResponse(response);
         final long begin = DateUtils.getMillis();
+
         // check request is multipart request.
-        HttpServletRequest processedRequest = this.checkMultipart(request);
+        HttpServletRequest processedRequest = this.checkMultipart(request, response);
+        if(Objects.isNull(processedRequest))
+            return;
+
         final String requestURI = HttpUtils.getURI(processedRequest, false);
 
         /*
@@ -308,15 +329,20 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
      * @return the processed request (multipart wrapper if necessary)
      * @see MultipartResolver#resolveMultipart
      */
-    protected HttpServletRequest checkMultipart(HttpServletRequest request) throws MultipartException {
+    protected HttpServletRequest checkMultipart(HttpServletRequest request, HttpServletResponse response) {
         if (Objects.isNull(this.multipartResolver))
             return request;
 
         if (request.getDispatcherType() == DispatcherType.REQUEST
                 && this.multipartResolver.isMultipart(request)) {
-            MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
-            multipartRequest.setAttribute(CHECK_MULTIPART, true);
-            return multipartRequest;
+            try {
+                MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
+                multipartRequest.setAttribute(CHECK_MULTIPART, true);
+                return multipartRequest;
+            } catch (MultipartException e) {
+                if (!this.multipartException.handleFailure(request, response, e))
+                    return null;
+            }
         }
 
         // return original request
@@ -329,9 +355,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             return;
 
         // Clean up any resources used by the given multipart request (if any).
-        if(HttpUtils.isMultipartRequest(request)) {
+        if (HttpUtils.isMultipartRequest(request)) {
             request.removeAttribute(CHECK_MULTIPART);
-            if(request instanceof MultipartHttpServletRequest)
+            if (request instanceof MultipartHttpServletRequest)
                 this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) request);
         }
     }
@@ -418,4 +444,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             ViewResolver.text(htmlMessage).render(request, response);
     }
 
+    protected void customizeResponse(HttpServletResponse response){
+        response.addHeader("X-Powered-By", WebServerConfig.POWER_BY_NAME);
+    }
 }

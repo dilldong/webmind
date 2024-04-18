@@ -62,6 +62,9 @@ public final class Action {
     }
 
     public String urlEncode(String value) {
+        if(StringUtils.isEmpty(value))
+            return value;
+
         try {
             return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
@@ -71,6 +74,9 @@ public final class Action {
     }
 
     public String urlDecode(String value) {
+        if(StringUtils.isEmpty(value))
+            return value;
+
         try {
             return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
@@ -81,19 +87,21 @@ public final class Action {
 
     public MultipartFile getFirstFile(String... keys) {
         MultiValueMap<String, MultipartFile> filesMap = getMultiValueMap();
-        if (Objects.isNull(filesMap))
+        if (Objects.isNull(filesMap) || filesMap.isEmpty())
             return null;
 
         if (ArrayUtils.isEmpty(keys)) {
             String key = filesMap.containsKey("file[0]") ? "file[0]" : "file";
             return filesMap.getFirst(key);
         }
+
         return filesMap.getFirst(keys[0]);
     }
 
     public MultiValueMap<String, MultipartFile> getMultiValueMap() {
         if (isMultipartRequest())
             return ((MultipartHttpServletRequest) getRequest()).getMultiFileMap();
+
         return null;
     }
 

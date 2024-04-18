@@ -30,6 +30,7 @@ import java.util.Set;
 public class WebServerConfig {
     public static final WebServerConfig INSTANCE = new WebServerConfig();
     public static final String JAR_IN_CLASSES = "BOOT-INF/classes";
+    public static final String POWER_BY_NAME = "Webmind";
     private static final String SERVER_PROPERTIES = "server.properties";
     private static final String JAR_PROPERTIES = String.format("%s/%s", JAR_IN_CLASSES, SERVER_PROPERTIES);
 
@@ -73,6 +74,10 @@ public class WebServerConfig {
     private String compression = "on";
 
     private int compressionMinSize = 2048;
+
+    private int maxPostSize = 2097152;
+
+    private int maxParameterCount = 10000;
 
     private String compressibleMimeType = "text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml";
 
@@ -146,6 +151,9 @@ public class WebServerConfig {
             this.resourceExpires = properties.getProperty("server.resourceExpires", resourceExpires);
             this.templateEngine = properties.getProperty("server.templateEngine", templateEngine);
 
+            this.maxPostSize = Integer.parseInt(properties.getProperty("server.maxPostSize", String.valueOf(maxPostSize)));
+            this.maxParameterCount = Integer.parseInt(properties.getProperty("server.maxParameterCount", String.valueOf(maxParameterCount)));
+
             // OkHttpClient
             this.maxRequestsPerHost = Integer.parseInt(properties.getProperty("okhttp.maxRequestsPerHost", String.valueOf(maxRequestsPerHost)));
             this.maxRequests = Integer.parseInt(properties.getProperty("okhttp.maxRequests", String.valueOf(maxRequests)));
@@ -168,7 +176,7 @@ public class WebServerConfig {
     }
 
     protected WebServerConfig initMimeMapping() {
-        if(Objects.nonNull(mimeMapping) && !mimeMapping.isEmpty())
+        if(!(Objects.isNull(mimeMapping) || mimeMapping.isEmpty()))
             return this;
 
         mimeMapping = Collections.unmodifiableMap(

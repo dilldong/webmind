@@ -29,14 +29,16 @@ public class HttpUtils {
     private static final String BODY_PARAMS = "post_body_input_stream";
     private static final String REQUEST_URI = "web_request_uri";
     private static final String REQUEST_URL = "web_request_url";
+    private static final String SERVER_URL = "web_request_server";
     private static final String REQUEST_IP = "web_request_ip";
 
     public static final String GZIP = "gzip";
     public static final String MIME_JAVASCRIPT = "application/x-javascript";
 
-    public static void clearSetting(HttpServletRequest request) {
+    public static void clearRequestAttribute(HttpServletRequest request) {
         request.removeAttribute(REQUEST_URI);
         request.removeAttribute(REQUEST_URL);
+        request.removeAttribute(SERVER_URL);
         request.removeAttribute(REQUEST_IP);
         request.removeAttribute(BODY_PARAMS);
         request.removeAttribute(BaseException.EXCEPTION_REQUEST);
@@ -87,17 +89,7 @@ public class HttpUtils {
                 return url;
         }
 
-        String scheme = request.getScheme();
-        int port = request.getServerPort();
-
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(scheme)
-                .append("://")
-                .append(request.getServerName());
-
-        if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
-            urlBuilder.append(':').append(request.getServerPort());
-
+        StringBuilder urlBuilder = new StringBuilder(getServerName(request, forAttr));
         String contextPath = WebServerConfig.INSTANCE.getContextPath();
         if (StringUtils.isNotEmpty(contextPath))
             urlBuilder.append(contextPath);
@@ -105,6 +97,29 @@ public class HttpUtils {
         String url = urlBuilder.append(getURI(request)).toString();
         request.setAttribute(REQUEST_URL, url);
         return url;
+    }
+
+    public static String getServerName(HttpServletRequest request, boolean... forAttr) {
+        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String url = (String) request.getAttribute(SERVER_URL);
+            if (StringUtils.isNotEmpty(url))
+                return url;
+        }
+
+        String scheme = request.getScheme();
+        int port = request.getServerPort();
+
+        StringBuilder urlBuilder =
+                new StringBuilder()
+                        .append(scheme)
+                        .append("://")
+                        .append(request.getServerName());
+
+        if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
+            urlBuilder.append(':').append(request.getServerPort());
+
+        request.setAttribute(SERVER_URL, urlBuilder.toString());
+        return urlBuilder.toString();
     }
 
     public static String getRequestIP(HttpServletRequest request, boolean... forAttr) {
@@ -167,7 +182,8 @@ public class HttpUtils {
         byte[] data = null;
         try {
             data = getPostBytes(request);
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
 
         /*
          * Servlet Specification:
@@ -217,7 +233,7 @@ public class HttpUtils {
     /**
      * check current request
      */
-    public static boolean isMultipartRequest(HttpServletRequest request){
+    public static boolean isMultipartRequest(HttpServletRequest request) {
         Object value = request.getAttribute(HandlerResult.CHECK_MULTIPART);
         if (Objects.isNull(value))
             return false;

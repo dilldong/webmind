@@ -144,6 +144,8 @@ public class TomcatServer extends Tomcat {
 
         connector.setUseBodyEncodingForURI(true);
         connector.setThrowOnFailure(true);
+        connector.setMaxParameterCount(serverConfig.getMaxParameterCount());
+        connector.setMaxPostSize(serverConfig.getMaxPostSize());
 
         AbstractHttp11JsseProtocol<?> nioProtocol = (AbstractHttp11JsseProtocol<?>) connector.getProtocolHandler();
         nioProtocol.setPort(Math.max(serverConfig.getPort(), 0));

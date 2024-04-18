@@ -110,13 +110,12 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if(Objects.isNull(result))
             return null;
 
-        Class<?> clazz = result.getClass();
-        if (List.class.isAssignableFrom(clazz)) {
-            helper.setWithLock(resolverKey, (List) result, expire, timeUnit);
-        } else if (Map.class.isAssignableFrom(clazz)) {
-            helper.setWithLock(resolverKey, (Map) result, expire, timeUnit);
-        } else if (Set.class.isAssignableFrom(clazz)) {
-            helper.setWithLock(resolverKey, (Set) result, expire, timeUnit);
+        if (result instanceof List) {
+            helper.setWithLock(resolverKey, (List<?>) result, expire, timeUnit);
+        } else if (result instanceof Map) {
+            helper.setWithLock(resolverKey, (Map<?, ?>) result, expire, timeUnit);
+        } else if (result instanceof Set) {
+            helper.setWithLock(resolverKey, (Set<?>) result, expire, timeUnit);
         } else
             helper.setWithLock(resolverKey, result, expire, timeUnit);
 
@@ -140,13 +139,13 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
         Object result = this.callback(invocation);
         if (Objects.nonNull(result)) {
-            Class<? extends Object> clazz = result.getClass();
+            Class<?> clazz = result.getClass();
             boolean addCache = true;
 
             if (Collection.class.isAssignableFrom(clazz))
-                addCache = !((Collection) result).isEmpty();
+                addCache = !((Collection<?>) result).isEmpty();
             else if (Map.class.isAssignableFrom(clazz))
-                addCache = !((Map) result).isEmpty();
+                addCache = !((Map<?, ?>) result).isEmpty();
 
             if (addCache)
                 this.cacheable.addCache(resolverKey, result, true, cloneType);

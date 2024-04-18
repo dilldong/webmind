@@ -22,12 +22,14 @@ public interface HandlerRequest extends Destroyable {
     // ResourceRequest object in the bean factory
     String RESOURCE_HANDLER_BEAN_NAME = "resourceHandlerRequest";
 
+    String MULTIPART_EXCEPTION = "multipartException";
+
     void init(ContainerAware container) throws ServletException;
 
     void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 
     default void clear(HttpServletRequest request){
-        HttpUtils.clearSetting(request);
+        HttpUtils.clearRequestAttribute(request);
     };
 
 }
