@@ -45,13 +45,6 @@ public class DispatcherServlet extends HttpServlet {
      */
     private ContainerAware webContainer;
 
-    /**
-     * Create default HttpServlet
-     */
-    public DispatcherServlet() {
-        super();
-    }
-
     @Override
     public void init() throws ServletException {
         log.info("Initializing mind-framework servlet....");
@@ -143,16 +136,16 @@ public class DispatcherServlet extends HttpServlet {
             request.setAttribute(BaseException.SYS_EXCEPTION, c);
             HandlerResult.setRequestAttribute(request);
             ThrowProvider.doThrow(c);
+        } finally {
+            this.handler.clear(request);
         }
     }
 
     private HandlerRequest initHandlerRequest() {
         try {
-            HandlerRequest handlerRequest = ContextSupport.getBean(HANDLER_REQUEST_BEAN_NAME, HandlerRequest.class);
-            if (Objects.nonNull(handlerRequest))
-                return handlerRequest;
-        } catch (NoSuchBeanDefinitionException ignored) {
-        }
+            return ContextSupport.getBean(HANDLER_REQUEST_BEAN_NAME, HandlerRequest.class);
+        } catch (NoSuchBeanDefinitionException ignored) {}
+
         return new DispatcherHandlerRequest();
     }
 

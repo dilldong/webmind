@@ -23,6 +23,7 @@ import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.server.GracefulShutdown;
 import org.mind.framework.web.server.ShutDownSignalStatus;
 import org.mind.framework.web.server.WebServerConfig;
+import org.springframework.http.HttpHeaders;
 import retrofit2.Call;
 import retrofit2.Converter;
 import retrofit2.Response;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -48,17 +50,12 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class OkHttpFactory {
-    private static final String CONTENT_ENCODING = "Content-Encoding";
+
+    // json media type
+    public static final MediaType JSON_MEDIA = MediaType.parse(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
 
     private static final OkHttpClient HTTP_CLIENT;
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
-
-    private static class ConverterFactory {
-        private static final Converter.Factory GSON_CONVERTER = GsonConverterFactory.create(JsonUtils.getSingleton());
-    }
-
-    // json media type
-    public static final MediaType JSON_MEDIA = MediaType.parse("application/json;charset=UTF-8");
 
     /**
      * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
@@ -114,8 +111,11 @@ public class OkHttpFactory {
                 ExecutorFactory.newThreadPoolExecutor(
                         0,
                         config.getMaxRequests(),
+                        60L,
+                        TimeUnit.SECONDS,
                         new SynchronousQueue<>(),
-                        ExecutorFactory.newThreadFactory("okhttp3-group", "okhttp3-exec-"));
+                        ExecutorFactory.newThreadFactory("okhttp3-group", "okhttp3-exec-"),
+                        new ThreadPoolExecutor.CallerRunsPolicy());
 
         Dispatcher dispatcher = new Dispatcher(executorService);
         dispatcher.setMaxRequestsPerHost(config.getMaxRequestsPerHost());
@@ -129,8 +129,10 @@ public class OkHttpFactory {
 //                        .followRedirects(false)
                         .connectTimeout(config.getConnectTimeout(), TimeUnit.SECONDS)
                         .readTimeout(config.getReadTimeout(), TimeUnit.SECONDS)
-                        .writeTimeout(config.getWriteTimeout(), TimeUnit.SECONDS)
-                        .pingInterval(config.getPingInterval(), TimeUnit.SECONDS);// websocket自动发送 ping 帧，直到连接失败或关闭
+                        .writeTimeout(config.getWriteTimeout(), TimeUnit.SECONDS);
+
+        if(config.getPingInterval() > 0)
+            builder.pingInterval(config.getPingInterval(), TimeUnit.SECONDS);// websocket自动发送 ping 帧，直到连接失败或关闭
 
         if (log.isDebugEnabled()) {
             builder.addInterceptor(
@@ -283,7 +285,7 @@ public class OkHttpFactory {
 
     private static InputStream buildInputStream(Headers responseHeaders, ResponseBody responseBody) throws IOException {
         ByteArrayInputStream in;
-        if (HttpUtils.GZIP.equals(responseHeaders.get(CONTENT_ENCODING))) {
+        if (HttpUtils.GZIP.equals(responseHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
             in = new ByteArrayInputStream(
                     Okio.buffer(new GzipSource(
                                     responseBody.source()))
@@ -301,7 +303,7 @@ public class OkHttpFactory {
     }
 
     private static String buildResponseString(Headers responseHeaders, ResponseBody responseBody) throws IOException {
-        if (HttpUtils.GZIP.equals(responseHeaders.get(CONTENT_ENCODING)))
+        if (HttpUtils.GZIP.equals(responseHeaders.get(HttpHeaders.CONTENT_ENCODING)))
             return Okio.buffer(new GzipSource(responseBody.source())).readUtf8();
 
         return responseBody.string();
@@ -322,5 +324,9 @@ public class OkHttpFactory {
                     } else if (signal == ShutDownSignalStatus.OUT)
                         CONTENT_LENGTH_LOCAL.remove();
                 });
+    }
+
+    private static class ConverterFactory {
+        private static final Converter.Factory GSON_CONVERTER = GsonConverterFactory.create(JsonUtils.getSingleton());
     }
 }

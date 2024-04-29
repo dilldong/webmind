@@ -10,10 +10,6 @@ import org.mind.framework.web.server.tomcat.TomcatGracefulShutdown;
  */
 public class WebServer extends ServerContext {
 
-    public WebServer() {
-        super();
-    }
-
     @Override
     protected void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException {
         // register webapp

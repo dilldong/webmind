@@ -52,7 +52,7 @@ public class TextRender extends Render {
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
         // json
         boolean isJson = JsonUtils.isJson(text);
-        String charset = StringUtils.isEmpty(characterEncoding) ? StandardCharsets.UTF_8.name() : characterEncoding;
+        String charset = StringUtils.defaultIfEmpty(characterEncoding, StandardCharsets.UTF_8.name());
 
         StringBuilder sb = new StringBuilder(40)
                 .append(StringUtils.isEmpty(contentType) ? (isJson ? MediaType.APPLICATION_JSON_VALUE : MediaType.TEXT_HTML_VALUE) : contentType)

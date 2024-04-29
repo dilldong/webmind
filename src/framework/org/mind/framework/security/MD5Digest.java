@@ -19,7 +19,7 @@ public class MD5Digest {
 
     private static final Logger log = LoggerFactory.getLogger(MD5Digest.class);
 
-    private static final _MD5 INSTANCE = _MD5.getInstance();
+    private static final InnerMD5 INSTANCE = InnerMD5.getInstance();
 
     private MD5Digest() {
 

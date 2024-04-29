@@ -23,8 +23,11 @@ public class Async {
         executor = ExecutorFactory.newThreadPoolExecutor(
                 0,
                 Integer.MAX_VALUE,
+                60L,
+                TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
-                ExecutorFactory.newThreadFactory("async-group", "async-pool-"));
+                ExecutorFactory.newThreadFactory("async-group", "async-pool-"),
+                new ThreadPoolExecutor.CallerRunsPolicy());
 
         GracefulShutdown.newShutdown("Async-Graceful", executor)
                 .waitTime(15L, TimeUnit.SECONDS)

@@ -14,7 +14,6 @@ import org.mind.framework.web.dispatcher.handler.Execution;
 import org.mind.framework.web.dispatcher.support.Catcher;
 import org.mind.framework.web.dispatcher.support.CatcherMapping;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
-import org.mind.framework.web.interceptor.AbstractHandlerInterceptor;
 import org.mind.framework.web.interceptor.CorsCatcher;
 import org.mind.framework.web.interceptor.CorsInterceptor;
 import org.mind.framework.web.interceptor.HandlerInterceptor;
@@ -81,7 +80,7 @@ public class SpringContainerAware implements ContainerAware {
 
         // if Interceptor
         if (clazz.isAnnotationPresent(Interceptor.class)) {
-            if (AbstractHandlerInterceptor.class.isAssignableFrom(clazz) || HandlerInterceptor.class.isAssignableFrom(clazz)) {
+            if (bean instanceof HandlerInterceptor) {
                 Interceptor interceptor = clazz.getAnnotation(Interceptor.class);
 
                 log.info("Loaded Interceptor: [order={}, interceptors={}, excludes={}]",

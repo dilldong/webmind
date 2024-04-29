@@ -1,5 +1,6 @@
 package org.mind.framework.config;
 
+import lombok.RequiredArgsConstructor;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.service.MainService;
@@ -19,7 +20,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -31,12 +31,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Configuration
 @EnableAsync
 @EnableScheduling
+@RequiredArgsConstructor
 @PropertySource("classpath:frame.properties")
 @ComponentScan(basePackages = {"org.mind.framework"})
 public class AppConfiguration {
 
-    @Resource
-    private Environment environment;
+    private final Environment environment;
 
     @Bean(destroyMethod = "destroy")
     public Cacheable cacheable() {

@@ -80,54 +80,51 @@ public class CacheElement {
     }
 
     private Object cloneValue(Object data) {
-        Class<? extends Object> clazz = data.getClass();
-        if (List.class.isAssignableFrom(clazz)) {
-            List list = (List) data;
+        if (data instanceof List) {
+            List<?> list = (List<?>) data;
             if (list.isEmpty())
                 return data;
 
-            List copierList = new ArrayList(list.size());
+            List<?> copierList = new ArrayList<>(list.size());
             addCollection(copierList, list);
             return copierList;
-        } else if (Map.class.isAssignableFrom(clazz)) {
-            Map map = (Map) data;
+        } else if (data instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) data;
             if (map.isEmpty())
                 return data;
 
-            Map copierMap = new HashMap(map.size());
+            Map<?, ?> copierMap = new HashMap<>(map.size());
             this.push(copierMap, map);
             return copierMap;
-        } else if (Cloneable.class.isAssignableFrom(clazz)) {
-            return ((Cloneable) data).clone();
-        } else if (Set.class.isAssignableFrom(clazz)) {
-            Set set = (Set) data;
+        } else if (data instanceof Set) {
+            Set<?> set = (Set<?>) data;
             if (set.isEmpty())
                 return data;
 
-            Set copierSet = new HashSet(set.size());
+            Set<?> copierSet = new HashSet<>(set.size());
             addCollection(copierSet, set);
             return copierSet;
+        } else if (data instanceof Cloneable) {
+            return ((Cloneable<?>) data).clone();
         } else
             ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
 
         return data;
     }
 
-    private void addCollection(Collection copier, Collection source) {
+    private void addCollection(Collection copier, Collection<?> source) {
         source.forEach(item -> {
-            if (Cloneable.class.isAssignableFrom(item.getClass())) {
-                Object obj = ((Cloneable) item).clone();
-                copier.add(obj);
+            if (item instanceof Cloneable) {
+                copier.add(((Cloneable<?>) item).clone());
             } else
                 ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
         });
     }
 
-    private void push(Map copier, Map source) {
+    private void push(Map copier, Map<?, ?> source) {
         source.forEach((k, v) -> {
-            if (Cloneable.class.isAssignableFrom(v.getClass())) {
-                Object obj = ((Cloneable) v).clone();
-                copier.put(k, obj);
+            if (v instanceof Cloneable) {
+                copier.put(k, ((Cloneable<?>) v).clone());
             } else
                 ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
         });

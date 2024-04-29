@@ -3,17 +3,27 @@ package org.mind.framework.web;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.Objects;
 
 /**
  * Holds all Servlet objects in ThreadLocal.
@@ -23,11 +33,17 @@ import java.util.Enumeration;
 public final class Action {
     private static final ThreadLocal<Action> ACTION_THREAD_LOCAL = new ThreadLocal<>();
 
-    private ServletContext context;
-    private HttpServletRequest request;
-    private HttpServletResponse response;
+    private final ServletContext context;
+    private final HttpServletRequest request;
+    private final HttpServletResponse response;
 
-    public String getRemoteIp(boolean ... forAttr) {
+    private Action(HttpServletRequest request, HttpServletResponse response) {
+        this.context = request.getServletContext();
+        this.request = request;
+        this.response = response;
+    }
+
+    public String getRemoteIp(boolean... forAttr) {
         return HttpUtils.getRequestIP(request, forAttr);
     }
 
@@ -43,6 +59,105 @@ public final class Action {
      */
     public HttpServletRequest getRequest() {
         return request;
+    }
+
+    public String urlEncode(String value) {
+        if(StringUtils.isEmpty(value))
+            return value;
+
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public String urlDecode(String value) {
+        if(StringUtils.isEmpty(value))
+            return value;
+
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public MultipartFile getFirstFile(String... keys) {
+        MultiValueMap<String, MultipartFile> filesMap = getMultiValueMap();
+        if (Objects.isNull(filesMap) || filesMap.isEmpty())
+            return null;
+
+        if (ArrayUtils.isEmpty(keys)) {
+            String key = filesMap.containsKey("file[0]") ? "file[0]" : "file";
+            return filesMap.getFirst(key);
+        }
+
+        return filesMap.getFirst(keys[0]);
+    }
+
+    public MultiValueMap<String, MultipartFile> getMultiValueMap() {
+        if (isMultipartRequest())
+            return ((MultipartHttpServletRequest) getRequest()).getMultiFileMap();
+
+        return null;
+    }
+
+    public void setAttribute(String name, Object value) {
+        getRequest().setAttribute(name, value);
+    }
+
+    public <T> T getAttribute(String name) {
+        return getAttribute(name, null);
+    }
+
+    public <T> T getAttribute(String name, T defaultValue) {
+        Object value = getRequest().getAttribute(name);
+        if (Objects.isNull(value))
+            return defaultValue;
+
+        return (T) value;
+    }
+
+    public void removeAttribute(String name) {
+        getRequest().removeAttribute(name);
+    }
+
+    /**
+     * check current request
+     */
+    public boolean isMultipartRequest() {
+        return HttpUtils.isMultipartRequest(getRequest());
+    }
+
+    /**
+     * Whether the request is POST method?
+     */
+    public boolean isPostMehod() {
+        return HttpUtils.isPostMehod(getRequest());
+    }
+
+    /**
+     * Whether the request is GET method?
+     */
+    public boolean isGetMehod() {
+        return HttpUtils.isGetMehod(getRequest());
+    }
+
+    /**
+     * Whether the request is PUT method?
+     */
+    public boolean isPutMehod() {
+        return HttpUtils.isPutMehod(getRequest());
+    }
+
+    /**
+     * Whether the request is DELETE method?
+     */
+    public boolean isDeleteMehod() {
+        return HttpUtils.isDeleteMehod(getRequest());
     }
 
     /**
@@ -68,10 +183,11 @@ public final class Action {
     }
 
     public JsonObject getJsonObject() {
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>(){});
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>() {});
     }
-    public JsonArray getJsonArray(){
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>(){});
+
+    public JsonArray getJsonArray() {
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>() {});
     }
 
     public String getString(String name) {
@@ -169,11 +285,7 @@ public final class Action {
     }
 
     public static void setActionContext(HttpServletRequest request, HttpServletResponse response) {
-        Action action = new Action();
-        action.context = request.getServletContext();
-        action.request = request;
-        action.response = response;
-        ACTION_THREAD_LOCAL.set(action);
+        ACTION_THREAD_LOCAL.set(new Action(request, response));
     }
 
     public static void removeActionContext() {

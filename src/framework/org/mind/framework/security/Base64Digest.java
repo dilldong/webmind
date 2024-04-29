@@ -13,7 +13,7 @@ public class Base64Digest {
      * @return
      */
     public static String encode(String input) {
-        return _Base64.getInstance().encode(input);
+        return InnerBase64.getInstance().encode(input);
     }
 
     /**
@@ -21,15 +21,15 @@ public class Base64Digest {
      * @return
      */
     public static String encode(byte[] input) {
-        return _Base64.getInstance().encode(input);
+        return InnerBase64.getInstance().encode(input);
     }
 
     public static String decode(String decodeStr) {
-        return _Base64.getInstance().decode(decodeStr);
+        return InnerBase64.getInstance().decode(decodeStr);
     }
 
     public static byte[] decodeToArray(String decodeStr) {
-        return _Base64.getInstance().decodeToByte(decodeStr);
+        return InnerBase64.getInstance().decodeToByte(decodeStr);
     }
 }
 

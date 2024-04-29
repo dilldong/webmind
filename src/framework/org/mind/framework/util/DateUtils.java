@@ -54,6 +54,25 @@ public class DateUtils {
         return getMillis() / 1000L;
     }
 
+    public static long getSeconds(long timemillis) {
+        return timemillis / 1000L;
+    }
+
+    public static long getSeconds(LocalDateTime dateTime) {
+        return getSeconds(dateTime, ZONE_DEFAULT);
+    }
+
+    public static long getSeconds(LocalDateTime dateTime, ZoneId zoneId) {
+        return dateTime.atZone(zoneId).toEpochSecond();
+    }
+
+    public static long getSeconds(LocalDate localDate) {
+        return getSeconds(localDate.atStartOfDay());
+    }
+
+    public static long getSeconds(LocalDate localDate, ZoneId zoneId) {
+        return getSeconds(localDate.atStartOfDay(), zoneId);
+    }
 
     /**
      * 返回某天之前的时间戳
@@ -265,13 +284,55 @@ public class DateUtils {
         return startOfDayMillis(localDate, UTC);
     }
 
+    public static long utcStartOfDaySeconds(LocalDate localDate) {
+        return startOfDaySeconds(localDate, UTC);
+    }
+
+    public static long utcStartOfDaySeconds(Date date) {
+        return startOfDaySeconds(date, UTC);
+    }
+
+
     public static long startOfDayMillis(LocalDate localDate) {
         return startOfDayMillis(localDate, ZONE_DEFAULT);
     }
 
-    public static long startOfDayMillis(LocalDate localDate, ZoneId zoneId) {
-        return localDate.atStartOfDay(zoneId).toEpochSecond() * 1_000L;
+    public static long startOfDaySeconds(Date date) {
+        return startOfDaySeconds(dateAt(date.getTime()));
     }
+
+    public static long startOfDaySeconds(Date date, ZoneId zoneId) {
+        return startOfDaySeconds(dateAt(date.getTime(), zoneId), zoneId);
+    }
+
+    public static long startOfDaySeconds(LocalDate localDate) {
+        return startOfDaySeconds(localDate, ZONE_DEFAULT);
+    }
+
+    public static long startOfDaySeconds(LocalDateTime localDateTime) {
+        return startOfDaySeconds(localDateTime, ZONE_DEFAULT);
+    }
+
+    public static long startOfDayMillis(LocalDateTime localDateTime) {
+        return startOfDayMillis(localDateTime, ZONE_DEFAULT);
+    }
+
+    public static long startOfDayMillis(LocalDate localDate, ZoneId zoneId) {
+        return localDate.atStartOfDay(zoneId).toInstant().toEpochMilli();
+    }
+
+    public static long startOfDayMillis(LocalDateTime localDateTime, ZoneId zoneId) {
+        return localDateTime.atZone(zoneId).toInstant().toEpochMilli();
+    }
+
+    public static long startOfDaySeconds(LocalDate localDate, ZoneId zoneId) {
+        return localDate.atStartOfDay(zoneId).toEpochSecond();
+    }
+
+    public static long startOfDaySeconds(LocalDateTime localDateTime, ZoneId zoneId) {
+        return localDateTime.atZone(zoneId).toInstant().getEpochSecond();
+    }
+
 
     /**
      * 获取某一天结束的毫秒数.
@@ -281,12 +342,52 @@ public class DateUtils {
         return endOfDayMillis(localDate, UTC);
     }
 
+    public static long utcEndOfDaySeconds(LocalDate localDate) {
+        return endOfDaySeconds(localDate, UTC);
+    }
+
+    public static long utcEndOfDaySeconds(Date date) {
+        return endOfDaySeconds(date, UTC);
+    }
+
     public static long endOfDayMillis(LocalDate localDate) {
         return endOfDayMillis(localDate, ZONE_DEFAULT);
     }
 
+    public static long endOfDayMillis(LocalDateTime localDateTime) {
+        return endOfDayMillis(localDateTime, ZONE_DEFAULT);
+    }
+
+    public static long endOfDaySeconds(LocalDate localDate) {
+        return endOfDaySeconds(localDate, ZONE_DEFAULT);
+    }
+
+    public static long endOfDaySeconds(LocalDateTime localDateTime) {
+        return endOfDaySeconds(localDateTime, ZONE_DEFAULT);
+    }
+
+    public static long endOfDaySeconds(Date date) {
+        return endOfDaySeconds(dateAt(date.getTime()));
+    }
+
+    public static long endOfDaySeconds(Date date, ZoneId zoneId) {
+        return endOfDaySeconds(dateAt(date.getTime(), zoneId), zoneId);
+    }
+
     public static long endOfDayMillis(LocalDate localDate, ZoneId zoneId) {
-        return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond() * 1000L;
+        return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toInstant().toEpochMilli();
+    }
+
+    public static long endOfDayMillis(LocalDateTime localDateTime, ZoneId zoneId) {
+        return localDateTime.with(LocalTime.MAX).atZone(zoneId).toInstant().toEpochMilli();
+    }
+
+    public static long endOfDaySeconds(LocalDate localDate, ZoneId zoneId) {
+        return LocalDateTime.of(localDate, LocalTime.MAX).atZone(zoneId).toEpochSecond();
+    }
+
+    public static long endOfDaySeconds(LocalDateTime localDateTime, ZoneId zoneId) {
+        return localDateTime.with(LocalTime.MAX).atZone(zoneId).toEpochSecond();
     }
 
     /**
@@ -335,10 +436,10 @@ public class DateUtils {
     }
 
     /**
-     * 将localTime的时间转成所在的分钟数:
+     * 将LocalDateTime的时间转成所在的分钟数:
      * e.g: 2022.10.08 10:03:42.938 -> 2022.10.08 10:03:00 的毫秒数
      *
-     * @return 分钟毫秒数
+     * @return 到分钟的毫秒数
      */
     public static long ofMinutes(LocalDateTime localTime, ZoneId zone) {
         long seconds = localTime.atZone(zone).toEpochSecond();
@@ -354,10 +455,10 @@ public class DateUtils {
     }
 
     /**
-     * 将localTime的时间转成所在的小时数:
+     * 将LocalDateTime的时间转成所在的小时数:
      * e.g: 2022.10.08 10:03:42.938 -> 2022.10.08 10:00:00 的毫秒数
      *
-     * @return 小时毫秒数
+     * @return 到小时的毫秒数
      */
     public static long ofHours(LocalDateTime localTime, ZoneId zone) {
         long timemillis = ofMinutes(localTime, zone);

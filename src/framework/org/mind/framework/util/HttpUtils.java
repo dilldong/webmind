@@ -4,8 +4,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.BaseException;
+import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -27,14 +29,16 @@ public class HttpUtils {
     private static final String BODY_PARAMS = "post_body_input_stream";
     private static final String REQUEST_URI = "web_request_uri";
     private static final String REQUEST_URL = "web_request_url";
+    private static final String SERVER_URL = "web_request_server";
     private static final String REQUEST_IP = "web_request_ip";
 
     public static final String GZIP = "gzip";
     public static final String MIME_JAVASCRIPT = "application/x-javascript";
 
-    public static void clearSetting(HttpServletRequest request){
+    public static void clearRequestAttribute(HttpServletRequest request) {
         request.removeAttribute(REQUEST_URI);
         request.removeAttribute(REQUEST_URL);
+        request.removeAttribute(SERVER_URL);
         request.removeAttribute(REQUEST_IP);
         request.removeAttribute(BODY_PARAMS);
         request.removeAttribute(BaseException.EXCEPTION_REQUEST);
@@ -49,8 +53,8 @@ public class HttpUtils {
      *
      * @param request The servlet request we are processing
      */
-    public static String getURI(HttpServletRequest request, boolean ... forAttr) {
-        if(ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
+    public static String getURI(HttpServletRequest request, boolean... forAttr) {
+        if (ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
             String uri = (String) request.getAttribute(REQUEST_URI);
             if (StringUtils.isNotEmpty(uri))
                 return uri;
@@ -78,26 +82,16 @@ public class HttpUtils {
         return uri;
     }
 
-    public static String getURL(HttpServletRequest request, boolean ... forAttr) {
-        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+    public static String getURL(HttpServletRequest request, boolean... forAttr) {
+        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
             String url = (String) request.getAttribute(REQUEST_URL);
             if (StringUtils.isNotEmpty(url))
                 return url;
         }
 
-        String scheme = request.getScheme();
-        int port = request.getServerPort();
-
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(scheme)
-                .append("://")
-                .append(request.getServerName());
-
-        if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
-            urlBuilder.append(':').append(request.getServerPort());
-
+        StringBuilder urlBuilder = new StringBuilder(getServerName(request, forAttr));
         String contextPath = WebServerConfig.INSTANCE.getContextPath();
-        if(StringUtils.isNotEmpty(contextPath))
+        if (StringUtils.isNotEmpty(contextPath))
             urlBuilder.append(contextPath);
 
         String url = urlBuilder.append(getURI(request)).toString();
@@ -105,8 +99,31 @@ public class HttpUtils {
         return url;
     }
 
-    public static String getRequestIP(HttpServletRequest request, boolean ... forAttr) {
-        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+    public static String getServerName(HttpServletRequest request, boolean... forAttr) {
+        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+            String url = (String) request.getAttribute(SERVER_URL);
+            if (StringUtils.isNotEmpty(url))
+                return url;
+        }
+
+        String scheme = request.getScheme();
+        int port = request.getServerPort();
+
+        StringBuilder urlBuilder =
+                new StringBuilder()
+                        .append(scheme)
+                        .append("://")
+                        .append(request.getServerName());
+
+        if ("http".equals(scheme) && port != 80 || "https".equals(scheme) && port != 443)
+            urlBuilder.append(':').append(request.getServerPort());
+
+        request.setAttribute(SERVER_URL, urlBuilder.toString());
+        return urlBuilder.toString();
+    }
+
+    public static String getRequestIP(HttpServletRequest request, boolean... forAttr) {
+        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
             String ip = (String) request.getAttribute(REQUEST_IP);
             if (StringUtils.isNotEmpty(ip))
                 return ip;
@@ -156,7 +173,7 @@ public class HttpUtils {
      * @return
      */
     public static String getPostString(HttpServletRequest request, boolean... forAttr) {
-        if(ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
             String json = (String) request.getAttribute(BODY_PARAMS);
             if (StringUtils.isNotEmpty(json))
                 return json;
@@ -165,7 +182,8 @@ public class HttpUtils {
         byte[] data = null;
         try {
             data = getPostBytes(request);
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
 
         /*
          * Servlet Specification:
@@ -211,4 +229,45 @@ public class HttpUtils {
 
         return buffer;
     }
+
+    /**
+     * check current request
+     */
+    public static boolean isMultipartRequest(HttpServletRequest request) {
+        Object value = request.getAttribute(HandlerResult.CHECK_MULTIPART);
+        if (Objects.isNull(value))
+            return false;
+
+        return (boolean) value;
+    }
+
+    /**
+     * Whether the request is POST method?
+     */
+    public static boolean isPostMehod(HttpServletRequest request) {
+        return request.getMethod().equals(RequestMethod.POST.name());
+    }
+
+    /**
+     * Whether the request is GET method?
+     */
+    public static boolean isGetMehod(HttpServletRequest request) {
+        return request.getMethod().equals(RequestMethod.GET.name());
+    }
+
+    /**
+     * Whether the request is PUT method?
+     */
+    public static boolean isPutMehod(HttpServletRequest request) {
+        return request.getMethod().equals(RequestMethod.PUT.name());
+    }
+
+    /**
+     * Whether the request is DELETE method?
+     */
+    public static boolean isDeleteMehod(HttpServletRequest request) {
+        return request.getMethod().equals(RequestMethod.DELETE.name());
+    }
+
+
 }

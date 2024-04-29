@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Marcus
@@ -23,6 +24,12 @@ import java.util.Objects;
 public class XmlLoad4SpringContext extends XmlWebApplicationContext {
 
     private static final Logger log = LoggerFactory.getLogger(XmlLoad4SpringContext.class);
+
+    private final AtomicBoolean closeing;
+
+    public XmlLoad4SpringContext() {
+        this.closeing = new AtomicBoolean(false);
+    }
 
     @Override
     protected void initBeanDefinitionReader(@NotNull XmlBeanDefinitionReader beanDefinitionReader) {
@@ -59,8 +66,10 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
 
     @Override
     protected void doClose() {
-        super.doClose();
-        if (log.isInfoEnabled() && !log.isDebugEnabled())
-            log.info("Closing {}", super.toString());
+        if(this.closeing.compareAndSet(false, true)) {
+            super.doClose();
+            if (log.isInfoEnabled() && !log.isDebugEnabled())
+                log.info("Closing {}", super.toString());
+        }
     }
 }

@@ -19,11 +19,12 @@ public abstract class AbstractHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void doAfter(HttpServletRequest request, HttpServletResponse response) {
+
     }
 
     @Override
     public void renderCompletion(HttpServletRequest request, HttpServletResponse response) {
-        HttpUtils.clearSetting(request);
+        HttpUtils.clearRequestAttribute(request);
     }
 
     protected boolean renderToFinish(Render render, HttpServletRequest request, HttpServletResponse response) {

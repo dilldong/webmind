@@ -1,10 +1,9 @@
 package org.mind.framework.security;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ObjectUtils;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -26,45 +25,41 @@ public class AESUtils {
     /**
      * Sign the given content using the given key and iv.
      *
-     * @param content  sign content
-     * @param key base64 encoded key
-     * @param iv base64 encoded iv-key
+     * @param content sign content
+     * @param key     base64 encoded key
+     * @param iv      base64 encoded iv-key
      * @return a signed message from base64 encode
      */
     public static String encrypt4Base64(String content, String key, String iv) {
-        byte[] bytes = encrypt(content, Base64.decodeBase64(key), Base64.decodeBase64(iv));
-        if (Objects.isNull(bytes))
-            return null;
+        byte[] bytes = encrypt(
+                content,
+                Base64.decode(key.getBytes(StandardCharsets.UTF_8)),
+                Base64.decode(iv.getBytes(StandardCharsets.UTF_8)));
 
-        return Base64.encodeBase64String(bytes);
+        return new String(Base64.encode(bytes), StandardCharsets.UTF_8);
     }
 
     /**
      * Sign the given content using the given key and iv.
      *
-     * @param content  sign content
-     * @param key hex encoded key
-     * @param iv hex encoded iv-key
+     * @param content sign content
+     * @param key     hex encoded key
+     * @param iv      hex encoded iv-key
      * @return a signed message from hex encode
      */
     public static String encrypt4Hex(String content, String key, String iv) {
-        byte[] keyBytes = null;
-        byte[] ivBytes = null;
+        byte[] keyBytes;
+        byte[] ivBytes;
         try {
-            keyBytes = Hex.decodeHex(key);
-            ivBytes = Hex.decodeHex(iv);
+            keyBytes = Hex.decodeStrict(key);
+            ivBytes = Hex.decodeStrict(iv);
         } catch (DecoderException e) {
             log.error(e.getMessage(), e);
+            return null;
         }
 
-        if(Objects.isNull(keyBytes) || Objects.isNull(ivBytes))
-            return null;
-
-        byte[] bytes = encrypt(content, keyBytes, ivBytes);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Hex.encodeHexString(bytes);
+        byte[] data = encrypt(content, keyBytes, ivBytes);
+        return new String(Hex.encode(data), StandardCharsets.UTF_8);
     }
 
     /**
@@ -92,70 +87,85 @@ public class AESUtils {
             //进行最终的加解密操作
             return cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            throw new DecoderException(e.getMessage(), e);
         }
-
-        return null;
     }
 
     /**
      * AES decryption after base64 decoding.
+     *
      * @param content base64 encoded content
-     * @param key base64 encoded key
-     * @param iv base64 encoded iv-key
+     * @param key     base64 encoded key
+     * @param iv      base64 encoded iv-key
      * @return AES decrypted content
      */
     public static String decrypt4Base64(String content, String key, String iv) {
-        return decrypt(Base64.decodeBase64(content), Base64.decodeBase64(key), Base64.decodeBase64(iv));
+        return decrypt(
+                Base64.decode(content.getBytes(StandardCharsets.UTF_8)),
+                Base64.decode(key.getBytes(StandardCharsets.UTF_8)),
+                Base64.decode(iv.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
      * AES decryption after hex decoding.
+     *
      * @param content hex encoded content
-     * @param key hex encoded key
-     * @param iv hex encoded iv-key
+     * @param key     hex encoded key
+     * @param iv      hex encoded iv-key
      * @return AES decrypted content
      */
     public static String decrypt4Hex(String content, String key, String iv) {
-        byte[] contentBytes = null;
-        byte[] keyBytes = null;
-        byte[] ivBytes = null;
+        byte[] data = decrypt4HexReturnBytes(content, key, iv);
+        if (Objects.isNull(data))
+            return null;
+
+        return new String(data, StandardCharsets.UTF_8);
+    }
+
+    public static byte[] decrypt4HexReturnBytes(String content, String key, String iv) {
+        byte[] contentBytes;
+        byte[] keyBytes;
+        byte[] ivBytes;
         try {
-            contentBytes = Hex.decodeHex(content);
-            keyBytes = Hex.decodeHex(key);
-            ivBytes = Hex.decodeHex(iv);
-        } catch (DecoderException e) {
+            contentBytes = Hex.decodeStrict(content);
+            keyBytes = Hex.decodeStrict(key);
+            ivBytes = Hex.decodeStrict(iv);
+        } catch (org.bouncycastle.util.encoders.DecoderException e) {
             log.error(e.getMessage(), e);
+            return null;
         }
 
         if (ObjectUtils.allNotNull(contentBytes, keyBytes, ivBytes))
-            return decrypt(contentBytes, keyBytes, ivBytes);
+            return decryptReturnBytes(contentBytes, keyBytes, ivBytes);
 
         return null;
     }
 
     /**
      * AES decryption
+     *
      * @param contents content byte array
      * @param keyBytes key byte array
-     * @param ivBytes iv-key byte array
+     * @param ivBytes  iv-key byte array
      * @return AES decrypted content
      */
     public static String decrypt(byte[] contents, byte[] keyBytes, byte[] ivBytes) {
+        return new String(decryptReturnBytes(contents, keyBytes, ivBytes), StandardCharsets.UTF_8);
+    }
+
+    public static byte[] decryptReturnBytes(byte[] contents, byte[] keyBytes, byte[] ivBytes) {
         try {
             SecretKeySpec keySpec = new SecretKeySpec(keyBytes, ALGORITHM);
             IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
             Cipher cipher = Cipher.getInstance(MODE);
             cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 
-            byte[] data = cipher.doFinal(contents);
-            return new String(data, StandardCharsets.UTF_8);
-
+            return cipher.doFinal(contents);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            throw new DecoderException(e.getMessage(), e);
         }
-        return null;
     }
+
 
     /**
      * Get a key generator by 128 with base64 encode.
@@ -173,11 +183,7 @@ public class AESUtils {
      * @return base64 string
      */
     public static String generateKeyBase64(int length) {
-        byte[] bytes = generateBytes(length);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Base64.encodeBase64String(bytes);
+        return new String(Base64.encode(generateBytes(length)), StandardCharsets.UTF_8);
     }
 
     /**
@@ -187,11 +193,7 @@ public class AESUtils {
      * @return hex string
      */
     public static String generateKeyHex(int length) {
-        byte[] bytes = generateBytes(length);
-        if (Objects.isNull(bytes))
-            return null;
-
-        return Hex.encodeHexString(bytes);
+        return new String(Hex.encode(generateBytes(length)), StandardCharsets.UTF_8);
     }
 
 
@@ -209,9 +211,8 @@ public class AESUtils {
 
             return secretKey.getEncoded();
         } catch (NoSuchAlgorithmException e) {
-            log.error(e.getMessage(), e);
+            throw new DecoderException(e.getMessage(), e);
         }
-        return null;
     }
 
 }

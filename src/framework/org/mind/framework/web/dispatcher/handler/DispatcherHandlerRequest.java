@@ -13,9 +13,12 @@ import org.mind.framework.web.Action;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.support.Catcher;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
+import org.mind.framework.web.interceptor.DefaultUploadErrorInterceptor;
+import org.mind.framework.web.interceptor.ErrorInterceptor;
 import org.mind.framework.web.interceptor.HandlerInterceptor;
 import org.mind.framework.web.renderer.Render;
 import org.mind.framework.web.renderer.TextRender;
+import org.mind.framework.web.server.WebServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -33,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -52,12 +54,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     private static final Logger log = LoggerFactory.getLogger("RequestHandler");
 
-    // MultipartResolver object in the bean factory
-    private static final String MULTIPART_RESOLVER_BEAN_NAME = "multipartResolver";
-
-    // ResourceRequest object in the bean factory
-    private static final String RESOURCE_HANDLER_BEAN_NAME = "resourceHandlerRequest";
-
     private Map<String, Execution> actions;// URI regex mapping object
     private List<String> urisRegex; // URI regex list
 
@@ -69,6 +65,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     // MultipartResolver used by this servlet
     private MultipartResolver multipartResolver;
+
+    // upload size exceeded exception
+    private ErrorInterceptor multipartException;
 
     @Override
     public void init(ContainerAware container) throws ServletException {
@@ -118,6 +117,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
         // init MultipartResolver
         this.initMultipartResolver();
+        this.initMultipartException();
 
         // init ResourceHandler
         this.initResourceHandler(container.getServletConfig());
@@ -129,6 +129,15 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         } catch (NoSuchBeanDefinitionException e) {
             // Default is no multipart resolver.
             this.multipartResolver = null;
+        }
+    }
+
+    protected void initMultipartException() {
+        try {
+            this.multipartException = ContextSupport.getBean(MULTIPART_EXCEPTION, ErrorInterceptor.class);
+        } catch (NoSuchBeanDefinitionException e) {
+            // Default is ResourceHandlerRequest resolver.
+            this.multipartException = new DefaultUploadErrorInterceptor();
         }
     }
 
@@ -159,8 +168,15 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        this.customizeResponse(response);
         final long begin = DateUtils.getMillis();
-        final String requestURI = HttpUtils.getURI(request, false);
+
+        // check request is multipart request.
+        HttpServletRequest processedRequest = this.checkMultipart(request, response);
+        if(Objects.isNull(processedRequest))
+            return;
+
+        final String requestURI = HttpUtils.getURI(processedRequest, false);
 
         /*
          * Global interceptors for application containers
@@ -179,7 +195,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
                 // Interceptor doBefore
                 // return false, Return to the request page
-                if (!interceptor.doBefore(request, response)) {
+                if (!interceptor.doBefore(processedRequest, response)) {
                     if (log.isDebugEnabled())
                         log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
                     return;
@@ -191,11 +207,11 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
 
         // set default character encoding to "utf-8" if encoding is not set:
-        if (StringUtils.isEmpty(request.getCharacterEncoding()))
-            request.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        if (StringUtils.isEmpty(processedRequest.getCharacterEncoding()))
+            processedRequest.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         // static resource
-        if (this.resourceRequest.checkStaticResource(request, response))
+        if (this.resourceRequest.checkStaticResource(processedRequest, response))
             return;
 
         // set response no-cache
@@ -233,7 +249,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     HttpServletResponse.SC_NOT_FOUND,
                     "The requested URL (404) Not found",
                     Render.NOT_FOUND_HTML,
-                    request,
+                    processedRequest,
                     response);
             return;
         }
@@ -241,14 +257,14 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         /*
          * validation request method
          */
-        if (!execution.isSupportMethod(request.getMethod())) {
+        if (!execution.isSupportMethod(processedRequest.getMethod())) {
             log.warn("[{}] - HTTP method {} is not supported by this URI, specified as: {}",
-                    requestURI, request.getMethod(), execution.methodString());
+                    requestURI, processedRequest.getMethod(), execution.methodString());
             this.renderError(
                     HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                    String.format("This URL does not support the HTTP method '%s'", request.getMethod()),
+                    String.format("This URL does not support the HTTP method '%s'", processedRequest.getMethod()),
                     Render.METHOD_NOT_ALLOWED_HTML,
-                    request,
+                    processedRequest,
                     response);
             return;
         }
@@ -259,10 +275,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     execution.getMethod().getName(),
                     requestURI);
         }
-
-        // check request is multipart request.
-        HttpServletRequest processedRequest = this.checkMultipart(request);
-        boolean supportMultipartRequest = processedRequest != request;
 
         // execute action
         try {
@@ -280,8 +292,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
             // Interceptor renderCompletion
             if (!currentInterceptors.isEmpty())
-                for (HandlerInterceptor interceptor : currentInterceptors)
-                    interceptor.renderCompletion(processedRequest, response);
+                currentInterceptors.forEach(interceptor -> interceptor.renderCompletion(processedRequest, response));
 
         } catch (IOException | ServletException e) {
             throw e;
@@ -294,7 +305,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         } finally {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
-                if(execution.isSimpleLogging()){
+                if (execution.isSimpleLogging()) {
                     log.info("{}.{} - [{}] - [{} ms]",
                             execution.getActionInstance().getClass().getSimpleName(),
                             execution.getMethod().getName(),
@@ -307,10 +318,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                             execution.getMethod().getName());
                 }
             }
-
-            // Clean up any resources used by a multipart request.
-            if (supportMultipartRequest)
-                cleanupMultipart(processedRequest);
         }
     }
 
@@ -322,55 +329,56 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
      * @return the processed request (multipart wrapper if necessary)
      * @see MultipartResolver#resolveMultipart
      */
-    protected HttpServletRequest checkMultipart(HttpServletRequest request) throws MultipartException {
-        if (Objects.isNull(this.multipartResolver)
-                || request.getDispatcherType() != DispatcherType.REQUEST
-                || !this.multipartResolver.isMultipart(request)) {
-            // return original request
+    protected HttpServletRequest checkMultipart(HttpServletRequest request, HttpServletResponse response) {
+        if (Objects.isNull(this.multipartResolver))
             return request;
+
+        if (request.getDispatcherType() == DispatcherType.REQUEST
+                && this.multipartResolver.isMultipart(request)) {
+            try {
+                MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
+                multipartRequest.setAttribute(CHECK_MULTIPART, true);
+                return multipartRequest;
+            } catch (MultipartException e) {
+                if (!this.multipartException.handleFailure(request, response, e))
+                    return null;
+            }
         }
 
-        return this.multipartResolver.resolveMultipart(request);
+        // return original request
+        return request;
     }
 
-    /**
-     * Clean up any resources used by the given multipart request (if any).
-     *
-     * @param request current HTTP request
-     */
-    protected void cleanupMultipart(HttpServletRequest request) {
+    @Override
+    public void clear(HttpServletRequest request) {
         if (Objects.isNull(this.multipartResolver))
             return;
 
-        this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) request);
+        // Clean up any resources used by the given multipart request (if any).
+        if (HttpUtils.isMultipartRequest(request)) {
+            request.removeAttribute(CHECK_MULTIPART);
+            if (request instanceof MultipartHttpServletRequest)
+                this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) request);
+        }
     }
-
 
     @Override
     public void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         if (Objects.isNull(result))
             return;
 
-        Class<?> clazz = result.getClass();
         ConverterFactory converterFactory = ConverterFactory.getInstance();
-        if (converterFactory.isConvert(clazz)) {
+        if (converterFactory.isConvert(result.getClass())) {
             Render.stringRender(result.toString()).render(request, response);
             return;
         }
 
-        if (Render.class.isAssignableFrom(clazz)) {
+        if (result instanceof Render) {
             ((Render) result).render(request, response);
             return;
         }
 
-        if (Collection.class.isAssignableFrom(clazz)
-                || Map.class.isAssignableFrom(clazz)
-                || Object.class.isAssignableFrom(clazz)) {
-            new TextRender(JsonUtils.toJson(result)).render(request, response);
-            return;
-        }
-
-        throw new ServletException(String.format("Cannot handle result with type '%s'", result.getClass().getName()));
+        new TextRender(JsonUtils.toJson(result)).render(request, response);
     }
 
     /**
@@ -436,4 +444,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             ViewResolver.text(htmlMessage).render(request, response);
     }
 
+    protected void customizeResponse(HttpServletResponse response){
+        response.addHeader("X-Powered-By", WebServerConfig.POWER_BY_NAME);
+    }
 }
