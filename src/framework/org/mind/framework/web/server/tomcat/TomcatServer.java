@@ -282,7 +282,7 @@ public class TomcatServer extends Tomcat {
                 // ac.registerShutdownHook();
 
                 // Listen when spring starts by ContextLoaderListener
-                ctx.addApplicationLifecycleListener(new WebContextLoadListener(ac, ctx));
+                ctx.addApplicationLifecycleListener(new WebContextLoadListener(ac));
 
                 // setting spring context
                 ContextSupport.setApplicationContext(ac);
@@ -303,7 +303,7 @@ public class TomcatServer extends Tomcat {
             // xmas.registerShutdownHook();
 
             // Listen when spring starts by ContextLoaderListener
-            ctx.addApplicationLifecycleListener(new WebContextLoadListener(xmas, ctx));
+            ctx.addApplicationLifecycleListener(new WebContextLoadListener(xmas));
 
             // setting spring context
             ContextSupport.setApplicationContext(xmas);

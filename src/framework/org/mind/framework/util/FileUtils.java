@@ -3,6 +3,7 @@ package org.mind.framework.util;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mind.framework.exception.ThrowProvider;
@@ -348,11 +349,10 @@ public class FileUtils {
 
         while (channel.read(buffer) > -1) {
             buffer.flip();
-            strBuilder.append(
-                    new String(buffer.array(),
-                            buffer.position(),
-                            buffer.limit(),
-                            StandardCharsets.UTF_8));
+            strBuilder.append(Strings.fromUTF8ByteArray(
+                    buffer.array(),
+                    buffer.position(),
+                    buffer.limit()));
         }
         return strBuilder.toString();
     }

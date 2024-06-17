@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.io.VelocityWriter;
+import org.mind.framework.util.DateUtils;
 import org.springframework.http.MediaType;
 
 import javax.servlet.ServletContext;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Map;
 
 /**
@@ -42,8 +44,8 @@ public class VelocityTemplate implements Template {
             Map<String, Object> model) throws IOException {
 
         String charset = StringUtils.isEmpty(encoding) ? StandardCharsets.UTF_8.name() : encoding;
-        StringBuilder sb = new StringBuilder(40);
-        sb.append(StringUtils.isEmpty(contentType) ? MediaType.TEXT_HTML_VALUE : contentType)
+        StringBuilder sb = new StringBuilder(40)
+                .append(StringUtils.isEmpty(contentType) ? MediaType.TEXT_HTML_VALUE : contentType)
                 .append(";charset=")
                 .append(charset);
 
@@ -52,10 +54,14 @@ public class VelocityTemplate implements Template {
 
         HttpSession session = request.getSession();
         ServletContext servletContext = session.getServletContext();
+        LocalDate localDate = DateUtils.dateNow();
 
         model.put("sessionScope", session);
         model.put("contextPath", servletContext.getContextPath());
         model.put("applicationScope", servletContext);
+        model.put("currentYear", localDate.getYear());
+        model.put("currentMonth", localDate.getMonthValue());
+        model.put("currentDay", localDate.getDayOfMonth());
 
         // init context:
         Context context = new VelocityContext(model);

@@ -1,6 +1,7 @@
 package org.mind.framework.security;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -34,7 +35,7 @@ public class HmacSHA256Utils {
      */
     public static String encryptBase64(String message, String secret) {
         byte[] bytes = encrypt(message, secret);
-        return new String(Base64.encode(bytes), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Base64.encode(bytes));
     }
 
     /**
@@ -46,7 +47,7 @@ public class HmacSHA256Utils {
      */
     public static String encryptHex(String message, String secret) {
         byte[] bytes = encrypt(message, secret);
-        return new String(Hex.encode(bytes), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Hex.encode(bytes));
     }
 
     /**
@@ -79,7 +80,7 @@ public class HmacSHA256Utils {
      */
     public static String generateKeyHex(String password, String salt, int iterationCount, int keyLength) {
         byte[] bytes = generateKey(password, salt, iterationCount, keyLength);
-        return new String(Hex.encode(bytes), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Hex.encode(bytes));
     }
 
     /**
@@ -93,7 +94,7 @@ public class HmacSHA256Utils {
      */
     public static String generateKeyBase64(String password, String salt, int iterationCount, int keyLength) {
         byte[] bytes = generateKey(password, salt, iterationCount, keyLength);
-        return new String(Base64.encode(bytes), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Base64.encode(bytes));
     }
 
     /**

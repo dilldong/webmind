@@ -184,19 +184,19 @@ public class JsonUtils {
         return toJson(target, false);
     }
 
-    public static String toJson(Object target, boolean excludesFieldsWithoutExpose) {
-        return toJson(target, target.getClass(), excludesFieldsWithoutExpose);
+    public static String toJson(Object target, boolean ofExpose) {
+        return toJson(target, target.getClass(), ofExpose);
     }
 
     public static String toJson(Object target, Type targetType) {
         return toJson(target, targetType, false);
     }
 
-    public static String toJson(Object target, Type targetType, boolean excludesFieldsWithoutExpose) {
+    public static String toJson(Object target, Type targetType, boolean ofExpose) {
         if (Objects.isNull(target))
             return EMPTY_JSON_OBJECT;
 
-        final Gson gson = excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton();
+        final Gson gson = ofExpose ? getExposedSingleton() : getSingleton();
         try {
             return Objects.isNull(targetType) ?
                     gson.toJson(target) :
@@ -211,18 +211,17 @@ public class JsonUtils {
         return toJson(target, false, isShowField, fieldName);
     }
 
-    public static String toJson(Object target, boolean excludesFieldsWithoutExpose, boolean isShowField, String... fieldName) {
-        return toJson(target, target.getClass(), excludesFieldsWithoutExpose, isShowField, fieldName);
+    public static String toJson(Object target, boolean ofExpose, boolean isShowField, String... fieldName) {
+        return toJson(target, target.getClass(), ofExpose, isShowField, fieldName);
     }
 
-    public static String toJson(Object target, Type type, boolean excludesFieldsWithoutExpose, boolean isShowField, String... fieldName) {
+    public static String toJson(Object target, Type type, boolean ofExpose, boolean isShowField, String... fieldName) {
         final String fieldNameString = StringUtils.substringBetween(Arrays.toString(fieldName), BEGIN_ARRARYS, END_ARRARYS);
         if (StringUtils.isEmpty(fieldNameString))
-            return toJson(target, type, excludesFieldsWithoutExpose);
-
+            return toJson(target, type, ofExpose);
 
         // filter children field
-        GsonBuilder gsonBuilder = (excludesFieldsWithoutExpose ? getExposedSingleton() : getSingleton())
+        GsonBuilder gsonBuilder = (ofExpose ? getExposedSingleton() : getSingleton())
                 .newBuilder()
                 .setExclusionStrategies(
                         new ExclusionStrategy() {
