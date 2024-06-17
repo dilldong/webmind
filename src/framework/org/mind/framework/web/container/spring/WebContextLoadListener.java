@@ -1,6 +1,5 @@
 package org.mind.framework.web.container.spring;
 
-import org.apache.catalina.Context;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.mind.framework.exception.WebServerException;
@@ -17,17 +16,16 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 
 /**
+ * The servlet container starts
+ *
  * @version 1.0
  * @auther Marcus
  * @date 2023/8/11
  */
 public class WebContextLoadListener extends ContextLoaderListener {
 
-    private final Context context;
-
-    public WebContextLoadListener(WebApplicationContext wac, Context context) {
+    public WebContextLoadListener(WebApplicationContext wac) {
         super(wac);
-        this.context = context;
     }
 
     @Override
@@ -36,7 +34,8 @@ public class WebContextLoadListener extends ContextLoaderListener {
 
         // filter registration by Spring.
         try {
-            new FilterRegistrationSupport(getCurrentWebApplicationContext()).registration(context.getServletContext());
+            new FilterRegistrationSupport(getCurrentWebApplicationContext())
+                    .registration(event.getServletContext());
         } catch (ServletException e) {
             throw new WebServerException(e.getMessage(), e);
         }
@@ -44,7 +43,7 @@ public class WebContextLoadListener extends ContextLoaderListener {
 
     @NotNull
     @Override
-    public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
+    public WebApplicationContext initWebApplicationContext(@NotNull ServletContext servletContext) {
         WebApplicationContext webAppContext = super.initWebApplicationContext(servletContext);
 
         if (webAppContext instanceof ConfigurableWebApplicationContext)

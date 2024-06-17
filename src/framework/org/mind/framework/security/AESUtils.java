@@ -2,6 +2,7 @@ package org.mind.framework.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -36,7 +37,7 @@ public class AESUtils {
                 Base64.decode(key.getBytes(StandardCharsets.UTF_8)),
                 Base64.decode(iv.getBytes(StandardCharsets.UTF_8)));
 
-        return new String(Base64.encode(bytes), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Base64.encode(bytes));
     }
 
     /**
@@ -59,7 +60,7 @@ public class AESUtils {
         }
 
         byte[] data = encrypt(content, keyBytes, ivBytes);
-        return new String(Hex.encode(data), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Hex.encode(data));
     }
 
     /**
@@ -119,7 +120,7 @@ public class AESUtils {
         if (Objects.isNull(data))
             return null;
 
-        return new String(data, StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(data);
     }
 
     public static byte[] decrypt4HexReturnBytes(String content, String key, String iv) {
@@ -150,7 +151,7 @@ public class AESUtils {
      * @return AES decrypted content
      */
     public static String decrypt(byte[] contents, byte[] keyBytes, byte[] ivBytes) {
-        return new String(decryptReturnBytes(contents, keyBytes, ivBytes), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(decryptReturnBytes(contents, keyBytes, ivBytes));
     }
 
     public static byte[] decryptReturnBytes(byte[] contents, byte[] keyBytes, byte[] ivBytes) {
@@ -159,7 +160,6 @@ public class AESUtils {
             IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
             Cipher cipher = Cipher.getInstance(MODE);
             cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-
             return cipher.doFinal(contents);
         } catch (Exception e) {
             throw new DecoderException(e.getMessage(), e);
@@ -183,7 +183,7 @@ public class AESUtils {
      * @return base64 string
      */
     public static String generateKeyBase64(int length) {
-        return new String(Base64.encode(generateBytes(length)), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Base64.encode(generateBytes(length)));
     }
 
     /**
@@ -193,7 +193,7 @@ public class AESUtils {
      * @return hex string
      */
     public static String generateKeyHex(int length) {
-        return new String(Hex.encode(generateBytes(length)), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Hex.encode(generateBytes(length)));
     }
 
 

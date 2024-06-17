@@ -83,10 +83,10 @@ public class Response<T> {
     /**
      * 是否排除未标注 @Expose 注解的字段。false:不排出，true:排除
      *
-     * @param excludesFieldsWithoutExpose
+     * @param ofExpose
      * @return
      */
-    public String toJson(boolean excludesFieldsWithoutExpose) {
+    public String toJson(boolean ofExpose) {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
@@ -94,7 +94,7 @@ public class Response<T> {
                 JsonUtils.toJson(
                         this,
                         new TypeToken<Response<T>>(){}.getType(),
-                        excludesFieldsWithoutExpose);
+                        ofExpose);
     }
 
     @Override
@@ -110,33 +110,33 @@ public class Response<T> {
     /**
      * 设置需要跳过的字段
      *
-     * @param excludesFieldsWithoutExpose
+     * @param ofExpose
      * @param skipField                   跳过的字段名称，不会在json中显示
      * @return
      */
-    public String toJson(boolean excludesFieldsWithoutExpose, final String... skipField) {
+    public String toJson(boolean ofExpose, final String... skipField) {
         if (Objects.nonNull(skipField) && skipField.length > 0)
-            return toJson(excludesFieldsWithoutExpose, false, skipField);
+            return toJson(ofExpose, false, skipField);
 
-        return toJson(excludesFieldsWithoutExpose);
+        return toJson(ofExpose);
     }
 
 
     /**
      * 设置需要跳过的字段
      *
-     * @param excludesFieldsWithoutExpose
+     * @param ofExpose
      * @param isShowField                 显示/隐藏
      * @param fieldName                   字段名称，根据isShow是否在json中显示
      * @return
      */
-    public String toJson(boolean excludesFieldsWithoutExpose, final boolean isShowField, final String... fieldName) {
+    public String toJson(boolean ofExpose, final boolean isShowField, final String... fieldName) {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
         return JsonUtils.toJson(this,
                 new TypeToken<Response<T>>(){}.getType(),
-                excludesFieldsWithoutExpose,
+                ofExpose,
                 isShowField,
                 fieldName);
     }

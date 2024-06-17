@@ -3,6 +3,7 @@ package org.mind.framework.security;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -50,7 +51,7 @@ public class RSA2Utils {
      * @return Base64 String
      */
     public static String encrypt(String content, String publicKey) {
-        return new String(Base64.encode(encryptReturnBytes(content, publicKey)), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Base64.encode(encryptReturnBytes(content, publicKey)));
     }
 
     public static byte[] encryptReturnBytes(String content, String publicKey) {
@@ -76,7 +77,7 @@ public class RSA2Utils {
      * @return
      */
     public static String decrypt(String content, String privateKey) {
-        return new String(decryptReturnBytes(content, privateKey), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(decryptReturnBytes(content, privateKey));
     }
 
     public static byte[] decryptReturnBytes(String content, String privateKey) {
@@ -101,7 +102,7 @@ public class RSA2Utils {
      * @return
      */
     public static String sign(String encryptedContent, String privateKey) {
-        return new String(Base64.encode(signReturnBytes(encryptedContent, privateKey)), StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(Base64.encode(signReturnBytes(encryptedContent, privateKey)));
     }
 
     /**
@@ -167,25 +168,25 @@ public class RSA2Utils {
 
         public String getPublicByBase64() {
             if (StringUtils.isEmpty(publicBase64))
-                publicBase64 = new String(Base64.encode(this.publics), StandardCharsets.UTF_8);
+                publicBase64 = Strings.fromUTF8ByteArray(Base64.encode(this.publics));
             return publicBase64;
         }
 
         public String getPrivateByBase64() {
             if (StringUtils.isEmpty(privateBase64))
-                privateBase64 = new String(Base64.encode(this.privates), StandardCharsets.UTF_8);
+                privateBase64 = Strings.fromUTF8ByteArray(Base64.encode(this.privates));
             return privateBase64;
         }
 
         public String getPublicByHex() {
             if (StringUtils.isEmpty(publicHex))
-                publicHex = new String(Hex.encode(this.publics), StandardCharsets.UTF_8);
+                publicHex = Strings.fromUTF8ByteArray(Hex.encode(this.publics));
             return publicHex;
         }
 
         public String getPrivateByHex() {
             if (StringUtils.isEmpty(privateHex))
-                privateHex = new String(Hex.encode(this.privates), StandardCharsets.UTF_8);
+                privateHex = Strings.fromUTF8ByteArray(Hex.encode(this.privates));
             return privateHex;
         }
     }

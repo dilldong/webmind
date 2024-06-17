@@ -3,6 +3,7 @@ package org.mind.framework.util;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.Strings;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.mind.framework.web.server.WebServerConfig;
@@ -11,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -191,16 +190,10 @@ public class HttpUtils {
          * InputStream does not implement the reset method (which can reset the position of the first read).
          */
         if (Objects.nonNull(data)) {
-            String encoding = StringUtils.defaultIfEmpty(request.getCharacterEncoding(), StandardCharsets.UTF_8.name());
-            String body;
-
-            try {
-                body = new String(data, encoding);
-            } catch (UnsupportedEncodingException e) {
-                body = new String(data, StandardCharsets.UTF_8);
-            }
-
+            String body = Strings.fromUTF8ByteArray(data);
             String contentType = request.getContentType();
+
+            // delete content blank
             if (StringUtils.isNotEmpty(contentType) && contentType.contains(MediaType.APPLICATION_JSON_VALUE))
                 body = JsonUtils.deletionBlank(body);
 

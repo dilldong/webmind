@@ -2,6 +2,7 @@ package org.mind.framework.security;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.Strings;
 
 import java.nio.charset.StandardCharsets;
 
@@ -97,7 +98,7 @@ final class InnerBase64 {
         if (ArrayUtils.isEmpty(b))
             return null;
 
-        return new String(b, StandardCharsets.UTF_8);
+        return Strings.fromUTF8ByteArray(b);
     }
 
     /**

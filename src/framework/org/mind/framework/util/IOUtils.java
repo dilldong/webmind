@@ -1,8 +1,11 @@
 package org.mind.framework.util;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.util.Strings;
 
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
 
 public class IOUtils {
 
@@ -102,11 +105,40 @@ public class IOUtils {
                 + ((b[off + 1] & 0xFFL) << 48) + ((b[off] & 0xFFL) << 56);
     }
 
+    public static String readString(InputStream in) throws IOException {
+        return readString(readBytes(in));
+    }
+
+    public static String readString(InputStream in, int size) throws IOException {
+        return readString(readBytes(in, size));
+    }
+
+    public static String readString(InputStream in, long size) throws IOException {
+        return readString(readBytes(in, size));
+    }
+
+    public static String readString(byte[] b) {
+        return readString(b, 0);
+    }
+
+    public static String readString(byte[] b, int offset) {
+        return readString(b, offset, b.length);
+    }
+
     public static String readString(byte[] b, int offset, int len) {
-        if (len > 0)
-            return (new String(b, offset, len, StandardCharsets.US_ASCII));
-        else
-            return ("");
+        return Strings.fromUTF8ByteArray(b, offset, len);
+    }
+
+    public static byte[] readBytes(InputStream in) throws IOException {
+        return org.apache.commons.io.IOUtils.toByteArray(in);
+    }
+
+    public static byte[] readBytes(InputStream in, int size) throws IOException {
+        return org.apache.commons.io.IOUtils.toByteArray(in, size);
+    }
+
+    public static byte[] readBytes(InputStream in, long size) throws IOException {
+        return org.apache.commons.io.IOUtils.toByteArray(in, size);
     }
 
     /**
@@ -137,7 +169,7 @@ public class IOUtils {
      * @return An array of length len containing the byte representation of num.
      */
     public static byte[] intToBytes(int num, int len, byte[] b, int offset) {
-        if (b == null) {
+        if (Objects.isNull(b)) {
             b = new byte[len];
             offset = 0;
         }
@@ -176,10 +208,8 @@ public class IOUtils {
      * @param offset the offset in <code>b</code> to write the integer to.
      * @return An array of length len containing the byte representation of num.
      */
-    public static byte[] longToBytes(long num, int len, byte[] b,
-                                     int offset) {
-
-        if (b == null) {
+    public static byte[] longToBytes(long num, int len, byte[] b, int offset) {
+        if (Objects.isNull(b)) {
             b = new byte[len];
             offset = 0;
         }

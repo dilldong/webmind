@@ -270,7 +270,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
 
         if (execution.isRequestLog() && !execution.isSimpleLogging()) {
-            log.info("Action is: {}.{} - [{}]",
+            log.info("{}.{} - [{}]",
                     execution.getActionInstance().getClass().getSimpleName(),
                     execution.getMethod().getName(),
                     requestURI);
@@ -306,16 +306,13 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             Action.removeActionContext();
             if (execution.isRequestLog()) {
                 if (execution.isSimpleLogging()) {
-                    log.info("{}.{} - [{}] - [{} ms]",
+                    log.info("{}.{} - [{}] - [{}ms]",
                             execution.getActionInstance().getClass().getSimpleName(),
                             execution.getMethod().getName(),
                             requestURI,
                             DateUtils.getMillis() - begin);
                 } else {
                     log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
-                    log.info("End method: {}.{}",
-                            execution.getActionInstance().getClass().getSimpleName(),
-                            execution.getMethod().getName());
                 }
             }
         }
