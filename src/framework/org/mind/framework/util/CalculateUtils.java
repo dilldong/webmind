@@ -44,7 +44,7 @@ public class CalculateUtils {
     }
 
     public static String format(BigDecimal number, RoundingMode mode, int scale) {
-        return number.setScale(scale, mode).stripTrailingZeros().toPlainString();
+        return number.setScale(scale, mode).toPlainString();
     }
 
     public static String add(String... augends) {
@@ -208,9 +208,6 @@ public class CalculateUtils {
         return dividend.divide(divisor, scale, mode);
     }
 
-    public static String formatCurrency(String amount) {
-        return formatCurrency(amount, Locale.getDefault());
-    }
 
     public static String formatNumberSymbol(String amount) {
         String intpart = StringUtils.substringBefore(amount, IOUtils.DOT_SEPARATOR);
@@ -246,19 +243,23 @@ public class CalculateUtils {
     }
 
     public static String formatCurrency(BigDecimal amount) {
-        return formatCurrency(amount, Locale.getDefault());
+        return formatCurrency(amount, false);
     }
 
-    public static String formatCurrency(String amount, Locale locale) {
-        return formatCurrency(amount, locale, false);
+    public static String formatCurrency(String amount) {
+        return formatCurrency(amount, false);
     }
 
-    public static String formatCurrency(BigDecimal amount, Locale locale) {
-        return formatCurrency(amount, locale, false);
+    public static String formatCurrency(String amount, boolean symbol) {
+        return formatCurrency(amount, symbol, Locale.getDefault());
     }
 
-    public static String formatCurrency(String amount, Locale locale, boolean symbol) {
-        return formatCurrency(new BigDecimal(amount), locale, symbol);
+    public static String formatCurrency(BigDecimal amount, boolean symbol) {
+        return formatCurrency(amount, symbol, Locale.getDefault());
+    }
+
+    public static String formatCurrency(String amount, boolean symbol, Locale locale) {
+        return formatCurrency(new BigDecimal(amount), symbol, locale);
     }
 
     /**
@@ -269,7 +270,7 @@ public class CalculateUtils {
      * @param symbol
      * @return
      */
-    public static String formatCurrency(BigDecimal amount, Locale locale, boolean symbol) {
+    public static String formatCurrency(BigDecimal amount, boolean symbol, Locale locale) {
         NumberFormat currency = NumberFormat.getCurrencyInstance(locale);
         String result = currency.format(amount);
         if (symbol)

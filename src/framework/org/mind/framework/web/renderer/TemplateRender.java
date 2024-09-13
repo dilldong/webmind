@@ -21,7 +21,7 @@ public class TemplateRender extends Render {
 
     public TemplateRender(String path) {
         this.path = path;
-        this.model = new HashMap<>(5);
+        this.model = new HashMap<>(8);
     }
 
     public TemplateRender(String path, Map<String, Object> model) {

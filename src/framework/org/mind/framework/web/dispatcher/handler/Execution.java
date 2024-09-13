@@ -15,6 +15,7 @@ import java.util.Arrays;
  *
  * @author dp
  */
+@Getter
 public class Execution {
 
     private final static RequestMethod[] NON_METHODS = {RequestMethod.GET, RequestMethod.POST};
@@ -26,8 +27,6 @@ public class Execution {
     private final Method method;
 
     // Http request method
-    @Getter
-    @Setter
     private RequestMethod[] requestMethods;
 
     // Method's arguments types
@@ -37,15 +36,17 @@ public class Execution {
     private final Object[] arguments;
 
     // Method's need arguments length
+    @Setter
     private int argsNumber;
 
     // Output request call log on parent
-    @Getter
     private final boolean requestLog;
 
     // Simple one line logging
-    @Getter
     private final boolean simpleLogging;
+
+    // Clear the returned collection object
+    private final boolean clearResult;
 
     public Execution(Object actionInstance, Method method, Mapping mapping) {
         this(actionInstance, method, null, mapping);
@@ -59,6 +60,7 @@ public class Execution {
         this.requestMethods = mapping.method();
         this.requestLog = mapping.requestLog();
         this.simpleLogging = mapping.simpleLogging();
+        this.clearResult = mapping.clearResult();
     }
 
     public Object execute() {
@@ -67,30 +69,6 @@ public class Execution {
 
     public Object execute(Object[] arguments) {
         return ReflectionUtils.invokeMethod(method, actionInstance, arguments);
-    }
-
-    protected Object getActionInstance() {
-        return actionInstance;
-    }
-
-    protected Method getMethod() {
-        return method;
-    }
-
-    protected Class<?>[] getParameterTypes() {
-        return parameterTypes;
-    }
-
-    protected Object[] getArguments() {
-        return arguments;
-    }
-
-    protected int getArgsNumber() {
-        return argsNumber;
-    }
-
-    protected void setArgsNumber(int argsNumber) {
-        this.argsNumber = argsNumber;
     }
 
     public boolean isSupportMethod(String method) {

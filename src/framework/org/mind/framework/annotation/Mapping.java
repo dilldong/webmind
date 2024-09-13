@@ -32,4 +32,9 @@ public @interface Mapping {
      * Simple one line logging
      */
     boolean simpleLogging() default false;
+
+    /**
+     * Clear the returned collection object
+     */
+    boolean clearResult() default false;
 }

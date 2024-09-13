@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -173,7 +174,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
         // check request is multipart request.
         HttpServletRequest processedRequest = this.checkMultipart(request, response);
-        if(Objects.isNull(processedRequest))
+        if (Objects.isNull(processedRequest))
             return;
 
         final String requestURI = HttpUtils.getURI(processedRequest, false);
@@ -277,9 +278,10 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
 
         // execute action
+        Object result = null;
         try {
             Action.setActionContext(processedRequest, response);
-            Object result = execution.execute(args);
+            result = execution.execute(args);
 
             // Interceptor doAfter
             if (!currentInterceptors.isEmpty()) {
@@ -315,6 +317,11 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
                 }
             }
+
+            // Let gc to work
+            if (execution.isClearResult())
+                if (Objects.nonNull(result) && result instanceof Collection)
+                    ((Collection<?>) result).clear();
         }
     }
 
@@ -441,7 +448,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             ViewResolver.text(htmlMessage).render(request, response);
     }
 
-    protected void customizeResponse(HttpServletResponse response){
+    protected void customizeResponse(HttpServletResponse response) {
         response.addHeader("X-Powered-By", WebServerConfig.POWER_BY_NAME);
     }
 }
