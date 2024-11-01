@@ -34,9 +34,9 @@ public class JsonUtils {
 
     public static final String END_BRACKETS = "}";
 
-    public static final String BEGIN_ARRARYS = "[";
+    public static final String BEGIN_ARRAY = "[";
 
-    public static final String END_ARRARYS = "]";
+    public static final String END_ARRAY = "]";
 
     public static final String COLON_SEPARATOR = ":";
 
@@ -96,7 +96,7 @@ public class JsonUtils {
         if (StringUtils.isBlank(text))
             return false;
 
-        return text.startsWith(BEGIN_ARRARYS) && text.endsWith(END_ARRARYS);
+        return text.startsWith(BEGIN_ARRAY) && text.endsWith(END_ARRAY);
     }
 
     public static boolean isJsonObject(String text) {
@@ -216,7 +216,7 @@ public class JsonUtils {
     }
 
     public static String toJson(Object target, Type type, boolean ofExpose, boolean isShowField, String... fieldName) {
-        final String fieldNameString = StringUtils.substringBetween(Arrays.toString(fieldName), BEGIN_ARRARYS, END_ARRARYS);
+        final String fieldNameString = StringUtils.substringBetween(Arrays.toString(fieldName), BEGIN_ARRAY, END_ARRAY);
         if (StringUtils.isEmpty(fieldNameString))
             return toJson(target, type, ofExpose);
 

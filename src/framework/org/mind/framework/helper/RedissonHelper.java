@@ -226,14 +226,11 @@ public class RedissonHelper {
         RList<V> rList = this.rList(name);
         CompletionStage<Boolean> completionStage =
                 rList.isExistsAsync().thenApplyAsync(exists -> {
-                    boolean added = rList.add(v);
-                    if (added) {
-                        putLocal(name, ArrayList.class);
-                        if (!exists)
-                            setExpire(rList, expire, unit);
-                        return Boolean.TRUE;
-                    }
-                    return Boolean.FALSE;
+                    rList.add(v);
+                    putLocal(name, ArrayList.class);
+                    if (!exists)
+                        setExpire(rList, expire, unit);
+                    return Boolean.TRUE;
                 });
 
         /*
@@ -540,7 +537,8 @@ public class RedissonHelper {
         return this.deleteMap(name, this.getWriteLock(name));
     }
 
-    public <K> RFuture<Long> removeByMapAsync(String name, K... k) {
+    @SafeVarargs
+    public final <K> RFuture<Long> removeByMapAsync(String name, K... k) {
         if (Objects.isNull(k))
             return new CompletableFutureWrapper<>(0L);
 

@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration scan="false" scanPeriod="60 seconds">
+    <!-- log file -->
+    <property name="logFile" value="webmind.log"/>
+    <property name="logErrorFile" value="webmind-error.log"/>
+    <property name="logPath" value="logs"/>
+
     <!-- log setting -->
-    <property name="log.root" value="info"/>
     <property name="log.project" value="org.mind.framework"/>
     <property name="log.project.level" value="debug"/>
+
+    <property name="log.project.jdbc" value="org.springframework.jdbc.core.JdbcTemplate"/>
+    <property name="log.project.jdbc.level" value="debug"/>
+
+    <property name="log.maxHistory" value="30"/>
+    <property name="log.maxSize" value="5MB"/>
+
+    <!-- file log pattern -->
+    <property name="file.pattern" value="%d{MM-dd HH:mm:ss.SSS} [%-5p] [%t] %c{0}.%M\(%L\) - %m%n"/>
 
     <!-- console output log -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -11,17 +24,54 @@
             <level>DEBUG</level>
         </filter>
         <encoder>
-            <pattern>
-                %d{MM-dd HH:mm:ss.SSS} [%highlight(%-5p)] [%yellow(%t)] %cyan(%c{0}.%M\(%L\)) - %m%n
-            </pattern>
+            <pattern>%d{MM-dd HH:mm:ss.SSS} [%highlight(%-5p)] [%yellow(%t)] %cyan(%c{0}.%M\(%L\)) - %m%n</pattern>
         </encoder>
     </appender>
 
-    <!-- the project log output -->
-    <logger name="${log.project}" additivity="true" level="${log.project.level}" />
+    <!-- INFO rolling log -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logPath}/${logFile}</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${logPath}/${logFile}.%i.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>${log.maxHistory}</maxHistory>
+            <maxFileSize>${log.maxSize}</maxFileSize>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${file.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- WARN+ rolling log -->
+    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logPath}/${logErrorFile}</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${logPath}/${logErrorFile}.%i.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>${log.maxHistory}</maxHistory>
+            <maxFileSize>${log.maxSize}</maxFileSize>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${file.pattern}</pattern>
+        </encoder>
+    </appender>
 
     <!-- root -->
-    <root level="${log.root}">
+    <root level="info">
+        <!--生产环境注释STDOUT输出-->
         <appender-ref ref="STDOUT"/>
+        <appender-ref ref="INFO_FILE"/>
+        <appender-ref ref="WARN_FILE"/>
     </root>
+
+    <!-- the project log output -->
+    <logger name="${log.project}" additivity="false" level="${log.project.level}" />
+    <logger name="${log.project.jdbc}" additivity="false" level="${log.project.jdbc.level}" />
+
 </configuration>

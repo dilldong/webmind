@@ -3,6 +3,7 @@ package org.mind.framework;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.IOUtils;
@@ -102,7 +103,7 @@ public class SpringApplication {
                     timeUnit.sleep(await);
 
                 // shutdown on Spring
-                if(ContextSupport.getApplicationContext() instanceof AbstractApplicationContext)
+                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext)
                     ((AbstractApplicationContext) ContextSupport.getApplicationContext()).close();
 
                 mainThread.interrupt();
@@ -138,7 +139,7 @@ public class SpringApplication {
     }
 
     // web project
-    private void run(String ... args) {
+    private void run(String... args) {
         new WebServer()
                 .addConfigClass(configClass)
                 .addSpringFile(springLocations)
@@ -147,7 +148,7 @@ public class SpringApplication {
     }
 
     // non-web project
-    private void runApplication(String ... args) {
+    private void runApplication(String... args) {
         synchronized (lock) {
             if (StringUtils.isNotEmpty(log4j)) {
                 URL url = ClassUtils.getResource(configClass, log4j);
@@ -160,9 +161,26 @@ public class SpringApplication {
                 } else
                     log4jInputStream = ClassUtils.getResourceAsStream(configClass, log4j);
 
-                // load log4j
                 try {
-                    org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);
+                    // load log4j2
+                    org.apache.logging.log4j.core.config.Configurator.initialize(
+                            null,
+                            new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream));
+
+                    // load logback
+//                    ch.qos.logback.classic.LoggerContext.LoggerContext context =
+//                            (ch.qos.logback.classic.LoggerContextLoggerContext) LoggerFactory.getILoggerFactory();
+//                    context.reset();
+//                    ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator configurator = new ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator();
+//                    configurator.setContext(context);
+//                    configurator.doConfigure(log4jInputStream);
+
+                    // load log4j 1.x
+                    //org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);
+
+                    log.info("Logger was reset and started successfully!");
+                } catch (Exception e) {
+                    ThrowProvider.doThrow(e);
                 } finally {
                     org.apache.commons.io.IOUtils.closeQuietly(log4jInputStream);
                 }

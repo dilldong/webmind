@@ -71,7 +71,7 @@ public abstract class LoopWorkerService extends AbstractService {
 
     protected void monitorAndRestart() {
         monitorThread = ExecutorFactory.newDaemonThread("Loop-Monitor", () -> {
-            while (true) {
+            while (isLoop) {
                 if (!workerMainThread.isAlive())
                     workerMainThread.start();
 

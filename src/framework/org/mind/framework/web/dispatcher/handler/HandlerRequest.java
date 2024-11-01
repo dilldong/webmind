@@ -30,6 +30,6 @@ public interface HandlerRequest extends Destroyable {
 
     default void clear(HttpServletRequest request){
         HttpUtils.clearRequestAttribute(request);
-    };
+    }
 
 }

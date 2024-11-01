@@ -2,8 +2,7 @@ package org.mind.framework.util;
 
 import org.springframework.core.io.FileSystemResource;
 
-public class PropertyPlaceholderConfigurer extends
-		org.springframework.beans.factory.config.PropertyPlaceholderConfigurer {
+public class PropertyPlaceholderConfigurer extends org.springframework.beans.factory.config.PropertyPlaceholderConfigurer {
 
 	private static String basePath = "config";
 

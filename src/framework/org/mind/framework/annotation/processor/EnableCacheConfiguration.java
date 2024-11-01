@@ -50,6 +50,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     private Cacheable cacheable;
     private BeanFactory beanFactory;
 
+    @NotNull
     @Override
     public ClassFilter getClassFilter() {
         return this.pointcut.getClassFilter();
@@ -60,16 +61,19 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         // do nothing
     }
 
+    @NotNull
     @Override
     public Class<?>[] getInterfaces() {
         return new Class[]{org.mind.framework.cache.Cacheable.class};
     }
 
+    @NotNull
     @Override
     public Pointcut getPointcut() {
         return pointcut;
     }
 
+    @NotNull
     @Override
     public Advice getAdvice() {
         return advice;

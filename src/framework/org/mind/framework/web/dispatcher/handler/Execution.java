@@ -27,7 +27,7 @@ public class Execution {
     private final Method method;
 
     // Http request method
-    private RequestMethod[] requestMethods;
+    private final RequestMethod[] requestMethods;
 
     // Method's arguments types
     private final Class<?>[] parameterTypes;

@@ -6,7 +6,6 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.springframework.util.MultiValueMap;
@@ -18,10 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Objects;
 
@@ -61,28 +56,16 @@ public final class Action {
         return request;
     }
 
-    public String urlEncode(String value) {
-        if(StringUtils.isEmpty(value))
-            return value;
-
-        try {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            ThrowProvider.doThrow(e);
-        }
-        return StringUtils.EMPTY;
+    public String encodeURIComponent(String value) {
+        return HttpUtils.encodeURIComponent(value);
     }
 
-    public String urlDecode(String value) {
-        if(StringUtils.isEmpty(value))
-            return value;
+    public String encodeURI(String value) {
+        return HttpUtils.encodeURI(value);
+    }
 
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            ThrowProvider.doThrow(e);
-        }
-        return StringUtils.EMPTY;
+    public String decodeURI(String value) {
+        return HttpUtils.decodeURI(value);
     }
 
     public MultipartFile getFirstFile(String... keys) {
@@ -135,35 +118,33 @@ public final class Action {
     /**
      * Whether the request is POST method?
      */
-    public boolean isPostMehod() {
-        return HttpUtils.isPostMehod(getRequest());
+    public boolean isPostMethod() {
+        return HttpUtils.isPostMethod(getRequest());
     }
 
     /**
      * Whether the request is GET method?
      */
-    public boolean isGetMehod() {
-        return HttpUtils.isGetMehod(getRequest());
+    public boolean isGetMethod() {
+        return HttpUtils.isGetMethod(getRequest());
     }
 
     /**
      * Whether the request is PUT method?
      */
-    public boolean isPutMehod() {
-        return HttpUtils.isPutMehod(getRequest());
+    public boolean isPutMethod() {
+        return HttpUtils.isPutMethod(getRequest());
     }
 
     /**
      * Whether the request is DELETE method?
      */
-    public boolean isDeleteMehod() {
-        return HttpUtils.isDeleteMehod(getRequest());
+    public boolean isDeleteMethod() {
+        return HttpUtils.isDeleteMethod(getRequest());
     }
 
     /**
      * Get the byte[] content of the post request
-     *
-     * @throws IOException
      */
     public byte[] getPostBytes() throws IOException {
         return HttpUtils.getPostBytes(request);
@@ -171,8 +152,6 @@ public final class Action {
 
     /**
      * Get the content of the post request
-     *
-     * @throws IOException
      */
     public String getPostString() throws IOException {
         return HttpUtils.getPostString(request, true);
@@ -182,12 +161,26 @@ public final class Action {
         return HttpUtils.getJson(request);
     }
 
+    public <V> V getJson(Class<V> clazz) {
+        return getJson(TypeToken.get(clazz));
+    }
+
+    public <V> V getJson(TypeToken<V> typeToken) {
+        String jsonString = getJson();
+        if (!JsonUtils.isJson(jsonString))
+            return null;
+
+        return JsonUtils.fromJson(jsonString, typeToken);
+    }
+
     public JsonObject getJsonObject() {
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>() {});
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>() {
+        });
     }
 
     public JsonArray getJsonArray() {
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>() {});
+        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>() {
+        });
     }
 
     public String getString(String name) {

@@ -3,6 +3,7 @@ package org.mind.framework.service.threads;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,7 +56,7 @@ public class TaskThreadFactory implements ThreadFactory {
     }
 
     @Override
-    public Thread newThread(Runnable r) {
+    public Thread newThread(@NotNull Runnable r) {
         TaskThread t = new TaskThread(group, r, threadNamePrefix + threadNumber.getAndIncrement());
         t.setDaemon(daemon);
         t.setPriority(threadPriority);
