@@ -316,7 +316,7 @@ public class OkHttpFactory {
         GracefulShutdown shutdown =
                 GracefulShutdown.newShutdown("OkHttp-Graceful", HTTP_CLIENT.dispatcher().executorService());
 
-        shutdown.waitTime(15L, TimeUnit.SECONDS)
+        shutdown.awaitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook(signal -> {
                     if (signal == ShutDownSignalStatus.IN) {
                         log.info("Cancel OkHttpClient connections ....");

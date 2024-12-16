@@ -142,7 +142,7 @@ public class LruCache extends AbstractCache implements Cacheable {
         if (Objects.isNull(element))
             return null;
 
-        if (interval > 0 && (DateUtils.getMillis() - element.getFirstTime()) > interval) {
+        if (interval > 0 && (DateUtils.CachedTime.currentMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
             if (log.isDebugEnabled())
                 log.debug("Remove Cache key, The access time interval expires. key = {}", key);
@@ -153,7 +153,7 @@ public class LruCache extends AbstractCache implements Cacheable {
             if (write.tryLock()) {
                 try {
                     element.recordVisited();// record count of visit
-                    element.recordTime(DateUtils.getMillis()); // record time of visit
+                    element.recordTime(DateUtils.CachedTime.currentMillis()); // record time of visit
                     return element;
                 } finally {
                     write.unlock();

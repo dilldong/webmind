@@ -74,7 +74,7 @@ public class IdUtils {
 
     public static int generateId() {
         int atomic = atomicInteger.incrementAndGet();
-        long timeMillis = DateUtils.getMillis();
+        long timeMillis = DateUtils.currentMillis();
         String value = StringUtils.substring(String.valueOf(timeMillis + atomic), 5);
         return Integer.parseInt(value);
     }

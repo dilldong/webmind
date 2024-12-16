@@ -60,7 +60,6 @@ public class Response<T> {
 
     /**
      * Set response-code follow code
-     * @return
      */
     public Response<T> followHttpStatus(){
         Action.getActionContext().getResponse().setStatus(code);
@@ -73,18 +72,15 @@ public class Response<T> {
 
     /**
      * 默认不排除未标注 @Expose 注解的字段.
-     *
-     * @return
      */
     public String toJson() {
         return this.toJson(false);
     }
 
     /**
-     * 是否排除未标注 @Expose 注解的字段。false:不排出，true:排除
+     * 是否只显示带@Expose注解的字段
      *
-     * @param ofExpose
-     * @return
+     * @param ofExpose true:只显示带@Expose的字段, false:全部显示
      */
     public String toJson(boolean ofExpose) {
         if (StringUtils.isEmpty(status))
@@ -101,18 +97,25 @@ public class Response<T> {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
                 .append("code", code)
-                .append(" msg", msg)
-                .append(" status", status)
-                .append(" result", result)
+                .append("msg", msg)
+                .append("status", status)
+                .append("result", result)
+                .toString();
+    }
+
+    public String toSimpleString() {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                .append("code", code)
+                .append("msg", msg)
+                .append("status", status)
                 .toString();
     }
 
     /**
      * 设置需要跳过的字段
      *
-     * @param ofExpose
-     * @param skipField                   跳过的字段名称，不会在json中显示
-     * @return
+     * @param ofExpose  true:只显示带@Expose的字段, false:全部显示
+     * @param skipField 跳过的字段名称，不会在结果中显示
      */
     public String toJson(boolean ofExpose, final String... skipField) {
         if (Objects.nonNull(skipField) && skipField.length > 0)
@@ -125,10 +128,9 @@ public class Response<T> {
     /**
      * 设置需要跳过的字段
      *
-     * @param ofExpose
-     * @param isShowField                 显示/隐藏
-     * @param fieldName                   字段名称，根据isShow是否在json中显示
-     * @return
+     * @param ofExpose      true:只显示带@Expose的字段, false:全部显示
+     * @param isShowField   显示/隐藏
+     * @param fieldName     字段名称，根据isShowField是否显示该字段
      */
     public String toJson(boolean ofExpose, final boolean isShowField, final String... fieldName) {
         if (StringUtils.isEmpty(status))

@@ -170,7 +170,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         this.customizeResponse(response);
-        final long begin = DateUtils.getMillis();
+        final long begin = DateUtils.CachedTime.currentMillis();
 
         // check request is multipart request.
         HttpServletRequest processedRequest = this.checkMultipart(request, response);
@@ -312,9 +312,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                             execution.getActionInstance().getClass().getSimpleName(),
                             execution.getMethod().getName(),
                             requestURI,
-                            DateUtils.getMillis() - begin);
+                            DateUtils.CachedTime.currentMillis() - begin);
                 } else {
-                    log.info("Used time(ms): {}", DateUtils.getMillis() - begin);
+                    log.info("Used time(ms): {}", DateUtils.CachedTime.currentMillis() - begin);
                 }
             }
 

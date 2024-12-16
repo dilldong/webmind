@@ -3,6 +3,8 @@ package org.mind.framework.util;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.web.server.GracefulShutdown;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -17,6 +19,9 @@ import java.time.temporal.TemporalAdjuster;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 对日期、时间格式化工具类
@@ -40,38 +45,72 @@ public class DateUtils {
     public static final String TIME_PATTERN = "HH:mm:ss";
     public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    public static class CachedTime {
+        private static volatile long currentTimeMillis = System.currentTimeMillis();
+        private static final ScheduledExecutorService scheduler =
+                Executors.newSingleThreadScheduledExecutor(
+                        ExecutorFactory.newThreadFactory("mind-time-", false));
+
+        static {
+            // Start a scheduled update currentTimeMillis
+            scheduler.scheduleAtFixedRate(() ->
+                    currentTimeMillis = System.currentTimeMillis(), 0, 1, TimeUnit.MILLISECONDS);
+
+            GracefulShutdown.newShutdown("UpdateTime-Graceful", scheduler)
+                    .awaitTime(5, TimeUnit.SECONDS)
+                    .registerShutdownHook();
+        }
+
+        // Gets the timestamp of the current cache
+        public static long currentMillis() {
+            return currentTimeMillis;
+        }
+
+        // Stop timestamp updates
+        public static void stopping() {
+            try {
+                scheduler.shutdown();
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS))
+                    scheduler.shutdownNow();
+            } catch (InterruptedException | IllegalStateException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     /**
      * 返回时间的毫秒数，同System.currentTimeMillis()结果一致.
      */
-    public static long getMillis() {
+    public static long currentMillis() {
         return System.currentTimeMillis();
+    }
+
+    public static long currentMillis(LocalDateTime localDateTime) {
+        return localDateTime.atZone(ZONE_DEFAULT).toInstant().toEpochMilli();
+    }
+
+    public static long currentMillis(LocalDateTime localDateTime, ZoneId zoneId) {
+        return localDateTime.atZone(zoneId).toInstant().toEpochMilli();
     }
 
     /**
      * 返回时间的秒数
      */
-    public static long getSeconds() {
-        return getMillis() / 1000L;
+    public static long currentSeconds() {
+        return currentSeconds(CachedTime.currentMillis());
     }
 
-    public static long getSeconds(long timemillis) {
+    public static long currentSeconds(long timemillis) {
         return timemillis / 1000L;
     }
 
-    public static long getSeconds(LocalDateTime dateTime) {
-        return getSeconds(dateTime, ZONE_DEFAULT);
+    public static long currentSeconds(LocalDateTime dateTime) {
+        return currentSeconds(dateTime, ZONE_DEFAULT);
     }
 
-    public static long getSeconds(LocalDateTime dateTime, ZoneId zoneId) {
+    public static long currentSeconds(LocalDateTime dateTime, ZoneId zoneId) {
         return dateTime.atZone(zoneId).toEpochSecond();
-    }
-
-    public static long getSeconds(LocalDate localDate) {
-        return getSeconds(localDate.atStartOfDay());
-    }
-
-    public static long getSeconds(LocalDate localDate, ZoneId zoneId) {
-        return getSeconds(localDate.atStartOfDay(), zoneId);
     }
 
     /**
@@ -80,7 +119,7 @@ public class DateUtils {
     public static long before(int days) {
         if (days < 1)
             return -1L;
-        return getMillis() - days * ONE_DAY_MILLIS;
+        return CachedTime.currentMillis() - days * ONE_DAY_MILLIS;
     }
 
     /**
@@ -213,11 +252,11 @@ public class DateUtils {
     }
 
     public static Date currentDate() {
-        return new Date(getMillis());
+        return new Date(CachedTime.currentMillis());
     }
 
     public static Timestamp currentTimestamp() {
-        return currentTimestamp(getMillis());
+        return currentTimestamp(CachedTime.currentMillis());
     }
 
     public static Timestamp currentTimestamp(Date date) {
@@ -226,6 +265,10 @@ public class DateUtils {
 
     public static Timestamp currentTimestamp(long timeMillis) {
         return new Timestamp(timeMillis);
+    }
+
+    public static Timestamp currentTimestamp(LocalDateTime dateTime) {
+        return currentTimestamp(currentMillis(dateTime));
     }
 
     public static LocalDate dateNow() {
@@ -305,34 +348,29 @@ public class DateUtils {
         return startOfDaySeconds(dateAt(date.getTime(), zoneId), zoneId);
     }
 
-    public static long startOfDaySeconds(LocalDate localDate) {
-        return startOfDaySeconds(localDate, ZONE_DEFAULT);
+    public static long startOfDaySeconds(LocalDateTime localDateTime) {
+        return startOfDaySeconds(localDateTime.toLocalDate());
     }
 
-    public static long startOfDaySeconds(LocalDateTime localDateTime) {
-        return startOfDaySeconds(localDateTime, ZONE_DEFAULT);
+    public static long startOfDaySeconds(LocalDate localDate) {
+        return startOfDaySeconds(localDate, ZONE_DEFAULT);
     }
 
     public static long startOfDayMillis(LocalDateTime localDateTime) {
         return startOfDayMillis(localDateTime, ZONE_DEFAULT);
     }
 
-    public static long startOfDayMillis(LocalDate localDate, ZoneId zoneId) {
-        return localDate.atStartOfDay(zoneId).toInstant().toEpochMilli();
+    public static long startOfDayMillis(LocalDateTime localDateTime, ZoneId zoneId) {
+        return startOfDayMillis(localDateTime.toLocalDate(), zoneId);
     }
 
-    public static long startOfDayMillis(LocalDateTime localDateTime, ZoneId zoneId) {
-        return localDateTime.atZone(zoneId).toInstant().toEpochMilli();
+    public static long startOfDayMillis(LocalDate localDate, ZoneId zoneId) {
+        return localDate.atStartOfDay(zoneId).toInstant().toEpochMilli();
     }
 
     public static long startOfDaySeconds(LocalDate localDate, ZoneId zoneId) {
         return localDate.atStartOfDay(zoneId).toEpochSecond();
     }
-
-    public static long startOfDaySeconds(LocalDateTime localDateTime, ZoneId zoneId) {
-        return localDateTime.atZone(zoneId).toInstant().getEpochSecond();
-    }
-
 
     /**
      * 获取某一天结束的毫秒数.
@@ -393,7 +431,7 @@ public class DateUtils {
     /**
      * 计算两个时间之差
      */
-    public static Duration endOfRemaining(LocalDateTime start, TemporalAdjuster endOf){
+    public static Duration endOfRemaining(LocalDateTime start, TemporalAdjuster endOf) {
         LocalDateTime nextMidnight = start.with(endOf).plusDays(1L);
         return Duration.between(start, nextMidnight);
     }

@@ -50,7 +50,7 @@ public class CacheElement {
     }
 
     public CacheElement(Object data, String key, Cloneable.CloneType type) {
-        this(data, key, DateUtils.getMillis(), 0, type);
+        this(data, key, DateUtils.CachedTime.currentMillis(), 0, type);
     }
 
     public CacheElement(Object data, String key) {

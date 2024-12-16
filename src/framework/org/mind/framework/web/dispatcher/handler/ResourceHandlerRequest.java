@@ -156,7 +156,7 @@ public class ResourceHandlerRequest implements ResourceRequest {
         } else if (this.expires > 0) {
             response.setHeader(HttpHeaders.CACHE_CONTROL, maxAge);
             // Reset HTTP 1.0 Expires header if present
-            response.setDateHeader(HttpHeaders.EXPIRES, DateUtils.getMillis() + this.expires);
+            response.setDateHeader(HttpHeaders.EXPIRES, DateUtils.CachedTime.currentMillis() + this.expires);
         }
 
         // should download?

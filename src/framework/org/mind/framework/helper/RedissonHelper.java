@@ -1112,7 +1112,7 @@ public class RedissonHelper {
     private long getId4Day(ZoneId zone) {
         String currentDate =
                 DateUtils.format(
-                        DateUtils.getMillis(),
+                        DateUtils.CachedTime.currentMillis(),
                         DateUtils.FULL_DATE_PATTERN,
                         TimeZone.getTimeZone(zone));
 
