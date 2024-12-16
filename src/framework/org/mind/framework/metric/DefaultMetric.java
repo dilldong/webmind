@@ -21,7 +21,7 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long success() {
-        return success(DateUtils.getMillis());
+        return success(DateUtils.CachedTime.currentMillis());
     }
 
     public long success(long timeMillis) {
@@ -37,7 +37,7 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long exception() {
-        return exception(DateUtils.getMillis());
+        return exception(DateUtils.CachedTime.currentMillis());
     }
 
     public long exception(long timeMillis) {
@@ -54,7 +54,7 @@ public class DefaultMetric implements Metric {
     @Override
     public long rt() {
         // Make sure the bucket at the current time is not empty
-        long timeMillis = DateUtils.getMillis();
+        long timeMillis = DateUtils.CachedTime.currentMillis();
         bucket.current(timeMillis);
 
         return
@@ -67,7 +67,7 @@ public class DefaultMetric implements Metric {
     @Override
     public long minRt() {
         // Make sure the bucket at the current time is not empty
-        long timeMillis = DateUtils.getMillis();
+        long timeMillis = DateUtils.CachedTime.currentMillis();
         bucket.current(timeMillis);
         return
                 bucket.getValuesByPeriod(timeMillis)
@@ -80,7 +80,7 @@ public class DefaultMetric implements Metric {
     @Override
     public long maxRt() {
         // Make sure the bucket at the current time is not empty
-        long timeMillis = DateUtils.getMillis();
+        long timeMillis = DateUtils.CachedTime.currentMillis();
         bucket.current(timeMillis);
 
         return
@@ -108,7 +108,7 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long countByPeriod() {
-        final long time = DateUtils.getMillis();
+        final long time = DateUtils.CachedTime.currentMillis();
         return success(time) + exception(time);
     }
 }

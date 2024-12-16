@@ -16,7 +16,7 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.coyote.http11.AbstractHttp11JsseProtocol;
+import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.apache.coyote.http2.Http2Protocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.mind.framework.ContextSupport;
@@ -122,7 +122,7 @@ public class TomcatServer extends Tomcat {
          * a LifecycleListener is used so not to interfere with Tomcat's default manager creation logic.
          */
         ctx.addLifecycleListener(event -> {
-            if (event.getType().equals(Lifecycle.START_EVENT)) {
+            if (Lifecycle.START_EVENT.equals(event.getType())) {
                 Context context = (Context) event.getLifecycle();
                 Manager manager = context.getManager();
                 if (manager instanceof StandardManager) {
@@ -132,6 +132,9 @@ public class TomcatServer extends Tomcat {
         });
 
         host.addChild(ctx);
+
+        // init spring context
+        this.initSpringContext(ctx);
         return ctx;
     }
 
@@ -147,8 +150,9 @@ public class TomcatServer extends Tomcat {
         connector.setMaxParameterCount(serverConfig.getMaxParameterCount());
         connector.setMaxPostSize(serverConfig.getMaxPostSize());
 
-        AbstractHttp11JsseProtocol<?> nioProtocol = (AbstractHttp11JsseProtocol<?>) connector.getProtocolHandler();
+        AbstractHttp11Protocol<?> nioProtocol = (AbstractHttp11Protocol<?>) connector.getProtocolHandler();
         nioProtocol.setPort(Math.max(serverConfig.getPort(), 0));
+
         if (StringUtils.isNotEmpty(serverConfig.getServerName()))
             connector.setProperty("server", serverConfig.getServerName());
 
@@ -158,12 +162,16 @@ public class TomcatServer extends Tomcat {
         // Don't bind to the socket prematurely if ApplicationContext is slow to start
         connector.setProperty("bindOnInit", "false");
 
-        if(serverConfig.isHttp2Enabled())
-            nioProtocol.addUpgradeProtocol(new Http2Protocol());
+        // support Http2
+        if(serverConfig.isHttp2Enabled()) {
+            Http2Protocol h2c = new Http2Protocol();
+            h2c.setCompression(serverConfig.getCompression());
+            h2c.setCompressionMinSize(serverConfig.getCompressionMinSize());
+            h2c.setCompressibleMimeType(serverConfig.getCompressibleMimeType());
+            nioProtocol.addUpgradeProtocol(h2c);
 
-        // config SSL, As: TomcatServletWebServerFactory
-
-        nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
+            // config SSL, As: TomcatServletWebServerFactory
+        }
 
         if ("on".equalsIgnoreCase(serverConfig.getCompression())) {
             nioProtocol.setCompression("on");
@@ -173,6 +181,7 @@ public class TomcatServer extends Tomcat {
             nioProtocol.setUseSendfile(false);
         }
 
+        nioProtocol.setConnectionTimeout(serverConfig.getConnectionTimeout());
         nioProtocol.setMaxThreads(serverConfig.getMaxThreads());
         nioProtocol.setAcceptCount(serverConfig.getAcceptCount());
         nioProtocol.setMaxConnections(serverConfig.getMaxConnections());
@@ -271,43 +280,48 @@ public class TomcatServer extends Tomcat {
 
         if (StringUtils.isNotEmpty(serverConfig.getTldSkipPatterns()))
             System.setProperty("tomcat.util.scan.StandardJarScanFilter.jarsToSkip", serverConfig.getTldSkipPatterns());
+    }
 
+    private void initSpringContext(StandardContext ctx){
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
             if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
                 AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
+                ac.setServletContext(ctx.getServletContext());
                 ac.register(serverConfig.getSpringConfigClassSet().toArray(new Class[0]));
                 // by web-container destroy
                 // @see SpringContainerAware.destroy()
                 // ac.registerShutdownHook();
 
                 // Listen when spring starts by ContextLoaderListener
-                ctx.addApplicationLifecycleListener(new WebContextLoadListener(ac));
+                ctx.addApplicationLifecycleListener(new WebContextLoadListener(ac, ctx));
 
                 // setting spring context
                 ContextSupport.setApplicationContext(ac);
             } else
                 log.warn("Spring's config class or file is not found.");
-        } else {
-            // init spring by xml, XmlLoad4SpringContext is custom implementation
-            XmlWebApplicationContext xmas = new XmlLoad4SpringContext();
-
-            // load spring config
-            xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[0]));
-
-            // load properties in spring
-            loadResource(xmas.getEnvironment());
-
-            // by web-container destroy
-            // @see SpringContainerAware.destroy()
-            // xmas.registerShutdownHook();
-
-            // Listen when spring starts by ContextLoaderListener
-            ctx.addApplicationLifecycleListener(new WebContextLoadListener(xmas));
-
-            // setting spring context
-            ContextSupport.setApplicationContext(xmas);
+            return;
         }
+
+        // init spring by xml, XmlLoad4SpringContext is custom implementation
+        XmlWebApplicationContext xmas = new XmlLoad4SpringContext();
+        xmas.setServletContext(ctx.getServletContext());
+
+        // load spring config
+        xmas.setConfigLocations(serverConfig.getSpringFileSet().toArray(new String[0]));
+
+        // load properties in spring
+        loadResource(xmas.getEnvironment());
+
+        // by web-container destroy
+        // @see SpringContainerAware.destroy()
+        // xmas.registerShutdownHook();
+
+        // Listen when spring starts by ContextLoaderListener
+        ctx.addApplicationLifecycleListener(new WebContextLoadListener(xmas, ctx));
+
+        // setting spring context
+        ContextSupport.setApplicationContext(xmas);
     }
 
     private void loadResource(ConfigurableEnvironment environment) {

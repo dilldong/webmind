@@ -9,20 +9,10 @@ public class AuthenticatorException extends BaseException {
 
     private static final long serialVersionUID = -4294788851970815693L;
 
-    /**
-     * @param msg
-     * @author dp
-     */
     public AuthenticatorException(String msg) {
         super(msg);
     }
 
-
-    /**
-     * @param msg
-     * @param e
-     * @author dp
-     */
     public AuthenticatorException(String msg, Throwable e) {
         super(msg, e);
     }

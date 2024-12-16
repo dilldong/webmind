@@ -8,6 +8,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okio.Buffer;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.exception.RequestException;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ public abstract class AbstractRequestInterceptor implements Interceptor {
 
     protected abstract void handle(Request original, Request.Builder newRequestBuilder) throws IOException;
 
+    @NotNull
     @Override
     public Response intercept(Chain chain) throws IOException {
         Request original = chain.request();

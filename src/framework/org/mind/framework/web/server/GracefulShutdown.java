@@ -28,10 +28,10 @@ public class GracefulShutdown {
     private final Thread currentThread;
 
     @Getter
-    private long waitTime;
+    private long awaitTime;
 
     @Getter
-    private TimeUnit waitTimeUnit;
+    private TimeUnit awaitTimeUnit;
 
     protected ExecutorService executor;
     protected Consumer<ShutDownSignalStatus> consumer;
@@ -39,8 +39,8 @@ public class GracefulShutdown {
     protected GracefulShutdown(String nameTag, Thread currentThread) {
         this.nameTag = nameTag;
         this.currentThread = currentThread;
-        this.waitTime = 30L;
-        this.waitTimeUnit = TimeUnit.SECONDS;
+        this.awaitTime = 30L;
+        this.awaitTimeUnit = TimeUnit.SECONDS;
     }
 
     protected GracefulShutdown(String nameTag, Thread currentThread, ExecutorService executor) {
@@ -56,9 +56,9 @@ public class GracefulShutdown {
         return new GracefulShutdown(name, currentThread, executor);
     }
 
-    public GracefulShutdown waitTime(long waitTime, TimeUnit waitTimeUnit) {
-        this.waitTime = waitTime;
-        this.waitTimeUnit = waitTimeUnit;
+    public GracefulShutdown awaitTime(long awaitTime, TimeUnit awaitTimeUnit) {
+        this.awaitTime = awaitTime;
+        this.awaitTimeUnit = awaitTimeUnit;
         return this;
     }
 
@@ -114,11 +114,11 @@ public class GracefulShutdown {
             executorService.shutdown();
             this.consumer.accept(ShutDownSignalStatus.DOWN);
 
-            if (!executorService.awaitTermination(waitTime, waitTimeUnit)) {
+            if (!executorService.awaitTermination(awaitTime, awaitTimeUnit)) {
                 log.warn("'{}' didn't shutdown gracefully within '{} {}'. Proceeding with forceful shutdown",
                         nameTag,
-                        waitTime,
-                        waitTimeUnit.name());
+                        awaitTime,
+                        awaitTimeUnit.name());
                 executorService.shutdownNow();
             }
         } catch (InterruptedException | IllegalStateException ignored) {

@@ -36,7 +36,7 @@ public abstract class AbstractBucket {
     }
 
     public Indicator current() {
-        return current(DateUtils.getMillis());
+        return current(DateUtils.CachedTime.currentMillis());
     }
 
     public Indicator current(long currTimeMillis) {
@@ -75,7 +75,7 @@ public abstract class AbstractBucket {
 
 
     public List<Indicator> getValuesByPeriod() {
-        return getValuesByPeriod(DateUtils.getMillis());
+        return getValuesByPeriod(DateUtils.CachedTime.currentMillis());
     }
 
     public List<Indicator> getValuesByPeriod(long timeMillis) {

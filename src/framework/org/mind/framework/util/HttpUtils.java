@@ -5,6 +5,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 import org.mind.framework.exception.BaseException;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.MediaType;
@@ -12,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -234,31 +239,70 @@ public class HttpUtils {
         return (boolean) value;
     }
 
+    public static String encodeURIComponent(String value) {
+        if (StringUtils.isEmpty(value))
+            return value;
+
+        // 在JS中，encodeURIComponent会保留一些特定字符
+        try {
+            String encode = URLEncoder.encode(value, StandardCharsets.UTF_8.name());
+            return StringUtils.replaceEach(encode,
+                    new String[]{"%27", "%7E", "%28", "%29", "%21"},
+                    new String[]{"'", "~", "(", ")", "!"});
+        } catch (UnsupportedEncodingException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    public static String encodeURI(String value) {
+        if (StringUtils.isEmpty(value))
+            return value;
+
+        // 在JS中，encodeURI会保留一些特定字符
+        String encode = org.apache.catalina.util.URLEncoder.DEFAULT.encode(value, StandardCharsets.UTF_8);
+        return StringUtils.replaceEach(encode,
+                new String[]{"%23", "%3F"},
+                new String[]{"#", "?"});
+    }
+
+    public static String decodeURI(String value) {
+        if (StringUtils.isEmpty(value))
+            return value;
+
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            ThrowProvider.doThrow(e);
+        }
+        return StringUtils.EMPTY;
+    }
+
     /**
      * Whether the request is POST method?
      */
-    public static boolean isPostMehod(HttpServletRequest request) {
+    public static boolean isPostMethod(HttpServletRequest request) {
         return request.getMethod().equals(RequestMethod.POST.name());
     }
 
     /**
      * Whether the request is GET method?
      */
-    public static boolean isGetMehod(HttpServletRequest request) {
+    public static boolean isGetMethod(HttpServletRequest request) {
         return request.getMethod().equals(RequestMethod.GET.name());
     }
 
     /**
      * Whether the request is PUT method?
      */
-    public static boolean isPutMehod(HttpServletRequest request) {
+    public static boolean isPutMethod(HttpServletRequest request) {
         return request.getMethod().equals(RequestMethod.PUT.name());
     }
 
     /**
      * Whether the request is DELETE method?
      */
-    public static boolean isDeleteMehod(HttpServletRequest request) {
+    public static boolean isDeleteMethod(HttpServletRequest request) {
         return request.getMethod().equals(RequestMethod.DELETE.name());
     }
 

@@ -15,6 +15,7 @@ package org.mind.framework.util;
  * limitations under the License.
  */
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -395,7 +396,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
     }
 
     @Override
-    public int compareTo(final ObjectId other) {
+    public int compareTo(@NotNull final ObjectId other) {
         Objects.requireNonNull(other);
         byte[] byteArray = toByteArray();
         byte[] otherByteArray = other.toByteArray();

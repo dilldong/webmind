@@ -1,6 +1,6 @@
 package org.mind.framework.web.dispatcher.support;
 
-import org.jetbrains.annotations.NotNull;
+import org.apache.catalina.core.StandardContext;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -11,5 +11,5 @@ import javax.servlet.ServletException;
  * @date 2024/5/4
  */
 public interface EventRegistration {
-    void registration(@NotNull ServletContext servletContext) throws ServletException;
+    void registration(ServletContext servletContext, StandardContext standardContext) throws ServletException;
 }

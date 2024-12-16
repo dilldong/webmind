@@ -62,10 +62,10 @@ public class IdUtils {
             // (16进制) 由4位时间码, 3位机器码, 2位进程id, 3位自增计数器组成
             String objId = ObjectId.get().toHexString();
 
-            Long machine = Long.parseLong(objId.substring(8, 14), 16);
-            Long pid = Long.parseLong(objId.substring(14, 18), 16);
-            Long inc = Long.parseLong(objId.substring(18), 16);
-            return String.join(StringUtils.EMPTY, machine.toString(), pid.toString(), inc.toString());
+            long machine = Long.parseLong(objId.substring(8, 14), 16);
+            long pid = Long.parseLong(objId.substring(14, 18), 16);
+            long inc = Long.parseLong(objId.substring(18), 16);
+            return String.join(StringUtils.EMPTY, String.valueOf(machine), String.valueOf(pid), String.valueOf(inc));
         } catch (Exception e) {
             logger.error(e.getMessage());
             return String.valueOf(System.currentTimeMillis() + atomicInteger.incrementAndGet());
@@ -74,7 +74,7 @@ public class IdUtils {
 
     public static int generateId() {
         int atomic = atomicInteger.incrementAndGet();
-        long timeMillis = DateUtils.getMillis();
+        long timeMillis = DateUtils.currentMillis();
         String value = StringUtils.substring(String.valueOf(timeMillis + atomic), 5);
         return Integer.parseInt(value);
     }

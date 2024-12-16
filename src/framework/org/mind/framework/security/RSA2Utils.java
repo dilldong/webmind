@@ -151,9 +151,9 @@ public class RSA2Utils {
 
     public static class RSA2 {
         @Getter
-        private byte[] publics;
+        private final byte[] publics;
         @Getter
-        private byte[] privates;
+        private final byte[] privates;
 
         private String publicBase64;
         private String privateBase64;

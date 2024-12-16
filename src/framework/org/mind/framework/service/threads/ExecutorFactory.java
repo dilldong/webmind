@@ -69,7 +69,7 @@ public class ExecutorFactory {
                         workQueue,
                         threadFactory);
 
-        // Prestart all core threads
+        // pre-start all core threads
         if (corePoolSize > 0)
             executor.prestartAllCoreThreads();
         return executor;
@@ -92,7 +92,7 @@ public class ExecutorFactory {
                         threadFactory,
                         handler);
 
-        // Prestart all core threads
+        // pre-start all core threads
         if (corePoolSize > 0)
             executor.prestartAllCoreThreads();
         return executor;

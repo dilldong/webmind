@@ -226,14 +226,11 @@ public class RedissonHelper {
         RList<V> rList = this.rList(name);
         CompletionStage<Boolean> completionStage =
                 rList.isExistsAsync().thenApplyAsync(exists -> {
-                    boolean added = rList.add(v);
-                    if (added) {
-                        putLocal(name, ArrayList.class);
-                        if (!exists)
-                            setExpire(rList, expire, unit);
-                        return Boolean.TRUE;
-                    }
-                    return Boolean.FALSE;
+                    rList.add(v);
+                    putLocal(name, ArrayList.class);
+                    if (!exists)
+                        setExpire(rList, expire, unit);
+                    return Boolean.TRUE;
                 });
 
         /*
@@ -540,7 +537,8 @@ public class RedissonHelper {
         return this.deleteMap(name, this.getWriteLock(name));
     }
 
-    public <K> RFuture<Long> removeByMapAsync(String name, K... k) {
+    @SafeVarargs
+    public final <K> RFuture<Long> removeByMapAsync(String name, K... k) {
         if (Objects.isNull(k))
             return new CompletableFutureWrapper<>(0L);
 
@@ -1114,7 +1112,7 @@ public class RedissonHelper {
     private long getId4Day(ZoneId zone) {
         String currentDate =
                 DateUtils.format(
-                        DateUtils.getMillis(),
+                        DateUtils.CachedTime.currentMillis(),
                         DateUtils.FULL_DATE_PATTERN,
                         TimeZone.getTimeZone(zone));
 

@@ -43,7 +43,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private boolean penetration;
     private boolean inRedis;
     private TimeUnit timeUnit;
-    private Class<? extends Object> redisType;
+    private Class<?> redisType;
 
     public CacheinOperationInterceptor(Cacheable cacheable,
                                        Cloneable.CloneType cloneType,
@@ -51,7 +51,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                                        long expire,
                                        TimeUnit timeUnit,
                                        boolean inRedis,
-                                       Class<? extends Object>[] redisType) {
+                                       Class<?>[] redisType) {
         this.cacheable = cacheable;
         this.cloneType = cloneType;
         this.penetration = penetration;

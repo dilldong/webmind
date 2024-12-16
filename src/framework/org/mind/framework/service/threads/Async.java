@@ -30,7 +30,7 @@ public class Async {
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
         GracefulShutdown.newShutdown("Async-Graceful", executor)
-                .waitTime(15L, TimeUnit.SECONDS)
+                .awaitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook();
     }
 

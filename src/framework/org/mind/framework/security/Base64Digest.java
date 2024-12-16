@@ -10,7 +10,6 @@ public class Base64Digest {
 
     /**
      * @param input String type
-     * @return
      */
     public static String encode(String input) {
         return InnerBase64.getInstance().encode(input);
@@ -18,7 +17,6 @@ public class Base64Digest {
 
     /**
      * @param input byte array
-     * @return
      */
     public static String encode(byte[] input) {
         return InnerBase64.getInstance().encode(input);

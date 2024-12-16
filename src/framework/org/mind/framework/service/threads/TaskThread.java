@@ -18,7 +18,7 @@ public class TaskThread extends Thread {
 
     public TaskThread(ThreadGroup group, Runnable target, String name, long stackSize) {
         super(group, new WrappingRunnable(target), name, stackSize);
-        this.creationTime = DateUtils.getMillis();
+        this.creationTime = DateUtils.CachedTime.currentMillis();
     }
 
     /**

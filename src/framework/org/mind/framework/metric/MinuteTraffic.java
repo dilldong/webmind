@@ -17,7 +17,7 @@ public class MinuteTraffic extends BaseTraffic {
     }
 
     public long getRequestCurrent() {
-        final Indicator indicator = ((DefaultMetric) metric).getBucket().current(DateUtils.getMillis());
+        final Indicator indicator = ((DefaultMetric) metric).getBucket().current(DateUtils.CachedTime.currentMillis());
         return indicator.success() + indicator.exception();
     }
 

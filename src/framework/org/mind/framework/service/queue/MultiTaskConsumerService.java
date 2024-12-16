@@ -61,7 +61,7 @@ public class MultiTaskConsumerService extends ConsumerService {
                     new LinkedBlockingQueue<>(maxPoolSize));
 
             GracefulShutdown.newShutdown("Consumer-Graceful", executor)
-                    .waitTime(15L, TimeUnit.SECONDS)
+                    .awaitTime(15L, TimeUnit.SECONDS)
                     .registerShutdownHook(signal -> {
                         if (signal == ShutDownSignalStatus.IN)
                             this.running = false;
