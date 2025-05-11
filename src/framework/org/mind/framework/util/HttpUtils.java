@@ -277,28 +277,28 @@ public class HttpUtils {
      * Whether the request is POST method?
      */
     public static boolean isPostMethod(HttpServletRequest request) {
-        return RequestMethod.POST.name().equals(request.getMethod().toUpperCase());
+        return RequestMethod.POST.name().equalsIgnoreCase(request.getMethod());
     }
 
     /**
      * Whether the request is GET method?
      */
     public static boolean isGetMethod(HttpServletRequest request) {
-        return RequestMethod.GET.name().equals(request.getMethod().toUpperCase());
+        return RequestMethod.GET.name().equalsIgnoreCase(request.getMethod());
     }
 
     /**
      * Whether the request is PUT method?
      */
     public static boolean isPutMethod(HttpServletRequest request) {
-        return RequestMethod.PUT.name().equals(request.getMethod().toUpperCase());
+        return RequestMethod.PUT.name().equalsIgnoreCase(request.getMethod());
     }
 
     /**
      * Whether the request is DELETE method?
      */
     public static boolean isDeleteMethod(HttpServletRequest request) {
-        return RequestMethod.DELETE.name().equals(request.getMethod().toUpperCase());
+        return RequestMethod.DELETE.name().equalsIgnoreCase(request.getMethod());
     }
 
 
