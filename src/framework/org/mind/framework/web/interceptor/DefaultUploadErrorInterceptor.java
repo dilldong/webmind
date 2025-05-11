@@ -1,5 +1,6 @@
 package org.mind.framework.web.interceptor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.util.ViewResolver;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
@@ -11,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
  * @auther Marcus
  * @date 2024/4/18
  */
+@Slf4j
 public class DefaultUploadErrorInterceptor extends AbstractHandlerInterceptor implements ErrorInterceptor {
 
     @Override
@@ -23,6 +25,8 @@ public class DefaultUploadErrorInterceptor extends AbstractHandlerInterceptor im
                     request,
                     response);
         }
+
+        log.error(ex.getMessage(), ex);
         return false;
     }
 }

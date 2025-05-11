@@ -3,6 +3,6 @@ package org.mind.framework.annotation;
 import java.io.Serializable;
 
 @FunctionalInterface
-public interface EnumFace<T extends Serializable> {
+public interface CacheinFace<T extends Serializable> {
     T getValue();
 }

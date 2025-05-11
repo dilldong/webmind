@@ -158,8 +158,7 @@ public abstract class ServerContext {
                         continue;
 
                     for (Resource resource : resources) {
-                        if(log.isDebugEnabled())
-                            log.debug("Copy resource to baseDir: {}", resource.getFilename());
+                        log.debug("Copy resource to baseDir: {}", resource.getFilename());
                         FileUtils.copyInputStreamToFile(
                                 resource.getInputStream(),
                                 new File(String.format("%s/%s", serverConfig.getTomcatBaseDir(), resource.getFilename())));
@@ -188,8 +187,7 @@ public abstract class ServerContext {
                         String namePath = StringUtils.substringAfter(
                                 resource.getURL().getPath(), serverConfig.getResourceDir());
 
-                        if(log.isDebugEnabled())
-                            log.debug("Copy static resource: {}-{}", serverConfig.getResourceDir(), namePath);
+                        log.debug("Copy static resource: {}{}", serverConfig.getResourceDir(), namePath);
                         FileUtils.copyInputStreamToFile(
                                 resource.getInputStream(),
                                 new File(String.format("%s%s", resourceBaseDir, namePath)));

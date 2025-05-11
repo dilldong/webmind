@@ -38,6 +38,8 @@ public class WebServerConfig {
 
     private String nioMode = "nio";
 
+    private long updatePeriod = 1L;
+
     @Setter
     private String tomcatBaseDir = StringUtils.EMPTY;
 
@@ -63,7 +65,7 @@ public class WebServerConfig {
 
     private int minSpareThreads = 5;
 
-    private int maxThreads = 200;
+    private int maxThreads = 100;
 
     private int acceptCount = 100;
 
@@ -77,7 +79,7 @@ public class WebServerConfig {
 
     private int maxPostSize = 2097152;
 
-    private int maxParameterCount = 10000;
+    private int maxParameterCount = 1000;
 
     private String compressibleMimeType = "text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml";
 
@@ -92,8 +94,8 @@ public class WebServerConfig {
     private String templateEngine = StringUtils.EMPTY;
 
     // OkHttpClient setting
-    private int maxRequestsPerHost = 200;
-    private int maxRequests = 200;
+    private int maxRequests = 64;// Maximum number of concurrent requests allowed
+    private int maxRequestsPerHost = 64;// Limit on the number of concurrent requests permitted for a single host (domain)
     private int connectTimeout = 15;// SECONDS
     private int readTimeout = 15;   // SECONDS
     private int writeTimeout = 15;  // SECONDS
@@ -161,6 +163,9 @@ public class WebServerConfig {
             this.readTimeout = Integer.parseInt(properties.getProperty("okhttp.readTimeout", String.valueOf(readTimeout)));
             this.writeTimeout = Integer.parseInt(properties.getProperty("okhttp.writeTimeout", String.valueOf(writeTimeout)));
             this.pingInterval = Integer.parseInt(properties.getProperty("okhttp.pingInterval", String.valueOf(pingInterval)));
+
+            // cached time
+            this.updatePeriod = Math.max(updatePeriod, Long.parseLong(properties.getProperty("time.updatePeriod", String.valueOf(updatePeriod))));
         }
     }
 

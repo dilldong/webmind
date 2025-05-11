@@ -2,9 +2,9 @@ package org.mind.framework.util;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @version 1.0
@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2022/8/7
  */
 public class ClassUtils {
-    private static final Map<String, Class<?>> CLAZZ_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, Class<?>> CLAZZ_MAP = new HashMap<>(64);
 
     private ClassUtils() {
     }
@@ -21,8 +21,8 @@ public class ClassUtils {
         if(CLAZZ_MAP.containsKey(clazz))
             return CLAZZ_MAP.get(clazz);
 
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
         Class<?> c = null;
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
         if (Objects.nonNull(loader)) {
             try {
                 c = Class.forName(clazz, true, loader);

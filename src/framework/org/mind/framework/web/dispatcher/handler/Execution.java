@@ -45,9 +45,6 @@ public class Execution {
     // Simple one line logging
     private final boolean simpleLogging;
 
-    // Clear the returned collection object
-    private final boolean clearResult;
-
     public Execution(Object actionInstance, Method method, Mapping mapping) {
         this(actionInstance, method, null, mapping);
     }
@@ -60,7 +57,6 @@ public class Execution {
         this.requestMethods = mapping.method();
         this.requestLog = mapping.requestLog();
         this.simpleLogging = mapping.simpleLogging();
-        this.clearResult = mapping.clearResult();
     }
 
     public Object execute() {

@@ -36,7 +36,7 @@ public abstract class AbstractService implements Service {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return serviceState == STARTED;
     }
 

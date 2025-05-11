@@ -28,7 +28,6 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -169,7 +167,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        this.customizeResponse(response);
+        this.customizeResponse(request, response);
         final long begin = DateUtils.CachedTime.currentMillis();
 
         // check request is multipart request.
@@ -306,6 +304,8 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                 throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
         } finally {
             Action.removeActionContext();
+            HandlerRequest.super.clear(request);
+
             if (execution.isRequestLog()) {
                 if (execution.isSimpleLogging()) {
                     log.info("{}.{} - [{}] - [{}ms]",
@@ -317,11 +317,6 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                     log.info("Used time(ms): {}", DateUtils.CachedTime.currentMillis() - begin);
                 }
             }
-
-            // Let gc to work
-            if (execution.isClearResult())
-                if (Objects.nonNull(result) && result instanceof Collection)
-                    ((Collection<?>) result).clear();
         }
     }
 
@@ -337,11 +332,11 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         if (Objects.isNull(this.multipartResolver))
             return request;
 
-        if (request.getDispatcherType() == DispatcherType.REQUEST
-                && this.multipartResolver.isMultipart(request)) {
+        // request.getDispatcherType() == DispatcherType.REQUEST && this.multipartResolver.isMultipart(request)
+        if (HttpUtils.isMultipartRequest(request)) {
             try {
                 MultipartHttpServletRequest multipartRequest = this.multipartResolver.resolveMultipart(request);
-                multipartRequest.setAttribute(CHECK_MULTIPART, true);
+                request.setAttribute(CHECK_MULTIPART, multipartRequest);
                 return multipartRequest;
             } catch (MultipartException e) {
                 if (!this.multipartException.handleFailure(request, response, e))
@@ -355,14 +350,20 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void clear(HttpServletRequest request) {
-        if (Objects.isNull(this.multipartResolver))
+        if(Objects.isNull(this.multipartResolver))
             return;
 
         // Clean up any resources used by the given multipart request (if any).
         if (HttpUtils.isMultipartRequest(request)) {
+            Object multipartRequest = request.getAttribute(CHECK_MULTIPART);
+            if(Objects.isNull(multipartRequest))
+                return;
+
+            this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) multipartRequest);
             request.removeAttribute(CHECK_MULTIPART);
-            if (request instanceof MultipartHttpServletRequest)
-                this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) request);
+
+            if(log.isDebugEnabled())
+                log.debug("Cleanup Multipart....");
         }
     }
 
@@ -448,7 +449,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             ViewResolver.text(htmlMessage).render(request, response);
     }
 
-    protected void customizeResponse(HttpServletResponse response) {
+    protected void customizeResponse(HttpServletRequest request, HttpServletResponse response) {
         response.addHeader("X-Powered-By", WebServerConfig.POWER_BY_NAME);
     }
 }

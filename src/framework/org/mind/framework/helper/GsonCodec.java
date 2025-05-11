@@ -21,6 +21,7 @@ import java.util.Objects;
  */
 @Slf4j
 public class GsonCodec extends BaseCodec {
+    public static final GsonCodec INSTANCE = new GsonCodec();
     private final Encoder encoder;
     private final Decoder<Object> decoder;
 
@@ -31,9 +32,8 @@ public class GsonCodec extends BaseCodec {
     public GsonCodec(boolean expose) {
         this.encoder = in -> {
             ByteBuf buf = ByteBufAllocator.DEFAULT.buffer();
-            try {
-                ByteBufOutputStream os = new ByteBufOutputStream(buf);
-                os.writeUTF(JsonUtils.toJson(in, expose));
+            try (ByteBufOutputStream os = new ByteBufOutputStream(buf)) {
+                os.writeUTF(JsonUtils.toJson(in));
                 os.writeUTF(in.getClass().getName());
                 return os.buffer();
             } catch (IOException e) {
@@ -48,9 +48,9 @@ public class GsonCodec extends BaseCodec {
         this.decoder = (buf, state) -> {
             try (ByteBufInputStream stream = new ByteBufInputStream(buf)) {
                 String value = stream.readUTF();
-                String type = stream.readUTF();
-                return JsonUtils.fromJson(value, ClassUtils.getClass(type));
-            } catch (ClassNotFoundException e) {
+                String typeName = stream.readUTF();
+                return JsonUtils.fromJson(value, ClassUtils.getClass(typeName));
+            } catch (Exception e) {
                 throw new IOException(e);
             }
         };

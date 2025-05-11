@@ -1,11 +1,15 @@
 package org.mind.framework.web.renderer;
 
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.mind.framework.web.renderer.template.TemplateFactory;
+import org.mind.framework.web.renderer.template.VelocityTemplate;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,9 +38,24 @@ public class TemplateRender extends Render {
         this.model.put(modelKey, modelValue);
     }
 
+    public String renderString() {
+        VelocityTemplate template =
+                (VelocityTemplate) TemplateFactory.getTemplateFactory().loadTemplate(path);
+
+
+        // init context:
+        Context context = new VelocityContext(model);
+
+        // render:
+        StringWriter writer = new StringWriter();
+        template.getTemplate().merge(context, writer);
+
+        return writer.toString();
+    }
+
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        if(log.isDebugEnabled())
+        if (log.isDebugEnabled())
             log.debug("Render path: {}", path);
 
         TemplateFactory.getTemplateFactory()

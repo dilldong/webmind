@@ -112,7 +112,7 @@ public class ResponseUtils {
 
     public static void write(OutputStream output, Path path) throws IOException {
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
-            byte[] buffer = new byte[FileUtils.MAX_BUFFER_SIZE];
+            byte[] buffer = new byte[FileUtils.BUFFER_SIZE];
 
             int length;
             while ((length = input.read(buffer)) > -1)

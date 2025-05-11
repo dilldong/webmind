@@ -28,14 +28,14 @@ public class MainService extends AbstractService {
         if(Objects.isNull(childServices) || childServices.isEmpty())
             return;
 
-        childServices.forEach(serv ->
+        childServices.forEach(srv ->
                 Async.synchronousExecutor().execute(() -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("Service [{}@{}] to starting ....",
-                                serv.getServiceName(),
-                                Integer.toHexString(serv.hashCode()));
+                                srv.getServiceName(),
+                                Integer.toHexString(srv.hashCode()));
                     }
-                    serv.start();
+                    srv.start();
                 })
         );
     }
@@ -44,14 +44,14 @@ public class MainService extends AbstractService {
         if(Objects.isNull(childServices) || childServices.isEmpty())
             return;
 
-        childServices.forEach(serv ->
+        childServices.forEach(srv ->
                 ExecutorFactory.newThread(() -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("Service [{}@{}] to stopping ....",
-                                serv.getServiceName(),
-                                Integer.toHexString(serv.hashCode()));
+                                srv.getServiceName(),
+                                Integer.toHexString(srv.hashCode()));
                     }
-                    serv.stop();
+                    srv.stop();
                 }).start()
         );
     }

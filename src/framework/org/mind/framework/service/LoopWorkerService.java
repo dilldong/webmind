@@ -97,7 +97,7 @@ public abstract class LoopWorkerService extends AbstractService {
     /**
      * 服务线程刚开始时调用的方法，若需做一些初始化操作可覆盖此方法来添加
      */
-    protected void toStart() {
+    protected void initStart() {
     }
 
     /**
@@ -107,8 +107,8 @@ public abstract class LoopWorkerService extends AbstractService {
     }
 
     @Override
-    public boolean isStart() {
-        return workerMainThread != null && workerMainThread.isAlive();
+    public boolean isStarted() {
+        return Objects.nonNull(workerMainThread) && workerMainThread.isAlive();
     }
 
     protected abstract void doLoopWork();
@@ -116,7 +116,7 @@ public abstract class LoopWorkerService extends AbstractService {
     private class Worker implements Runnable {
         @Override
         public void run() {
-            toStart();
+            initStart();
             while (isLoop) {
                 // process child thread
                 doLoopWork();
@@ -126,8 +126,10 @@ public abstract class LoopWorkerService extends AbstractService {
                     try {
                         TimeUnit.MILLISECONDS.sleep(spaceTime);
                     } catch (InterruptedException ignored) {}
-                } else // jump out of the while loop with spaceTime<=0
-                    break;
+                    continue;
+                }
+                // jump out of the while loop with spaceTime<=0
+                break;
             }
             toEnd();
         }

@@ -1,5 +1,6 @@
 package org.mind.framework.web.renderer.template;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -23,6 +24,7 @@ import java.util.Map;
  */
 public class VelocityTemplate implements Template {
 
+    @Getter
     private final org.apache.velocity.Template template;
     private String contentType;
     private String encoding;

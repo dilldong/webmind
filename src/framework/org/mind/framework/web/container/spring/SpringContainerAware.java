@@ -109,8 +109,16 @@ public class SpringContainerAware implements ContainerAware {
                 continue;
 
             Mapping mapping = method.getAnnotation(Mapping.class);
-            biConsumer.accept(mapping.value(), new Execution(bean, method, mapping));
-            joiner.add(mapping.value());
+            Execution execution = new Execution(bean, method, mapping);
+            if (mapping.value().length == 1) {
+                biConsumer.accept(mapping.value()[0], execution);
+                joiner.add(mapping.value()[0]);
+            } else {
+                for (String route : mapping.value()) {
+                    biConsumer.accept(route, execution);
+                    joiner.add(route);
+                }
+            }
         }
 
         if (joiner.length() > 0)
@@ -138,8 +146,8 @@ public class SpringContainerAware implements ContainerAware {
                             new CorsInterceptor(this.initCorsConfiguration(classOrigin, mapping.method())) :
                             new CorsInterceptor(this.initCorsConfiguration(methodOrigin, mapping.method()));
 
-            consumer.accept(new CorsCatcher(new String[]{mapping.value()}, interceptor));
-            log.info("Loaded cross origin: [{}], {}", mapping.value(), interceptor);
+            consumer.accept(new CorsCatcher(mapping.value(), interceptor));
+            log.info("Loaded cross origin: {}, {}", mapping.value(), interceptor);
         }
     }
 
@@ -149,7 +157,7 @@ public class SpringContainerAware implements ContainerAware {
         if (Objects.isNull(mapping))
             return false;
 
-        if (StringUtils.trimToEmpty(mapping.value()).length() == 0) {
+        if (ArrayUtils.isEmpty(mapping.value())) {
             log.warn("Invalid Action method '{}', URI mapping value cannot be empty.", method.toGenericString());
             return false;
         }
@@ -178,7 +186,7 @@ public class SpringContainerAware implements ContainerAware {
         // Only call close() on WebApplicationContext
         if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext) {
             ConfigurableApplicationContext context = (ConfigurableApplicationContext) ContextSupport.getApplicationContext();
-            if(context.isActive())
+            if (context.isActive())
                 context.close();
         }
     }

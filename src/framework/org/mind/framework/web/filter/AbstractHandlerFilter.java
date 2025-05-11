@@ -1,6 +1,5 @@
 package org.mind.framework.web.filter;
 
-import org.jetbrains.annotations.NotNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -22,9 +21,9 @@ public abstract class AbstractHandlerFilter extends OncePerRequestFilter impleme
                                  FilterChain filterChain) throws ServletException, IOException;
 
     @Override
-    protected void doFilterInternal(@NotNull HttpServletRequest request,
-                                    @NotNull HttpServletResponse response,
-                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
         this.doStart(request, response, filterChain);
     }
 }

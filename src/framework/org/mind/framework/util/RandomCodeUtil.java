@@ -59,7 +59,6 @@ public final class RandomCodeUtil {
         return (int) (10_000_000 + (99_999_999 - 10_000_000) * Math.abs(ThreadLocalRandom.current().nextDouble()));
     }
 
-
     /**
      * A random string of numbers or characters of the specified length
      *
@@ -67,7 +66,7 @@ public final class RandomCodeUtil {
      * @param numbers true: contains numbers
      */
     public static String getRandomString(int length, boolean letters, boolean numbers) {
-        return RandomStringUtils.random(length, letters, numbers);
+        return RandomStringUtils.secure().next(length, letters, numbers);
     }
 
     public static int getRandomNums(int min, int max) {
