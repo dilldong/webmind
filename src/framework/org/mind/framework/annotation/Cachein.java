@@ -43,6 +43,6 @@ public @interface Cachein {
     // When inRedis=true, should specify the returned java type
     Class<?>[] redisType() default {};
 
-    // When set true, the object in the cache is returned first, even if it is empty.
+    // When set false, the object in the cache is returned first, even if it is empty.
     boolean penetration() default true;
 }

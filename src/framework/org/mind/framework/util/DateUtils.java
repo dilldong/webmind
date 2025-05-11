@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.web.server.GracefulShutdown;
+import org.mind.framework.web.server.WebServerConfig;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -47,14 +48,18 @@ public class DateUtils {
 
     public static class CachedTime {
         private static volatile long currentTimeMillis = System.currentTimeMillis();
+        private static final long PERIOD = WebServerConfig.INSTANCE.getUpdatePeriod();
         private static final ScheduledExecutorService scheduler =
                 Executors.newSingleThreadScheduledExecutor(
                         ExecutorFactory.newThreadFactory("mind-time-", false));
 
         static {
+            if(log.isDebugEnabled())
+                log.debug("Timestamp update interval: {}ms", PERIOD);
+
             // Start a scheduled update currentTimeMillis
             scheduler.scheduleAtFixedRate(() ->
-                    currentTimeMillis = System.currentTimeMillis(), 0, 1, TimeUnit.MILLISECONDS);
+                    currentTimeMillis = System.currentTimeMillis(), 0, PERIOD, TimeUnit.MILLISECONDS);
 
             GracefulShutdown.newShutdown("UpdateTime-Graceful", scheduler)
                     .awaitTime(5, TimeUnit.SECONDS)

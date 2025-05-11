@@ -8,6 +8,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -254,6 +255,14 @@ public final class Action {
 
     public Enumeration<String> getHeaders(String name) {
         return request.getHeaders(name);
+    }
+
+    public String acceptLanguage(){
+        return getHeader(HttpHeaders.ACCEPT_LANGUAGE);
+    }
+
+    public String browserAgent(){
+        return getHeader(HttpHeaders.USER_AGENT);
     }
 
     /**

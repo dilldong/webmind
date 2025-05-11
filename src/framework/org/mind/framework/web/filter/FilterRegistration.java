@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Filter;
 
 import javax.servlet.DispatcherType;
@@ -43,7 +42,7 @@ public class FilterRegistration implements Comparable<FilterRegistration> {
     }
 
     @Override
-    public int compareTo(@NotNull FilterRegistration registration) {
+    public int compareTo(FilterRegistration registration) {
         return this.order - registration.order;
     }
 

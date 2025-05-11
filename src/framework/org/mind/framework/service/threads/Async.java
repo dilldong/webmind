@@ -4,6 +4,7 @@ import org.mind.framework.web.server.GracefulShutdown;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,28 +18,32 @@ import java.util.concurrent.TimeUnit;
  */
 public class Async {
 
-    private static final ThreadPoolExecutor executor;
+    private static final ThreadPoolExecutor SYNCHRONOUS_EXECUTOR;
 
     static {
-        executor = ExecutorFactory.newThreadPoolExecutor(
+        SYNCHRONOUS_EXECUTOR = ExecutorFactory.newThreadPoolExecutor(
                 0,
-                Integer.MAX_VALUE,
-                60L,
+                1024,
+                30L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 ExecutorFactory.newThreadFactory("async-group", "async-pool-"),
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
-        GracefulShutdown.newShutdown("Async-Graceful", executor)
+        GracefulShutdown.newShutdown("Async-Graceful", SYNCHRONOUS_EXECUTOR)
                 .awaitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook();
     }
 
     public static ThreadPoolExecutor synchronousExecutor() {
-        return executor;
+        return SYNCHRONOUS_EXECUTOR;
     }
 
     public static <T> CompletableFuture<T> run(Callable<T> callable) {
+        return run(callable, SYNCHRONOUS_EXECUTOR);
+    }
+
+    public static <T> CompletableFuture<T> run(Callable<T> callable, Executor executor) {
         CompletableFuture<T> result = new CompletableFuture<>();
         CompletableFuture.runAsync(
                 () -> {

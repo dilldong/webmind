@@ -1,7 +1,6 @@
 package org.mind.framework.web.container.spring;
 
 import org.apache.catalina.core.StandardContext;
-import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.web.dispatcher.support.EventRegistration;
@@ -33,7 +32,7 @@ public class WebContextLoadListener extends ContextLoaderListener {
     }
 
     @Override
-    public void contextInitialized(@NotNull ServletContextEvent event) {
+    public void contextInitialized(ServletContextEvent event) {
         super.contextInitialized(event);
 
         // filter registration by Spring.
@@ -45,9 +44,9 @@ public class WebContextLoadListener extends ContextLoaderListener {
         }
     }
 
-    @NotNull
+
     @Override
-    public WebApplicationContext initWebApplicationContext(@NotNull ServletContext servletContext) {
+    public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
         WebApplicationContext webAppContext = super.initWebApplicationContext(servletContext);
 
         if (webAppContext instanceof ConfigurableWebApplicationContext)

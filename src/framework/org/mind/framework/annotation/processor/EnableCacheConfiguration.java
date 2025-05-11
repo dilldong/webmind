@@ -1,7 +1,6 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
-import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
@@ -50,7 +49,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     private Cacheable cacheable;
     private BeanFactory beanFactory;
 
-    @NotNull
+    
     @Override
     public ClassFilter getClassFilter() {
         return this.pointcut.getClassFilter();
@@ -61,26 +60,26 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         // do nothing
     }
 
-    @NotNull
+    
     @Override
     public Class<?>[] getInterfaces() {
         return new Class[]{org.mind.framework.cache.Cacheable.class};
     }
 
-    @NotNull
+    
     @Override
     public Pointcut getPointcut() {
         return pointcut;
     }
 
-    @NotNull
+    
     @Override
     public Advice getAdvice() {
         return advice;
     }
 
     @Override
-    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
@@ -165,7 +164,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
+        public boolean matches(Method method, Class<?> targetClass) {
             return getClassFilter().matches(targetClass) || this.methodResolver.matches(method, targetClass);
         }
 
@@ -191,7 +190,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(@NotNull Class<?> clazz) {
+        public boolean matches(Class<?> clazz) {
             return super.matches(clazz) || this.methodResolver.hasAnnotatedMethods(clazz);
         }
     }

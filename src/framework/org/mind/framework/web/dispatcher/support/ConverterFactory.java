@@ -83,11 +83,11 @@ public class ConverterFactory {
                         || this.converterMap.containsKey(clazz.getName());
     }
 
-    public Object convert(Class<?> clazz, String value) {
+    public <T> T convert(Class<T> clazz, String value) {
         if (this.converterMap.containsKey(clazz.getName())) {
             Converter<?> convert = this.converterMap.get(clazz.getName());
             if (Objects.nonNull(convert))
-                return convert.convert(value);
+                return (T)convert.convert(value);
         }
         throw new NotSupportedException("The parameter conversion type failed, Only supports basic data types.");
     }

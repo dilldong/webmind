@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Mapping {
 
-    String value() default "/";
+    String[] value() default {"/"};
 
     RequestMethod[] method() default {};
 
@@ -32,9 +32,4 @@ public @interface Mapping {
      * Simple one line logging
      */
     boolean simpleLogging() default false;
-
-    /**
-     * Clear the returned collection object
-     */
-    boolean clearResult() default false;
 }

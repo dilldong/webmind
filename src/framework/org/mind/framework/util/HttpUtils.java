@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
-import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -87,7 +86,7 @@ public class HttpUtils {
     }
 
     public static String getURL(HttpServletRequest request, boolean... forAttr) {
-        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+        if (ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
             String url = (String) request.getAttribute(REQUEST_URL);
             if (StringUtils.isNotEmpty(url))
                 return url;
@@ -104,7 +103,7 @@ public class HttpUtils {
     }
 
     public static String getServerName(HttpServletRequest request, boolean... forAttr) {
-        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+        if (ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
             String url = (String) request.getAttribute(SERVER_URL);
             if (StringUtils.isNotEmpty(url))
                 return url;
@@ -127,7 +126,7 @@ public class HttpUtils {
     }
 
     public static String getRequestIP(HttpServletRequest request, boolean... forAttr) {
-        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+        if (ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
             String ip = (String) request.getAttribute(REQUEST_IP);
             if (StringUtils.isNotEmpty(ip))
                 return ip;
@@ -177,7 +176,7 @@ public class HttpUtils {
      * @return
      */
     public static String getPostString(HttpServletRequest request, boolean... forAttr) {
-        if (ArrayUtils.isNotEmpty(forAttr) && forAttr[0]) {
+        if (ArrayUtils.isEmpty(forAttr) || forAttr[0]) {
             String json = (String) request.getAttribute(BODY_PARAMS);
             if (StringUtils.isNotEmpty(json))
                 return json;
@@ -232,11 +231,7 @@ public class HttpUtils {
      * check current request
      */
     public static boolean isMultipartRequest(HttpServletRequest request) {
-        Object value = request.getAttribute(HandlerResult.CHECK_MULTIPART);
-        if (Objects.isNull(value))
-            return false;
-
-        return (boolean) value;
+        return isPostMethod(request) && StringUtils.startsWithIgnoreCase(request.getContentType(), "multipart/");
     }
 
     public static String encodeURIComponent(String value) {
@@ -247,8 +242,8 @@ public class HttpUtils {
         try {
             String encode = URLEncoder.encode(value, StandardCharsets.UTF_8.name());
             return StringUtils.replaceEach(encode,
-                    new String[]{"%27", "%7E", "%28", "%29", "%21"},
-                    new String[]{"'", "~", "(", ")", "!"});
+                    new String[]{"+", "%27", "%7E", "%28", "%29", "%21"},
+                    new String[]{"%20", "'", "~", "(", ")", "!"});
         } catch (UnsupportedEncodingException e) {
             ThrowProvider.doThrow(e);
         }
@@ -282,28 +277,28 @@ public class HttpUtils {
      * Whether the request is POST method?
      */
     public static boolean isPostMethod(HttpServletRequest request) {
-        return request.getMethod().equals(RequestMethod.POST.name());
+        return RequestMethod.POST.name().equals(request.getMethod().toUpperCase());
     }
 
     /**
      * Whether the request is GET method?
      */
     public static boolean isGetMethod(HttpServletRequest request) {
-        return request.getMethod().equals(RequestMethod.GET.name());
+        return RequestMethod.GET.name().equals(request.getMethod().toUpperCase());
     }
 
     /**
      * Whether the request is PUT method?
      */
     public static boolean isPutMethod(HttpServletRequest request) {
-        return request.getMethod().equals(RequestMethod.PUT.name());
+        return RequestMethod.PUT.name().equals(request.getMethod().toUpperCase());
     }
 
     /**
      * Whether the request is DELETE method?
      */
     public static boolean isDeleteMethod(HttpServletRequest request) {
-        return request.getMethod().equals(RequestMethod.DELETE.name());
+        return RequestMethod.DELETE.name().equals(request.getMethod().toUpperCase());
     }
 
 

@@ -1,7 +1,6 @@
 package org.mind.framework.web.interceptor;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.mind.framework.util.MatcherUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.DefaultCorsProcessor;
@@ -16,7 +15,7 @@ import java.util.Objects;
 public class CorsRegexProcessor extends DefaultCorsProcessor {
 
     @Override
-    protected String checkOrigin(@NotNull CorsConfiguration config, String requestOrigin) {
+    protected String checkOrigin(CorsConfiguration config, String requestOrigin) {
         if (StringUtils.isEmpty(requestOrigin)
                 || Objects.isNull(config.getAllowedOrigins())
                 || config.getAllowedOrigins().isEmpty()) {

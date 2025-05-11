@@ -1,11 +1,7 @@
 package org.mind.framework.helper;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.cache.CacheElement;
-import org.mind.framework.cache.Cacheable;
-import org.mind.framework.cache.LruCache;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
@@ -14,6 +10,7 @@ import org.mind.framework.util.JarFileUtils;
 import org.mind.framework.util.JsonUtils;
 import org.redisson.Redisson;
 import org.redisson.RedissonShutdownException;
+import org.redisson.ScanResult;
 import org.redisson.api.LockOptions;
 import org.redisson.api.RBucket;
 import org.redisson.api.RExpirable;
@@ -29,6 +26,9 @@ import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
+import org.redisson.client.codec.Codec;
+import org.redisson.client.protocol.RedisCommands;
+import org.redisson.command.CommandAsyncExecutor;
 import org.redisson.config.Config;
 import org.redisson.misc.CompletableFutureWrapper;
 
@@ -40,9 +40,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,7 +47,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -65,14 +61,16 @@ import static org.mind.framework.web.server.WebServerConfig.JAR_IN_CLASSES;
 public class RedissonHelper {
     private static final String DEFAULT_REDISSON = "redisson.yml";
     private static final String JAR_REDISSON = String.format("%s/%s", JAR_IN_CLASSES, DEFAULT_REDISSON);
-    private static final String REDIS_LOCAL_KEY = "redis_local_keys";
     public static final String LOCK_PREFIX = "LK:";
     public static final String RATE_LIMITED_PREFIX = "RL:";
     public static final String INCREMENT_PREFIX = "ICR:";
     public static final String UNIQUE_ID = "UNIQUE:ID";
     public static final String RESET_ID4DAY = "RESET:ID4DAY";
-    private final RedissonClient redissonClient;
-    private final Cacheable cacheable;
+    public static final String NULL_MARKER = "NULL";
+    public static final String EMPTY_LIST_MARKER = "EMPTY_LIST";
+    public static final String EMPTY_MAP_MARKER = "EMPTY_MAP";
+    public static final String EMPTY_SET_MARKER = "EMPTY_SET";
+    public final RedissonClient redissonClient;
     private List<RedissonShutdownListener> shutdownEvents;
 
     private static class Helper {
@@ -97,8 +95,6 @@ public class RedissonHelper {
             ThrowProvider.doThrow(e);
         }
 
-        // Used to store the key added to redis
-        cacheable = LruCache.initCache();
         redissonClient = Redisson.create(config);
 
         Runtime.getRuntime().addShutdownHook(ExecutorFactory.newDaemonThread("Redisson-Gracefully", () -> {
@@ -147,7 +143,7 @@ public class RedissonHelper {
     }
 
     public <V> List<V> getList(String name) {
-        return new ArrayList<>(this.rList(name));
+        return this.<V>rList(name).readAll();
     }
 
     public <V> List<V> getList(String name, RLock lock) {
@@ -165,7 +161,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> setAsync(String name, List<V> list) {
-        return this.setAsync(name, list, 0, TimeUnit.MILLISECONDS);
+        return this.setAsync(name, list, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> setAsync(String name, List<V> list, long expire, TimeUnit unit) {
@@ -173,20 +169,28 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RList<V> rList = this.rList(name);
-        CompletionStage<Boolean> completionStage = rList.deleteAsync().thenApplyAsync(fn -> {
-            boolean added = rList.addAll(list);
-            if (added) {
-                putLocal(name, list.getClass());
-                setExpire(rList, expire, unit);
-                return Boolean.TRUE;
-            }
-            return Boolean.FALSE;
-        });
+        CompletionStage<Boolean> completionStage =
+                rList.deleteAsync()
+                        .thenCompose(deleted -> rList.addAllAsync(list))
+                        .thenCompose(added -> {
+                            // 如果 added 为 true 则设置过期，否则返回一个完成的 future
+                            CompletionStage<?> expireStage = added
+                                    ? setExpireAsync(rList, expire, unit)
+                                    : CompletableFuture.completedFuture(null);
+
+                            // 无论是否设置Expire，都会返回true
+                            return expireStage.thenApply(v -> Boolean.TRUE);
+                        })
+                        .exceptionally(ex -> {
+                            log.error(ex.getMessage(), ex);
+                            return Boolean.FALSE;
+                        });
+
         return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <V> boolean set(String name, List<V> list) {
-        return this.set(name, list, 0, TimeUnit.MILLISECONDS);
+        return this.set(name, list, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit) {
@@ -194,7 +198,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, List<V> list, RLock lock) {
-        return this.set(name, list, 0, TimeUnit.MILLISECONDS, lock);
+        return this.set(name, list, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit, RLock lock) {
@@ -208,7 +212,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean setWithLock(String name, List<V> list) {
-        return this.setWithLock(name, list, 0, TimeUnit.MILLISECONDS);
+        return this.setWithLock(name, list, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean setWithLock(String name, List<V> list, long expire, TimeUnit unit) {
@@ -216,7 +220,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> addByListAsync(String name, V v) {
-        return this.addByListAsync(name, v, 0, TimeUnit.MILLISECONDS);
+        return this.addByListAsync(name, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> addByListAsync(String name, V v, long expire, TimeUnit unit) {
@@ -224,32 +228,11 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RList<V> rList = this.rList(name);
-        CompletionStage<Boolean> completionStage =
-                rList.isExistsAsync().thenApplyAsync(exists -> {
-                    rList.add(v);
-                    putLocal(name, ArrayList.class);
-                    if (!exists)
-                        setExpire(rList, expire, unit);
-                    return Boolean.TRUE;
-                });
-
-        /*
-         * Redis 7.0+
-         */
-//        CompletionStage<Boolean> completionStage = rList.addAsync(v).thenApplyAsync(added -> {
-//            if (added) {
-//                putLocal(name, ArrayList.class);
-//                setExpireIfNotSet(rList, expire, unit);
-//                return Boolean.TRUE;
-//            }
-//            return Boolean.FALSE;
-//        });
-
-        return new CompletableFutureWrapper<>(completionStage);
+        return add2Collections(rList.addAsync(v), rList.sizeAsync(), setExpireAsync(rList, expire, unit));
     }
 
     public <V> boolean addByList(String name, V v) {
-        return this.addByList(name, v, 0, TimeUnit.MILLISECONDS);
+        return this.addByList(name, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addByList(String name, V v, long expire, TimeUnit unit) {
@@ -257,7 +240,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addByList(String name, V v, RLock lock) {
-        return this.addByList(name, v, 0, TimeUnit.MILLISECONDS, lock);
+        return this.addByList(name, v, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean addByList(String name, V v, long expire, TimeUnit unit, RLock lock) {
@@ -271,7 +254,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addByListWithLock(String name, V v) {
-        return this.addByListWithLock(name, v, 0, TimeUnit.MILLISECONDS);
+        return this.addByListWithLock(name, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addByListWithLock(String name, V v, long expire, TimeUnit unit) {
@@ -279,9 +262,7 @@ public class RedissonHelper {
     }
 
     public RFuture<Boolean> deleteListAsync(String name) {
-        RFuture<Boolean> future = this.rList(name).deleteAsync();
-        this.removeLocal(name);
-        return future;
+        return this.rList(name).deleteAsync();
     }
 
     public boolean deleteList(String name) {
@@ -370,7 +351,7 @@ public class RedissonHelper {
     }
 
     public <K, V> Map<K, V> getMap(String name) {
-        return new HashMap<>(this.rMap(name));
+        return this.<K, V>rMap(name).readAllMap();
     }
 
     public <K, V> Map<K, V> getMap(String name, RLock lock) {
@@ -388,7 +369,7 @@ public class RedissonHelper {
     }
 
     public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map) {
-        return this.setAsync(name, map, 0, TimeUnit.MILLISECONDS);
+        return this.setAsync(name, map, -1, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map, long expire, TimeUnit unit) {
@@ -396,18 +377,20 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RMap<K, V> rMap = this.rMap(name);
-        CompletionStage<Boolean> completionStage = rMap.deleteAsync().thenApplyAsync(deleted -> {
-            rMap.putAll(map);
-            putLocal(name, map.getClass());
-            setExpire(rMap, expire, unit);
-            return Boolean.TRUE;
-        });
+        CompletionStage<Boolean> completionStage =
+                rMap.deleteAsync()
+                        .thenCompose(deleted -> rMap.putAllAsync(map))
+                        .thenCompose(ignored -> setExpireAsync(rMap, expire, unit).thenApply(expired -> Boolean.TRUE))// 无论是否设置Expire，都会返回true
+                        .exceptionally(ex -> {
+                            log.error(ex.getMessage(), ex);
+                            return Boolean.FALSE;
+                        });
 
         return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map) {
-        return this.set(name, map, 0, TimeUnit.MILLISECONDS);
+        return this.set(name, map, -1, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit) {
@@ -415,7 +398,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, RLock lock) {
-        return this.set(name, map, 0, TimeUnit.MILLISECONDS, lock);
+        return this.set(name, map, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
@@ -429,7 +412,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean setWithLock(String name, Map<K, V> map) {
-        return this.setWithLock(name, map, 0, TimeUnit.MILLISECONDS);
+        return this.setWithLock(name, map, -1, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean setWithLock(String name, Map<K, V> map, long expire, TimeUnit unit) {
@@ -437,7 +420,7 @@ public class RedissonHelper {
     }
 
     public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v) {
-        return this.putByMapAsync(name, k, v, 0, TimeUnit.MILLISECONDS);
+        return this.putByMapAsync(name, k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v, long expire, TimeUnit unit) {
@@ -446,21 +429,26 @@ public class RedissonHelper {
 
         RMap<K, V> rMap = this.rMap(name);
         CompletionStage<Boolean> completionStage =
-                rMap.isExistsAsync().thenApplyAsync(exists -> {
-                    boolean puted = rMap.fastPut(k, v);
-                    if (puted) {
-                        putLocal(name, HashMap.class);
-                        if (!exists)
-                            setExpire(rMap, expire, unit);
-                        return Boolean.TRUE;
-                    }
+                rMap.fastPutAsync(k, v).thenCompose(putted -> {
+                    if (!putted)
+                        return CompletableFuture.completedFuture(Boolean.FALSE);
+
+                    // 通过 size 判断是否首次创建
+                    return rMap.sizeAsync().thenCompose(size -> {
+                        if (size == 1)
+                            return setExpireAsync(rMap, expire, unit).thenApply(expired -> Boolean.TRUE);// 无论是否设置Expire，都会返回true
+                        return CompletableFuture.completedFuture(Boolean.TRUE);
+                    });
+                }).exceptionally(ex -> {
+                    log.error(ex.getMessage(), ex);
                     return Boolean.FALSE;
                 });
+
         return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <K, V> boolean putByMap(String name, K k, V v) {
-        return this.putByMap(name, k, v, 0, TimeUnit.MILLISECONDS);
+        return this.putByMap(name, k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit) {
@@ -468,7 +456,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, RLock lock) {
-        return this.putByMap(name, k, v, 0, TimeUnit.MILLISECONDS, lock);
+        return this.putByMap(name, k, v, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
@@ -482,7 +470,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean putByMapWithLock(String name, K k, V v) {
-        return this.putByMapWithLock(name, k, v, 0, TimeUnit.MILLISECONDS);
+        return this.putByMapWithLock(name, k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean putByMapWithLock(String name, K k, V v, long expire, TimeUnit unit) {
@@ -515,9 +503,7 @@ public class RedissonHelper {
     }
 
     public RFuture<Boolean> deleteMapAsync(String name) {
-        RFuture<Boolean> future = this.rMap(name).deleteAsync();
-        this.removeLocal(name);
-        return future;
+        return this.rMap(name).deleteAsync();
     }
 
     public boolean deleteMap(String name) {
@@ -564,7 +550,7 @@ public class RedissonHelper {
     }
 
     public <V> Set<V> getSet(String name) {
-        return new HashSet<>(this.rSet(name));
+        return this.<V>rSet(name).readAll();
     }
 
     public <V> Set<V> getSet(String name, RLock lock) {
@@ -582,29 +568,32 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> setAsync(String name, Set<V> set) {
-        return this.setAsync(name, set, 0, TimeUnit.MILLISECONDS);
+        return this.setAsync(name, set, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> setAsync(String name, Set<V> set, long expire, TimeUnit unit) {
         if (Objects.isNull(set) || set.isEmpty())
-            return new CompletableFutureWrapper<>(Boolean.FALSE);
+            return new CompletableFutureWrapper<>(false);
 
         RSet<V> rSet = this.rSet(name);
-        CompletionStage<Boolean> completionStage = rSet.deleteAsync().thenApplyAsync(deleted -> {
-            boolean added = rSet.addAll(set);
-            if (added) {
-                putLocal(name, set.getClass());
-                setExpire(rSet, expire, unit);
-                return Boolean.TRUE;
-            }
-            return Boolean.FALSE;
-        });
+        CompletionStage<Boolean> completionStage =
+                rSet.deleteAsync()
+                        .thenCompose(deleted -> rSet.addAllAsync(set))
+                        .thenCompose(added -> {
+                            if (added)
+                                return setExpireAsync(rSet, expire, unit).thenApply(expired -> Boolean.TRUE);// 无论是否设置Expire，都会返回true
+                            return CompletableFuture.completedFuture(Boolean.TRUE);
+                        })
+                        .exceptionally(ex -> {
+                            log.error(ex.getMessage(), ex);
+                            return Boolean.FALSE;
+                        });
 
         return new CompletableFutureWrapper<>(completionStage);
     }
 
     public <V> boolean set(String name, Set<V> set) {
-        return set(name, set, 0, TimeUnit.MILLISECONDS);
+        return set(name, set, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit) {
@@ -612,7 +601,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, Set<V> set, RLock lock) {
-        return set(name, set, 0, TimeUnit.MILLISECONDS, lock);
+        return set(name, set, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit, RLock lock) {
@@ -626,7 +615,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean setWithLock(String name, Set<V> set) {
-        return setWithLock(name, set, 0, TimeUnit.MILLISECONDS);
+        return setWithLock(name, set, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean setWithLock(String name, Set<V> set, long expire, TimeUnit unit) {
@@ -634,7 +623,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> addBySetAsync(String name, V v) {
-        return addBySetAsync(name, v, 0, TimeUnit.MILLISECONDS);
+        return addBySetAsync(name, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> addBySetAsync(String name, V v, long expire, TimeUnit unit) {
@@ -642,15 +631,23 @@ public class RedissonHelper {
             return new CompletableFutureWrapper<>(Boolean.FALSE);
 
         RSet<V> rSet = this.rSet(name);
+        return add2Collections(rSet.addAsync(v), rSet.sizeAsync(), setExpireAsync(rSet, expire, unit));
+    }
+
+    private RFuture<Boolean> add2Collections(RFuture<Boolean> booleanRFuture, RFuture<Integer> integerRFuture, RFuture<Boolean> booleanRFuture2) {
         CompletionStage<Boolean> completionStage =
-                rSet.isExistsAsync().thenApplyAsync(exists -> {
-                    boolean added = rSet.add(v);
-                    if (added) {
-                        putLocal(name, HashSet.class);
-                        if (!exists)
-                            setExpire(rSet, expire, unit);
-                        return Boolean.TRUE;
-                    }
+                booleanRFuture.thenCompose(added -> {
+                    if (!added)
+                        return CompletableFuture.completedFuture(Boolean.FALSE);
+
+                    // 通过 size 判断是否首次创建
+                    return integerRFuture.thenCompose(size -> {
+                        if (size == 1)
+                            return booleanRFuture2.thenApply(expired -> Boolean.TRUE);// 无论是否设置Expire，都会返回true
+                        return CompletableFuture.completedFuture(Boolean.TRUE);
+                    });
+                }).exceptionally(ex -> {
+                    log.error(ex.getMessage(), ex);
                     return Boolean.FALSE;
                 });
 
@@ -658,7 +655,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addBySet(String name, V v) {
-        return addBySet(name, v, 0, TimeUnit.MILLISECONDS);
+        return addBySet(name, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit) {
@@ -666,7 +663,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addBySet(String name, V v, RLock lock) {
-        return addBySet(name, v, 0, TimeUnit.MILLISECONDS, lock);
+        return addBySet(name, v, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit, RLock lock) {
@@ -680,7 +677,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addBySetWithLock(String name, V v) {
-        return addBySetWithLock(name, v, 0, TimeUnit.MILLISECONDS);
+        return addBySetWithLock(name, v, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addBySetWithLock(String name, V v, long expire, TimeUnit unit) {
@@ -688,9 +685,7 @@ public class RedissonHelper {
     }
 
     public RFuture<Boolean> deleteSetAsync(String name) {
-        RFuture<Boolean> future = this.rSet(name).deleteAsync();
-        this.removeLocal(name);
-        return future;
+        return this.rSet(name).deleteAsync();
     }
 
     public boolean deleteSet(String name) {
@@ -733,7 +728,7 @@ public class RedissonHelper {
     }
 
     public <V> V get(String name) {
-        return getClient().<V>getBucket(name).get();
+        return this.<V>rBucket(name).get();
     }
 
     public <V> V getWithLock(String name) {
@@ -751,9 +746,7 @@ public class RedissonHelper {
     }
 
     public RFuture<Boolean> deleteAsync(String name) {
-        RFuture<Boolean> future = getClient().getBucket(name).deleteAsync();
-        this.removeLocal(name);
-        return future;
+        return this.rBucket(name).deleteAsync();
     }
 
     public boolean delete(String name) {
@@ -775,20 +768,18 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Void> setAsync(String name, V value) {
-        return setAsync(name, value, 0, TimeUnit.MILLISECONDS);
+        return setAsync(name, value, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Void> setAsync(String name, V value, long expire, TimeUnit unit) {
-        RBucket<V> rBucket = getClient().getBucket(name);
-        RFuture<Void> future = expire > 0 ?
+        RBucket<V> rBucket = this.rBucket(name);
+        return expire > 0L ?
                 rBucket.setAsync(value, expire, unit) :
                 rBucket.setAsync(value);
-        this.putLocal(name, value.getClass());
-        return future;
     }
 
     public <V> void set(String name, V value) {
-        set(name, value, 0, TimeUnit.MILLISECONDS);
+        set(name, value, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> void set(String name, V value, long expire, TimeUnit unit) {
@@ -796,7 +787,7 @@ public class RedissonHelper {
     }
 
     public <V> void setWithLock(String name, V value) {
-        setWithLock(name, value, 0, TimeUnit.MILLISECONDS);
+        setWithLock(name, value, -1, TimeUnit.MILLISECONDS);
     }
 
     public <V> void setWithLock(String name, V value, long expire, TimeUnit unit) {
@@ -804,7 +795,7 @@ public class RedissonHelper {
     }
 
     public <V> void set(String name, V value, RLock lock) {
-        set(name, value, 0, TimeUnit.MILLISECONDS, lock);
+        set(name, value, -1, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> void set(String name, V value, long expire, TimeUnit unit, RLock Lock) {
@@ -815,6 +806,10 @@ public class RedissonHelper {
         } finally {
             Lock.unlock();
         }
+    }
+
+    public boolean containsKey(String ... keys){
+        return getClient().getKeys().countExists(keys) > 0L;
     }
 
     public long getIdForDate() {
@@ -908,112 +903,28 @@ public class RedissonHelper {
         return getClient().getSpinLock(LOCK_PREFIX + name, backOff);
     }
 
-    public void removeContainsKeys(String keyPart, boolean... useLock) {
-        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
-        if (Objects.isNull(element))
-            return;
-
-        Map<String, Class<?>> redisKeys = (Map<String, Class<?>>) element.getValue();
-        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
-            return;
-
-        final boolean lock = ArrayUtils.isNotEmpty(useLock) && useLock[0];
-        redisKeys.forEach((k, v) -> {
-            if (StringUtils.contains(k, keyPart)) {
-                if (List.class.isAssignableFrom(v)) {
-                    if (lock)
-                        this.deleteListWithLock(k);
-                    else
-                        this.deleteListAsync(k);
-                } else if (Map.class.isAssignableFrom(v)) {
-                    if (lock)
-                        this.deleteMapWithLock(k);
-                    else
-                        this.deleteMapAsync(k);
-                } else if (Set.class.isAssignableFrom(v)) {
-                    if (lock)
-                        this.deleteSetWithLock(k);
-                    else
-                        this.deleteSetAsync(k);
-                } else {
-                    if (lock)
-                        this.deleteWithLock(k);
-                    else
-                        this.deleteAsync(k);
-                }
-            }
-        });
-    }
-
-    public List<String> getLocalKeys(Class<?> clazzType) {
-        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
-
-        if (Objects.isNull(element))
-            return Collections.emptyList();
-
-        Map<String, Class<?>> redisKeys =
-                (Map<String, Class<?>>) element.getValue();
-
-        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
-            return Collections.emptyList();
-
-        List<String> results = new ArrayList<>();
-        redisKeys.forEach((k, v) -> {
-            if (v.getName().equals(clazzType.getName()))
-                results.add(k);
-        });
-
-        return results;
-    }
-
-    public Map<String, Class<?>> getLocalKeys(String keyPart) {
-        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
-
-        if (Objects.isNull(element))
-            return Collections.emptyMap();
-
-        Map<String, Class<?>> redisKeys =
-                (Map<String, Class<?>>) element.getValue();
-
-        if (Objects.isNull(redisKeys) || redisKeys.isEmpty())
-            return Collections.emptyMap();
-
-        Map<String, Class<?>> results = new HashMap<>();
-        redisKeys.forEach((k, v) -> {
-            if (k.contains(keyPart))
-                results.put(k, v);
-        });
-
-        return results;
-    }
-
-    public Map<String, Class<?>> getLocalKeys() {
-        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
-
-        if (Objects.isNull(element))
-            return Collections.emptyMap();
-
-        Map<String, Class<?>> keysMap =
-                (Map<String, Class<?>>) element.getValue();
-
-        if (Objects.isNull(keysMap) || keysMap.isEmpty())
-            return Collections.emptyMap();
-
-        return new HashMap<>(keysMap);
-    }
-
     public boolean setExpire(RExpirable rExpirable, long expire, TimeUnit unit) {
         return this.<Boolean>get(this.setExpireAsync(rExpirable, expire, unit));
     }
 
     public RFuture<Boolean> setExpireAsync(RExpirable rExpirable, long expire, TimeUnit unit) {
-        if (expire > 0L) {
-            long newExpire = expire;
-            if (TimeUnit.MILLISECONDS != unit)
-                newExpire = unit.toMillis(expire);
-            return rExpirable.expireAsync(Duration.ofMillis(newExpire));
-        }
-        return new CompletableFutureWrapper<>(Boolean.FALSE);
+        if (expire <= 0L)
+            return new CompletableFutureWrapper<>(Boolean.FALSE);
+
+        long newExpire = expire;
+        if (TimeUnit.MILLISECONDS != unit)
+            newExpire = unit.toMillis(expire);
+
+        CompletionStage<Boolean> completionStage =
+                rExpirable.expireAsync(Duration.ofMillis(newExpire))
+                        .thenCompose(success -> {
+                            if (success)
+                                return CompletableFuture.completedFuture(Boolean.TRUE);
+                            return rExpirable.remainTimeToLiveAsync().thenApply(ttl -> ttl > 0L);
+                        })
+                        .exceptionally(ex -> Boolean.FALSE);
+
+        return new CompletableFutureWrapper<>(completionStage);
     }
 
     /**
@@ -1071,42 +982,48 @@ public class RedissonHelper {
         return Boolean.FALSE;
     }
 
-    private void removeLocal(String name) {
-        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
-        if (Objects.isNull(element))
-            return;
+    /**
+     * 利用redis的 HSCAN 分批获取数据
+     *
+     * @param name    redis key名称
+     * @param pattern 如果为null，则获取全部，通配符说明如下:
+     *                <p>*：匹配零个或多个字符<p/>
+     *                <p>?：匹配一个字符<p/>
+     *                <p>[]：匹配方括号内列出的字符范围或字符集。例如 [a-c] 匹配 a、b 或 c<p/>
+     *                <p>如: Eg*, 匹配以 "Eg" 开头的键<p/>
+     * @param cursor  游标，通常以0开始
+     * @param count   扫描数量
+     */
+    public <R> ScanResult<R> scanBatch(String name, String pattern, long cursor, int count) {
+        RedissonClient redissonClient = getClient();
+        Codec codec = redissonClient.getConfig().getCodec();
+        CommandAsyncExecutor command = ((Redisson) redissonClient).getCommandExecutor();
 
-        Map<String, Class<?>> localKeys = (Map<String, Class<?>>) element.getValue();
-        if (Objects.isNull(localKeys) || localKeys.isEmpty())
-            return;
-
-        localKeys.remove(name);
+        RFuture<ScanResult<R>> rf =
+                StringUtils.isEmpty(pattern) ?
+                        command.readAsync(
+                                name, codec, RedisCommands.HSCAN,
+                                name, cursor, "COUNT", count)
+                        :
+                        command.readAsync(name, codec, RedisCommands.HSCAN,
+                                name, cursor, "MATCH", pattern, "COUNT", count);
+        return command.get(rf);
     }
 
-    private void putLocal(String name, Class<?> clazzType) {
-        CacheElement element = cacheable.getCache(REDIS_LOCAL_KEY);
-        if (Objects.isNull(element)) {
-            Map<String, Class<?>> redisKeys = new ConcurrentHashMap<>();
-            redisKeys.put(name, clazzType);
-            cacheable.addCache(REDIS_LOCAL_KEY, redisKeys, true);
-            return;
-        }
-
-        Map<String, Class<?>> redisKeys =
-                (Map<String, Class<?>>) element.getValue();
-        redisKeys.putIfAbsent(name, clazzType);
-    }
-
-    private <V> RList<V> rList(String name) {
+    public <V> RList<V> rList(String name) {
         return getClient().getList(name);
     }
 
-    private <K, V> RMap<K, V> rMap(String name) {
+    public <K, V> RMap<K, V> rMap(String name) {
         return getClient().getMap(name);
     }
 
-    private <V> RSet<V> rSet(String name) {
+    public <V> RSet<V> rSet(String name) {
         return getClient().getSet(name);
+    }
+
+    public <V> RBucket<V> rBucket(String name) {
+        return getClient().getBucket(name);
     }
 
     private long getId4Day(ZoneId zone) {
@@ -1128,6 +1045,11 @@ public class RedissonHelper {
     private void resetId4Day(RIdGenerator idGenerator, String currentDate, ZoneId zone) {
         // Time difference in seconds from midnight
         Duration duration = DateUtils.endOfRemaining(DateUtils.dateTimeNow(zone), LocalTime.MIDNIGHT);
+        if (Objects.isNull(duration)) {
+            log.error("Failed to calculate the duration from midnight.");
+            return;
+        }
+
         try {
             idGenerator.tryInit(100_000L, 10_000L);
             idGenerator.expireAsync(duration);

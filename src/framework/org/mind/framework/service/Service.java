@@ -24,7 +24,7 @@ public interface Service {
 	 */
 	void stop();
 	
-	boolean isStart();
+	boolean isStarted();
 	
 	boolean isStop();
 	

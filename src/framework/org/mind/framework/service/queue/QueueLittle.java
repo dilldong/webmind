@@ -87,7 +87,10 @@ public class QueueLittle implements QueueService {
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
+                .append("workerQueue", getQueue().toString())
                 .append("queueSize", this.size())
+                .append("waitTasksToCompleteOnShutdown", this.waitTasksToCompleteOnShutdown)
+                .append("awaitSeconds", this.awaitSeconds)
                 .toString();
     }
 }

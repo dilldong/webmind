@@ -30,7 +30,7 @@ public interface Updatable {
 
         ConverterFactory converterFactory = ConverterFactory.getInstance();
         if(converterFactory.isConvert(parseClazz))
-            return (T) converterFactory.convert(parseClazz, value);
+            return converterFactory.convert(parseClazz, value);
 
         return (T) value;
     }
