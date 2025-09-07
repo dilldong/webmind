@@ -91,6 +91,9 @@ public class WebServerConfig {
 
     private String tldSkipPatterns = "*.jar";
 
+    private boolean enableLogStatus = false;
+    private long logIntervalSeconds = 15L;
+
     private String templateEngine = StringUtils.EMPTY;
 
     // OkHttpClient setting
@@ -166,6 +169,10 @@ public class WebServerConfig {
 
             // cached time
             this.updatePeriod = Math.max(updatePeriod, Long.parseLong(properties.getProperty("time.updatePeriod", String.valueOf(updatePeriod))));
+
+            // enable monitor
+            this.enableLogStatus = Boolean.parseBoolean(properties.getProperty("server.monitor", "false"));
+            this.logIntervalSeconds = Long.parseLong(properties.getProperty("server.monitor.logIntervalSeconds", String.valueOf(logIntervalSeconds)));
         }
     }
 

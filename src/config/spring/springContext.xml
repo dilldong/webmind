@@ -34,21 +34,14 @@
     </bean>
 
     <!-- MQ config -->
-    <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
-        <property name="workerQueue">
-            <bean class="java.util.concurrent.LinkedBlockingQueue">
-                <constructor-arg name="capacity" type="int" value="1024"/>
+    <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" init-method="start" destroy-method="destroy">
+        <constructor-arg>
+            <bean class="org.mind.framework.service.queue.QueueConfig">
+                <property name="queueCapacity" value="1024"/>
+                <property name="minConsumerThreads" value="1"/>
+                <property name="maxConsumerThreads" value="2"/>
             </bean>
-        </property>
-    </bean>
-
-    <!-- thread-pool processor MQ config -->
-    <bean id="executorQueueService" class="org.mind.framework.service.queue.QueueLittle" destroy-method="destroy">
-        <property name="workerQueue">
-            <bean class="java.util.concurrent.LinkedBlockingQueue">
-                <constructor-arg name="capacity" type="int" value="1024"/>
-            </bean>
-        </property>
+        </constructor-arg>
     </bean>
 
     <!-- WEB main service -->
@@ -60,19 +53,6 @@
                     <property name="serviceName" value="Loop-Queue-Svc"/>
                     <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
                     <property name="daemon" value="false"/><!-- daemon thread -->
-                    <property name="updaters">
-                        <list>
-                            <bean class="org.mind.framework.service.queue.SingleTaskConsumerService">
-                                <constructor-arg name="queueService" ref="queueService"/>
-                            </bean>
-
-                            <!--利用线程池处理queueService-->
-                            <bean class="org.mind.framework.service.queue.MultiTaskConsumerService">
-                                <constructor-arg name="maxPoolSize" value="1"/>
-                                <constructor-arg name="queueService" ref="executorQueueService"/>
-                            </bean>
-                        </list>
-                    </property>
                 </bean>
             </list>
         </property>

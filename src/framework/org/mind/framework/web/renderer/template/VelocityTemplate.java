@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -54,13 +53,13 @@ public class VelocityTemplate implements Template {
         response.setContentType(sb.toString());
         response.setCharacterEncoding(charset);
 
-        HttpSession session = request.getSession();
-        ServletContext servletContext = session.getServletContext();
+//        HttpSession session = request.getSession();
+        ServletContext servletContext = request.getServletContext();
         LocalDate localDate = DateUtils.dateNow();
 
-        model.put("sessionScope", session);
+//        model.put("sessionScope", session);
         model.put("contextPath", servletContext.getContextPath());
-        model.put("applicationScope", servletContext);
+//        model.put("applicationScope", servletContext);
         model.put("currentYear", localDate.getYear());
         model.put("currentMonth", localDate.getMonthValue());
         model.put("currentDay", localDate.getDayOfMonth());

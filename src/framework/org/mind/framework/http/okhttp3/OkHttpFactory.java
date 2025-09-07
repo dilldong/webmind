@@ -34,10 +34,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -55,14 +55,17 @@ public class OkHttpFactory {
     public static final MediaType JSON_MEDIA = MediaType.parse(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
 
     private static final OkHttpClient HTTP_CLIENT;
+
+    // 线程本地变量，用于存储响应内容长度
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
 
     /**
+     * 默认支持的密码套件列表
      * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
      */
-    @SuppressWarnings("JavadocReference")
     private static final CipherSuite[] DEFAULT_CIPHER_SUITES =
             new CipherSuite[]{
+                    // 现代安全的密码套件
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
                     CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
@@ -70,6 +73,7 @@ public class OkHttpFactory {
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
                     CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
 
+                    // 为了兼容性保留的密码套件（不推荐用于生产环境）
                     // Note that the following cipher suites are all on HTTP/2's bad cipher suites list.
                     // We'll
                     // continue to include them until better suites are commonly available. For example,
@@ -107,20 +111,30 @@ public class OkHttpFactory {
         log.info("Init OkHttpClient ....");
 
         WebServerConfig config = WebServerConfig.INSTANCE;
-        ExecutorService executorService =
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+
+        ThreadPoolExecutor executorService =
                 ExecutorFactory.newThreadPoolExecutor(
-                        0,
-                        config.getMaxRequests(),
-                        60L,
+                        Math.max(availableProcessors, 8),
+                        Math.min(config.getMaxRequests(), availableProcessors * 16),
+                        30L,
                         TimeUnit.SECONDS,
                         new SynchronousQueue<>(),
                         ExecutorFactory.newThreadFactory("okhttp3-group", "okhttp3-exec-"),
                         new ThreadPoolExecutor.CallerRunsPolicy());
 
+        // 允许核心线程超时回收
+        executorService.allowCoreThreadTimeOut(true);
+
+        // 预启动核心线程
+        executorService.prestartAllCoreThreads();
+
+        // 配置请求分发器
         Dispatcher dispatcher = new Dispatcher(executorService);
         dispatcher.setMaxRequestsPerHost(config.getMaxRequestsPerHost());
         dispatcher.setMaxRequests(config.getMaxRequests());
 
+        // 构建OkHttpClient
         OkHttpClient.Builder builder =
                 new OkHttpClient.Builder()
                         .connectionSpecs(CONNECTION_SPEC_LIST)
@@ -131,9 +145,11 @@ public class OkHttpFactory {
                         .readTimeout(config.getReadTimeout(), TimeUnit.SECONDS)
                         .writeTimeout(config.getWriteTimeout(), TimeUnit.SECONDS);
 
-        if(config.getPingInterval() > 0)
+        // 配置WebSocket ping间隔
+        if (config.getPingInterval() > 0)
             builder.pingInterval(config.getPingInterval(), TimeUnit.SECONDS);// websocket自动发送 ping 帧，直到连接失败或关闭
 
+        // 开发环境添加日志拦截器
         if (log.isDebugEnabled()) {
             builder.addInterceptor(
                     new HttpLoggingInterceptor(log::debug)
@@ -246,6 +262,7 @@ public class OkHttpFactory {
         try (okhttp3.Response response = client().newCall(request).execute()) {
             if (Objects.nonNull(processHeaders))
                 processHeaders.accept(response.headers());
+
             ResponseBody responseBody = response.body();
 
             if (response.isSuccessful()) {
@@ -258,7 +275,7 @@ public class OkHttpFactory {
                     "N/A" :
                     buildResponseString(response.headers(), responseBody);
             throw new RequestException(
-                    "Invalid response received: " + response.code() + "; " + message,
+                    "Invalid response: " + response.code() + "; " + message,
                     RequestError.newInstance(response.code(), message));
         }
     }
@@ -274,37 +291,59 @@ public class OkHttpFactory {
      * Execute Http request and return a json serialized object
      */
     public static <T> T request(Request request, TypeToken<T> typeReference) throws IOException {
-        InputStream in = requestStream(request);
-        if (Objects.isNull(in))
-            return null;
+        try (InputStream in = requestStream(request)) {
+            if (Objects.isNull(in))
+                return null;
 
-        try (InputStreamReader reader = new InputStreamReader(in)) {
-            return JsonUtils.fromJson(reader, typeReference);
+            try (InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+                return JsonUtils.fromJson(reader, typeReference);
+            }
         }
     }
 
+    /**
+     * 获取当前响应的内容长度
+     */
+    public static Integer getCurrentContentLength() {
+        return CONTENT_LENGTH_LOCAL.get();
+    }
+
+    /**
+     * 清除当前线程的内容长度缓存
+     */
+    public static void clearContentLength() {
+        CONTENT_LENGTH_LOCAL.remove();
+    }
+
     private static InputStream buildInputStream(Headers responseHeaders, ResponseBody responseBody) throws IOException {
-        ByteArrayInputStream in;
+        byte[] bytes;
+
         if (HttpUtils.GZIP.equals(responseHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
-            in = new ByteArrayInputStream(
-                    Okio.buffer(new GzipSource(
-                                    responseBody.source()))
-                            .readByteArray());
+            try (GzipSource gzipSource = new GzipSource(responseBody.source())) {
+                bytes = Okio.buffer(gzipSource).readByteArray();
+            }
             // The following methods are also available
             // return new GZIPInputStream(responseBody.byteStream());
         } else
-            in = new ByteArrayInputStream(responseBody.bytes());
+            bytes = responseBody.bytes();
 
         // Set return content length
         CONTENT_LENGTH_LOCAL.remove();
-        CONTENT_LENGTH_LOCAL.set(in.available());
+        CONTENT_LENGTH_LOCAL.set(bytes.length);
 
-        return in;
+        return new ByteArrayInputStream(bytes);
     }
 
     private static String buildResponseString(Headers responseHeaders, ResponseBody responseBody) throws IOException {
-        if (HttpUtils.GZIP.equals(responseHeaders.get(HttpHeaders.CONTENT_ENCODING)))
-            return Okio.buffer(new GzipSource(responseBody.source())).readUtf8();
+        if (Objects.isNull(responseBody))
+            return StringUtils.EMPTY;
+
+        if (HttpUtils.GZIP.equals(responseHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
+            // 处理GZIP压缩的响应
+            try (GzipSource gzipSource = new GzipSource(responseBody.source())) {
+                return Okio.buffer(gzipSource).readUtf8();
+            }
+        }
 
         return responseBody.string();
     }

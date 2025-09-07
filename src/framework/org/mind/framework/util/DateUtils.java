@@ -78,8 +78,8 @@ public class DateUtils {
                 if (!scheduler.awaitTermination(5, TimeUnit.SECONDS))
                     scheduler.shutdownNow();
             } catch (InterruptedException | IllegalStateException e) {
-                scheduler.shutdownNow();
                 Thread.currentThread().interrupt();
+                scheduler.shutdownNow();
             }
         }
     }

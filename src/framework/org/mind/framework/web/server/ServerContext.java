@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Marcus
@@ -82,7 +83,7 @@ public abstract class ServerContext {
                         serverConfig.getPort(),
                         StringUtils.isEmpty(serverConfig.getContextPath()) ? IOUtils.DIR_SEPARATOR : serverConfig.getContextPath());
 
-                log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatch.getTime());
+                log.info("{} startup time: {}ms", serverConfig.getServerName(), stopWatch.getTime(TimeUnit.MILLISECONDS));
             } catch (Exception e) {
                 throw new WebServerException("Unable to start embedded Tomcat", e);
             } finally {
