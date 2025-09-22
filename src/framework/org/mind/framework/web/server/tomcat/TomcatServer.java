@@ -7,6 +7,7 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.Manager;
+import org.apache.catalina.Valve;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
@@ -16,9 +17,12 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.coyote.AbstractProtocol;
+import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.apache.coyote.http2.Http2Protocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
+import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
@@ -30,6 +34,7 @@ import org.mind.framework.web.dispatcher.DispatcherServlet;
 import org.mind.framework.web.server.ServerContext;
 import org.mind.framework.web.server.WebServerConfig;
 import org.mind.framework.web.server.XmlLoad4SpringContext;
+import org.mind.framework.web.server.tomcat.monitor.MonitoringValve;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.PlaceholderConfigurerSupport;
@@ -45,6 +50,8 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Marcus
@@ -74,6 +81,7 @@ public class TomcatServer extends Tomcat {
         StandardContext ctx = new TomcatEmbeddedContext();
         ctx.setPath(contextPath);
         ctx.setDocBase(docBase);
+        ctx.setReloadable(false);// 控制Web应用是否支持热重载（自动重新加载）
 
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
@@ -114,8 +122,8 @@ public class TomcatServer extends Tomcat {
             org.apache.catalina.Valve 是 Tomcat 中用于处理请求的一个拦截器，
             如: 日志记录器、IP 黑白名单过滤、请求头处理、安全性增强、性能监控和调优。
          */
-        // ctx.getPipeline().addValve();
-        // super.getEngine().getPipeline().addValve();
+        if (serverConfig.isEnableLogStatus())
+            ctx.getPipeline().addValve(new MonitoringValve());
 
         /*
          * Disable persistence in the StandardManager.
@@ -156,14 +164,14 @@ public class TomcatServer extends Tomcat {
         if (StringUtils.isNotEmpty(serverConfig.getServerName()))
             connector.setProperty("server", serverConfig.getServerName());
 
-        if(Objects.nonNull(serverConfig.getBindAddress()))
+        if (Objects.nonNull(serverConfig.getBindAddress()))
             nioProtocol.setAddress(serverConfig.getBindAddress());
 
         // Don't bind to the socket prematurely if ApplicationContext is slow to start
         connector.setProperty("bindOnInit", "false");
 
         // support Http2
-        if(serverConfig.isHttp2Enabled()) {
+        if (serverConfig.isHttp2Enabled()) {
             Http2Protocol h2c = new Http2Protocol();
             h2c.setCompression(serverConfig.getCompression());
             h2c.setCompressionMinSize(serverConfig.getCompressionMinSize());
@@ -178,6 +186,7 @@ public class TomcatServer extends Tomcat {
             nioProtocol.setCompressionMinSize(serverConfig.getCompressionMinSize());
             nioProtocol.setCompressibleMimeType(serverConfig.getCompressibleMimeType());
             // compression为on时, 需要与sendfile互斥, 两者取其一
+            // sendfile使用零拷贝发送静态资源(对静态文件很有效)
             nioProtocol.setUseSendfile(false);
         }
 
@@ -186,6 +195,7 @@ public class TomcatServer extends Tomcat {
         nioProtocol.setAcceptCount(serverConfig.getAcceptCount());
         nioProtocol.setMaxConnections(serverConfig.getMaxConnections());
         nioProtocol.setMinSpareThreads(serverConfig.getMinSpareThreads());
+        nioProtocol.setKeepAliveTimeout(15_000);//KeepAlive 连接空闲超时时间
         return connector;
     }
 
@@ -211,6 +221,22 @@ public class TomcatServer extends Tomcat {
                     () -> TomcatServer.this.getServer().await());
             awaitThread.setContextClassLoader(getClass().getClassLoader());
             awaitThread.start();
+
+            // start monitor
+            if (serverConfig.isEnableLogStatus()) {
+                ExecutorFactory.newDaemonThread("tomcat-monitor", () -> {
+                    long interval = Math.max(serverConfig.getLogIntervalSeconds(), 15L);
+                    while (isRunning()) {
+                        try {
+                            TimeUnit.SECONDS.sleep(interval);
+                            logStatus();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                }).start();
+            }
         } catch (Exception e) {
             stop();
             destroy();
@@ -228,6 +254,64 @@ public class TomcatServer extends Tomcat {
 
         throw new IllegalStateException("The host does not contain a Context");
     }
+
+    public AbstractProtocol<?> findProtocolHandler() {
+        Connector[] connectors = this.getService().findConnectors();
+        for (Connector connector : connectors) {
+            if (Objects.isNull(connector))
+                continue;
+
+            ProtocolHandler handler = connector.getProtocolHandler();
+            if (handler instanceof AbstractProtocol)
+                return (AbstractProtocol<?>) handler;
+        }
+        return null;
+    }
+
+    public boolean isRunning() {
+        return this.getServer().getState().isAvailable();
+    }
+
+    public void logStatus() {
+        if (!isRunning() || !serverConfig.isEnableLogStatus())
+            return;
+
+        AbstractProtocol<?> protocol = this.findProtocolHandler();
+        if (Objects.isNull(protocol))
+            return;
+
+        Valve[] valves = this.findContext().getPipeline().getValves();
+        for (Valve valve : valves) {
+            if (valve instanceof MonitoringValve) {
+                String statistics = ((MonitoringValve) valve).getStatisticsSummary();
+                if (StringUtils.isNotEmpty(statistics))
+                    log.info(statistics);
+                break;
+            }
+        }
+
+        // basic info
+        int maxConnections = protocol.getMaxConnections();
+        int currentCount = (int) protocol.getConnectionCount();
+
+        Executor executor = protocol.getExecutor();
+        if (executor instanceof ThreadPoolExecutor) {
+            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
+            // 如启用了 NIO、异步 Servlet 或 HTTP/2, Tomcat自身把很多 I/O 事件或内部任务放入线程池中,
+            // 这就会看到没有请求连接情况下, Completed和Total数量往上涨
+            log.info("Server Monitor: {}/{}, Core: {}, Max: {}, Active: {}, Size: {}",//, Completed: {}, Total: {}
+                    currentCount, maxConnections,
+                    threadPoolExecutor.getCorePoolSize(),
+                    threadPoolExecutor.getMaximumPoolSize(),
+                    threadPoolExecutor.getActiveCount(),
+                    threadPoolExecutor.getQueue().size());
+                    //threadPoolExecutor.getCompletedTaskCount()
+                    //threadPoolExecutor.getTaskCount()
+            return;
+        }
+        log.info("Server Monitor: {}/{}", currentCount, maxConnections);
+    }
+
 
     /**
      * Stop Quietly
@@ -282,7 +366,7 @@ public class TomcatServer extends Tomcat {
             System.setProperty("tomcat.util.scan.StandardJarScanFilter.jarsToSkip", serverConfig.getTldSkipPatterns());
     }
 
-    private void initSpringContext(StandardContext ctx){
+    private void initSpringContext(StandardContext ctx) {
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
             if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
@@ -371,4 +455,5 @@ public class TomcatServer extends Tomcat {
         errorPage.setCharset(StandardCharsets.UTF_8);
         return errorPage;
     }
+
 }

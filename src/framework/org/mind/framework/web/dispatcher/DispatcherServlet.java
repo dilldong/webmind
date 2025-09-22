@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.http.HttpHeaders;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -47,7 +48,9 @@ public class DispatcherServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        log.info("Initializing mind-framework servlet....");
+        ServletContext context = this.getServletContext();
+        log.info("Initializing mind-framework servlet[{}.{}] ....",
+                context.getEffectiveMajorVersion(), context.getEffectiveMinorVersion());
 
         this.webContainer = WebContainerGenerator.initMindContainer(this.getServletConfig());
         this.webContainer.init(this.getServletConfig());
@@ -56,7 +59,7 @@ public class DispatcherServlet extends HttpServlet {
         this.handler.init(this.webContainer);
 
         TemplateFactory tf = WebContainerGenerator.initTemplateFactory(this.getServletConfig());
-        tf.init(getServletContext());
+        tf.init(context);
         TemplateFactory.setTemplateFactory(tf);
 
         this.startServer();
@@ -85,6 +88,11 @@ public class DispatcherServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        if ("PATCH".equalsIgnoreCase(request.getMethod())) {
+            this.process(request, response);
+            return;
+        }
+
         super.service(request, response);
     }
 
@@ -156,8 +164,7 @@ public class DispatcherServlet extends HttpServlet {
         try {
             Service serv = ContextSupport.getBean("mainService", Service.class);
             serv.start();
-        } catch (NoSuchBeanDefinitionException e) {
-            log.warn("Message Queuing service failed to start, {}.", e.getMessage());
+        } catch (NoSuchBeanDefinitionException ignored) {
         }
     }
 }

@@ -58,7 +58,7 @@ public final class WebContainerGenerator {
      */
     public static TemplateFactory initTemplateFactory(ServletConfig config) {
         String templateName = config.getInitParameter("template");
-        if (Objects.isNull(templateName) || StringUtils.equalsIgnoreCase(templateName, "JspTemplate")) {
+        if (StringUtils.isEmpty(templateName) || "JspTemplate".equalsIgnoreCase(templateName)) {
             templateName = JspTemplateFactory.class.getName();
             if(log.isDebugEnabled())
                 log.debug("Default template factory to '{}'.", templateName);

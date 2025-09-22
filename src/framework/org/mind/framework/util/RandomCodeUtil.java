@@ -65,7 +65,7 @@ public final class RandomCodeUtil {
      * @param letters true: contains characters
      * @param numbers true: contains numbers
      */
-    public static String getRandomString(int length, boolean letters, boolean numbers) {
+    public static String randomString(int length, boolean letters, boolean numbers) {
         return RandomStringUtils.secure().next(length, letters, numbers);
     }
 

@@ -1,6 +1,10 @@
 package org.mind.framework.web.dispatcher.handler;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.http.Response;
@@ -40,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
 
@@ -50,8 +55,8 @@ import java.util.regex.Matcher;
  * @author dp
  */
 public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
-
     private static final Logger log = LoggerFactory.getLogger("RequestHandler");
+    private static final Map<String, ExtendedLogger> TARGET_LOG_CACHEMAP = new ConcurrentHashMap<>();
 
     private Map<String, Execution> actions;// URI regex mapping object
     private List<String> urisRegex; // URI regex list
@@ -160,6 +165,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         if (!interceptorsCatcher.isEmpty())
             interceptorsCatcher.clear();
 
+        if (!TARGET_LOG_CACHEMAP.isEmpty())
+            TARGET_LOG_CACHEMAP.clear();
+
         actions = null;
         urisRegex = null;
         interceptorsCatcher = null;
@@ -167,8 +175,10 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void processor(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        this.customizeResponse(request, response);
         final long begin = DateUtils.CachedTime.currentMillis();
+
+        // customize response
+        this.customizeResponse(request, response);
 
         // check request is multipart request.
         HttpServletRequest processedRequest = this.checkMultipart(request, response);
@@ -185,7 +195,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
          * renderCompletion();
          */
         List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
-        if (interceptorsCatcher != null) {
+        if (Objects.nonNull(interceptorsCatcher)) {
             for (Catcher catcher : interceptorsCatcher) {
                 if (!catcher.matchOne(requestURI, MatcherUtils.DEFAULT_EQ))// not-match
                     continue;
@@ -269,14 +279,11 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
 
         if (execution.isRequestLog() && !execution.isSimpleLogging()) {
-            log.info("{}.{} - [{}]",
-                    execution.getActionInstance().getClass().getSimpleName(),
-                    execution.getMethod().getName(),
-                    requestURI);
+            this.targetLog(execution, new ParameterizedMessage("[{}]", requestURI));
         }
 
         // execute action
-        Object result = null;
+        Object result;
         try {
             Action.setActionContext(processedRequest, response);
             result = execution.execute(args);
@@ -307,17 +314,38 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             HandlerRequest.super.clear(request);
 
             if (execution.isRequestLog()) {
-                if (execution.isSimpleLogging()) {
-                    log.info("{}.{} - [{}] - [{}ms]",
-                            execution.getActionInstance().getClass().getSimpleName(),
-                            execution.getMethod().getName(),
-                            requestURI,
-                            DateUtils.CachedTime.currentMillis() - begin);
-                } else {
-                    log.info("Used time(ms): {}", DateUtils.CachedTime.currentMillis() - begin);
-                }
+                long spendor = DateUtils.CachedTime.currentMillis() - begin;
+                this.targetLog(execution,
+                        execution.isSimpleLogging() ?
+                                new ParameterizedMessage("[{}] - [{}ms]", requestURI, spendor) :
+                                new ParameterizedMessage("Used time(ms): {}", spendor)
+                );
             }
         }
+    }
+
+    private void targetLog(Execution execution, ParameterizedMessage message) {
+        Class<?> target = execution.getActionInstance().getClass();
+        ExtendedLogger targetLoger = TARGET_LOG_CACHEMAP.computeIfAbsent(
+                target.getName(),
+                className -> (ExtendedLogger) LogManager.getLogger(className)
+        );
+
+        StackTraceElement location = new StackTraceElement(
+                target.getName(),                   // the fully declaring class name of class
+                execution.getMethod().getName(),    // method name
+                target.getSimpleName() + ".java",   // the file name of class
+                0                                   // line number(No got it)
+        );
+
+        targetLoger.logMessage(
+                Level.INFO,
+                null,
+                target.getName(),
+                location,
+                message,
+                null
+        );
     }
 
     /**
@@ -350,19 +378,19 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void clear(HttpServletRequest request) {
-        if(Objects.isNull(this.multipartResolver))
+        if (Objects.isNull(this.multipartResolver))
             return;
 
         // Clean up any resources used by the given multipart request (if any).
         if (HttpUtils.isMultipartRequest(request)) {
             Object multipartRequest = request.getAttribute(CHECK_MULTIPART);
-            if(Objects.isNull(multipartRequest))
+            if (Objects.isNull(multipartRequest))
                 return;
 
             this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) multipartRequest);
             request.removeAttribute(CHECK_MULTIPART);
 
-            if(log.isDebugEnabled())
+            if (log.isDebugEnabled())
                 log.debug("Cleanup Multipart....");
         }
     }
