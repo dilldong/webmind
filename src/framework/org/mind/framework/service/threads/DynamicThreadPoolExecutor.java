@@ -134,7 +134,7 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
                     log.warn("Dynamic monitor thread interrupted: {}", Thread.currentThread().getName());
                     Thread.currentThread().interrupt();
                     break;
-                } catch (Throwable e){
+                } catch (Throwable e) {
                     log.error("Error in monitor thread", e);
                 }
             }
@@ -145,17 +145,19 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
      * 打印线程池状态
      */
     public void logStatus() throws InterruptedException {
-        if(!enableLogStatus)
+        if (!enableLogStatus)
             return;
 
         // log output interval
         long interval = this.logIntervalSeconds - 10L;
-        if(interval > 0)
+        if (interval > 0)
             TimeUnit.SECONDS.sleep(interval);
 
-        String info = String.format("Dynamic ThreadPool - Core: %d, Max: %d, Active: %d, Size: %d, Completed: %d, Total: %d%n",
-                getCorePoolSize(), getMaximumPoolSize(), getActiveCount(),
-                getQueue().size(), getCompletedTaskCount(), getTaskCount());
-        log.info(info);
+        log.info(
+                String.format("Dynamic ThreadPool - Core: %d, Max: %d, Active: %d, Size: %d, Completed: %d, Total: %d",
+                        getCorePoolSize(), getMaximumPoolSize(), getActiveCount(),
+                        getQueue().size(), getCompletedTaskCount(), getTaskCount()
+                )
+        );
     }
 }
