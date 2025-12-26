@@ -19,7 +19,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/6/26
  */
 @Configuration

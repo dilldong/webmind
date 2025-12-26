@@ -7,7 +7,7 @@ import java.io.Serializable;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/6/12
  */
 @Getter

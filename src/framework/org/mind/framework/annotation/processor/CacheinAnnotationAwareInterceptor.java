@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * to an appropriate CacheinOperationsInterceptor.
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/9/5
  */
 public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor, BeanFactoryAware {

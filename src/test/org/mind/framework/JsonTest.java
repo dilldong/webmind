@@ -17,13 +17,13 @@ import java.util.Map;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  */
 public class JsonTest {
 
     @Test
     public void test03() {
-        A<List<Object>> a = new A<>(23, "dasef", Arrays.asList("value1", "value2", 0.00, DateUtils.getMillis()));
+        A<List<Object>> a = new A<>(23, "dasef", Arrays.asList("value1", "value2", 0.00, DateUtils.currentMillis()));
         String json = ViewResolver.<A>response(HttpStatus.OK, a).toJson(false);
         System.out.println(json);
 

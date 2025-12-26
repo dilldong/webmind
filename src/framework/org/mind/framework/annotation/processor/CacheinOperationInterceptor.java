@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/9/6
  */
 @Setter

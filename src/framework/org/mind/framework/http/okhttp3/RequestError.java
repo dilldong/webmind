@@ -9,7 +9,7 @@ import org.mind.framework.service.Cloneable;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2021-08-24
  */
 @Getter

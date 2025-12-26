@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 核心线程监控和自动恢复功能
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/26
  */
 @Slf4j(topic = "QueueService")

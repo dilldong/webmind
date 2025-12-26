@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  * NIO Read/Write files
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/2/4
  */
 @Slf4j

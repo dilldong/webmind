@@ -8,7 +8,7 @@ import org.mind.framework.util.RandomCodeUtil;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/22
  */
 @Getter

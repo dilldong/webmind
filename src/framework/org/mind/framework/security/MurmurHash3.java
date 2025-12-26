@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
  * MurmurHash3 x64 128-bit implementation (Java).
  * 可直接用于生成 128-bit 哈希（byte[16] / hex / 两个 long）。
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/11/17
  */
 public final class MurmurHash3 {

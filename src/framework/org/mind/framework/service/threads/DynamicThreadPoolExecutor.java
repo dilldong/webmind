@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 根据任务负载动态调整线程池参数
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/26
  */
 @Slf4j

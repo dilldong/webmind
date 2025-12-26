@@ -4,7 +4,7 @@ import org.mind.framework.web.Destroyable;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/2/27
  */
 public class StripedSynchronizedLock implements Destroyable {

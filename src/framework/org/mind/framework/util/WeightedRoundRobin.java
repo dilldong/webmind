@@ -6,7 +6,7 @@ import java.util.List;
  * 加权轮询
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/7/21
  */
 public class WeightedRoundRobin<T> {

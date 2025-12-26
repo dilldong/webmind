@@ -2,7 +2,7 @@ package org.mind.framework.exception;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/8/7
  */
 public class ResourceNotFoundException extends NotSupportedException{

@@ -22,7 +22,7 @@ import java.util.Map;
  * Filter event registration
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/8/11
  */
 @Slf4j(topic = "FilterRegistration")

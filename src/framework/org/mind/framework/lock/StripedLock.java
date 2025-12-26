@@ -7,7 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/2/27
  */
 public class StripedLock implements Destroyable {

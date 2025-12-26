@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.LongAdder;
  * Tomcat Monitor
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/27
  */
 @Slf4j(topic = "ServerMonitor")

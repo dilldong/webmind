@@ -15,7 +15,7 @@ import java.util.Objects;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  */
 public abstract class AbstractRequestInterceptor implements Interceptor {
     @Setter

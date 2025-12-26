@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Basic configuration for <code>@Cachein</code> processing.
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/9/5
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

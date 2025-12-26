@@ -20,7 +20,7 @@ import javax.servlet.ServletException;
  * The servlet container starts
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/8/11
  */
 public class WebContextLoadListener extends ContextLoaderListener {

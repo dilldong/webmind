@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * 健康状态类
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/6/2
  */
 @Getter

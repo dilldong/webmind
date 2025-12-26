@@ -14,7 +14,6 @@ import org.mind.framework.cache.LruCache;
 import org.mind.framework.config.AppConfiguration;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.service.MainService;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.util.CalculateUtils;
 import org.mind.framework.util.DateUtils;
@@ -38,7 +37,7 @@ import java.util.Locale;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 //@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
@@ -52,10 +51,39 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     private TestServiceComponent testServiceComponent;
 
     @Resource
-    private QueueService executorQueueService;
-
-    @Resource
     private QueueService queueService;
+
+    @SneakyThrows
+    @Test
+    public void nestedQueue() {
+        queueService.producer(()->{
+            System.out.println("task-1");
+
+            Thread.currentThread().interrupt();
+
+            queueService.producer(()->{
+                System.out.println("task-1-1");
+
+                queueService.producer(()->{
+                    System.out.println("task-1-1-1");
+
+                    queueService.producer(()->{
+                        System.out.println("task-1-1-1-1");
+                    });
+                });
+            });
+        });
+
+        queueService.producer(()->{
+            System.out.println("task-2");
+
+            queueService.producer(()->{
+                System.out.println("task-2-1");
+            });
+        });
+
+        System.in.read();
+    }
 
     @Test
     public void test10() {
@@ -108,8 +136,6 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void test09() {
-        this.applicationContext.getBean("mainService", MainService.class).start();
-
         int i = 10;
         while ((--i) >= 0) {
             A a = A.builder().field01("" + (i + 1)).build();
@@ -118,6 +144,7 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
                     System.out.println(Thread.currentThread().getName() + "\tblocking");
                     Thread.sleep(3_000L);
                 } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
                 }
                 System.out.println(Thread.currentThread().getName() + "\t" + a.field01);
 
@@ -179,19 +206,23 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Test
     public void test04() {
+//        RedissonHelper.getInstance()
+//                .deleteList(String.join(AbstractCache.CACHE_DELIMITER, "user_by_id", "832834", "first"));
         List<Object> list = testService.get("first", 832834L);
-        list.forEach(obj -> System.out.println(obj));
+        System.out.println("1: "+ list);
+        list = testService.get("first", 832834L);
+        System.out.println("2: "+ list);
 
-        testService.get("second", 23784234).forEach(obj -> System.out.println(obj));
-        testService.get("first", 832834L).forEach(obj -> System.out.println(obj));
-
-        System.out.println(testService.byCache(32342));
-        System.out.println(testService.byCache(32342));
-        System.out.println(testService.getClass().getName());
-
-        System.out.println("testServiceComponent: ");
-        System.out.println(testServiceComponent.byCache(22222));
-        System.out.println(testServiceComponent.getClass().getName());
+//        testService.get("second", 23784234).forEach(System.out::println);
+//        testService.get("first", 832834L).forEach(System.out::println);
+//
+        System.out.println(testService.byCache(323421));
+        System.out.println(testService.byCache(323421));
+//        System.out.println(testService.getClass().getName());
+//
+//        System.out.println("testServiceComponent: ");
+//        System.out.println(testServiceComponent.byCache(22222));
+//        System.out.println(testServiceComponent.getClass().getName());
     }
 
     @Test
@@ -245,7 +276,7 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Test
     public void test01() {
-        System.out.println(RandomCodeUtil.getRandomString(10, false, true));
+        System.out.println(RandomCodeUtil.randomString(10, false, true));
     }
 
 

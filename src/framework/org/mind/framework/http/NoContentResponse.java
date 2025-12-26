@@ -12,7 +12,7 @@ import java.util.Objects;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/6/11
  */
 @Getter

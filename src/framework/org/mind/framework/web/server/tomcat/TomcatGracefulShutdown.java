@@ -12,7 +12,7 @@ import java.util.concurrent.Executor;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/6/12
  */
 public class TomcatGracefulShutdown extends GracefulShutdown {

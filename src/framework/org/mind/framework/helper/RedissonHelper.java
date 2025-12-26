@@ -54,7 +54,7 @@ import static org.mind.framework.web.server.WebServerConfig.JAR_IN_CLASSES;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/11/24
  */
 @Slf4j

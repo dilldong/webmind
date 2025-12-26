@@ -14,7 +14,7 @@ import java.util.Objects;
  * For this usage:<br> @PropertySource(value = "classpath:application.yml", factory = YamlPropertyFactory.class)
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/7/9
  */
 public class YamlPropertyFactory extends DefaultPropertySourceFactory {

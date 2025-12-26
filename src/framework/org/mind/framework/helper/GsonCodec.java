@@ -16,7 +16,7 @@ import java.util.Objects;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/11/26
  */
 @Slf4j

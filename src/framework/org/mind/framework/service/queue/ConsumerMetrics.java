@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 消费者性能指标
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/27
  */
 public class ConsumerMetrics {

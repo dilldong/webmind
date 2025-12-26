@@ -13,7 +13,7 @@ import java.util.Random;
  * 常用于生成短链接、唯一ID等场景
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/6/13
  */
 public class Base62Utils {

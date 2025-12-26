@@ -7,7 +7,7 @@ import org.mind.framework.web.interceptor.HandlerInterceptor;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/8/13
  */
 @Getter
