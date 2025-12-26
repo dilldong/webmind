@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/8/11
  */
 @Getter

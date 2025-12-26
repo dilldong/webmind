@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2024/4/18
  */
 public interface ErrorInterceptor {

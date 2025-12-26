@@ -5,7 +5,7 @@ import lombok.ToString;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/7/21
  */
 @Getter

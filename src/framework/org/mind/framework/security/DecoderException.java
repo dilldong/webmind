@@ -2,7 +2,7 @@ package org.mind.framework.security;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/12/31
  */
 public class DecoderException extends IllegalStateException {

@@ -4,9 +4,9 @@ import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
+import org.mind.framework.web.Action;
 import org.mind.framework.web.renderer.Render;
 import org.mind.framework.web.renderer.TemplateRender;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -26,14 +26,8 @@ import java.util.stream.IntStream;
 @Controller
 public class TestAction {
 
-    @Value("${db.connectionTimeout}")
-    String value;
-
-    @Mapping
+    @Mapping(value = {"/", "/index"})
     public String first() {
-        if(true)
-            throw new RuntimeException("----------");
-
         return "Welcome usage mind-framework.";
     }
 
@@ -60,13 +54,17 @@ public class TestAction {
     @Mapping("/request/json01")
     public String withJsonResult() {
         return new Response<Map<String, Object>>(HttpServletResponse.SC_OK, "OK")
-                .setResult(ImmutableMap.of("name", "Smith", "age", 26, "gender", "Male"))
+                .setResult(ImmutableMap.of(
+                        "name", "Smith",
+                        "age", 26,
+                        "gender", "Male",
+                        "session-id", Action.getActionContext().getSession().getId()))
                 .toJson();
     }
 
     @Mapping("/request/redirect")
     public String redirect() {
-        return "redirect:https://github.com/dilldong";
+        return "redirect:https://github.com/dilldong/webmind";
     }
 
     @Mapping("/request/forward")

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * 采用线程池模式自动处理队列任务
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/22
  */
 @Slf4j

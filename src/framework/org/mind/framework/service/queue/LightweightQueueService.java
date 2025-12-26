@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 核心线程监控和自动恢复功能
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/26
  */
 @Slf4j(topic = "QueueService")
@@ -101,7 +101,7 @@ public class LightweightQueueService {
             }
 
             // 启动监控线程
-            if(Objects.isNull(monitorThread) || !monitorThread.isAlive())
+            if (Objects.isNull(monitorThread) || !monitorThread.isAlive())
                 startMonitoringThread();
 
         } else {
@@ -323,7 +323,7 @@ public class LightweightQueueService {
                     log.warn("Queue monitor thread interrupted: {}", Thread.currentThread().getName());
                     Thread.currentThread().interrupt();
                     break;
-                }catch (Throwable e){
+                } catch (Throwable e) {
                     log.error("Error in monitor thread", e);
                     consecutiveHealthCheckFailures.incrementAndGet();
 
@@ -421,7 +421,7 @@ public class LightweightQueueService {
 
         QueueStats stats = getStatisticState();
         log.info(String.format(
-                "Queue Stats - Size: %d, Consumers: %d, Processed: %d, Failed: %d, Avg: %.2fms%n",
+                "Queue Stats - Size: %d, Consumers: %d, Processed: %d, Failed: %d, Avg: %.2fms",
                 stats.getQueueSize(), stats.getActiveConsumers(), stats.getTotalProcessed(),
                 stats.getTotalFailed(), stats.getAverageProcessingTime()
         ));
@@ -440,8 +440,8 @@ public class LightweightQueueService {
         // 基于队列大小和负载情况决定是否调整
         boolean shouldIncrease =
                 currentThreads < config.getMinConsumerThreads() ||
-                (queueSize > config.getQueueHighWaterMark() &&
-                        currentThreads < config.getMaxConsumerThreads());
+                        (queueSize > config.getQueueHighWaterMark() &&
+                                currentThreads < config.getMaxConsumerThreads());
 
         boolean shouldDecrease = (queueSize < config.getQueueLowWaterMark() &&
                 currentThreads > config.getMinConsumerThreads());
@@ -482,7 +482,7 @@ public class LightweightQueueService {
                         if (Objects.nonNull(item)) {
                             try {
                                 processTask(item, metrics, context);
-                            }finally {
+                            } finally {
                                 context.cleanup();
                             }
                         }
@@ -524,7 +524,7 @@ public class LightweightQueueService {
 
                 // 处理本层的嵌套任务
                 Queue<DelegateMessage> currentLevelTasks = context.getCurrentLevelTasks();
-                if(Objects.nonNull(currentLevelTasks)) {
+                if (Objects.nonNull(currentLevelTasks)) {
                     DelegateMessage nestedTask;
                     while (Objects.nonNull(nestedTask = currentLevelTasks.poll())) {
                         processTask(nestedTask, metrics, context); // 递归处理
@@ -539,7 +539,7 @@ public class LightweightQueueService {
                 totalFailed.incrementAndGet();
                 log.error("Error processing task: {}", item, e);
                 // 这里可以根据需要添加错误处理逻辑，比如重试、死信队列等
-            }finally {
+            } finally {
                 // 减少深度
                 context.decrementDepth();
             }

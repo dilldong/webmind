@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * 队列统计信息
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/5/27
  */
 @Getter

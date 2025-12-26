@@ -1,9 +1,12 @@
 package org.mind.framework;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.security.Base62Utils;
+import org.mind.framework.service.threads.DynamicThreadPoolExecutor;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.FileUtils;
 import org.mind.framework.util.JsonUtils;
@@ -17,15 +20,69 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  */
+@Slf4j
 public class TestModule {
+
+    @Test
+    public void base62() {
+        // 测试数字编解码
+        long number = 123456789L;
+        String encoded = Base62Utils.encode(number);
+        long decoded = Base62Utils.decodeToLong(encoded);
+        System.out.println("数字: " + number + " -> Base62: " + encoded + " -> 解码: " + decoded);
+
+        // 测试字符串编解码
+        String text = "Hello, World! 你好世界！";
+        String encodedStr = Base62Utils.encode(text);
+        String decodedStr = Base62Utils.decodeToString(encodedStr);
+        System.out.println("字符串: " + text + " -> Base62: " + encodedStr + " -> 解码: " + decodedStr);
+
+        // 生成随机Base62字符串
+        String randomStr = Base62Utils.randomString(10);
+        System.out.println("随机Base62字符串: " + randomStr);
+
+        // 验证Base62格式
+        System.out.println("'" + encoded + "' 是否为有效Base62: " + Base62Utils.isValidBase62(encoded));
+        System.out.println("'Hello@' 是否为有效Base62: " + Base62Utils.isValidBase62("Hello@"));
+    }
+
+    @Test
+    public void testDynamicPool() throws InterruptedException {
+        DynamicThreadPoolExecutor dynamicPool = new DynamicThreadPoolExecutor();
+
+        System.out.println("Testing dynamic thread pool...");
+
+        // 提交一些任务
+        for (int i = 0; i < 2000; i++) {
+            final int taskId = i;
+            dynamicPool.execute(() -> {
+                try {
+                    System.out.println(Thread.currentThread().getName() + " - " + "Executing task " + taskId);
+                    Thread.sleep(100); // 模拟任务执行
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            if (i % 45 == 0) {
+                Thread.sleep(500); // 中间暂停，观察动态调整
+            }
+        }
+
+        Thread.sleep(60000); // 等待任务完成和池调整
+        dynamicPool.shutdown();
+    }
 
     @SneakyThrows
     @Test
@@ -81,17 +138,23 @@ public class TestModule {
         System.in.read();
     }
 
-    private void readBy() {
-        String rootDirectory = "/Users/marcus/Desktop/eventdata";
+    @SneakyThrows
+    @Test
+    public void readBy() {
+        String rootDirectory = "/Users/marcus/Desktop";
         try (Stream<Path> streams = Files.list(Paths.get(rootDirectory))) {
             streams.filter(p -> StringUtils.endsWith(p.getFileName().toString(), ".json"))
                     .forEach(path -> {
                         String content = FileUtils.read(path, false, false);
                         System.out.println(path.getFileName().toString() + ": " + (content == null ? "null" : content.length()));
+                        FileUtils.write(rootDirectory + "/1.js", content);
                     });
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        System.in.read();
     }
 
 
@@ -191,4 +254,29 @@ public class TestModule {
             System.out.println("shutdown: " + sum);
         });
     }
+
+    @Test
+    @SneakyThrows
+    public void test041() {
+        RedissonHelper helper = RedissonHelper.getInstance();
+        String name = "lz:test:map";
+        Map<String, Object> map = new HashMap<>();
+        map.put("s1", 24);
+        map.put("s2", "25");
+        map.put("m1", "32");
+        map.put("e1", true);
+
+        helper.setAsync(name, map, 10, TimeUnit.MINUTES).whenComplete((w, e) -> {
+            System.out.println(w);
+            Map<String, Object> newmap = helper.getMap(name);
+            System.out.println(newmap.size());
+            newmap.forEach((k, v) -> System.out.println(k + "\t" + v));
+        });
+
+//        Map<String, Object> newmap = helper.getMap(name);
+//        System.out.println(newmap.size());
+//        newmap.forEach((k, v) -> System.out.println(k + "\t" + v));
+        System.in.read();
+    }
+
 }

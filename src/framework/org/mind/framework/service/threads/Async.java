@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * Async task facilitation
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/6/27
  */
 public class Async {

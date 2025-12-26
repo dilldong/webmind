@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/8/7
  */
 public class ClassUtils {

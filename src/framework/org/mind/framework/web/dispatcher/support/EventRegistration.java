@@ -7,7 +7,7 @@ import javax.servlet.ServletException;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2024/5/4
  */
 public interface EventRegistration {

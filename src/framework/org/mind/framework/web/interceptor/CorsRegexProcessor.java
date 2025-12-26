@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2023/8/18
  */
 public class CorsRegexProcessor extends DefaultCorsProcessor {

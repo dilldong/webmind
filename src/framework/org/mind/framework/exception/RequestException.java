@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  */
 public class RequestException extends RuntimeException {
 

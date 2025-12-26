@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * 自定义拒绝策略，记录拒绝情况
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2025/6/2
  */
 @Slf4j

@@ -18,7 +18,7 @@ import java.util.Objects;
  * Compatible with reading in File and Jar modes.
  *
  * @version 1.0
- * @auther Marcus
+ * @author Marcus
  * @date 2022/8/6
  */
 public class TemplateResourceLoader extends ClasspathResourceLoader {
