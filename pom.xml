@@ -16,7 +16,7 @@
     <version>5.0.0</version>
 
     <licenses>
-        <license>
+        <license> s
             <name>The Apache Software License, Version2.0</name>
             <url>https://github.com/dilldong/webmind/blob/master/LICENSE</url>
             <distribution>repo</distribution>
