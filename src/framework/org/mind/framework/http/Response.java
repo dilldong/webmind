@@ -1,6 +1,5 @@
 package org.mind.framework.http;
 
-
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import jakarta.servlet.http.HttpServletResponse;
