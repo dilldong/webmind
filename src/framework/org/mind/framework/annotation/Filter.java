@@ -1,6 +1,7 @@
 package org.mind.framework.annotation;
 
-import javax.servlet.DispatcherType;
+import jakarta.servlet.DispatcherType;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;

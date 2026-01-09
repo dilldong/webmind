@@ -1,5 +1,8 @@
 package org.mind.framework.web.container.spring;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletException;
 import org.apache.catalina.core.StandardContext;
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.mind.framework.exception.WebServerException;
@@ -11,10 +14,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 
 /**
  * The servlet container starts

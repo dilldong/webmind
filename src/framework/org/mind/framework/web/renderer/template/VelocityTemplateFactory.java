@@ -1,9 +1,8 @@
 package org.mind.framework.web.renderer.template;
 
+import jakarta.servlet.ServletContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.mind.framework.ContextSupport;
-
-import javax.servlet.ServletContext;
 
 /**
  * Velocity Template factory.

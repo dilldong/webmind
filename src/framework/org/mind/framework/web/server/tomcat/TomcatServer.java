@@ -112,7 +112,7 @@ public class TomcatServer extends Tomcat {
             ctx.addErrorPage(newErrorPage(404, "/error/404"));
             ctx.addErrorPage(newErrorPage(500, "/error/500"));
             ctx.addErrorPage(newErrorPage("java.lang.NullPointerException", "/error/500"));
-            ctx.addErrorPage(newErrorPage("javax.servlet.ServletException", "/error/500"));
+            ctx.addErrorPage(newErrorPage("jakarta.servlet.ServletException", "/error/500"));
             ctx.addErrorPage(newErrorPage("java.lang.RuntimeException", "/error/500"));
             ctx.addErrorPage(newErrorPage("java.lang.Exception", "/error/500"));
         }
@@ -173,9 +173,6 @@ public class TomcatServer extends Tomcat {
         // support Http2
         if (serverConfig.isHttp2Enabled()) {
             Http2Protocol h2c = new Http2Protocol();
-            h2c.setCompression(serverConfig.getCompression());
-            h2c.setCompressionMinSize(serverConfig.getCompressionMinSize());
-            h2c.setCompressibleMimeType(serverConfig.getCompressibleMimeType());
             nioProtocol.addUpgradeProtocol(h2c);
 
             // config SSL, As: TomcatServletWebServerFactory

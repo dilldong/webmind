@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mind.framework.http.Response;
 import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.JsonUtils;

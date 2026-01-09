@@ -167,14 +167,6 @@ public class SpringApplication {
                             null,
                             new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream));
 
-                    // load logback
-//                    ch.qos.logback.classic.LoggerContext.LoggerContext context =
-//                            (ch.qos.logback.classic.LoggerContextLoggerContext) LoggerFactory.getILoggerFactory();
-//                    context.reset();
-//                    ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator configurator = new ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator();
-//                    configurator.setContext(context);
-//                    configurator.doConfigure(log4jInputStream);
-
                     // load log4j 1.x
                     //org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);
 

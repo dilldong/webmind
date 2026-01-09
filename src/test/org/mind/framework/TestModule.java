@@ -3,7 +3,7 @@ package org.mind.framework;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.security.Base62Utils;
 import org.mind.framework.service.threads.DynamicThreadPoolExecutor;

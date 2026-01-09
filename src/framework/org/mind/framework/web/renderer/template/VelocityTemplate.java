@@ -1,5 +1,8 @@
 package org.mind.framework.web.renderer.template;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
@@ -8,9 +11,6 @@ import org.apache.velocity.io.VelocityWriter;
 import org.mind.framework.util.DateUtils;
 import org.springframework.http.MediaType;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;

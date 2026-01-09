@@ -1,6 +1,9 @@
 package org.mind.framework.web.dispatcher.handler;
 
 import com.google.gson.JsonObject;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.util.HttpUtils;
@@ -8,9 +11,6 @@ import org.mind.framework.util.JsonUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;

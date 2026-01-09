@@ -1,5 +1,6 @@
 package org.mind.framework;
 
+import jakarta.servlet.ServletContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -9,7 +10,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import javax.servlet.ServletContext;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Objects;

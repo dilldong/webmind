@@ -3,6 +3,7 @@ package org.mind.framework.http;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -11,7 +12,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.Action;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.Objects;
 
 @Getter

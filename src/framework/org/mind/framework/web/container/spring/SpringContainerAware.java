@@ -1,5 +1,7 @@
 package org.mind.framework.web.container.spring;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -23,8 +25,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.cors.CorsConfiguration;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

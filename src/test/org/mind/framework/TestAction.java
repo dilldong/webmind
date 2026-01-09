@@ -1,6 +1,6 @@
 package org.mind.framework;
 
-import com.google.common.collect.ImmutableMap;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
@@ -10,7 +10,6 @@ import org.mind.framework.web.renderer.TemplateRender;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,7 +32,7 @@ public class TestAction {
 
     @Mapping(value = "/request/text", method = RequestMethod.GET)
     public String withText() {
-        return "Hello,This is mind-framework.";
+        return "Hello, This is mind-framework.";
     }
 
     @Mapping(value = "/request/value/${type}", method = RequestMethod.GET)
@@ -53,12 +52,15 @@ public class TestAction {
 
     @Mapping("/request/json01")
     public String withJsonResult() {
+        Map<String, Object> dataMap = Map.of(
+                "name", "Smith",
+                "age", 26,
+                "gender", "Male",
+                "session-id", Action.getActionContext().getSession().getId()
+        );
+
         return new Response<Map<String, Object>>(HttpServletResponse.SC_OK, "OK")
-                .setResult(ImmutableMap.of(
-                        "name", "Smith",
-                        "age", 26,
-                        "gender", "Male",
-                        "session-id", Action.getActionContext().getSession().getId()))
+                .setResult(dataMap)
                 .toJson();
     }
 

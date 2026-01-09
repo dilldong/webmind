@@ -1,6 +1,6 @@
 package org.mind.framework.web.container;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 /**
  * Guice module which implements this interface will automatically get the

@@ -1,9 +1,8 @@
 package org.mind.framework.web.renderer.template;
 
+import jakarta.servlet.ServletContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.servlet.ServletContext;
 
 /**
  * TemplateFactory which holds the singleton instance of TemplateFactory.

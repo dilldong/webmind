@@ -1,5 +1,6 @@
 package org.mind.framework.web.server.tomcat.monitor;
 
+import jakarta.servlet.ServletException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
@@ -7,7 +8,6 @@ import org.apache.catalina.valves.ValveBase;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.DateUtils;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;

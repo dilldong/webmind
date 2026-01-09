@@ -1,14 +1,14 @@
 package org.mind.framework.web.renderer;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.ResponseUtils;
 import org.mind.framework.web.Action;
 import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.springframework.http.MediaType;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

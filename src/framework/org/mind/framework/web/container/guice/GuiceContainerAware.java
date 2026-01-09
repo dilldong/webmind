@@ -6,6 +6,8 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.exception.ThrowProvider;
@@ -16,8 +18,6 @@ import org.mind.framework.web.container.ServletContextAware;
 import org.mind.framework.web.dispatcher.handler.Execution;
 import org.mind.framework.web.dispatcher.support.Catcher;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;

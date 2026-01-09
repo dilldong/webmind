@@ -1,6 +1,6 @@
 package org.mind.framework.web.renderer.template;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 /**
  * TemplateFactory which uses JSP.

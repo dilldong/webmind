@@ -1,13 +1,13 @@
 package org.mind.framework.web.renderer;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.mind.framework.web.renderer.template.TemplateFactory;
 import org.mind.framework.web.renderer.template.VelocityTemplate;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;

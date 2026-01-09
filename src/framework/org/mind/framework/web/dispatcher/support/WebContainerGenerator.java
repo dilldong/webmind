@@ -1,5 +1,6 @@
 package org.mind.framework.web.dispatcher.support;
 
+import jakarta.servlet.ServletConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.util.ClassUtils;
@@ -9,7 +10,6 @@ import org.mind.framework.web.renderer.template.TemplateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletConfig;
 import java.util.Objects;
 
 public final class WebContainerGenerator {
@@ -18,7 +18,7 @@ public final class WebContainerGenerator {
     /**
      * init web container (Guice or Spring) by web application define.
      *
-     * @param config javax.servlet.ServletConfig
+     * @param config jakarta.servlet.ServletConfig
      * @return org.mind.framework.container.ContainerGenerator
      */
     public static ContainerAware initMindContainer(ServletConfig config) {
@@ -53,7 +53,7 @@ public final class WebContainerGenerator {
     /**
      * init Page view resolver engine by web application define.
      *
-     * @param config javax.servlet.ServletConfig
+     * @param config jakarta.servlet.ServletConfig
      * @return org.mind.framework.renderer.template.TemplateFactory
      */
     public static TemplateFactory initTemplateFactory(ServletConfig config) {

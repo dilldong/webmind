@@ -1,5 +1,10 @@
 package org.mind.framework.web.dispatcher;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
@@ -15,11 +20,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.http.HttpHeaders;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -70,7 +70,7 @@ public class DispatcherServlet extends HttpServlet {
      * <code>service</code> method and dispatches
      * them to the <code>process</code> methods defined in
      * this class. This method is an HTTP-specific version of the
-     * {@link javax.servlet.Servlet#service} method. There's no
+     * {@link jakarta.servlet.Servlet#service} method. There's no
      * need to override this method.
      *
      * @param request  the {@link HttpServletRequest} object that
@@ -84,7 +84,7 @@ public class DispatcherServlet extends HttpServlet {
      *                          HTTP request
      * @throws ServletException if the HTTP request
      *                          cannot be handled
-     * @see javax.servlet.Servlet#service
+     * @see jakarta.servlet.Servlet#service
      */
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -1,5 +1,6 @@
 package org.mind.framework.web.filter;
 
+import jakarta.servlet.DispatcherType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,7 +8,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.annotation.Filter;
 
-import javax.servlet.DispatcherType;
 import java.util.Arrays;
 import java.util.List;
 
