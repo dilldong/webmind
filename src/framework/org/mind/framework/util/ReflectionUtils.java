@@ -280,11 +280,11 @@ public abstract class ReflectionUtils {
         if (ex instanceof IllegalAccessException) {
             throw new IllegalStateException(String.format("Could not access method: %s", ex.getMessage()));
         }
-        if (ex instanceof InvocationTargetException) {
-            handleInvocationTargetException((InvocationTargetException) ex);
+        if (ex instanceof InvocationTargetException itex) {
+            handleInvocationTargetException(itex);
         }
-        if (ex instanceof RuntimeException) {
-            throw (RuntimeException) ex;
+        if (ex instanceof RuntimeException rex) {
+            throw rex;
         }
         handleUnexpectedException(ex);
     }
@@ -314,11 +314,11 @@ public abstract class ReflectionUtils {
      * @throws RuntimeException the rethrown exception
      */
     public static void rethrowRuntimeException(Throwable ex) {
-        if (ex instanceof RuntimeException) {
-            throw (RuntimeException) ex;
+        if (ex instanceof RuntimeException rex) {
+            throw rex;
         }
-        if (ex instanceof Error) {
-            throw (Error) ex;
+        if (ex instanceof Error error) {
+            throw error;
         }
         handleUnexpectedException(ex);
     }
@@ -336,11 +336,11 @@ public abstract class ReflectionUtils {
      * @throws Exception the rethrown exception (in case of a checked exception)
      */
     public static void rethrowException(Throwable ex) throws Exception {
-        if (ex instanceof Exception) {
-            throw (Exception) ex;
+        if (ex instanceof Exception rex) {
+            throw rex;
         }
-        if (ex instanceof Error) {
-            throw (Error) ex;
+        if (ex instanceof Error error) {
+            throw error;
         }
         handleUnexpectedException(ex);
     }

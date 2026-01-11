@@ -79,7 +79,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         this.interceptorsCatcher = new ArrayList<>();
 
         // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
-        this.actions = new HashMap<String, Execution>() {
+        this.actions = new HashMap<>(16) {
             @Override
             public Execution put(String key, Execution value) {
                 // convert URI to Regex
@@ -406,8 +406,8 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if (result instanceof Render) {
-            ((Render) result).render(request, response);
+        if (result instanceof Render render) {
+            render.render(request, response);
             return;
         }
 

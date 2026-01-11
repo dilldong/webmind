@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -415,9 +414,9 @@ public class FileUtils {
     public static List<Path> get(String directory, Function<Path, Boolean> filter) {
         try (Stream<Path> streams = Files.list(Paths.get(directory))) {
             if (Objects.isNull(filter))
-                return streams.collect(Collectors.toList());
+                return streams.toList();
 
-            return streams.filter(filter::apply).collect(Collectors.toList());
+            return streams.filter(filter::apply).toList();
         } catch (IOException e) {
             log.error("Read files is error, dir: {}, error: {}", directory, e.getMessage());
         }

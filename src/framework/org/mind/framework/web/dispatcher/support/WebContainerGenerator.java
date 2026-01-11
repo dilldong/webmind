@@ -40,8 +40,8 @@ public final class WebContainerGenerator {
                                 ContainerAware.class.getSimpleName()));
             }
 
-            if (obj instanceof ContainerAware)
-                return (ContainerAware) obj;
+            if (obj instanceof ContainerAware aware)
+                return aware;
 
         } catch (Exception e) {
             ThrowProvider.doThrow(e);
@@ -82,8 +82,8 @@ public final class WebContainerGenerator {
             }
         }
 
-        if (obj instanceof TemplateFactory)
-            return (TemplateFactory) obj;
+        if (obj instanceof TemplateFactory factory)
+            return factory;
 
         throw new IllegalArgumentException("Init template name invalid. Optional as Velocity or JspTemplate.");
     }

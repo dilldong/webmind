@@ -103,8 +103,8 @@ public class SpringApplication {
                     timeUnit.sleep(await);
 
                 // shutdown on Spring
-                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext)
-                    ((AbstractApplicationContext) ContextSupport.getApplicationContext()).close();
+                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext context)
+                    context.close();
 
                 mainThread.interrupt();
                 // When received a stop signal,

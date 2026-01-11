@@ -48,8 +48,8 @@ public class WebContextLoadListener extends ContextLoaderListener {
     public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
         WebApplicationContext webAppContext = super.initWebApplicationContext(servletContext);
 
-        if (webAppContext instanceof ConfigurableWebApplicationContext)
-            registerCustomBean((ConfigurableWebApplicationContext) webAppContext);
+        if (webAppContext instanceof ConfigurableWebApplicationContext configContext)
+            registerCustomBean(configContext);
 
         return webAppContext;
     }

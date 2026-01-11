@@ -91,8 +91,8 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
         this.advice = buildAdvice();
-        if (this.advice instanceof BeanFactoryAware)
-            ((BeanFactoryAware) advice).setBeanFactory(beanFactory);
+        if (this.advice instanceof BeanFactoryAware adviceAware)
+            adviceAware.setBeanFactory(beanFactory);
     }
 
     @Override
@@ -101,8 +101,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     private <T> List<T> findBeans(Class<? extends T> type) {
-        if (this.beanFactory instanceof ListableBeanFactory) {
-            ListableBeanFactory listable = (ListableBeanFactory) this.beanFactory;
+        if (this.beanFactory instanceof ListableBeanFactory listable) {
             if (listable.getBeanNamesForType(type).length > 0) {
                 List<T> list = new ArrayList<>(listable.getBeansOfType(type, false, false).values());
                 OrderComparator.sort(list);
@@ -114,8 +113,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     private <T> T findBean(Class<? extends T> type) {
-        if (this.beanFactory instanceof ListableBeanFactory) {
-            ListableBeanFactory listable = (ListableBeanFactory) this.beanFactory;
+        if (this.beanFactory instanceof ListableBeanFactory listable) {
             if (listable.getBeanNamesForType(type, false, false).length == 1)
                 return listable.getBean(type);
         }
@@ -173,11 +171,10 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
             if (this == other)
                 return true;
 
-            if (!(other instanceof AnnotationClassOrMethodPointcut))
-                return false;
+            if (other instanceof AnnotationClassOrMethodPointcut otherAdvisor)
+                return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
 
-            AnnotationClassOrMethodPointcut otherAdvisor = (AnnotationClassOrMethodPointcut) other;
-            return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
+            return false;
         }
     }
 

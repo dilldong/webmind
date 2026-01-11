@@ -94,9 +94,7 @@ public class GracefulShutdown {
         if(Objects.isNull(this.executor))
             return;
 
-        if (this.executor instanceof ThreadPoolExecutor) {
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
-
+        if (this.executor instanceof ThreadPoolExecutor threadPoolExecutor) {
             long completed = threadPoolExecutor.getCompletedTaskCount();
             log.info("'{}' active thread worker: {}, completed task: {}, remaining task: {}",
                     nameTag,

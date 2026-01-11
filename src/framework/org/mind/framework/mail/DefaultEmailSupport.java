@@ -33,34 +33,30 @@ public class DefaultEmailSupport extends MailAbstract {
 
     @Override
     public String loadContent(MailType mailType) throws Exception {
-
         switch (mailType) {
-            case HTML:
-                if (logger.isDebugEnabled())
-                    logger.debug("Loading email template...");
+            case HTML -> {
+                logger.debug("Loading email template...");
 
                 if (Objects.isNull(this.velocityEngine)) {
                     this.velocityEngine = ContextSupport.getBean("velocityEngine");
                     if (Objects.isNull(this.velocityEngine))
                         throw new NotSupportedException("VelocityEngine spring bean is not defined");
                 }
-
                 return
                         VelocityEngineUtils.mergeTemplateIntoString(
                                 (org.apache.velocity.app.VelocityEngine) velocityEngine,
                                 templateName,
                                 defaultCharset,
                                 (Map<String, Object>) this.getModel());
-            case TEXT:
-                if (logger.isDebugEnabled())
-                    logger.debug("Loading email text planning...");
-
+            }
+            case TEXT -> {
+                logger.debug("Loading email text planning...");
                 return (String) this.getModel();
-            default:
-                break;
+            }
+            default -> {
+                return StringUtils.EMPTY;
+            }
         }
-
-        return StringUtils.EMPTY;
     }
 
     @Override

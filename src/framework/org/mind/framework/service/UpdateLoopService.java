@@ -46,8 +46,8 @@ public class UpdateLoopService extends LoopWorkerService {
             return;
 
         updaters.forEach(updater -> {
-            if (updater instanceof Destroyable)
-                ((Destroyable) updater).destroy();
+            if (updater instanceof Destroyable destroyable)
+                destroyable.destroy();
         });
         updaters.clear();
     }

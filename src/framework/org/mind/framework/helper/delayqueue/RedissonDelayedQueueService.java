@@ -132,8 +132,8 @@ public class RedissonDelayedQueueService {
             log.debug("Adding a delay task successfully, task type: {}, delay time: {} {}",
                     task.getClass().getSimpleName(), delay, timeUnit);
 
-            if (task instanceof AbstractTask)
-                this.rMapCache.fastPut(((AbstractTask) task).getTaskId(), task, delay, timeUnit);
+            if (task instanceof AbstractTask abstractTask)
+                this.rMapCache.fastPut(abstractTask.getTaskId(), task, delay, timeUnit);
 
             // 确保该队列有对应类型的消费者在运行
             ensureQueueListenerRunning();
@@ -179,8 +179,8 @@ public class RedissonDelayedQueueService {
 
         try {
             boolean result = delayedQueue.remove(task);
-            if (result && task instanceof AbstractTask)
-                this.rMapCache.fastRemove(((AbstractTask) task).getTaskId());
+            if (result && task instanceof AbstractTask abstractTask)
+                this.rMapCache.fastRemove(abstractTask.getTaskId());
 
             log.info("Delete delay-queue tasks: [{}], task: {}", result ? "OK" : "Failed", task);
             return result;
@@ -304,8 +304,8 @@ public class RedissonDelayedQueueService {
                 String taskId = null;
 
                 // 尝试task id匹配
-                if (task instanceof AbstractTask) {
-                    taskId = ((AbstractTask) task).getTaskId();
+                if (task instanceof AbstractTask abstractTask) {
+                    taskId = abstractTask.getTaskId();
                     consumer = consumers.get(taskId);
                 }
 

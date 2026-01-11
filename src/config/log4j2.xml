@@ -3,36 +3,20 @@
     <properties>
         <property name="logPath" value="logs"/>
         <property name="logFile" value="webmind.log"/>
-        <property name="logErrFile" value="webmind-error.log"/>
-
         <property name="log.project" value="org.mind.framework"/>
         <property name="log.project.level" value="debug"/>
-
-        <property name="logPattern" value="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] %c{0}.%M(%L) - %m%n%ex"/>
     </properties>
 
     <Appenders>
         <!-- 控制台输出 -->
-        <Console name="Console" target="SYSTEM_OUT"><PatternLayout pattern="${logPattern}"/></Console>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] %c{0}.%M(%L) - %m%n%ex"/>
+        </Console>
 
-        <!-- info 日志轮换 -->
+        <!-- 日志轮换 -->
         <!-- AsyncAppender or AsyncLogger will auto-flush in batches, so switch off immediateFlush. -->
-        <RollingFile name="InfoRollingFile" fileName="${logPath}/${logFile}" filePattern="${logPath}/${logFile}.%i.%d{yyyy-MM-dd}">
-            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="${logPattern}"/>
-            <Policies>
-                <!-- 根据filePattern日期轮换 -->
-                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
-                <!-- 根据文件大小轮换 -->
-                <SizeBasedTriggeringPolicy size="5MB"/>
-            </Policies>
-        </RollingFile>
-
-        <!-- warn+ 日志轮换 -->
-        <!-- AsyncAppender or AsyncLogger will auto-flush in batches, so switch off immediateFlush. -->
-        <RollingFile name="WarnRollingFile" fileName="${logPath}/${logErrFile}" filePattern="${logPath}/${logErrFile}.%i.%d{yyyy-MM-dd}">
-            <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="${logPattern}"/>
+        <RollingFile name="RollingFile" fileName="${logPath}/${logFile}" filePattern="${logPath}/${logFile}.%i.%d{yyyy-MM-dd}">
+            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] %c{0}.%M(%L) - %m%n%ex"/>
             <Policies>
                 <!-- 根据filePattern日期轮换 -->
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
@@ -43,8 +27,7 @@
 
         <!-- 异步日志输出 -->
         <Async name="Async" includeLocation="true">
-            <AppenderRef ref="InfoRollingFile"/>
-            <AppenderRef ref="WarnRollingFile"/>
+            <AppenderRef ref="RollingFile"/>
             <AppenderRef ref="Console"/>
         </Async>
     </Appenders>
