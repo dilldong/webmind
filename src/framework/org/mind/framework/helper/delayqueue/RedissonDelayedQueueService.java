@@ -220,7 +220,7 @@ public class RedissonDelayedQueueService {
     public <T> void registerConsumer(DelayTask<T> task, Consumer<DelayTask<T>> consumer, boolean... onlyTaskId) {
         synchronized (queueConsumerMap) {
             Map<Object, Consumer<?>> consumers =
-                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>());
+                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
             boolean registTaskType = ArrayUtils.isEmpty(onlyTaskId) || !onlyTaskId[0];
             Class<?> clazz = task.getClass();
@@ -247,7 +247,7 @@ public class RedissonDelayedQueueService {
     public <T> void registerConsumer(Class<T> taskType, Consumer<T> consumer) {
         synchronized (queueConsumerMap) {
             Map<Object, Consumer<?>> consumers =
-                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>());
+                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
             if (consumers.containsKey(taskType))
                 log.warn("Warn: Type overridden, task type{}", taskType.getSimpleName());

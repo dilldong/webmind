@@ -13,6 +13,7 @@ public class DecoderException extends IllegalStateException {
         this.cause = var2;
     }
 
+    @Override
     public Throwable getCause() {
         return this.cause;
     }

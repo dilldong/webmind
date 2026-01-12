@@ -192,7 +192,7 @@ public class WebServerConfig {
             return this;
 
         mimeMapping = Collections.unmodifiableMap(
-                new HashMap<String, String>() {{
+                new HashMap<String, String>(34) {{
                     put("css", "text/css; charset=UTF-8");
                     put("js", "text/javascript; charset=UTF-8");
 

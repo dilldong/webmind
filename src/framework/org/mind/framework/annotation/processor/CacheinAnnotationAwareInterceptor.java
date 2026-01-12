@@ -48,7 +48,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         Object target = invocation.getThis();
         Map<Method, MethodInterceptor> cachedMethods = this.delegates.get(target);
         if (Objects.isNull(cachedMethods)) {
-            cachedMethods = new ConcurrentHashMap<>();
+            cachedMethods = new ConcurrentHashMap<>(16);
             this.delegates.putIfAbsent(target, cachedMethods);
         }
 

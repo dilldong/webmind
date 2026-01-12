@@ -88,16 +88,19 @@ public class BaseException extends Exception {
         return sw.toString();
     }
 
+    @Override
     public void printStackTrace(PrintStream out) {
         out.println(backStacks);
         super.printStackTrace(out);
     }
 
+    @Override
     public void printStackTrace(PrintWriter out) {
         out.println(backStacks);
         super.printStackTrace(out);
     }
 
+    @Override
     public void printStackTrace() {
         printStackTrace(System.err);
     }

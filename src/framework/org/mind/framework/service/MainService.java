@@ -56,11 +56,13 @@ public class MainService extends AbstractService {
         );
     }
 
+    @Override
     public final void start() {
         startChildServices();
         serviceState = STARTED;
     }
 
+    @Override
     public final void stop() {
         stopChildServices();
         serviceState = STOPPED;

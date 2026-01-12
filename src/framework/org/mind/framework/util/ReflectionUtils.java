@@ -395,7 +395,7 @@ public abstract class ReflectionUtils {
      * @see java.lang.Object#equals
      */
     public static boolean isEqualsMethod(Method method) {
-        if (method == null || !method.getName().equals("equals")) {
+        if (method == null || !"equals".equals(method.getName())) {
             return false;
         }
         Class<?>[] paramTypes = method.getParameterTypes();
@@ -408,7 +408,7 @@ public abstract class ReflectionUtils {
      * @see java.lang.Object#hashCode
      */
     public static boolean isHashCodeMethod(Method method) {
-        return (method != null && method.getName().equals("hashCode") &&
+        return (method != null && "hashCode".equals(method.getName()) &&
                 method.getParameterTypes().length == 0);
     }
 
@@ -418,7 +418,7 @@ public abstract class ReflectionUtils {
      * @see java.lang.Object#toString()
      */
     public static boolean isToStringMethod(Method method) {
-        return (method != null && method.getName().equals("toString") &&
+        return (method != null && "toString".equals(method.getName()) &&
                 method.getParameterTypes().length == 0);
     }
 

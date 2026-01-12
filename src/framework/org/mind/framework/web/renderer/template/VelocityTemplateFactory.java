@@ -12,6 +12,7 @@ import javax.servlet.ServletContext;
  */
 public class VelocityTemplateFactory extends TemplateFactory {
 
+    @Override
     public Template loadTemplate(String path) {
         if(log.isDebugEnabled())
             log.debug("Load velocity template '{}'", path);
@@ -20,6 +21,7 @@ public class VelocityTemplateFactory extends TemplateFactory {
                 ContextSupport.getBean("velocityEngine", VelocityEngine.class).getTemplate(path));
     }
 
+    @Override
     public void init(ServletContext context) {
         if (log.isDebugEnabled())
             log.debug("VelocityTemplateFactory init success.");

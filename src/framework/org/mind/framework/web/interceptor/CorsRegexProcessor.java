@@ -24,7 +24,7 @@ public class CorsRegexProcessor extends DefaultCorsProcessor {
 
         for (String allowedOrigin : config.getAllowedOrigins()) {
             if (CorsConfiguration.ALL.equals(allowedOrigin)) {
-                if (config.getAllowCredentials() != Boolean.TRUE)
+                if (!Boolean.TRUE.equals(config.getAllowCredentials()))
                     return CorsConfiguration.ALL;
                 return requestOrigin;
             }
