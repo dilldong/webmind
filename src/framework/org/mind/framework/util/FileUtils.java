@@ -192,7 +192,7 @@ public class FileUtils {
                             log.warn("File lock not acquired and await disabled: {}", filePath);
                             return 0L;
                         }
-                        log.debug("File is locked, waiting....");
+                        log.debug("File is locked, waiting ...");
                     } else {
                         return writtenString(channel, content);
                     }

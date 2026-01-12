@@ -422,8 +422,8 @@ public class LightweightQueueService {
         QueueStats stats = getStatisticState();
         log.info(String.format(
                 "Queue Stats - Size: %d, Consumers: %d, Processed: %d, Failed: %d, Avg: %.2fms",
-                stats.getQueueSize(), stats.getActiveConsumers(), stats.getTotalProcessed(),
-                stats.getTotalFailed(), stats.getAverageProcessingTime()
+                stats.queueSize(), stats.activeConsumers(), stats.totalProcessed(),
+                stats.totalFailed(), stats.averageProcessingTime()
         ));
     }
 

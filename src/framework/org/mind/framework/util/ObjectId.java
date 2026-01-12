@@ -140,7 +140,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
      * three. This major release of the Java driver conforms to the specification, but still supports clients that are relying on the
      * behavior of the previous major release by providing this explicit factory method that takes three parameters instead of four.</p>
      *
-     * <p>Ordinary users of the driver will not need this method.  It's only for those that have written there own BSON decoders.</p>
+     * <p>Ordinary users of the driver will not need this method.  It's only for those that have written their own BSON decoders.</p>
      *
      * <p>NOTE: This will not break any application that use ObjectIds.  The 12-byte representation will be round-trippable from old to new
      * driver releases.</p>

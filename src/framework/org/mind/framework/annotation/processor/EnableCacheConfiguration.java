@@ -1,6 +1,7 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
@@ -187,31 +188,25 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Class<?> clazz) {
+        public boolean matches(@NotNull Class<?> clazz) {
             return super.matches(clazz) || this.methodResolver.hasAnnotatedMethods(clazz);
         }
     }
 
-    private static class AnnotationMethodsResolver {
-        private final Class<? extends Annotation> annotationType;
-
-        public AnnotationMethodsResolver(Class<? extends Annotation> annotationType) {
-            this.annotationType = annotationType;
-        }
-
+    private record AnnotationMethodsResolver(Class<? extends Annotation> annotationType) {
         public boolean hasAnnotatedMethods(Class<?> clazz) {
-            final AtomicBoolean found = new AtomicBoolean(false);
-            ReflectionUtils.doWithMethods(clazz, method -> {
-                if (found.get())
-                    return;
+                final AtomicBoolean found = new AtomicBoolean(false);
+                ReflectionUtils.doWithMethods(clazz, method -> {
+                    if (found.get())
+                        return;
 
-                Annotation annotation = AnnotationUtils.findAnnotation(
-                        method,
-                        AnnotationMethodsResolver.this.annotationType);
-                if (Objects.nonNull(annotation))
-                    found.set(true);
-            });
-            return found.get();
+                    Annotation annotation = AnnotationUtils.findAnnotation(
+                            method,
+                            AnnotationMethodsResolver.this.annotationType);
+                    if (Objects.nonNull(annotation))
+                        found.set(true);
+                });
+                return found.get();
+            }
         }
-    }
 }

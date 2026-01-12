@@ -76,6 +76,8 @@
                     <target>17</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
+                        <!--Java17需要添加patterns in switch statements预览功能，默认禁用 -->
+                        <arg>--enable-preview</arg>
                         <arg>-Xlint:unchecked</arg>
                         <arg>-Xlint:deprecation</arg>
                     </compilerArgs>

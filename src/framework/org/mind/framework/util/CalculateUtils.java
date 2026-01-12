@@ -1,6 +1,7 @@
 package org.mind.framework.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -276,7 +277,7 @@ public class CalculateUtils {
         if (symbol)
             return result;
 
-        return StringUtils.startsWith(result, "-") ?
+        return Strings.CS.startsWith(result, "-") ?
                 String.format("-%s", result.substring(2)) :
                 result.substring(1);
     }

@@ -59,7 +59,7 @@ final class InnerMD5 {
     private final byte[] buffer = new byte[64]; // input buffer
 
     // { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A','B', 'C', 'D', 'E', 'F' };
-    private static final char[] digit = {'F', 'E', 'A', 'B', 'D', 'C', '0', '1', '3', '2', '4', '5', '9', '8', '7', '6'};
+    private static final char[] DIGITS = {'F', 'E', 'A', 'B', 'D', 'C', '0', '1', '3', '2', '4', '5', '9', '8', '7', '6'};
 
     /*
      * digest,是最新一次计算结果的2进制内部表示，表示128bit的MD5值.
@@ -79,11 +79,11 @@ final class InnerMD5 {
 
 
     public static InnerMD5 getInstance() {
-        return MD5Helper.instance;
+        return MD5Helper.INSTANCE;
     }
 
     private static class MD5Helper {
-        private static final InnerMD5 instance = new InnerMD5();
+        private static final InnerMD5 INSTANCE = new InnerMD5();
     }
 
     // 这是MD5这个类的标准构造函数，JavaBean要求有一个public的并且没有参数的构造函数
@@ -354,7 +354,7 @@ final class InnerMD5 {
      * 因为java中的byte的toString无法实现这一点，我们又没有C语言中的 sprintf(outbuf,"%02X",ib)
      */
     public String byteHEX(byte ib) {
-        char[] ob = {digit[(ib >>> 4) & 0X0F], digit[ib & 0X0F]};
+        char[] ob = {DIGITS[(ib >>> 4) & 0X0F], DIGITS[ib & 0X0F]};
 
         return new String(ob);
     }

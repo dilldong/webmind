@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.IOUtils;
@@ -56,8 +57,7 @@ public class ResourceHandlerRequest implements ResourceRequest {
 
         // load web application static resource strs.
         this.resStr = config.getInitParameter("resource");
-        if (log.isDebugEnabled())
-            log.debug("resource suffix: {}", resStr);
+        log.debug("resource suffix: {}", resStr);
 
         String expSec = config.getInitParameter("expires");
         if (StringUtils.isEmpty(expSec)) {
@@ -105,10 +105,9 @@ public class ResourceHandlerRequest implements ResourceRequest {
                              HttpServletRequest request,
                              HttpServletResponse response) throws IOException, ServletException {
         String uri = (String) result;
-        if (log.isDebugEnabled())
-            log.debug("Access resource: {}", uri);
+        log.debug("Access resource: {}", uri);
 
-        boolean forbidden = StringUtils.startsWithAny(uri.toUpperCase(), FORBIDDEN_DIR);
+        boolean forbidden = Strings.CS.startsWithAny(uri.toUpperCase(), FORBIDDEN_DIR);
 
         if (forbidden) {
             log.warn("[{}]{} - Forbidden access.", HttpServletResponse.SC_FORBIDDEN, uri);

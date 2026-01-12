@@ -23,6 +23,7 @@ import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.apache.coyote.http2.Http2Protocol;
 import org.apache.tomcat.util.descriptor.web.ErrorPage;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.exception.WebServerException;
@@ -32,7 +33,7 @@ import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.container.spring.WebContextLoadListener;
 import org.mind.framework.web.dispatcher.DispatcherServlet;
-import org.mind.framework.web.server.ServerContext;
+import org.mind.framework.web.server.AbstractServerContext;
 import org.mind.framework.web.server.WebServerConfig;
 import org.mind.framework.web.server.XmlLoad4SpringContext;
 import org.mind.framework.web.server.tomcat.monitor.MonitoringValve;
@@ -86,8 +87,7 @@ public class TomcatServer extends Tomcat {
 
         // by web.xml
         if (StringUtils.isNotEmpty(serverConfig.getWebXml())) {
-            if (log.isDebugEnabled())
-                log.debug("Load Web-Server config: [{}]", serverConfig.getWebXml());
+            log.debug("Load Web-Server config: [{}]", serverConfig.getWebXml());
 
             ctx.addLifecycleListener(super.getDefaultWebXmlListener());
             LifecycleListener config = this.getContextListener(host);
@@ -96,8 +96,7 @@ public class TomcatServer extends Tomcat {
             if (config instanceof ContextConfig contextConfig)
                 contextConfig.setDefaultWebXml(new File(serverConfig.getWebXml()).getAbsolutePath());
         } else {
-            if (log.isDebugEnabled())
-                log.debug("Creation default servlet: [{}]", DispatcherServlet.class.getName());
+            log.debug("Creation default servlet: [{}]", DispatcherServlet.class.getName());
 
             // Allow parsing multipartform-data in non-POST requests
             ctx.setAllowCasualMultipartParsing(true);
@@ -147,17 +146,7 @@ public class TomcatServer extends Tomcat {
     }
 
     protected Connector getNioConnector() {
-        Connector connector;
-        if ("nio2".equalsIgnoreCase(serverConfig.getNioMode()))
-            connector = new Connector("org.apache.coyote.http11.Http11Nio2Protocol");
-        else
-            connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-
-        connector.setUseBodyEncodingForURI(true);
-        connector.setThrowOnFailure(true);
-        connector.setMaxParameterCount(serverConfig.getMaxParameterCount());
-        connector.setMaxPostSize(serverConfig.getMaxPostSize());
-
+        Connector connector = this.newConnector();
         AbstractHttp11Protocol<?> nioProtocol = (AbstractHttp11Protocol<?>) connector.getProtocolHandler();
         nioProtocol.setPort(Math.max(serverConfig.getPort(), 0));
 
@@ -193,6 +182,19 @@ public class TomcatServer extends Tomcat {
         nioProtocol.setMaxConnections(serverConfig.getMaxConnections());
         nioProtocol.setMinSpareThreads(serverConfig.getMinSpareThreads());
         nioProtocol.setKeepAliveTimeout(15_000);//KeepAlive 连接空闲超时时间
+        return connector;
+    }
+
+    @NotNull
+    private Connector newConnector() {
+        Connector connector = "nio2".equalsIgnoreCase(serverConfig.getNioMode()) ?
+                new Connector("org.apache.coyote.http11.Http11Nio2Protocol") :
+                new Connector("org.apache.coyote.http11.Http11NioProtocol");
+
+        connector.setUseBodyEncodingForURI(true);
+        connector.setThrowOnFailure(true);
+        connector.setMaxParameterCount(serverConfig.getMaxParameterCount());
+        connector.setMaxPostSize(serverConfig.getMaxPostSize());
         return connector;
     }
 
@@ -301,8 +303,8 @@ public class TomcatServer extends Tomcat {
                     threadPoolExecutor.getMaximumPoolSize(),
                     threadPoolExecutor.getActiveCount(),
                     threadPoolExecutor.getQueue().size());
-                    //threadPoolExecutor.getCompletedTaskCount()
-                    //threadPoolExecutor.getTaskCount()
+            //threadPoolExecutor.getCompletedTaskCount()
+            //threadPoolExecutor.getTaskCount()
             return;
         }
         log.info("Server Monitor: {}/{}", currentCount, maxConnections);
@@ -330,8 +332,7 @@ public class TomcatServer extends Tomcat {
         } catch (LifecycleException ignored) {
         }
 
-        if (log.isDebugEnabled())
-            log.debug("Delete tomcat temp directory ....");
+        log.debug("Delete tomcat temp directory ....");
 
         try {
             if (StringUtils.isNotEmpty(serverConfig.getTomcatBaseDir()))
@@ -345,7 +346,7 @@ public class TomcatServer extends Tomcat {
         ctx.addLifecycleListener(new Tomcat.FixContextListener());
         ctx.addLifecycleListener(getContextListener(host));
 
-        Wrapper wrapper = Tomcat.addServlet(ctx, ServerContext.SERVLET_NAME, new DispatcherServlet());
+        Wrapper wrapper = Tomcat.addServlet(ctx, AbstractServerContext.SERVLET_NAME, new DispatcherServlet());
 
         wrapper.addInitParameter("container", serverConfig.getContainerAware());
         if (StringUtils.isNotEmpty(serverConfig.getTemplateEngine()))
@@ -356,7 +357,7 @@ public class TomcatServer extends Tomcat {
         wrapper.setLoadOnStartup(1);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
-        ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, ServerContext.SERVLET_NAME);
+        ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, AbstractServerContext.SERVLET_NAME);
 
         if (StringUtils.isNotEmpty(serverConfig.getTldSkipPatterns()))
             System.setProperty("tomcat.util.scan.StandardJarScanFilter.jarsToSkip", serverConfig.getTldSkipPatterns());

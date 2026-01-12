@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 根据任务负载动态调整线程池参数
  *
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2025/5/26
  */
 @Slf4j
@@ -153,11 +153,9 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
         if (interval > 0)
             TimeUnit.SECONDS.sleep(interval);
 
-        log.info(
-                String.format("Dynamic ThreadPool - Core: %d, Max: %d, Active: %d, Size: %d, Completed: %d, Total: %d",
-                        getCorePoolSize(), getMaximumPoolSize(), getActiveCount(),
-                        getQueue().size(), getCompletedTaskCount(), getTaskCount()
-                )
+        log.info("Dynamic ThreadPool - Core: {}, Max: {}, Active: {}, Size: {}, Completed: {}, Total: {}",
+                getCorePoolSize(), getMaximumPoolSize(), getActiveCount(),
+                getQueue().size(), getCompletedTaskCount(), getTaskCount()
         );
     }
 }

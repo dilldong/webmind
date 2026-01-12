@@ -205,8 +205,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                 // Interceptor doBefore
                 // return false, Return to the request page
                 if (!interceptor.doBefore(processedRequest, response)) {
-                    if (log.isDebugEnabled())
-                        log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
+                    log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
                     return;
                 }
 
@@ -390,8 +389,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) multipartRequest);
             request.removeAttribute(CHECK_MULTIPART);
 
-            if (log.isDebugEnabled())
-                log.debug("Cleanup Multipart....");
+            log.debug("Cleanup Multipart....");
         }
     }
 

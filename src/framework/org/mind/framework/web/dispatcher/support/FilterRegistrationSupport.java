@@ -31,6 +31,7 @@ public class FilterRegistrationSupport implements EventRegistration {
 
     private final WebApplicationContext applicationContext;
 
+    @Override
     public void registration(ServletContext servletContext, StandardContext standardContext) throws ServletException {
         Map<String, HandlerFilter> filterOfType = applicationContext.getBeansOfType(HandlerFilter.class);
         if (filterOfType.isEmpty())

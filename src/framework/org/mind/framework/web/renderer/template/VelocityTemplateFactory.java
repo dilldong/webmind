@@ -11,16 +11,16 @@ import org.mind.framework.ContextSupport;
  */
 public class VelocityTemplateFactory extends TemplateFactory {
 
+    @Override
     public Template loadTemplate(String path) {
-        if(log.isDebugEnabled())
-            log.debug("Load velocity template '{}'", path);
+        log.debug("Load velocity template '{}'", path);
 
         return new VelocityTemplate(
                 ContextSupport.getBean("velocityEngine", VelocityEngine.class).getTemplate(path));
     }
 
+    @Override
     public void init(ServletContext context) {
-        if (log.isDebugEnabled())
-            log.debug("VelocityTemplateFactory init success.");
+        log.debug("VelocityTemplateFactory init success.");
     }
 }

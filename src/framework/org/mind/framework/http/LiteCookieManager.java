@@ -75,7 +75,7 @@ public class LiteCookieManager implements Destroyable {
             domainStore = store.get(domain);
         } else {
             // we don't, so let's create it and put it in the store
-            domainStore = new HashMap<>();
+            domainStore = new HashMap<>(16);
             store.put(domain, domainStore);
         }
 
@@ -84,7 +84,7 @@ public class LiteCookieManager implements Destroyable {
         String headerName;
         for (int i = 1; (headerName = conn.getHeaderFieldKey(i)) != null; ++i) {
             if (headerName.equalsIgnoreCase(HttpHeaders.SET_COOKIE)) {
-                Map<String, String> cookie = new HashMap<>();
+                Map<String, String> cookie = new HashMap<>(16);
                 StringTokenizer st = new StringTokenizer(
                         conn.getHeaderField(i), COOKIE_VALUE_DELIMITER);
 
@@ -218,6 +218,7 @@ public class LiteCookieManager implements Destroyable {
      * Returns a string representation of stored cookies organized by domain.
      */
 
+    @Override
     public String toString() {
         return store.toString();
     }

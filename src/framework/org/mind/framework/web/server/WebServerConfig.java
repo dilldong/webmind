@@ -13,8 +13,6 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -176,8 +174,8 @@ public class WebServerConfig {
         }
     }
 
-    public InetAddress getBindAddress(){
-        if(StringUtils.isEmpty(this.bindAddress))
+    public InetAddress getBindAddress() {
+        if (StringUtils.isEmpty(this.bindAddress))
             return null;
 
         try {
@@ -188,53 +186,45 @@ public class WebServerConfig {
     }
 
     protected WebServerConfig initMimeMapping() {
-        if(!(Objects.isNull(mimeMapping) || mimeMapping.isEmpty()))
+        if (!(Objects.isNull(mimeMapping) || mimeMapping.isEmpty()))
             return this;
 
-        mimeMapping = Collections.unmodifiableMap(
-                new HashMap<String, String>() {{
-                    put("css", "text/css; charset=UTF-8");
-                    put("js", "text/javascript; charset=UTF-8");
-
-                    put("png", "image/png");
-                    put("jpg", "image/jpeg");
-                    put("jpeg", "image/jpeg");
-                    put("webp", "image/webp");
-                    put("svg", "image/svg+xml");
-                    put("ico", "image/vnd.microsoft.icon");
-                    put("gif", "image/gif");
-
-                    put("mov", "video/quicktime");
-                    put("mp3", "audio/mpeg");
-                    put("aac", "audio/aac");
-                    put("avi", "video/x-msvideo");
-                    put("mpeg", "video/mpeg");
-                    put("swf", "application/x-shockwave-flash");
-
-                    put("html", "text/html; charset=UTF-8");
-                    put("htm", "text/html; charset=UTF-8");
-
-                    put("rtf", "application/rtf");
-                    put("ttf", "font/ttf");
-                    put("tof", "font/tof");
-                    put("woff", "font/woff");
-                    put("woff2", "font/woff2");
-
-                    put("doc", "application/msword");
-                    put("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-                    put("ppt", "application/vnd.ms-powerpoint");
-                    put("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
-                    put("xls", "application/vnd.ms-excel");
-                    put("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-
-                    put("csv", "text/csv");
-                    put("pdf", "application/pdf");
-                    put("txt", "text/plain");
-                    put("xml", "text/xml");
-
-                    put("rar", "application/x-rar-compressed");
-                    put("zip", "application/zip");
-                }});
+        mimeMapping = Map.ofEntries(
+                Map.entry("css", "text/css; charset=UTF-8"),
+                Map.entry("js", "text/javascript; charset=UTF-8"),
+                Map.entry("png", "image/png"),
+                Map.entry("jpg", "image/jpeg"),
+                Map.entry("jpeg", "image/jpeg"),
+                Map.entry("webp", "image/webp"),
+                Map.entry("svg", "image/svg+xml"),
+                Map.entry("ico", "image/vnd.microsoft.icon"),
+                Map.entry("gif", "image/gif"),
+                Map.entry("mov", "video/quicktime"),
+                Map.entry("mp3", "audio/mpeg"),
+                Map.entry("aac", "audio/aac"),
+                Map.entry("avi", "video/x-msvideo"),
+                Map.entry("mpeg", "video/mpeg"),
+                Map.entry("swf", "application/x-shockwave-flash"),
+                Map.entry("html", "text/html; charset=UTF-8"),
+                Map.entry("htm", "text/html; charset=UTF-8"),
+                Map.entry("rtf", "application/rtf"),
+                Map.entry("ttf", "font/ttf"),
+                Map.entry("tof", "font/tof"),
+                Map.entry("woff", "font/woff"),
+                Map.entry("woff2", "font/woff2"),
+                Map.entry("doc", "application/msword"),
+                Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+                Map.entry("ppt", "application/vnd.ms-powerpoint"),
+                Map.entry("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
+                Map.entry("xls", "application/vnd.ms-excel"),
+                Map.entry("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                Map.entry("csv", "text/csv"),
+                Map.entry("pdf", "application/pdf"),
+                Map.entry("txt", "text/plain"),
+                Map.entry("xml", "text/xml"),
+                Map.entry("rar", "application/x-rar-compressed"),
+                Map.entry("zip", "application/zip")
+        );
         return this;
     }
 }

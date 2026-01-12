@@ -2,7 +2,6 @@ package org.mind.framework.http.okhttp3;
 
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.CipherSuite;
 import okhttp3.ConnectionSpec;
 import okhttp3.Dispatcher;
 import okhttp3.Headers;
@@ -21,7 +20,6 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.server.GracefulShutdown;
-import org.mind.framework.web.server.ShutDownSignalStatus;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.HttpHeaders;
 import retrofit2.Call;
@@ -35,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.SynchronousQueue;
@@ -60,52 +57,13 @@ public class OkHttpFactory {
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
 
     /**
-     * 默认支持的密码套件列表
-     * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
-     */
-    private static final CipherSuite[] DEFAULT_CIPHER_SUITES =
-            new CipherSuite[]{
-                    // 现代安全的密码套件
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-
-                    // 为了兼容性保留的密码套件（不推荐用于生产环境）
-                    // Note that the following cipher suites are all on HTTP/2's bad cipher suites list.
-                    // We'll
-                    // continue to include them until better suites are commonly available. For example,
-                    // none
-                    // of the better cipher suites listed above shipped with Android 4.4 or Java 7.
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-                    CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-                    CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-                    CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-
-                    // Additional CipherSuites
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-                    CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256
-            };
-
-    private static final ConnectionSpec DEFAULT_CIPHER_SUITE_SPEC =
-            new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                    .cipherSuites(DEFAULT_CIPHER_SUITES)
-                    .build();
-
-    /**
      * The list of {@link ConnectionSpec} instances used by the connection.
      */
     private static final List<ConnectionSpec> CONNECTION_SPEC_LIST =
-            Arrays.asList(DEFAULT_CIPHER_SUITE_SPEC, ConnectionSpec.CLEARTEXT);
+            List.of(
+                    new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build(),
+                    ConnectionSpec.CLEARTEXT
+            );
 
     static {
         log.info("Init OkHttpClient ....");
@@ -357,11 +315,13 @@ public class OkHttpFactory {
 
         shutdown.awaitTime(15L, TimeUnit.SECONDS)
                 .registerShutdownHook(signal -> {
-                    if (signal == ShutDownSignalStatus.IN) {
-                        log.info("Cancel OkHttpClient connections ....");
-                        HTTP_CLIENT.dispatcher().cancelAll();
-                    } else if (signal == ShutDownSignalStatus.OUT)
-                        CONTENT_LENGTH_LOCAL.remove();
+                    switch (signal){
+                        case IN -> {
+                            log.info("Cancel OkHttpClient connections ....");
+                            HTTP_CLIENT.dispatcher().cancelAll();
+                        }
+                        case OUT -> CONTENT_LENGTH_LOCAL.remove();
+                    }
                 });
     }
 

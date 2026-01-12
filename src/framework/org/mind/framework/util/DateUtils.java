@@ -49,19 +49,18 @@ public class DateUtils {
     public static class CachedTime {
         private static volatile long currentTimeMillis = System.currentTimeMillis();
         private static final long PERIOD = WebServerConfig.INSTANCE.getUpdatePeriod();
-        private static final ScheduledExecutorService scheduler =
+        private static final ScheduledExecutorService SCHEDULED_EXECUTOR =
                 Executors.newSingleThreadScheduledExecutor(
                         ExecutorFactory.newThreadFactory("mind-time-", false));
 
         static {
-            if(log.isDebugEnabled())
-                log.debug("Timestamp update interval: {}ms", PERIOD);
+            log.debug("Timestamp update interval: {}ms", PERIOD);
 
             // Start a scheduled update currentTimeMillis
-            scheduler.scheduleAtFixedRate(() ->
+            SCHEDULED_EXECUTOR.scheduleAtFixedRate(() ->
                     currentTimeMillis = System.currentTimeMillis(), 0, PERIOD, TimeUnit.MILLISECONDS);
 
-            GracefulShutdown.newShutdown("UpdateTime-Graceful", scheduler)
+            GracefulShutdown.newShutdown("UpdateTime-Graceful", SCHEDULED_EXECUTOR)
                     .awaitTime(5, TimeUnit.SECONDS)
                     .registerShutdownHook();
         }
@@ -74,12 +73,12 @@ public class DateUtils {
         // Stop timestamp updates
         public static void stopping() {
             try {
-                scheduler.shutdown();
-                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS))
-                    scheduler.shutdownNow();
+                SCHEDULED_EXECUTOR.shutdown();
+                if (!SCHEDULED_EXECUTOR.awaitTermination(5, TimeUnit.SECONDS))
+                    SCHEDULED_EXECUTOR.shutdownNow();
             } catch (InterruptedException | IllegalStateException e) {
                 Thread.currentThread().interrupt();
-                scheduler.shutdownNow();
+                SCHEDULED_EXECUTOR.shutdownNow();
             }
         }
     }

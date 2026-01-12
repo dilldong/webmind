@@ -22,7 +22,6 @@ import org.redisson.api.RMap;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RSet;
-import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
@@ -870,7 +869,7 @@ public class RedissonHelper {
         RRateLimiter rLimiter = getClient().getRateLimiter(RATE_LIMITED_PREFIX + name);
         rLimiter.isExistsAsync().whenComplete((exists, ex) -> {
             if (!exists)
-                rLimiter.trySetRate(RateType.OVERALL, rate, intervalSeconds, RateIntervalUnit.SECONDS);
+                rLimiter.trySetRate(RateType.OVERALL, rate, Duration.ofSeconds(intervalSeconds));
         });
         return rLimiter;
     }

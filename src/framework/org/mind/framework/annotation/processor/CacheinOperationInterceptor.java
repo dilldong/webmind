@@ -1,7 +1,5 @@
 package org.mind.framework.annotation.processor;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -98,18 +96,18 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         TypeMatchResult typeMatch = getNullTypeValue(redisType);
 
         ResolveResult cacheResult = resolveCacheValue(
-                typeMatch.getNullMarker(),
+                typeMatch.nullMarker(),
                 () -> helper.getWithLock(resolverKey),// 用于验证是否为NULL marker
                 () -> typeMatch.loadReids(resolverKey),
                 typeMatch.getEmptyValue()
         );
 
         // penetration=false时，允许返回空值
-        if (cacheResult.isShouldShortCircuit())
-            return cacheResult.getResult();
+        if (cacheResult.shouldShortCircuit())
+            return cacheResult.result();
 
-        if (!isEmpty(cacheResult.getResult()))
-            return cacheResult.getResult();
+        if (!isEmpty(cacheResult.result()))
+            return cacheResult.result();
 
         // invoke orig method
         Object result = this.callback(invocation);
@@ -281,12 +279,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         };
     }
 
-    @AllArgsConstructor
-    private static class TypeMatchResult {
-        private final Class<?> matchedClass;
-        @Getter
-        private final String nullMarker;
-
+    private record TypeMatchResult(Class<?> matchedClass, String nullMarker) {
         public Object loadReids(String name) {
             RedissonHelper helper = RedissonHelper.getInstance();
             try {
@@ -331,13 +324,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         public boolean isSetType() {
             return RedissonHelper.EMPTY_SET_MARKER.equals(nullMarker);
         }
-
     }
 
-    @Getter
-    @AllArgsConstructor
-    public static class ResolveResult {
-        private final Object result;
-        private final boolean shouldShortCircuit;
-    }
+    public record ResolveResult(Object result, boolean shouldShortCircuit) {}
 }

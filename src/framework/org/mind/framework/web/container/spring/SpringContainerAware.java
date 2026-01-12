@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
@@ -63,9 +64,9 @@ public class SpringContainerAware implements ContainerAware {
         String[] names = ContextSupport.getBeanNames();
         //get defined name by spring
         List<String> beanNames = (ArrayUtils.isEmpty(excludeSpringSelf) || !excludeSpringSelf[0]) ?
-                Arrays.asList(names) :
+                List.of(names) :
                 Arrays.stream(names)
-                        .filter(name -> !StringUtils.startsWith(name, "org.springframework"))
+                        .filter(name -> !Strings.CS.startsWith(name, "org.springframework"))
                         .toList();
 
         List<Object> beans = new ArrayList<>(beanNames.size());

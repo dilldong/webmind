@@ -19,7 +19,7 @@ import java.util.Properties;
  *
  * @author dp
  */
-public abstract class PropertiesUtils {
+public class PropertiesUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertiesUtils.class);
 

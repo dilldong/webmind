@@ -5,7 +5,6 @@ import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.EnableCache;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +31,7 @@ public class TestServiceImpl implements TestService {
     public List<Object> get(String vars, long userId){
         log.debug("--------------执行方法: get");
 //        return Collections.emptyList();
-        return Arrays.asList(234L, 32, 32);
+        return List.of(234L, 32, 32);
     }
 
 

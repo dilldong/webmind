@@ -12,6 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
+/**
+ * Web Page container
+ * @author Marcus
+ */
 public final class WebContainerGenerator {
     private static final Logger log = LoggerFactory.getLogger(WebContainerGenerator.class);
 
@@ -60,8 +64,7 @@ public final class WebContainerGenerator {
         String templateName = config.getInitParameter("template");
         if (StringUtils.isEmpty(templateName) || "JspTemplate".equalsIgnoreCase(templateName)) {
             templateName = JspTemplateFactory.class.getName();
-            if(log.isDebugEnabled())
-                log.debug("Default template factory to '{}'.", templateName);
+            log.debug("Default template factory to '{}'.", templateName);
         }
 
         Object obj = null;

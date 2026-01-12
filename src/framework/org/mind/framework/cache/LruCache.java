@@ -1,6 +1,6 @@
 package org.mind.framework.cache;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateUtils;
 import org.slf4j.Logger;
@@ -60,7 +60,7 @@ public class LruCache extends AbstractCache implements Cacheable {
             @Override
             protected boolean removeEldestEntry(Entry<String, CacheElement> eldest) {
                 boolean tooBig = this.size() > LruCache.this.capacity;
-                if (tooBig && log.isDebugEnabled())
+                if (tooBig)
                     log.debug("Remove the last entry key: {}", eldest.getKey());
                 return tooBig;
             }
@@ -114,8 +114,7 @@ public class LruCache extends AbstractCache implements Cacheable {
             if (check)
                 return this.replace(key, element);
 
-            if (log.isDebugEnabled())
-                log.debug("The Cache key already exists.");
+            log.debug("The Cache key already exists.");
             return this;
         }
 
@@ -144,8 +143,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 
         if (interval > 0 && (DateUtils.CachedTime.currentMillis() - element.getFirstTime()) > interval) {
             this.removeCache(key);
-            if (log.isDebugEnabled())
-                log.debug("Remove Cache key, The access time interval expires. key = {}", key);
+            log.debug("Remove Cache key, The access time interval expires. key = {}", key);
             return null;
         }
 
@@ -200,15 +198,15 @@ public class LruCache extends AbstractCache implements Cacheable {
 
         while (iterator.hasNext()) {
             Map.Entry<String, CacheElement> entry = iterator.next();
-            if (StringUtils.containsIgnoreCase(entry.getKey(), searchStr)) {
+            if (Strings.CI.contains(entry.getKey(), searchStr)) {
                 // Exclude
                 if (excludes != null && excludes.length > 0) {
                     // true: continue find, false: for delete
                     exclude = false;
                     for (String exKey : excludes) {
                         exclude = Cacheable.CompareType.EQ_FULL == excludesRule ?
-                                StringUtils.equals(entry.getKey(), exKey) :
-                                StringUtils.contains(entry.getKey(), exKey);
+                                Strings.CS.equals(entry.getKey(), exKey) :
+                                Strings.CS.contains(entry.getKey(), exKey);
                         if (exclude)
                             break;
                     }

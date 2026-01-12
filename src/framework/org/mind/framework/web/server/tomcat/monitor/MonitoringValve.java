@@ -22,29 +22,29 @@ import java.util.concurrent.atomic.LongAdder;
 @Slf4j(topic = "ServerMonitor")
 public class MonitoringValve extends ValveBase {
     // 统计信息
-    private static final AtomicLong requestCount = new AtomicLong(0);
-    private static final AtomicLong errorCount = new AtomicLong(0);
-    private static final LongAdder totalResponseTime = new LongAdder();
-    private static final AtomicLong maxResponseTime = new AtomicLong(0);
-    private static final AtomicLong minResponseTime = new AtomicLong(Long.MAX_VALUE);
+    private static final AtomicLong REQUEST_COUNT = new AtomicLong(0);
+    private static final AtomicLong ERROR_COUNT = new AtomicLong(0);
+    private static final LongAdder TOTAL_RESPONSE_TIME = new LongAdder();
+    private static final AtomicLong MAX_RESPONSE_TIME = new AtomicLong(0);
+    private static final AtomicLong MIN_RESPONSE_TIME = new AtomicLong(Long.MAX_VALUE);
 
     // 状态码统计
-    private static final AtomicLong status2xx = new AtomicLong(0);
-    private static final AtomicLong status3xx = new AtomicLong(0);
-    private static final AtomicLong status4xx = new AtomicLong(0);
-    private static final AtomicLong status5xx = new AtomicLong(0);
+    private static final AtomicLong STATUS_2XX = new AtomicLong(0);
+    private static final AtomicLong STATUS_3XX = new AtomicLong(0);
+    private static final AtomicLong STATUS_4XX = new AtomicLong(0);
+    private static final AtomicLong STATUS_5XX = new AtomicLong(0);
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         long startTime = DateUtils.CachedTime.currentMillis();
-        long currentRequestId = requestCount.incrementAndGet();
+        long currentRequestId = REQUEST_COUNT.incrementAndGet();
 
         try {
             // 调用下一个Valve或Servlet
             getNext().invoke(request, response);
 
         } catch (IOException | ServletException | RuntimeException e) {
-            errorCount.incrementAndGet();
+            ERROR_COUNT.incrementAndGet();
             log.error("Request handle exception #{} - {}: {}", currentRequestId, e.getClass().getSimpleName(), e.getMessage());
             throw e;
         } finally {
@@ -61,29 +61,29 @@ public class MonitoringValve extends ValveBase {
      */
     private void updateStatistics(long responseTime, int status) {
         // 响应时间统计
-        totalResponseTime.add(responseTime);
+        TOTAL_RESPONSE_TIME.add(responseTime);
 
         // 更新最大响应时间
-        long currentMax = maxResponseTime.get();
-        while (responseTime > currentMax && !maxResponseTime.compareAndSet(currentMax, responseTime)) {
-            currentMax = maxResponseTime.get();
+        long currentMax = MAX_RESPONSE_TIME.get();
+        while (responseTime > currentMax && !MAX_RESPONSE_TIME.compareAndSet(currentMax, responseTime)) {
+            currentMax = MAX_RESPONSE_TIME.get();
         }
 
         // 更新最小响应时间
-        long currentMin = minResponseTime.get();
-        while (responseTime < currentMin && !minResponseTime.compareAndSet(currentMin, responseTime)) {
-            currentMin = minResponseTime.get();
+        long currentMin = MIN_RESPONSE_TIME.get();
+        while (responseTime < currentMin && !MIN_RESPONSE_TIME.compareAndSet(currentMin, responseTime)) {
+            currentMin = MIN_RESPONSE_TIME.get();
         }
 
         // 状态码统计
         if (status >= 200 && status < 300) {
-            status2xx.incrementAndGet();
+            STATUS_2XX.incrementAndGet();
         } else if (status >= 300 && status < 400) {
-            status3xx.incrementAndGet();
+            STATUS_3XX.incrementAndGet();
         } else if (status >= 400 && status < 500) {
-            status4xx.incrementAndGet();
+            STATUS_4XX.incrementAndGet();
         } else if (status >= 500) {
-            status5xx.incrementAndGet();
+            STATUS_5XX.incrementAndGet();
         }
     }
 
@@ -91,20 +91,20 @@ public class MonitoringValve extends ValveBase {
      * 获取统计信息摘要
      */
     public String getStatisticsSummary() {
-        long totalRequests = requestCount.get();
+        long totalRequests = REQUEST_COUNT.get();
         if (totalRequests == 0)
             return StringUtils.EMPTY;
 
-        long avgResponseTime = totalResponseTime.sum() / totalRequests;
-        double errorRate = (double) errorCount.get() / totalRequests * 100;
+        long avgResponseTime = TOTAL_RESPONSE_TIME.sum() / totalRequests;
+        double errorRate = (double) ERROR_COUNT.get() / totalRequests * 100;
 
         return String.format(
                 "Request Summary - Total: %d, Error: %d (%.2f%%), " +
                         "Response - avg: %dms, min: %dms, max: %dms, " +
                         "Status - 2xx: %d, 3xx: %d, 4xx: %d, 5xx: %d",
-                totalRequests, errorCount.get(), errorRate,
-                avgResponseTime, minResponseTime.get() == Long.MAX_VALUE ? 0 : minResponseTime.get(), maxResponseTime.get(),
-                status2xx.get(), status3xx.get(), status4xx.get(), status5xx.get()
+                totalRequests, ERROR_COUNT.get(), errorRate,
+                avgResponseTime, MIN_RESPONSE_TIME.get() == Long.MAX_VALUE ? 0 : MIN_RESPONSE_TIME.get(), MAX_RESPONSE_TIME.get(),
+                STATUS_2XX.get(), STATUS_3XX.get(), STATUS_4XX.get(), STATUS_5XX.get()
         );
     }
 
@@ -112,15 +112,15 @@ public class MonitoringValve extends ValveBase {
      * 重置统计信息
      */
     public void resetStatistics() {
-        requestCount.set(0);
-        errorCount.set(0);
-        totalResponseTime.reset();
-        maxResponseTime.set(0);
-        minResponseTime.set(Long.MAX_VALUE);
-        status2xx.set(0);
-        status3xx.set(0);
-        status4xx.set(0);
-        status5xx.set(0);
+        REQUEST_COUNT.set(0);
+        ERROR_COUNT.set(0);
+        TOTAL_RESPONSE_TIME.reset();
+        MAX_RESPONSE_TIME.set(0);
+        MIN_RESPONSE_TIME.set(Long.MAX_VALUE);
+        STATUS_2XX.set(0);
+        STATUS_3XX.set(0);
+        STATUS_4XX.set(0);
+        STATUS_5XX.set(0);
 
         log.info("Monitoring statistics have been reset");
     }

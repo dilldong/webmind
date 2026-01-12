@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class IdUtils {
     private static final Logger logger = LoggerFactory.getLogger(IdUtils.class);
 
-    private static final AtomicInteger atomicInteger = new AtomicInteger(0);
+    private static final AtomicInteger ATOMIC_INTEGER = new AtomicInteger(0);
 
     /**
      * 按当前日期(6位长度) + ObjectId的自增计数器(取后6位长度)
@@ -68,12 +68,12 @@ public class IdUtils {
             return String.join(StringUtils.EMPTY, String.valueOf(machine), String.valueOf(pid), String.valueOf(inc));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return String.valueOf(System.currentTimeMillis() + atomicInteger.incrementAndGet());
+            return String.valueOf(System.currentTimeMillis() + ATOMIC_INTEGER.incrementAndGet());
         }
     }
 
     public static int generateId() {
-        int atomic = atomicInteger.incrementAndGet();
+        int atomic = ATOMIC_INTEGER.incrementAndGet();
         long timeMillis = DateUtils.currentMillis();
         String value = StringUtils.substring(String.valueOf(timeMillis + atomic), 5);
         return Integer.parseInt(value);
@@ -93,7 +93,7 @@ public class IdUtils {
             return Long.parseLong(date + counter);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return System.currentTimeMillis() + atomicInteger.incrementAndGet();
+            return System.currentTimeMillis() + ATOMIC_INTEGER.incrementAndGet();
         }
     }
 }

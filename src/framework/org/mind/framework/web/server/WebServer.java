@@ -8,7 +8,7 @@ import org.mind.framework.web.server.tomcat.TomcatGracefulShutdown;
  * @author Marcus
  * @version 1.1
  */
-public class WebServer extends ServerContext {
+public class WebServer extends AbstractServerContext {
 
     @Override
     protected void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException {

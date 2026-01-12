@@ -66,11 +66,7 @@ public class HttpUtils {
         String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
 
-//		log.info("path info: "+ request.getPathInfo());
-//		log.info("servlet path: "+ request.getServletPath());
-//		log.info("Query string: "+ request.getQueryString());
-
-        uri = contextPath.length() > 0 ? uri.substring(contextPath.length()) : uri;
+        uri = !contextPath.isEmpty() ? uri.substring(contextPath.length()) : uri;
 
         // check is root path
         if (uri.length() > 1)
@@ -231,7 +227,7 @@ public class HttpUtils {
      * check current request
      */
     public static boolean isMultipartRequest(HttpServletRequest request) {
-        return isPostMethod(request) && StringUtils.startsWithIgnoreCase(request.getContentType(), "multipart/");
+        return isPostMethod(request) && org.apache.commons.lang3.Strings.CI.startsWith(request.getContentType(), "multipart/");
     }
 
     public static String encodeURIComponent(String value) {

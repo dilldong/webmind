@@ -11,7 +11,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +83,7 @@ public class TestAction {
         return new TemplateRender(
                 "index.vm",
                 "listItem",
-                Arrays.asList(11, 22, 32, 3, 62, 92));
+                List.of(11, 22, 32, 3, 62, 92));
     }
 
     @Mapping("/number/${value}")

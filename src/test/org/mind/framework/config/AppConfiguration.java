@@ -1,12 +1,15 @@
 package org.mind.framework.config;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.velocity.spring.VelocityEngineFactoryBean;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.service.queue.QueueConfig;
 import org.mind.framework.service.queue.QueueLittle;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.util.ClassUtils;
+import org.mind.framework.util.PropertiesUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -71,4 +74,17 @@ public class AppConfiguration {
         taskScheduler.setAwaitTerminationSeconds(15);
         return taskScheduler;
     }
+
+    /**
+     * velocity config
+     */
+    @Bean
+    public VelocityEngineFactoryBean velocityEngine() {
+        VelocityEngineFactoryBean velocityEngine = new VelocityEngineFactoryBean();
+        velocityEngine.setVelocityProperties(
+                PropertiesUtils.getProperties(
+                        ClassUtils.getResourceAsStream(AppConfiguration.class, "velocity.properties")));
+        return velocityEngine;
+    }
+
 }

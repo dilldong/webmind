@@ -6,6 +6,7 @@ import org.mind.framework.util.DateUtils;
 
 /**
  * A Thread implementation that records the time at which it was created.
+ * @author marcus
  */
 @Slf4j
 public class TaskThread extends Thread {
@@ -25,13 +26,7 @@ public class TaskThread extends Thread {
      * Wraps a {@link Runnable} to swallow any {@link IllegalThreadStateException}
      * instead of letting it go and potentially trigger a break in a debugger.
      */
-    private static class WrappingRunnable implements Runnable {
-        private final Runnable wrappedRunnable;
-
-        WrappingRunnable(Runnable wrappedRunnable) {
-            this.wrappedRunnable = wrappedRunnable;
-        }
-
+    private record WrappingRunnable(Runnable wrappedRunnable) implements Runnable {
         @Override
         public void run() {
             try {
@@ -39,8 +34,7 @@ public class TaskThread extends Thread {
             } catch (IllegalThreadStateException e) {
                 //expected : we just swallow the exception to avoid disturbing
                 //debuggers like eclipse's
-                if(log.isDebugEnabled())
-                    log.debug("Thread exiting on purpose, "+ e.getMessage(), e);
+                log.error("Thread exiting on purpose, {}", e.getMessage(), e);
             }
         }
 
