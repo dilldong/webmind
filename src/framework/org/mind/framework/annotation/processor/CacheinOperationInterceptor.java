@@ -114,15 +114,28 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (isEmpty(result) && this.penetration)
             return result;
 
-        final Object value = switch (result) {
-            case List<?> list -> list.isEmpty() && !this.penetration ? RedissonHelper.EMPTY_LIST_MARKER : list;
-            case Map<?, ?> map -> map.isEmpty() && !this.penetration ? RedissonHelper.EMPTY_MAP_MARKER : map;
-            case Set<?> set -> set.isEmpty() && !this.penetration ? RedissonHelper.EMPTY_SET_MARKER : set;
-            case null -> RedissonHelper.NULL_MARKER; // 当result == null时，这里penetration=false，需要设置null marker
-            default -> result;
-        };
-
-        helper.setWithLock(resolverKey, value, expire, timeUnit);
+        if (result instanceof List<?> list) {
+            if (list.isEmpty()) {
+                if (!this.penetration)
+                    helper.setWithLock(resolverKey, RedissonHelper.EMPTY_LIST_MARKER, expire, timeUnit);
+            } else
+                helper.setWithLock(resolverKey, (List<?>) result, expire, timeUnit);
+        } else if (result instanceof Map<?, ?> map) {
+            if (map.isEmpty()) {
+                if (!this.penetration)
+                    helper.setWithLock(resolverKey, RedissonHelper.EMPTY_MAP_MARKER, expire, timeUnit);
+            } else
+                helper.setWithLock(resolverKey, (Map<?, ?>) result, expire, timeUnit);
+        } else if (result instanceof Set<?> set) {
+            if (set.isEmpty()) {
+                if (!this.penetration)
+                    helper.setWithLock(resolverKey, RedissonHelper.EMPTY_SET_MARKER, expire, timeUnit);
+            } else
+                helper.setWithLock(resolverKey, (Set<?>) result, expire, timeUnit);
+        } else {
+            // 当result == null时，这里penetration=false，需要设置null marker
+            helper.setWithLock(resolverKey, Objects.isNull(result) ? RedissonHelper.NULL_MARKER : result, expire, timeUnit);
+        }
 
         return result;
     }
@@ -271,12 +284,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     private boolean isEmpty(Object obj) {
-        return switch (obj) {
-            case Collection<?> collection -> collection.isEmpty();
-            case Map<?, ?> map -> map.isEmpty();
-            case null -> true;
-            default -> false;
-        };
+        if (Objects.isNull(obj))
+            return true;
+
+        if (obj instanceof Collection<?> collection)
+            return collection.isEmpty();
+
+        if (obj instanceof Map<?,?> map)
+            return map.isEmpty();
+
+        return false;
     }
 
     private record TypeMatchResult(Class<?> matchedClass, String nullMarker) {

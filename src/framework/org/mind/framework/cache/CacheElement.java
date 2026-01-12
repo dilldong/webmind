@@ -76,37 +76,31 @@ public class CacheElement {
     }
 
     private Object cloneValue(Object data) {
-        switch (data) {
-            case List<?> list -> {
-                if (list.isEmpty())
-                    return data;
+        if (data instanceof List<?> list) {
+            if (list.isEmpty())
+                return data;
 
-                List<?> copierList = new ArrayList<>(list.size());
-                addCollection(copierList, list);
-                return copierList;
-            }
-            case Map<?, ?> map -> {
-                if (map.isEmpty())
-                    return data;
+            List<?> copierList = new ArrayList<>(list.size());
+            addCollection(copierList, list);
+            return copierList;
+        } else if (data instanceof Map<?, ?> map) {
+            if (map.isEmpty())
+                return data;
 
-                Map<?, ?> copierMap = new HashMap<>(map.size());
-                this.push(copierMap, map);
-                return copierMap;
-            }
-            case Set<?> set -> {
-                if (set.isEmpty())
-                    return data;
+            Map<?, ?> copierMap = new HashMap<>(map.size());
+            this.push(copierMap, map);
+            return copierMap;
+        } else if (data instanceof Set<?> set) {
+            if (set.isEmpty())
+                return data;
 
-                Set<?> copierSet = new HashSet<>(set.size());
-                addCollection(copierSet, set);
-                return copierSet;
-            }
-            case Cloneable<?> cloneable -> {
-                return cloneable.clone();
-            }
-            case null, default ->
-                    ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
-        }
+            Set<?> copierSet = new HashSet<>(set.size());
+            addCollection(copierSet, set);
+            return copierSet;
+        } else if (data instanceof Cloneable<?> cloneable) {
+            return cloneable.clone();
+        } else
+            ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
 
         return data;
     }
