@@ -20,8 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.AopProxyUtils;
-import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.StandardReflectionParameterNameDiscoverer;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 public class CacheinOperationInterceptor implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger("org.mind.framework.annotation.Cachein");
-    private static final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
+    private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new StandardReflectionParameterNameDiscoverer();
     private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>();
 
     private String key;
@@ -191,7 +191,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         }
 
         // 获取参数名（Java17+ 必须确保编译时加了 -parameters）
-        String[] paramNames = parameterNameDiscoverer.getParameterNames(originalMethod);
+        String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(originalMethod);
 
         // check NPE
         Objects.requireNonNull(paramNames);
