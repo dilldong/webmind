@@ -76,6 +76,7 @@
                     <target>17</target>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
+                        <arg>-parameters</arg>
                         <arg>-Xlint:unchecked</arg>
                         <arg>-Xlint:deprecation</arg>
                     </compilerArgs>

@@ -19,6 +19,7 @@ import org.redisson.client.RedisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.ProxyMethodInvocation;
+import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 
@@ -177,17 +178,23 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (MatcherUtils.checkCount(attrKey, MatcherUtils.PARAM_MATCH_PATTERN) == 0)
             return attrKey;
 
-        String[] methodVarNames = parameterNameDiscoverer.getParameterNames(method);
-        if (ArrayUtils.isEmpty(methodVarNames)) {
-            try {
-                Method m = target.getClass().getMethod(method.getName(), method.getParameterTypes());
-                methodVarNames = parameterNameDiscoverer.getParameterNames(m);
-            } catch (NoSuchMethodException ignored) {
-            }
+        // AopProxyUtils.ultimateTargetClass 穿透多层代理，返回原始对象
+        Class<?> targetClass = AopProxyUtils.ultimateTargetClass(target);
+
+        Method originalMethod;
+        try {
+            originalMethod = targetClass.getDeclaredMethod(method.getName(), method.getParameterTypes());
+            originalMethod.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // 回退到原 method（罕见情况）
+            originalMethod = method;
         }
 
-        // check again
-        Objects.requireNonNull(methodVarNames);
+        // 获取参数名（Java17+ 必须确保编译时加了 -parameters）
+        String[] paramNames = parameterNameDiscoverer.getParameterNames(originalMethod);
+
+        // check NPE
+        Objects.requireNonNull(paramNames);
 
         for (int i = 0; i < params.length; ++i) {
             String value = null;
@@ -211,7 +218,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
             attrKey =
                     attrKey.replaceAll(
-                            "#\\{" + methodVarNames[i] + "\\}",
+                            "#\\{" + paramNames[i] + "\\}",
                             StringUtils.defaultIfEmpty(value, StringUtils.EMPTY));
         }
 

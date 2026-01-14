@@ -20,6 +20,7 @@ import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
@@ -38,7 +39,7 @@ import java.util.Locale;
  * @author Marcus
  */
 @ExtendWith(SpringExtension.class)
-//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
 //@ContextConfiguration(classes = AppConfiguration.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
@@ -202,6 +203,14 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(CalculateUtils.formatNumberSymbol("1002"));
     }
 
+
+    @Test
+    public void testLocalCache(){
+        System.out.println("testServiceComponent: ");
+        System.out.println(testServiceComponent.byCache(22222));
+        System.out.println(testServiceComponent.getClass().getName());
+    }
+
     @Test
     public void test04() {
 //        RedissonHelper.getInstance()
@@ -217,10 +226,6 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(testService.byCache(323421));
         System.out.println(testService.byCache(323421));
 //        System.out.println(testService.getClass().getName());
-//
-//        System.out.println("testServiceComponent: ");
-//        System.out.println(testServiceComponent.byCache(22222));
-//        System.out.println(testServiceComponent.getClass().getName());
     }
 
     @Test
