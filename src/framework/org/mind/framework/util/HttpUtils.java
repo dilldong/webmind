@@ -261,12 +261,7 @@ public class HttpUtils {
         if (StringUtils.isEmpty(value))
             return value;
 
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            ThrowProvider.doThrow(e);
-        }
-        return StringUtils.EMPTY;
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     /**
