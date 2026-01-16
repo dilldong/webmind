@@ -12,6 +12,7 @@ import org.mind.framework.util.ViewResolver;
 import org.springframework.http.HttpStatus;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class JsonTest {
         System.out.println("A->Map<String, Object> fromJson: ");
         aMap.forEach((k, v) -> System.out.println(k + ": " + v));
 
-        A<List<Integer>> a1 = new A<>(56, "ndi", Arrays.asList(9328));
+        A<List<Integer>> a1 = new A<>(56, "ndi", Collections.singletonList(9328));
         String as = JsonUtils.toJson(new A[]{a, a1}, A[].class);
 
         System.out.println();

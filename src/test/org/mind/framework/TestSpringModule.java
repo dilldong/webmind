@@ -205,6 +205,13 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     }
 
     @Test
+    public void testLocalCache(){
+        System.out.println("testServiceComponent: ");
+        System.out.println(testServiceComponent.byCache(22222));
+        System.out.println(testServiceComponent.getClass().getName());
+    }
+
+    @Test
     public void test04() {
 //        RedissonHelper.getInstance()
 //                .deleteList(String.join(AbstractCache.CACHE_DELIMITER, "user_by_id", "832834", "first"));
@@ -219,10 +226,6 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(testService.byCache(323421));
         System.out.println(testService.byCache(323421));
 //        System.out.println(testService.getClass().getName());
-//
-//        System.out.println("testServiceComponent: ");
-//        System.out.println(testServiceComponent.byCache(22222));
-//        System.out.println(testServiceComponent.getClass().getName());
     }
 
     @Test

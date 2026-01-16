@@ -21,6 +21,7 @@ import org.redisson.client.RedisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.ProxyMethodInvocation;
+import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 
@@ -49,8 +50,8 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 public class CacheinOperationInterceptor implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger("org.mind.framework.annotation.Cachein");
-    private static final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
-    private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>();
+    private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
+    private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
 
     private String key;
     private long expire = 0;
@@ -181,16 +182,21 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (MatcherUtils.checkCount(attrKey, MatcherUtils.PARAM_MATCH_PATTERN) == 0)
             return attrKey;
 
-        String[] methodVarNames = parameterNameDiscoverer.getParameterNames(method);
-        if (Objects.isNull(methodVarNames)) {
-            try {
-                Method m = target.getClass().getMethod(method.getName(), method.getParameterTypes());
-                methodVarNames = parameterNameDiscoverer.getParameterNames(m);
-            } catch (NoSuchMethodException ignored) {
-            }
+        // AopProxyUtils.ultimateTargetClass 穿透多层代理，返回原始对象
+        Class<?> targetClass = AopProxyUtils.ultimateTargetClass(target);
+
+        Method originalMethod;
+        try {
+            originalMethod = targetClass.getDeclaredMethod(method.getName(), method.getParameterTypes());
+            originalMethod.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // 回退到原 method（罕见情况）
+            originalMethod = method;
         }
 
-        Objects.requireNonNull(methodVarNames);
+        String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(originalMethod);
+
+        Objects.requireNonNull(paramNames);
         int size = params.length;
 
         for (int i = 0; i < size; ++i) {
@@ -215,7 +221,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
             attrKey =
                     attrKey.replaceAll(
-                            "#\\{" + methodVarNames[i] + "\\}",
+                            "#\\{" + paramNames[i] + "\\}",
                             StringUtils.defaultIfEmpty(value, StringUtils.EMPTY));
         }
 
