@@ -48,7 +48,7 @@ import java.util.stream.Stream;
 public class CacheinOperationInterceptor implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger("org.mind.framework.annotation.Cachein");
     private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new StandardReflectionParameterNameDiscoverer();
-    private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>();
+    private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
 
     private String key;
     private long expire = 0;
