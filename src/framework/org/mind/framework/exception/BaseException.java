@@ -11,8 +11,6 @@ import java.io.StringWriter;
  */
 public class BaseException extends Exception {
 
-    private static final long serialVersionUID = -846923593612400497L;
-
     public final static int ERR_INF = 1;
 
     public final static int ERR_APP = 2;
@@ -88,16 +86,19 @@ public class BaseException extends Exception {
         return sw.toString();
     }
 
+    @Override
     public void printStackTrace(PrintStream out) {
         out.println(backStacks);
         super.printStackTrace(out);
     }
 
+    @Override
     public void printStackTrace(PrintWriter out) {
         out.println(backStacks);
         super.printStackTrace(out);
     }
 
+    @Override
     public void printStackTrace() {
         printStackTrace(System.err);
     }

@@ -3,7 +3,7 @@ package org.mind.framework;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.security.Base62Utils;
 import org.mind.framework.service.threads.DynamicThreadPoolExecutor;
@@ -196,7 +196,7 @@ public class TestModule {
 
         System.out.println(JsonUtils.deletionBlank(json));
         json = StringUtils.substringBetween(json, "method", ",");
-        json = json.replaceAll("[\'\":]*", "").trim();
+        json = json.replaceAll("['\":]*", "").trim();
         System.out.println(json);
     }
 

@@ -1,17 +1,17 @@
 package org.mind.framework;
 
+import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
-import org.mind.framework.config.AppConfiguration;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.queue.QueueService;
@@ -21,10 +21,9 @@ import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.annotation.Resource;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -39,9 +38,9 @@ import java.util.Locale;
  * @version 1.0
  * @author Marcus
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
-@ContextConfiguration(classes = AppConfiguration.class)
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+//@ContextConfiguration(classes = AppConfiguration.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Resource
@@ -204,6 +203,14 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(CalculateUtils.formatNumberSymbol("1002"));
     }
 
+
+    @Test
+    public void testLocalCache(){
+        System.out.println("testServiceComponent: ");
+        System.out.println(testServiceComponent.byCache(22222));
+        System.out.println(testServiceComponent.getClass().getName());
+    }
+
     @Test
     public void test04() {
 //        RedissonHelper.getInstance()
@@ -219,10 +226,6 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(testService.byCache(323421));
         System.out.println(testService.byCache(323421));
 //        System.out.println(testService.getClass().getName());
-//
-//        System.out.println("testServiceComponent: ");
-//        System.out.println(testServiceComponent.byCache(22222));
-//        System.out.println(testServiceComponent.getClass().getName());
     }
 
     @Test

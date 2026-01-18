@@ -132,8 +132,8 @@ public class RedissonDelayedQueueService {
             log.debug("Adding a delay task successfully, task type: {}, delay time: {} {}",
                     task.getClass().getSimpleName(), delay, timeUnit);
 
-            if (task instanceof AbstractTask)
-                this.rMapCache.fastPut(((AbstractTask) task).getTaskId(), task, delay, timeUnit);
+            if (task instanceof AbstractTask abstractTask)
+                this.rMapCache.fastPut(abstractTask.getTaskId(), task, delay, timeUnit);
 
             // 确保该队列有对应类型的消费者在运行
             ensureQueueListenerRunning();
@@ -179,8 +179,8 @@ public class RedissonDelayedQueueService {
 
         try {
             boolean result = delayedQueue.remove(task);
-            if (result && task instanceof AbstractTask)
-                this.rMapCache.fastRemove(((AbstractTask) task).getTaskId());
+            if (result && task instanceof AbstractTask abstractTask)
+                this.rMapCache.fastRemove(abstractTask.getTaskId());
 
             log.info("Delete delay-queue tasks: [{}], task: {}", result ? "OK" : "Failed", task);
             return result;
@@ -220,7 +220,7 @@ public class RedissonDelayedQueueService {
     public <T> void registerConsumer(DelayTask<T> task, Consumer<DelayTask<T>> consumer, boolean... onlyTaskId) {
         synchronized (queueConsumerMap) {
             Map<Object, Consumer<?>> consumers =
-                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>());
+                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
             boolean registTaskType = ArrayUtils.isEmpty(onlyTaskId) || !onlyTaskId[0];
             Class<?> clazz = task.getClass();
@@ -247,7 +247,7 @@ public class RedissonDelayedQueueService {
     public <T> void registerConsumer(Class<T> taskType, Consumer<T> consumer) {
         synchronized (queueConsumerMap) {
             Map<Object, Consumer<?>> consumers =
-                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>());
+                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
             if (consumers.containsKey(taskType))
                 log.warn("Warn: Type overridden, task type{}", taskType.getSimpleName());
@@ -304,8 +304,8 @@ public class RedissonDelayedQueueService {
                 String taskId = null;
 
                 // 尝试task id匹配
-                if (task instanceof AbstractTask) {
-                    taskId = ((AbstractTask) task).getTaskId();
+                if (task instanceof AbstractTask abstractTask) {
+                    taskId = abstractTask.getTaskId();
                     consumer = consumers.get(taskId);
                 }
 

@@ -1,6 +1,6 @@
 package org.mind.framework.web.renderer.template;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 /**
  * TemplateFactory which uses JSP.
@@ -11,15 +11,13 @@ public class JspTemplateFactory extends TemplateFactory {
 
     @Override
     public Template loadTemplate(String path) {
-        if(log.isDebugEnabled())
-            log.debug("Load JSP template '{}'", path);
+        log.debug("Load JSP template '{}'", path);
         return new JspTemplate(path);
     }
 
     @Override
     public void init(ServletContext context) {
-        if (log.isDebugEnabled())
-            log.debug("JspTemplateFactory init success.");
+        log.debug("JspTemplateFactory init success.");
     }
 
 }

@@ -103,8 +103,8 @@ public class SpringApplication {
                     timeUnit.sleep(await);
 
                 // shutdown on Spring
-                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext)
-                    ((AbstractApplicationContext) ContextSupport.getApplicationContext()).close();
+                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext context)
+                    context.close();
 
                 mainThread.interrupt();
                 // When received a stop signal,
@@ -166,14 +166,6 @@ public class SpringApplication {
                     org.apache.logging.log4j.core.config.Configurator.initialize(
                             null,
                             new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream));
-
-                    // load logback
-//                    ch.qos.logback.classic.LoggerContext.LoggerContext context =
-//                            (ch.qos.logback.classic.LoggerContextLoggerContext) LoggerFactory.getILoggerFactory();
-//                    context.reset();
-//                    ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator configurator = new ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator();
-//                    configurator.setContext(context);
-//                    configurator.doConfigure(log4jInputStream);
 
                     // load log4j 1.x
                     //org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);

@@ -1,5 +1,6 @@
 package org.mind.framework.web.filter;
 
+import jakarta.servlet.DispatcherType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,8 +8,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mind.framework.annotation.Filter;
 
-import javax.servlet.DispatcherType;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -38,7 +37,7 @@ public class FilterRegistration implements Comparable<FilterRegistration> {
         this.order = annotation.order();
         this.uriPatterns = annotation.value();
         this.matchAfter = annotation.matchAfter();
-        this.dispatcherTypes = Arrays.asList(annotation.dispatcherTypes());
+        this.dispatcherTypes = List.of(annotation.dispatcherTypes());
     }
 
     @Override

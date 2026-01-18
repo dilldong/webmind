@@ -38,23 +38,12 @@ public class ResponseUtils {
 
         for (char ch : content) {
             switch (ch) {
-                case '<':
-                    result.append("&lt;");
-                    break;
-                case '>':
-                    result.append("&gt;");
-                    break;
-                case '&':
-                    result.append("&amp;");
-                    break;
-                case '"':
-                    result.append("&quot;");
-                    break;
-                case '\'':
-                    result.append("&#39;");
-                    break;
-                default:
-                    result.append(ch);
+                case '<' -> result.append("&lt;");
+                case '>' -> result.append("&gt;");
+                case '&' -> result.append("&amp;");
+                case '"' -> result.append("&quot;");
+                case '\'' -> result.append("&#39;");
+                default -> result.append(ch);
             }
         }
         return result.toString();

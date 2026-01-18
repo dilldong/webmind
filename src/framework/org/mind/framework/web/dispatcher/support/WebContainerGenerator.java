@@ -1,5 +1,6 @@
 package org.mind.framework.web.dispatcher.support;
 
+import jakarta.servlet.ServletConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.util.ClassUtils;
@@ -9,16 +10,19 @@ import org.mind.framework.web.renderer.template.TemplateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletConfig;
 import java.util.Objects;
 
+/**
+ * Web Page container
+ * @author Marcus
+ */
 public final class WebContainerGenerator {
     private static final Logger log = LoggerFactory.getLogger(WebContainerGenerator.class);
 
     /**
      * init web container (Guice or Spring) by web application define.
      *
-     * @param config javax.servlet.ServletConfig
+     * @param config jakarta.servlet.ServletConfig
      * @return org.mind.framework.container.ContainerGenerator
      */
     public static ContainerAware initMindContainer(ServletConfig config) {
@@ -40,8 +44,8 @@ public final class WebContainerGenerator {
                                 ContainerAware.class.getSimpleName()));
             }
 
-            if (obj instanceof ContainerAware)
-                return (ContainerAware) obj;
+            if (obj instanceof ContainerAware aware)
+                return aware;
 
         } catch (Exception e) {
             ThrowProvider.doThrow(e);
@@ -53,15 +57,14 @@ public final class WebContainerGenerator {
     /**
      * init Page view resolver engine by web application define.
      *
-     * @param config javax.servlet.ServletConfig
+     * @param config jakarta.servlet.ServletConfig
      * @return org.mind.framework.renderer.template.TemplateFactory
      */
     public static TemplateFactory initTemplateFactory(ServletConfig config) {
         String templateName = config.getInitParameter("template");
         if (StringUtils.isEmpty(templateName) || "JspTemplate".equalsIgnoreCase(templateName)) {
             templateName = JspTemplateFactory.class.getName();
-            if(log.isDebugEnabled())
-                log.debug("Default template factory to '{}'.", templateName);
+            log.debug("Default template factory to '{}'.", templateName);
         }
 
         Object obj = null;
@@ -82,8 +85,8 @@ public final class WebContainerGenerator {
             }
         }
 
-        if (obj instanceof TemplateFactory)
-            return (TemplateFactory) obj;
+        if (obj instanceof TemplateFactory factory)
+            return factory;
 
         throw new IllegalArgumentException("Init template name invalid. Optional as Velocity or JspTemplate.");
     }

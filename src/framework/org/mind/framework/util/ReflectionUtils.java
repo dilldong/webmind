@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Sam Brannen
  * @since 1.2.2
  */
-public abstract class ReflectionUtils {
+public class ReflectionUtils {
 
     /**
      * Pre-built FieldFilter that matches all non-static, non-final fields.
@@ -55,8 +55,8 @@ public abstract class ReflectionUtils {
      * superclasses up to {@link Object}.
      *
      * @param clazz the class to introspect
-     * @param name  the name of the field (may be <code>null</code> if type is specified)
-     * @param type  the type of the field (may be <code>null</code> if name is specified)
+     * @param name  the name of the field (maybe <code>null</code> if type is specified)
+     * @param type  the type of the field (maybe <code>null</code> if name is specified)
      * @return the corresponding Field object, or <code>null</code> if not found
      */
     public static Field findField(Class<?> clazz, String name, Class<?> type) {
@@ -280,11 +280,11 @@ public abstract class ReflectionUtils {
         if (ex instanceof IllegalAccessException) {
             throw new IllegalStateException(String.format("Could not access method: %s", ex.getMessage()));
         }
-        if (ex instanceof InvocationTargetException) {
-            handleInvocationTargetException((InvocationTargetException) ex);
+        if (ex instanceof InvocationTargetException itex) {
+            handleInvocationTargetException(itex);
         }
-        if (ex instanceof RuntimeException) {
-            throw (RuntimeException) ex;
+        if (ex instanceof RuntimeException rex) {
+            throw rex;
         }
         handleUnexpectedException(ex);
     }
@@ -314,11 +314,11 @@ public abstract class ReflectionUtils {
      * @throws RuntimeException the rethrown exception
      */
     public static void rethrowRuntimeException(Throwable ex) {
-        if (ex instanceof RuntimeException) {
-            throw (RuntimeException) ex;
+        if (ex instanceof RuntimeException rex) {
+            throw rex;
         }
-        if (ex instanceof Error) {
-            throw (Error) ex;
+        if (ex instanceof Error error) {
+            throw error;
         }
         handleUnexpectedException(ex);
     }
@@ -336,11 +336,11 @@ public abstract class ReflectionUtils {
      * @throws Exception the rethrown exception (in case of a checked exception)
      */
     public static void rethrowException(Throwable ex) throws Exception {
-        if (ex instanceof Exception) {
-            throw (Exception) ex;
+        if (ex instanceof Exception rex) {
+            throw rex;
         }
-        if (ex instanceof Error) {
-            throw (Error) ex;
+        if (ex instanceof Error error) {
+            throw error;
         }
         handleUnexpectedException(ex);
     }
@@ -357,7 +357,7 @@ public abstract class ReflectionUtils {
 
     /**
      * Determine whether the given method explicitly declares the given exception
-     * or one of its superclasses, which means that an exception of that type
+     * or one of its superclasses, which means that an exception to that type
      * can be propagated as-is within a reflective invocation.
      *
      * @param method        the declaring method
@@ -395,7 +395,7 @@ public abstract class ReflectionUtils {
      * @see java.lang.Object#equals
      */
     public static boolean isEqualsMethod(Method method) {
-        if (method == null || !method.getName().equals("equals")) {
+        if (method == null || !"equals".equals(method.getName())) {
             return false;
         }
         Class<?>[] paramTypes = method.getParameterTypes();
@@ -408,7 +408,7 @@ public abstract class ReflectionUtils {
      * @see java.lang.Object#hashCode
      */
     public static boolean isHashCodeMethod(Method method) {
-        return (method != null && method.getName().equals("hashCode") &&
+        return (method != null && "hashCode".equals(method.getName()) &&
                 method.getParameterTypes().length == 0);
     }
 
@@ -418,7 +418,7 @@ public abstract class ReflectionUtils {
      * @see java.lang.Object#toString()
      */
     public static boolean isToStringMethod(Method method) {
-        return (method != null && method.getName().equals("toString") &&
+        return (method != null && "toString".equals(method.getName()) &&
                 method.getParameterTypes().length == 0);
     }
 

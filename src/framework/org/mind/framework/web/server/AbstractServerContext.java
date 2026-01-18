@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  * @author Marcus
  * @version 1.0
  */
-public abstract class ServerContext {
-    static final Logger log = LoggerFactory.getLogger(ServerContext.class);
+public abstract class AbstractServerContext {
+    static final Logger log = LoggerFactory.getLogger(AbstractServerContext.class);
     public static final String SERVLET_NAME = "webmindServlet";
 
     private transient Set<String> springFileSet;
@@ -54,7 +54,7 @@ public abstract class ServerContext {
      */
     protected abstract void registerServer(Tomcat tomcat, WebServerConfig serverConfig) throws LifecycleException;
 
-    public ServerContext() {
+    public AbstractServerContext() {
         this.serverConfig = WebServerConfig.INSTANCE.initMimeMapping();
     }
 
@@ -92,36 +92,36 @@ public abstract class ServerContext {
         }
     }
 
-    public ServerContext addConfigClass(Class<?> ... configClass){
-        if (ArrayUtils.isEmpty(configClass))
+    public AbstractServerContext addConfigClass(Class<?> configClass){
+        if (Objects.isNull(configClass))
             return this;
 
         if (Objects.isNull(this.configClassSet))
             this.configClassSet = new HashSet<>();
 
-        this.configClassSet.addAll(Arrays.asList(configClass));
+        this.configClassSet.add(configClass);
         return this;
     }
 
-    public ServerContext addSpringFile(String... filePath) {
+    public AbstractServerContext addSpringFile(String... filePath) {
         if (ArrayUtils.isEmpty(filePath))
             return this;
 
         if (Objects.isNull(this.springFileSet))
             this.springFileSet = new HashSet<>();
 
-        this.springFileSet.addAll(Arrays.asList(filePath));
+        this.springFileSet.addAll(List.of(filePath));
         return this;
     }
 
-    public ServerContext addResource(String... resPath) {
+    public AbstractServerContext addResource(String... resPath) {
         if (ArrayUtils.isEmpty(resPath))
             return this;
 
         if (Objects.isNull(this.resourceSet))
             this.resourceSet = new HashSet<>();
 
-        this.resourceSet.addAll(Arrays.asList(resPath));
+        this.resourceSet.addAll(List.of(resPath));
         return this;
     }
 

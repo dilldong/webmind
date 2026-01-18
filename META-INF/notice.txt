@@ -1,5 +1,5 @@
 Webmind Framework
-Copyright (c) 2010-2023 Marcus(idea.pdware@gmail.com)
+Copyright (c) 2010-2026 Marcus(idea.pdware@gmail.com)
 
 This product is licensed to you under the Apache License, Version 2.0
 (the "License"). You may not use this product except in compliance with

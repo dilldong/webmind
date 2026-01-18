@@ -1,12 +1,12 @@
 package org.mind.framework.web.renderer;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.web.dispatcher.handler.HandlerResult;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -33,22 +33,19 @@ public class NullRender extends Render {
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         switch (type) {
-            case REDIRECT:
+            case REDIRECT -> {
                 if (uri.startsWith(IOUtils.DIR_SEPARATOR))
                     uri = String.format("%s%s", request.getContextPath(), uri);
 
-                if (log.isDebugEnabled())
-                    log.debug("Redirect path: {}", uri);
+                log.debug("Redirect path: {}", uri);
                 response.sendRedirect(response.encodeRedirectURL(uri));
-                break;
-
-            case FORWARD:
-                if (log.isDebugEnabled())
-                    log.debug("Forward path: {}", uri);
+            }
+            case FORWARD -> {
+                log.debug("Forward path: {}", uri);
 
                 // 	Unwrap the multipart request, if there is one.
-//	        if (request instanceof MultipartRequestWrapper) {
-//	            request = ((MultipartRequestWrapper) request).getRequest();
+//	        if (request instanceof MultipartRequestWrapper multiRequest) {
+//	            request = multiRequest.getRequest();
 //	        }
 
                 RequestDispatcher rd = request.getRequestDispatcher(uri);
@@ -59,11 +56,8 @@ public class NullRender extends Render {
                             String.format("Not forward path: %s", uri));
                     return;
                 }
-
                 rd.forward(request, response);
-                break;
-            default:
-                break;
+            }
         }
     }
 }

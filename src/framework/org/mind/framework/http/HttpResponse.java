@@ -57,8 +57,7 @@ public class HttpResponse<T> implements Closeable {
             this.responseCode = con.getResponseCode();
         }
 
-        if (log.isDebugEnabled())
-            log.debug("Http response code: {}", this.responseCode);
+        log.debug("Http response code: {}", this.responseCode);
 
         if (Objects.isNull((inStream = con.getErrorStream())))
             inStream = con.getInputStream();

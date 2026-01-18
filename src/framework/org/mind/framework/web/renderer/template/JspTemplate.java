@@ -1,8 +1,9 @@
 package org.mind.framework.web.renderer.template;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ public class JspTemplate implements Template {
      * @throws ServletException
      * @throws IOException
      */
+    @Override
     public void render(
             HttpServletRequest request,
             HttpServletResponse response,

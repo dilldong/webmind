@@ -39,8 +39,7 @@ public abstract class AbstractCache implements Destroyable {
 
     @Override
     public void destroy() {
-        if(log.isDebugEnabled())
-            log.debug("Destroy {} manager.", cacheName);
+        log.debug("Destroy {} manager.", cacheName);
     }
 
     public String getCacheName() {

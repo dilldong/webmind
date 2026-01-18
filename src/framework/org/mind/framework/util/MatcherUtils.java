@@ -2,6 +2,7 @@ package org.mind.framework.util;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.annotation.Mapping;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -106,7 +107,7 @@ public class MatcherUtils {
             return MatcherUtils.matcher(searchUrl, regex, MatcherUtils.IGNORECASE_EQ).matches();
         }
 
-        return StringUtils.containsIgnoreCase(searchUrl, urlWithWildcard);
+        return Strings.CI.contains(searchUrl, urlWithWildcard);
     }
 
     /**
@@ -135,11 +136,7 @@ public class MatcherUtils {
         newParam = ANY_PATTERN.matcher(newParam).replaceAll(ANY_CHAR);
         newParam = URI_SEP_PATTERN.matcher(newParam).replaceAll(URI_SEP);
 
-        return new StringBuilder(newParam.length() + 2)
-                .append(START)
-                .append(newParam)
-                .append(END)
-                .toString();
+        return START + newParam + END;
     }
 
 }

@@ -1,7 +1,5 @@
 package org.mind.framework.annotation.processor;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -21,10 +19,10 @@ import org.redisson.client.RedisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.core.DefaultParameterNameDiscoverer;
+import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.StandardReflectionParameterNameDiscoverer;
 
-import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -41,16 +39,16 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2022/9/6
  */
 @Setter
 @NoArgsConstructor
 public class CacheinOperationInterceptor implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger("org.mind.framework.annotation.Cachein");
-    private static final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
-    private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>();
+    private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new StandardReflectionParameterNameDiscoverer();
+    private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
 
     private String key;
     private long expire = 0;
@@ -99,38 +97,38 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         TypeMatchResult typeMatch = getNullTypeValue(redisType);
 
         ResolveResult cacheResult = resolveCacheValue(
-                typeMatch.getNullMarker(),
+                typeMatch.nullMarker(),
                 () -> helper.getWithLock(resolverKey),// 用于验证是否为NULL marker
                 () -> typeMatch.loadReids(resolverKey),
                 typeMatch.getEmptyValue()
         );
 
         // penetration=false时，允许返回空值
-        if (cacheResult.isShouldShortCircuit())
-            return cacheResult.getResult();
+        if (cacheResult.shouldShortCircuit())
+            return cacheResult.result();
 
-        if (!isEmpty(cacheResult.getResult()))
-            return cacheResult.getResult();
+        if (!isEmpty(cacheResult.result()))
+            return cacheResult.result();
 
         // invoke orig method
         Object result = this.callback(invocation);
         if (isEmpty(result) && this.penetration)
             return result;
 
-        if (result instanceof List) {
-            if (((List<?>) result).isEmpty()) {
+        if (result instanceof List<?> list) {
+            if (list.isEmpty()) {
                 if (!this.penetration)
                     helper.setWithLock(resolverKey, RedissonHelper.EMPTY_LIST_MARKER, expire, timeUnit);
             } else
                 helper.setWithLock(resolverKey, (List<?>) result, expire, timeUnit);
-        } else if (result instanceof Map) {
-            if (((Map<?, ?>) result).isEmpty()) {
+        } else if (result instanceof Map<?, ?> map) {
+            if (map.isEmpty()) {
                 if (!this.penetration)
                     helper.setWithLock(resolverKey, RedissonHelper.EMPTY_MAP_MARKER, expire, timeUnit);
             } else
                 helper.setWithLock(resolverKey, (Map<?, ?>) result, expire, timeUnit);
-        } else if (result instanceof Set) {
-            if (((Set<?>) result).isEmpty()) {
+        } else if (result instanceof Set<?> set) {
+            if (set.isEmpty()) {
                 if (!this.penetration)
                     helper.setWithLock(resolverKey, RedissonHelper.EMPTY_SET_MARKER, expire, timeUnit);
             } else
@@ -152,8 +150,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             if (!this.penetration && this.cacheable.containsKey(resolverKey))
                 return null;
         } else {
-            if (log.isDebugEnabled())
-                log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
+            log.debug("Get by cache, key: [{}], visited: [{}]", element.getKey(), element.getVisited());
 
             Object result = element.getValue(cloneType);
             if (!this.penetration)
@@ -181,33 +178,39 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (MatcherUtils.checkCount(attrKey, MatcherUtils.PARAM_MATCH_PATTERN) == 0)
             return attrKey;
 
-        String[] methodVarNames = parameterNameDiscoverer.getParameterNames(method);
-        if (Objects.isNull(methodVarNames)) {
-            try {
-                Method m = target.getClass().getMethod(method.getName(), method.getParameterTypes());
-                methodVarNames = parameterNameDiscoverer.getParameterNames(m);
-            } catch (NoSuchMethodException ignored) {
-            }
+        // AopProxyUtils.ultimateTargetClass 穿透多层代理，返回原始对象
+        Class<?> targetClass = AopProxyUtils.ultimateTargetClass(target);
+
+        Method originalMethod;
+        try {
+            originalMethod = targetClass.getDeclaredMethod(method.getName(), method.getParameterTypes());
+            originalMethod.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            // 回退到原 method（罕见情况）
+            originalMethod = method;
         }
 
-        Objects.requireNonNull(methodVarNames);
-        int size = params.length;
+        // 获取参数名（Java17+ 必须确保编译时加了 -parameters）
+        String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(originalMethod);
 
-        for (int i = 0; i < size; ++i) {
+        // check NPE
+        Objects.requireNonNull(paramNames);
+
+        for (int i = 0; i < params.length; ++i) {
             String value = null;
             if (Objects.nonNull(params[i])) {
                 if (ConverterFactory.getInstance().isConvert(params[i].getClass()))
                     value = String.valueOf(params[i]);
-                else if (params[i] instanceof CacheinFace)
-                    value = String.valueOf(((CacheinFace<? extends Serializable>) params[i]).getValue());
+                else if (params[i] instanceof CacheinFace<?> face)
+                    value = String.valueOf(face.getValue());
                 else if (params[i].getClass().isArray())
                     value = arrayToString(params[i]);
-                else if (params[i] instanceof Collection) {
-                    value = ((Collection<?>) params[i]).stream().map(v -> {
-                        if (v instanceof CacheinFace)
-                            return String.valueOf(((CacheinFace<? extends Serializable>) v).getValue());
-                        return String.valueOf(v);
-                    }).collect(Collectors.joining(AbstractCache.CACHE_DELIMITER));
+                else if (params[i] instanceof Collection<?> collection) {
+                    value = collection.stream()
+                            .map(v -> v instanceof CacheinFace<?> face ?
+                                    String.valueOf(face.getValue()) :
+                                    String.valueOf(v))
+                            .collect(Collectors.joining(AbstractCache.CACHE_DELIMITER));
                 } else {
                     throw new NotSupportedException("Key value conversion failed. Supported types: basic-types, one-dimensional arrays(basic-types), CacheinFace, Collection(basic-types and CacheinFace");
                 }
@@ -215,7 +218,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
             attrKey =
                     attrKey.replaceAll(
-                            "#\\{" + methodVarNames[i] + "\\}",
+                            "#\\{" + paramNames[i] + "\\}",
                             StringUtils.defaultIfEmpty(value, StringUtils.EMPTY));
         }
 
@@ -248,12 +251,11 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         }
 
         // Object type array
-        return
-                Stream.of((Object[]) obj).map(v -> {
-                    if (v instanceof CacheinFace)
-                        return String.valueOf(((CacheinFace<? extends Serializable>) v).getValue());
-                    return String.valueOf(v);
-                }).collect(Collectors.joining(AbstractCache.CACHE_DELIMITER));
+        return Stream.of((Object[]) obj)
+                .map(v -> v instanceof CacheinFace<?> face ?
+                        String.valueOf(face.getValue()) :
+                        String.valueOf(v))
+                .collect(Collectors.joining(AbstractCache.CACHE_DELIMITER));
     }
 
     private TypeMatchResult getNullTypeValue(Class<?> redisType) {
@@ -288,26 +290,20 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         return new ResolveResult(result, false);
     }
 
-    @SuppressWarnings("rawtypes")
     private boolean isEmpty(Object obj) {
         if (Objects.isNull(obj))
             return true;
 
-        if (obj instanceof Collection)
-            return ((Collection) obj).isEmpty();
+        if (obj instanceof Collection<?> collection)
+            return collection.isEmpty();
 
-        if (obj instanceof Map)
-            return ((Map) obj).isEmpty();
+        if (obj instanceof Map<?,?> map)
+            return map.isEmpty();
 
         return false;
     }
 
-    @AllArgsConstructor
-    private static class TypeMatchResult {
-        private final Class<?> matchedClass;
-        @Getter
-        private final String nullMarker;
-
+    private record TypeMatchResult(Class<?> matchedClass, String nullMarker) {
         public Object loadReids(String name) {
             RedissonHelper helper = RedissonHelper.getInstance();
             try {
@@ -317,7 +313,8 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                     return helper.getMapWithLock(name);
                 else if (isSetType())
                     return helper.getSetWithLock(name);
-            }catch (RedisException ignored){}
+            } catch (RedisException ignored) {
+            }
             return helper.getWithLock(name);
         }
 
@@ -351,13 +348,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         public boolean isSetType() {
             return RedissonHelper.EMPTY_SET_MARKER.equals(nullMarker);
         }
-
     }
 
-    @Getter
-    @AllArgsConstructor
-    public static class ResolveResult {
-        private final Object result;
-        private final boolean shouldShortCircuit;
-    }
+    public record ResolveResult(Object result, boolean shouldShortCircuit) {}
 }

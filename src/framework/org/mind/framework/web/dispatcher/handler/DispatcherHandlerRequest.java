@@ -1,5 +1,9 @@
 package org.mind.framework.web.dispatcher.handler;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -32,10 +36,6 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -79,7 +79,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         this.interceptorsCatcher = new ArrayList<>();
 
         // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
-        this.actions = new HashMap<String, Execution>() {
+        this.actions = new HashMap<>(16) {
             @Override
             public Execution put(String key, Execution value) {
                 // convert URI to Regex
@@ -205,8 +205,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
                 // Interceptor doBefore
                 // return false, Return to the request page
                 if (!interceptor.doBefore(processedRequest, response)) {
-                    if (log.isDebugEnabled())
-                        log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
+                    log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
                     return;
                 }
 
@@ -390,8 +389,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) multipartRequest);
             request.removeAttribute(CHECK_MULTIPART);
 
-            if (log.isDebugEnabled())
-                log.debug("Cleanup Multipart....");
+            log.debug("Cleanup Multipart....");
         }
     }
 
@@ -406,8 +404,8 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             return;
         }
 
-        if (result instanceof Render) {
-            ((Render) result).render(request, response);
+        if (result instanceof Render render) {
+            render.render(request, response);
             return;
         }
 

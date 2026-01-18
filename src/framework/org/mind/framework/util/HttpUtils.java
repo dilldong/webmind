@@ -1,18 +1,16 @@
 package org.mind.framework.util;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 import org.mind.framework.exception.BaseException;
-import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -66,11 +64,7 @@ public class HttpUtils {
         String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
 
-//		log.info("path info: "+ request.getPathInfo());
-//		log.info("servlet path: "+ request.getServletPath());
-//		log.info("Query string: "+ request.getQueryString());
-
-        uri = contextPath.length() > 0 ? uri.substring(contextPath.length()) : uri;
+        uri = !contextPath.isEmpty() ? uri.substring(contextPath.length()) : uri;
 
         // check is root path
         if (uri.length() > 1)
@@ -231,7 +225,7 @@ public class HttpUtils {
      * check current request
      */
     public static boolean isMultipartRequest(HttpServletRequest request) {
-        return isPostMethod(request) && StringUtils.startsWithIgnoreCase(request.getContentType(), "multipart/");
+        return isPostMethod(request) && org.apache.commons.lang3.Strings.CI.startsWith(request.getContentType(), "multipart/");
     }
 
     public static String encodeURIComponent(String value) {
@@ -239,15 +233,10 @@ public class HttpUtils {
             return value;
 
         // 在JS中，encodeURIComponent会保留一些特定字符
-        try {
-            String encode = URLEncoder.encode(value, StandardCharsets.UTF_8.name());
-            return StringUtils.replaceEach(encode,
-                    new String[]{"+", "%27", "%7E", "%28", "%29", "%21"},
-                    new String[]{"%20", "'", "~", "(", ")", "!"});
-        } catch (UnsupportedEncodingException e) {
-            ThrowProvider.doThrow(e);
-        }
-        return StringUtils.EMPTY;
+        String encode = URLEncoder.encode(value, StandardCharsets.UTF_8);
+        return StringUtils.replaceEach(encode,
+                new String[]{"+", "%27", "%7E", "%28", "%29", "%21"},
+                new String[]{"%20", "'", "~", "(", ")", "!"});
     }
 
     public static String encodeURI(String value) {
@@ -265,12 +254,7 @@ public class HttpUtils {
         if (StringUtils.isEmpty(value))
             return value;
 
-        try {
-            return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            ThrowProvider.doThrow(e);
-        }
-        return StringUtils.EMPTY;
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     /**

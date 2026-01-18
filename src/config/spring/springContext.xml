@@ -33,30 +33,15 @@
         <property name="configLocation" value="classpath:velocity.properties"/>
     </bean>
 
-    <!-- MQ config -->
+    <!-- Queue config -->
     <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" init-method="start" destroy-method="destroy">
         <constructor-arg>
             <bean class="org.mind.framework.service.queue.QueueConfig">
-                <property name="queueCapacity" value="1024"/>
+                <property name="queueCapacity" value="128"/>
                 <property name="minConsumerThreads" value="1"/>
                 <property name="maxConsumerThreads" value="2"/>
             </bean>
         </constructor-arg>
     </bean>
-
-    <!-- WEB main service -->
-    <bean id="mainService" class="org.mind.framework.service.MainService" destroy-method="stop">
-        <property name="childServices">
-            <list>
-                <!-- start MQ service -->
-                <bean class="org.mind.framework.service.UpdateLoopService">
-                    <property name="serviceName" value="Loop-Queue-Svc"/>
-                    <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
-                    <property name="daemon" value="false"/><!-- daemon thread -->
-                </bean>
-            </list>
-        </property>
-    </bean>
-
 
 </beans>

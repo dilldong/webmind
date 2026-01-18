@@ -153,24 +153,7 @@ public final class MurmurHash3 {
     /**
      * 128位哈希值的封装类
      */
-    public static class HashCode128 {
-        private final long h1;
-        private final long h2;
-
-        public HashCode128(long h1, long h2) {
-            this.h1 = h1;
-            this.h2 = h2;
-        }
-
-        // 获取第一个64位
-        public long getH1() {
-            return h1;
-        }
-
-        // 获取第二个64位
-        public long getH2() {
-            return h2;
-        }
+    public record HashCode128(long h1, long h2) {
 
         /**
          * 转换为字节数组（16字节）
@@ -195,16 +178,8 @@ public final class MurmurHash3 {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            HashCode128 that = (HashCode128) o;
-            return h1 == that.h1 && h2 == that.h2;
-        }
-
-        @Override
         public int hashCode() {
-            return (int) (h1 ^ h2);
-        }
+                return (int) (h1 ^ h2);
+            }
     }
 }

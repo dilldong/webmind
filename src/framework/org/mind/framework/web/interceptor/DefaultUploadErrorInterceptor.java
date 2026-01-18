@@ -1,11 +1,10 @@
 package org.mind.framework.web.interceptor;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.util.ViewResolver;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @version 1.0

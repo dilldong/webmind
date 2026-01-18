@@ -1,6 +1,7 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
@@ -91,8 +92,8 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
         this.advice = buildAdvice();
-        if (this.advice instanceof BeanFactoryAware)
-            ((BeanFactoryAware) advice).setBeanFactory(beanFactory);
+        if (this.advice instanceof BeanFactoryAware adviceAware)
+            adviceAware.setBeanFactory(beanFactory);
     }
 
     @Override
@@ -101,8 +102,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     private <T> List<T> findBeans(Class<? extends T> type) {
-        if (this.beanFactory instanceof ListableBeanFactory) {
-            ListableBeanFactory listable = (ListableBeanFactory) this.beanFactory;
+        if (this.beanFactory instanceof ListableBeanFactory listable) {
             if (listable.getBeanNamesForType(type).length > 0) {
                 List<T> list = new ArrayList<>(listable.getBeansOfType(type, false, false).values());
                 OrderComparator.sort(list);
@@ -114,8 +114,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     private <T> T findBean(Class<? extends T> type) {
-        if (this.beanFactory instanceof ListableBeanFactory) {
-            ListableBeanFactory listable = (ListableBeanFactory) this.beanFactory;
+        if (this.beanFactory instanceof ListableBeanFactory listable) {
             if (listable.getBeanNamesForType(type, false, false).length == 1)
                 return listable.getBean(type);
         }
@@ -173,11 +172,10 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
             if (this == other)
                 return true;
 
-            if (!(other instanceof AnnotationClassOrMethodPointcut))
-                return false;
+            if (other instanceof AnnotationClassOrMethodPointcut otherAdvisor)
+                return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
 
-            AnnotationClassOrMethodPointcut otherAdvisor = (AnnotationClassOrMethodPointcut) other;
-            return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
+            return false;
         }
     }
 
@@ -190,31 +188,25 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Class<?> clazz) {
+        public boolean matches(@NotNull Class<?> clazz) {
             return super.matches(clazz) || this.methodResolver.hasAnnotatedMethods(clazz);
         }
     }
 
-    private static class AnnotationMethodsResolver {
-        private final Class<? extends Annotation> annotationType;
-
-        public AnnotationMethodsResolver(Class<? extends Annotation> annotationType) {
-            this.annotationType = annotationType;
-        }
-
+    private record AnnotationMethodsResolver(Class<? extends Annotation> annotationType) {
         public boolean hasAnnotatedMethods(Class<?> clazz) {
-            final AtomicBoolean found = new AtomicBoolean(false);
-            ReflectionUtils.doWithMethods(clazz, method -> {
-                if (found.get())
-                    return;
+                final AtomicBoolean found = new AtomicBoolean(false);
+                ReflectionUtils.doWithMethods(clazz, method -> {
+                    if (found.get())
+                        return;
 
-                Annotation annotation = AnnotationUtils.findAnnotation(
-                        method,
-                        AnnotationMethodsResolver.this.annotationType);
-                if (Objects.nonNull(annotation))
-                    found.set(true);
-            });
-            return found.get();
+                    Annotation annotation = AnnotationUtils.findAnnotation(
+                            method,
+                            AnnotationMethodsResolver.this.annotationType);
+                    if (Objects.nonNull(annotation))
+                        found.set(true);
+                });
+                return found.get();
+            }
         }
-    }
 }

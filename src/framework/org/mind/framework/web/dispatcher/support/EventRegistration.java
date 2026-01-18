@@ -1,9 +1,8 @@
 package org.mind.framework.web.dispatcher.support;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.apache.catalina.core.StandardContext;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 
 /**
  * @version 1.0

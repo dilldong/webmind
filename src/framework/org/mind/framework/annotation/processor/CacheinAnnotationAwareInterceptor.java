@@ -4,6 +4,7 @@ import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.springframework.aop.IntroductionInterceptor;
@@ -34,12 +35,12 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
     private Cacheable defaultCache;
 
     @Override
-    public boolean implementsInterface(Class<?> clazz) {
+    public boolean implementsInterface(@NotNull Class<?> clazz) {
         return Cacheable.class.isAssignableFrom(clazz);
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
@@ -48,7 +49,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         Object target = invocation.getThis();
         Map<Method, MethodInterceptor> cachedMethods = this.delegates.get(target);
         if (Objects.isNull(cachedMethods)) {
-            cachedMethods = new ConcurrentHashMap<>();
+            cachedMethods = new ConcurrentHashMap<>(16);
             this.delegates.putIfAbsent(target, cachedMethods);
         }
 

@@ -1,5 +1,7 @@
 package org.mind.framework.web.dispatcher.support;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.core.StandardContext;
@@ -11,8 +13,6 @@ import org.mind.framework.web.filter.FilterRegistration;
 import org.mind.framework.web.filter.HandlerFilter;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +31,7 @@ public class FilterRegistrationSupport implements EventRegistration {
 
     private final WebApplicationContext applicationContext;
 
+    @Override
     public void registration(ServletContext servletContext, StandardContext standardContext) throws ServletException {
         Map<String, HandlerFilter> filterOfType = applicationContext.getBeansOfType(HandlerFilter.class);
         if (filterOfType.isEmpty())

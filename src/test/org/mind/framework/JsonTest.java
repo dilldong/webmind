@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mind.framework.http.Response;
 import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.JsonUtils;
@@ -23,7 +23,7 @@ public class JsonTest {
 
     @Test
     public void test03() {
-        A<List<Object>> a = new A<>(23, "dasef", Arrays.asList("value1", "value2", 0.00, DateUtils.currentMillis()));
+        A<List<Object>> a = new A<>(23, "dasef", List.of("value1", "value2", 0.00, DateUtils.currentMillis()));
         String json = ViewResolver.<A>response(HttpStatus.OK, a).toJson(false);
         System.out.println(json);
 
@@ -46,7 +46,7 @@ public class JsonTest {
         System.out.println("A->Map<String, Object> fromJson: ");
         aMap.forEach((k, v) -> System.out.println(k + ": " + v));
 
-        A<List<Integer>> a1 = new A<>(56, "ndi", Arrays.asList(9328));
+        A<List<Integer>> a1 = new A<>(56, "ndi", List.of(9328));
         String as = JsonUtils.toJson(new A[]{a, a1}, A[].class);
 
         System.out.println();
@@ -60,7 +60,6 @@ public class JsonTest {
         System.out.println("A[]->List fromJson: ");
         fromList.forEach(System.out::println);
 
-
         //List<Map<String, JsonElement>> fromMapList01 = JsonUtils.fromJson(as, new TypeToken<List<Map<String, JsonElement>>>(){});
 
         List<Map<String, Object>> fromMapList = JsonUtils.fromJson(as, List.class);
@@ -73,7 +72,7 @@ public class JsonTest {
 
     @Test
     public void test01() {
-        String json = JsonUtils.toJson(Arrays.asList("dasd", "23"), List.class);
+        String json = JsonUtils.toJson(List.of("dasd", "23"), List.class);
         System.out.println("toJson: " + json);
 
         String[] array = JsonUtils.fromJson(json, String[].class);

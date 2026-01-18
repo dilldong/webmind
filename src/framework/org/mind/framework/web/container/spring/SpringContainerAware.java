@@ -1,10 +1,13 @@
 package org.mind.framework.web.container.spring;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
@@ -23,8 +26,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.cors.CorsConfiguration;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -35,7 +36,6 @@ import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Web Container Wrapper for Spring 2+
@@ -64,10 +64,10 @@ public class SpringContainerAware implements ContainerAware {
         String[] names = ContextSupport.getBeanNames();
         //get defined name by spring
         List<String> beanNames = (ArrayUtils.isEmpty(excludeSpringSelf) || !excludeSpringSelf[0]) ?
-                Arrays.asList(names) :
+                List.of(names) :
                 Arrays.stream(names)
-                        .filter(name -> !StringUtils.startsWith(name, "org.springframework"))
-                        .collect(Collectors.toList());
+                        .filter(name -> !Strings.CS.startsWith(name, "org.springframework"))
+                        .toList();
 
         List<Object> beans = new ArrayList<>(beanNames.size());
         beanNames.forEach(name -> beans.add(ContextSupport.getBean(name)));
@@ -80,12 +80,12 @@ public class SpringContainerAware implements ContainerAware {
 
         // if Interceptor
         if (clazz.isAnnotationPresent(Interceptor.class)) {
-            if (bean instanceof HandlerInterceptor) {
+            if (bean instanceof HandlerInterceptor interceptorBean) {
                 Interceptor interceptor = clazz.getAnnotation(Interceptor.class);
 
                 log.info("Loaded Interceptor: [order={}, interceptors={}, excludes={}]",
                         interceptor.order(), interceptor.value(), interceptor.excludes());
-                consumer.accept(new CatcherMapping(interceptor, (HandlerInterceptor) bean));
+                consumer.accept(new CatcherMapping(interceptor, interceptorBean));
                 return;
             }
 
@@ -184,8 +184,7 @@ public class SpringContainerAware implements ContainerAware {
     public void destroy() {
         // Let Spring destroy all beans.
         // Only call close() on WebApplicationContext
-        if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext) {
-            ConfigurableApplicationContext context = (ConfigurableApplicationContext) ContextSupport.getApplicationContext();
+        if (ContextSupport.getApplicationContext() instanceof ConfigurableApplicationContext context) {
             if (context.isActive())
                 context.close();
         }

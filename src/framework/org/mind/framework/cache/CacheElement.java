@@ -40,12 +40,8 @@ public class CacheElement {
         this.key = key;
 
         switch (type) {
-            case ORIGINAL:
-                this.value = data;
-                break;
-            case CLONE:
-                this.value = this.cloneValue(data);
-                break;
+            case ORIGINAL -> this.value = data;
+            case CLONE -> this.value = this.cloneValue(data);
         }
     }
 
@@ -80,32 +76,29 @@ public class CacheElement {
     }
 
     private Object cloneValue(Object data) {
-        if (data instanceof List) {
-            List<?> list = (List<?>) data;
+        if (data instanceof List<?> list) {
             if (list.isEmpty())
                 return data;
 
             List<?> copierList = new ArrayList<>(list.size());
             addCollection(copierList, list);
             return copierList;
-        } else if (data instanceof Map) {
-            Map<?, ?> map = (Map<?, ?>) data;
+        } else if (data instanceof Map<?, ?> map) {
             if (map.isEmpty())
                 return data;
 
             Map<?, ?> copierMap = new HashMap<>(map.size());
             this.push(copierMap, map);
             return copierMap;
-        } else if (data instanceof Set) {
-            Set<?> set = (Set<?>) data;
+        } else if (data instanceof Set<?> set) {
             if (set.isEmpty())
                 return data;
 
             Set<?> copierSet = new HashSet<>(set.size());
             addCollection(copierSet, set);
             return copierSet;
-        } else if (data instanceof Cloneable) {
-            return ((Cloneable<?>) data).clone();
+        } else if (data instanceof Cloneable<?> cloneable) {
+            return cloneable.clone();
         } else
             ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
 
@@ -114,8 +107,8 @@ public class CacheElement {
 
     private void addCollection(Collection copier, Collection<?> source) {
         source.forEach(item -> {
-            if (item instanceof Cloneable) {
-                copier.add(((Cloneable<?>) item).clone());
+            if (item instanceof Cloneable<?> cloneObj) {
+                copier.add(cloneObj.clone());
             } else
                 ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
         });
@@ -123,8 +116,8 @@ public class CacheElement {
 
     private void push(Map copier, Map<?, ?> source) {
         source.forEach((k, v) -> {
-            if (v instanceof Cloneable) {
-                copier.put(k, ((Cloneable<?>) v).clone());
+            if (v instanceof Cloneable cloneObj) {
+                copier.put(k, cloneObj.clone());
             } else
                 ThrowProvider.doThrow(new CloneNotSupportedException("The clone object needs to implement [org.mind.framework.service.Cloneable]"));
         });

@@ -1,6 +1,7 @@
 package org.mind.framework.util;
 
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +37,8 @@ public class ClassUtils {
         return c;
     }
 
-    public static Object newInstance(String clazz) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        return getClass(clazz).newInstance();
+    public static Object newInstance(String clazz) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        return getClass(clazz).getDeclaredConstructor().newInstance();
     }
 
     public static InputStream getResourceAsStream(Class<?> classObj, String name) {

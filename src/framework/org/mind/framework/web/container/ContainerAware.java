@@ -1,11 +1,11 @@
 package org.mind.framework.web.container;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 import org.mind.framework.web.Destroyable;
 import org.mind.framework.web.dispatcher.handler.Execution;
 import org.mind.framework.web.dispatcher.support.Catcher;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiConsumer;
