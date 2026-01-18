@@ -136,11 +136,7 @@ public class MatcherUtils {
         newParam = ANY_PATTERN.matcher(newParam).replaceAll(ANY_CHAR);
         newParam = URI_SEP_PATTERN.matcher(newParam).replaceAll(URI_SEP);
 
-        return new StringBuilder(newParam.length() + 2)
-                .append(START)
-                .append(newParam)
-                .append(END)
-                .toString();
+        return START + newParam + END;
     }
 
 }

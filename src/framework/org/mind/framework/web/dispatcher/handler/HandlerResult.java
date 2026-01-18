@@ -45,7 +45,7 @@ public interface HandlerResult {
             jsonObject.addProperty(REQUEST_URL, HttpUtils.getURL(request, true));
         else {
             try {
-                queryString = URLDecoder.decode(queryString, StandardCharsets.UTF_8.name());
+                queryString = URLDecoder.decode(queryString, StandardCharsets.UTF_8);
             } catch (Exception ignored) {}
             jsonObject.addProperty(REQUEST_URL, HttpUtils.getURL(request, true) + "?" + queryString);
         }

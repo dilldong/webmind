@@ -6,13 +6,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 import org.mind.framework.exception.BaseException;
-import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -235,15 +233,10 @@ public class HttpUtils {
             return value;
 
         // 在JS中，encodeURIComponent会保留一些特定字符
-        try {
-            String encode = URLEncoder.encode(value, StandardCharsets.UTF_8.name());
-            return StringUtils.replaceEach(encode,
-                    new String[]{"+", "%27", "%7E", "%28", "%29", "%21"},
-                    new String[]{"%20", "'", "~", "(", ")", "!"});
-        } catch (UnsupportedEncodingException e) {
-            ThrowProvider.doThrow(e);
-        }
-        return StringUtils.EMPTY;
+        String encode = URLEncoder.encode(value, StandardCharsets.UTF_8);
+        return StringUtils.replaceEach(encode,
+                new String[]{"+", "%27", "%7E", "%28", "%29", "%21"},
+                new String[]{"%20", "'", "~", "(", ")", "!"});
     }
 
     public static String encodeURI(String value) {

@@ -196,7 +196,7 @@ public class TestModule {
 
         System.out.println(JsonUtils.deletionBlank(json));
         json = StringUtils.substringBetween(json, "method", ",");
-        json = json.replaceAll("[\'\":]*", "").trim();
+        json = json.replaceAll("['\":]*", "").trim();
         System.out.println(json);
     }
 
