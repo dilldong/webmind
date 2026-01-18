@@ -21,7 +21,7 @@ import org.redisson.client.RedisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.aop.framework.AopProxyUtils;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 
@@ -182,19 +182,14 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (MatcherUtils.checkCount(attrKey, MatcherUtils.PARAM_MATCH_PATTERN) == 0)
             return attrKey;
 
-        // AopProxyUtils.ultimateTargetClass 穿透多层代理，返回原始对象
-        Class<?> targetClass = AopProxyUtils.ultimateTargetClass(target);
-
-        Method originalMethod;
-        try {
-            originalMethod = targetClass.getDeclaredMethod(method.getName(), method.getParameterTypes());
-            originalMethod.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            // 回退到原 method（罕见情况）
-            originalMethod = method;
-        }
-
-        String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(originalMethod);
+        /*
+         * 使用 Spring 提供的方法解析 + 参数名发现器
+         * 接口 → 实现类
+         * bridge method
+         * 泛型擦除问题
+         */
+        Method specificMethod = AopUtils.getMostSpecificMethod(method, target.getClass());
+        String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(specificMethod);
 
         Objects.requireNonNull(paramNames);
         int size = params.length;
