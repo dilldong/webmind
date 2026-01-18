@@ -1,6 +1,5 @@
 package org.mind.framework;
 
-import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
@@ -53,12 +52,14 @@ public class TestAction {
 
     @Mapping("/request/json01")
     public String withJsonResult() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Smith");
+        data.put("age", 26);
+        data.put("gender", "Male");
+        data.put("session-id", Action.getActionContext().getSession().getId());
+
         return new Response<Map<String, Object>>(HttpServletResponse.SC_OK, "OK")
-                .setResult(ImmutableMap.of(
-                        "name", "Smith",
-                        "age", 26,
-                        "gender", "Male",
-                        "session-id", Action.getActionContext().getSession().getId()))
+                .setResult(data)
                 .toJson();
     }
 
