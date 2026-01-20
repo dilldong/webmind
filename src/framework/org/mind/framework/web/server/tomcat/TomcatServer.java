@@ -29,11 +29,12 @@ import org.mind.framework.exception.WebServerException;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.IOUtils;
+import org.mind.framework.web.container.spring.AnnotationLoad4SpringContext;
 import org.mind.framework.web.container.spring.WebContextLoadListener;
+import org.mind.framework.web.container.spring.XmlLoad4SpringContext;
 import org.mind.framework.web.dispatcher.DispatcherServlet;
 import org.mind.framework.web.server.ServerContext;
 import org.mind.framework.web.server.WebServerConfig;
-import org.mind.framework.web.server.XmlLoad4SpringContext;
 import org.mind.framework.web.server.tomcat.monitor.MonitoringValve;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.ResourcePropertySource;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import java.io.File;
@@ -79,7 +79,6 @@ public class TomcatServer extends Tomcat {
     @Override
     public Context addWebapp(Host host, String contextPath, String docBase) {
         StandardContext ctx = new TomcatEmbeddedContext();
-        ctx.setPath(contextPath);
         ctx.setDocBase(docBase);
         ctx.setReloadable(false);// 控制Web应用是否支持热重载（自动重新加载）
 
@@ -358,6 +357,7 @@ public class TomcatServer extends Tomcat {
         wrapper.addInitParameter("resource", serverConfig.getStaticSuffix());
         wrapper.addInitParameter("expires", serverConfig.getResourceExpires());
         wrapper.setLoadOnStartup(1);
+        //wrapper.setAsyncSupported(true);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
         ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, ServerContext.SERVLET_NAME);
@@ -370,7 +370,7 @@ public class TomcatServer extends Tomcat {
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
             if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
-                AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
+                AnnotationLoad4SpringContext ac = new AnnotationLoad4SpringContext();
                 ac.setServletContext(ctx.getServletContext());
                 ac.register(serverConfig.getSpringConfigClassSet().toArray(new Class[0]));
                 // by web-container destroy
@@ -415,10 +415,12 @@ public class TomcatServer extends Tomcat {
         environment.setPlaceholderPrefix(PlaceholderConfigurerSupport.DEFAULT_PLACEHOLDER_PREFIX);
         environment.setPlaceholderSuffix(PlaceholderConfigurerSupport.DEFAULT_PLACEHOLDER_SUFFIX);
 
+        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
         MutablePropertySources propertySources = environment.getPropertySources();
+
         serverConfig.getResourceSet().forEach(res -> {
             try {
-                propertySources.addFirst(new ResourcePropertySource(new ClassPathResource(res)));
+                propertySources.addLast(new ResourcePropertySource(new ClassPathResource(res, contextLoader)));
             } catch (IOException e) {
                 throw new WebServerException(e.getMessage(), e);
             }

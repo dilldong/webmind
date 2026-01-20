@@ -3,6 +3,7 @@ package org.mind.framework;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
@@ -163,9 +164,9 @@ public class SpringApplication {
 
                 try {
                     // load log4j2
-                    org.apache.logging.log4j.core.config.Configurator.initialize(
+                    try(LoggerContext context = org.apache.logging.log4j.core.config.Configurator.initialize(
                             null,
-                            new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream));
+                            new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream))){}
 
                     // load logback
 //                    ch.qos.logback.classic.LoggerContext.LoggerContext context =
