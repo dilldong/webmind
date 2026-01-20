@@ -31,11 +31,12 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.JsonUtils;
+import org.mind.framework.web.container.spring.AnnotationLoad4SpringContext;
 import org.mind.framework.web.container.spring.WebContextLoadListener;
+import org.mind.framework.web.container.spring.XmlLoad4SpringContext;
 import org.mind.framework.web.dispatcher.DispatcherServlet;
 import org.mind.framework.web.server.AbstractServerContext;
 import org.mind.framework.web.server.WebServerConfig;
-import org.mind.framework.web.server.XmlLoad4SpringContext;
 import org.mind.framework.web.server.tomcat.monitor.MonitoringValve;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.ResourcePropertySource;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import java.io.File;
@@ -355,6 +355,7 @@ public class TomcatServer extends Tomcat {
         wrapper.addInitParameter("resource", serverConfig.getStaticSuffix());
         wrapper.addInitParameter("expires", serverConfig.getResourceExpires());
         wrapper.setLoadOnStartup(1);
+        //wrapper.setAsyncSupported(true);
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
         ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, AbstractServerContext.SERVLET_NAME);
@@ -367,7 +368,7 @@ public class TomcatServer extends Tomcat {
         // Add Spring loader
         if (Objects.isNull(serverConfig.getSpringFileSet()) || serverConfig.getSpringFileSet().isEmpty()) {
             if (Objects.nonNull(serverConfig.getSpringConfigClassSet()) && !serverConfig.getSpringConfigClassSet().isEmpty()) {
-                AnnotationConfigWebApplicationContext ac = new AnnotationConfigWebApplicationContext();
+                AnnotationLoad4SpringContext ac = new AnnotationLoad4SpringContext();
                 ac.setServletContext(ctx.getServletContext());
                 ac.register(serverConfig.getSpringConfigClassSet().toArray(new Class[0]));
                 // by web-container destroy

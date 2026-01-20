@@ -1,7 +1,12 @@
 package org.mind.framework.util;
 
-import org.apache.commons.io.IOUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.exception.ThrowProvider;
+import org.mind.framework.web.container.spring.DefaultByteArrayResource;
+import org.mind.framework.web.server.WebServerConfig;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +21,7 @@ import java.util.jar.JarFile;
  * @version 1.0
  * @date 2022-03-17
  */
+@Slf4j
 public final class JarFileUtils {
     private static final String CLASS_PATH =
             String.join(
@@ -58,7 +64,7 @@ public final class JarFileUtils {
 
     public static String getJarEntryContent(String jarPath, String fileName) {
         try (InputStream in = getJarEntryStream(jarPath, fileName)) {
-            return IOUtils.toString(Objects.requireNonNull(in), StandardCharsets.UTF_8);
+            return org.apache.commons.io.IOUtils.toString(Objects.requireNonNull(in), StandardCharsets.UTF_8);
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
             return null;
@@ -80,5 +86,33 @@ public final class JarFileUtils {
             ThrowProvider.doThrow(e);
             return null;
         }
+    }
+
+    // Load from custom JAR path
+    public static Resource loadResourceFromJar(String path) {
+        String tempPath = path;
+
+        if(tempPath.startsWith(ResourceLoader.CLASSPATH_URL_PREFIX))
+            tempPath = tempPath.substring(ResourceLoader.CLASSPATH_URL_PREFIX.length());
+        else if(tempPath.startsWith(ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX))
+            tempPath = tempPath.substring(ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX.length());
+
+        if(tempPath.startsWith(IOUtils.DIR_SEPARATOR))
+            tempPath =  tempPath.substring(1);
+
+        InputStream in = getJarEntryStream(
+                WebServerConfig.JAR_IN_CLASSES + IOUtils.DIR_SEPARATOR + tempPath);
+
+        if (Objects.nonNull(in)) {
+            try {
+                return new DefaultByteArrayResource(in, tempPath);
+            } catch (IOException e) {
+                log.error("Load resource form jar error, {}", e.getMessage());
+            } finally {
+                org.apache.commons.io.IOUtils.closeQuietly(in);
+            }
+        }
+
+        return null;
     }
 }
