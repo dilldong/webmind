@@ -79,6 +79,7 @@ public class TomcatServer extends Tomcat {
     @Override
     public Context addWebapp(Host host, String contextPath, String docBase) {
         StandardContext ctx = new TomcatEmbeddedContext();
+        ctx.setPath(contextPath);
         ctx.setDocBase(docBase);
         ctx.setReloadable(false);// 控制Web应用是否支持热重载（自动重新加载）
 
