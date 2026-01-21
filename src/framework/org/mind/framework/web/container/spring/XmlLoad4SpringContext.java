@@ -33,7 +33,7 @@ public class XmlLoad4SpringContext extends XmlWebApplicationContext {
         ClassLoader cl = XmlLoad4SpringContext.class.getClassLoader();
 
         // Sync to Context
-        setClassLoader(cl);
+        this.setClassLoader(cl);
 
         // Sync to Reader
         reader.setBeanClassLoader(cl);
