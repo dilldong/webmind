@@ -16,6 +16,7 @@ import org.mind.framework.util.IOUtils;
 import org.mind.framework.web.server.tomcat.TomcatServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -147,7 +148,9 @@ public abstract class AbstractServerContext {
 
         Objects.requireNonNull(baseDir, "The tomcat work directory not exists.");
         serverConfig.setTomcatBaseDir(baseDir.getAbsolutePath());
-        ResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+        ResourcePatternResolver patternResolver =
+                new PathMatchingResourcePatternResolver(
+                        new DefaultResourceLoader(AbstractServerContext.class.getClassLoader()));
 
         // Copy root files
         if(StringUtils.isNotEmpty(serverConfig.getResourceRootFiles())){

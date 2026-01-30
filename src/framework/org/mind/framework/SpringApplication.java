@@ -3,6 +3,7 @@ package org.mind.framework;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
@@ -103,8 +104,8 @@ public class SpringApplication {
                     timeUnit.sleep(await);
 
                 // shutdown on Spring
-                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext context)
-                    context.close();
+                if (ContextSupport.getApplicationContext() instanceof AbstractApplicationContext)
+                    ((AbstractApplicationContext) ContextSupport.getApplicationContext()).close();
 
                 mainThread.interrupt();
                 // When received a stop signal,
@@ -163,9 +164,17 @@ public class SpringApplication {
 
                 try {
                     // load log4j2
-                    org.apache.logging.log4j.core.config.Configurator.initialize(
+                    try(LoggerContext context = org.apache.logging.log4j.core.config.Configurator.initialize(
                             null,
-                            new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream));
+                            new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream))){}
+
+                    // load logback
+//                    ch.qos.logback.classic.LoggerContext.LoggerContext context =
+//                            (ch.qos.logback.classic.LoggerContextLoggerContext) LoggerFactory.getILoggerFactory();
+//                    context.reset();
+//                    ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator configurator = new ch.qos.logback.classic.joran.JoranConfiguratorJoranConfigurator();
+//                    configurator.setContext(context);
+//                    configurator.doConfigure(log4jInputStream);
 
                     // load log4j 1.x
                     //org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);
