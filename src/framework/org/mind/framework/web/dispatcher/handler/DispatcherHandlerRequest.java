@@ -253,7 +253,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
          * Status code (404) indicating that the requested resource is not available.
          */
         if (Objects.isNull(execution)) {
-            log.warn("The requested URL (404) Not found: [{}]", requestURI);
+            log.warn("(404) Not found: [{}]", requestURI);
             this.renderError(
                     HttpServletResponse.SC_NOT_FOUND,
                     "The requested URL (404) Not found",
