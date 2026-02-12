@@ -18,7 +18,7 @@ public class DelayTask<T> extends AbstractTask {
 
     public static <T> DelayTask<T> of(T payload) {
         DelayTask<T> task = new DelayTask<>();
-        task.taskId = RandomCodeUtil.randomString(16, true, true);
+        task.taskId = RandomCodeUtil.fastRandomString(8);
         task.payload = payload;
         return task;
     }
