@@ -12,9 +12,11 @@ import org.redisson.api.RDelayedQueue;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RedissonClient;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -59,7 +61,12 @@ public class RedissonDelayedQueueService {
     /**
      * 存储正在运行的队列监听器
      */
-    private final Map<String, Future<?>> runningListeners = new ConcurrentHashMap<>();
+    private final Map<String, Future<?>> runningListenerMap = new ConcurrentHashMap<>();
+
+    /**
+     * 缓存查找到的兼容数据类型
+     */
+    private final Map<Class<?>, Consumer<?>> compatibleTypeReference = new ConcurrentHashMap<>();
 
     private final RBlockingQueue<Object> blockingQueue;
     private final RDelayedQueue<Object> delayedQueue;
@@ -67,6 +74,9 @@ public class RedissonDelayedQueueService {
 
     @Getter
     private volatile boolean running;
+
+    @Getter
+    private volatile boolean shutdownHookRegistered;
 
     public RedissonDelayedQueueService(String delayQueueName, String delayMapName) {
         this.delayQueueName = delayQueueName;
@@ -77,84 +87,93 @@ public class RedissonDelayedQueueService {
         this.delayedQueue = redissonClient.getDelayedQueue(blockingQueue);
         this.rMapCache = redissonClient.getMapCache(delayMapName);
 
-        RedissonHelper.getInstance().addShutdownEvent(client -> {
-            this.stopQueueListener();
+        if (!shutdownHookRegistered) {
+            synchronized (this) {
+                if (!shutdownHookRegistered) {
+                    RedissonHelper.getInstance().addShutdownEvent(client -> {
+                        this.stopQueueListener();
 
-            if (!taskExecutor.isShutdown())
-                taskExecutor.shutdown();
+                        // task shutdown graceful
+                        shutdownExecutor(this.taskExecutor, "RDelayTask-Graceful", 10);
 
-            if (!listenerExecutor.isShutdown())
-                listenerExecutor.shutdown();
+                        // listener shutdown graceful
+                        shutdownExecutor(this.listenerExecutor, "RDelayListen-Graceful", 5);
 
-            runningListeners.clear();
-            queueConsumerMap.clear();
-        });
+                        runningListenerMap.clear();
+                        queueConsumerMap.clear();
+                        compatibleTypeReference.clear();
+                    });
+                    shutdownHookRegistered = true;
+                }
+            }
+        }
     }
 
     public void init(){
         // 创建任务处理线程池
-        if(Objects.isNull(taskExecutor)) {
-            taskExecutor = ExecutorFactory.newThreadPoolExecutor(
-                    2,
-                    Math.min(Runtime.getRuntime().availableProcessors() << 1, 4),
-                    60L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(64),
-                    ExecutorFactory.newThreadFactory("delay-task-", false),
-                    new ThreadPoolExecutor.CallerRunsPolicy());
-        }
+        initTaskExecutor();
 
         // 创建队列监听线程池
-        if(Objects.isNull(listenerExecutor)) {
-            listenerExecutor = ExecutorFactory.newThreadPoolExecutor(
-                    1, 2,
-                    30L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<>(32),
-                    ExecutorFactory.newThreadFactory("delay-listen-", true),
-                    new ThreadPoolExecutor.CallerRunsPolicy());
-        }
+        initListenerExecutor();
     }
 
     /**
      * 添加延迟任务
      * 如果该队列已经注册了对应类型的消费者，会自动处理任务
+     * 注意：任务对象必须可序列化（实现 Serializable 接口）
      *
-     * @param task     任务对象
+     * @param task     任务对象（必须可序列化）
      * @param delay    延迟时间
      * @param timeUnit 时间单位
      * @param <T>      任务类型
      */
-    public <T> void addDelayTask(T task, long delay, TimeUnit timeUnit) {
+    public <T> boolean addDelayTask(T task, long delay, TimeUnit timeUnit) {
         if (Objects.isNull(task))
-            return;
+            return false;
 
+        String taskId = null;
+        boolean putable = false;
         try {
-            this.delayedQueue.offer(task, delay, timeUnit);
-            log.debug("Adding a delay task successfully, task type: {}, delay time: {} {}",
-                    task.getClass().getSimpleName(), delay, timeUnit);
+            if (task instanceof AbstractTask at) {
+                taskId = at.getTaskId();
+                putable = this.rMapCache.fastPut(taskId, task, delay, timeUnit);
+                if(!putable) {
+                    log.error("Failed to add a delay task, task: {}", task);
+                    return false;
+                }
+            }
 
-            if (task instanceof AbstractTask abstractTask)
-                this.rMapCache.fastPut(abstractTask.getTaskId(), task, delay, timeUnit);
+            this.delayedQueue.offer(task, delay, timeUnit);
+            log.debug("Added a delay task successfully, task type: {}, delay time: {} {}",
+                    task.getClass().getSimpleName(), delay, timeUnit);
 
             // 确保该队列有对应类型的消费者在运行
             ensureQueueListenerRunning();
+            return true;
         } catch (Exception e) {
+            // Rollback：如果队列添加失败，清理 map
+            if (putable && StringUtils.isNotEmpty(taskId))
+                this.rMapCache.fastRemove(taskId);
+
             log.error("Failed to add a delay task, task: {}, error: {}", task, e.getMessage(), e);
+            return false;
         }
     }
 
     /**
      * 添加延迟任务并注册消费者
      * 如果该队列没有注册过消费者，会同时注册消费者
+     * 注意：任务对象必须可序列化（实现 Serializable 接口）
      *
-     * @param task     任务对象
+     * @param task     任务对象（必须可序列化）
      * @param delay    延迟时间
      * @param timeUnit 时间单位
      * @param consumer 消费者处理逻辑
      * @param <T>      任务类型
      */
-    public <T> void addDelayTask(T task, long delay, TimeUnit timeUnit, Consumer<T> consumer) {
+    public <T> boolean addDelayTask(T task, long delay, TimeUnit timeUnit, Consumer<T> consumer) {
         if (Objects.isNull(task))
-            return;
+            return false;
 
         // 注册消费者
         if (task instanceof DelayTask)
@@ -163,7 +182,7 @@ public class RedissonDelayedQueueService {
             registerConsumer((Class<T>) task.getClass(), consumer);
 
         // 添加任务
-        addDelayTask(task, delay, timeUnit);
+        return addDelayTask(task, delay, timeUnit);
     }
 
     /**
@@ -179,8 +198,8 @@ public class RedissonDelayedQueueService {
 
         try {
             boolean result = delayedQueue.remove(task);
-            if (result && task instanceof AbstractTask abstractTask)
-                this.rMapCache.fastRemove(abstractTask.getTaskId());
+            if (result && task instanceof AbstractTask at)
+                this.rMapCache.fastRemove(at.getTaskId());
 
             log.info("Delete delay-queue tasks: [{}], task: {}", result ? "OK" : "Failed", task);
             return result;
@@ -218,46 +237,42 @@ public class RedissonDelayedQueueService {
      * 注册后系统会自动监听并处理队列中的任务
      */
     public <T> void registerConsumer(DelayTask<T> task, Consumer<DelayTask<T>> consumer, boolean... onlyTaskId) {
-        synchronized (queueConsumerMap) {
-            Map<Object, Consumer<?>> consumers =
-                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
+        Map<Object, Consumer<?>> consumers =
+                queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
-            boolean registTaskType = ArrayUtils.isEmpty(onlyTaskId) || !onlyTaskId[0];
-            Class<?> clazz = task.getClass();
+        boolean registerTaskType = ArrayUtils.isEmpty(onlyTaskId) || !onlyTaskId[0];
+        Class<?> clazz = task.getClass();
 
-            if (registTaskType) {
-                if (consumers.containsKey(clazz))
-                    log.warn("Warn: Type overridden, task type{}", clazz.getSimpleName());
+        if (registerTaskType) {
+            if (consumers.containsKey(clazz))
+                log.warn("Warn: Type overridden, task type{}", clazz.getSimpleName());
 
-                // class type
-                consumers.put(task.getClass(), consumer);
-            }
-
-            if (consumers.containsKey(task.getTaskId()))
-                log.warn("Warn: Same taskId overridden, task id: {}, override type: {}", task.getTaskId(), clazz.getSimpleName());
-
-            // task id
-            consumers.put(task.getTaskId(), consumer);
-
-            // 启动队列监听器(如果尚未启动)
-            ensureQueueListenerRunning();
+            // class type
+            consumers.put(task.getClass(), consumer);
         }
+
+        if (consumers.containsKey(task.getTaskId()))
+            log.warn("Warn: Same taskId overridden, task id: {}, override type: {}", task.getTaskId(), clazz.getSimpleName());
+
+        // task id
+        consumers.put(task.getTaskId(), consumer);
+
+        // 启动队列监听器(如果尚未启动)
+        ensureQueueListenerRunning();
     }
 
     public <T> void registerConsumer(Class<T> taskType, Consumer<T> consumer) {
-        synchronized (queueConsumerMap) {
-            Map<Object, Consumer<?>> consumers =
-                    queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
+        Map<Object, Consumer<?>> consumers =
+                queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
-            if (consumers.containsKey(taskType))
-                log.warn("Warn: Type overridden, task type{}", taskType.getSimpleName());
+        if (consumers.containsKey(taskType))
+            log.warn("Warn: Type overridden, task type{}", taskType.getSimpleName());
 
-            // class type
-            consumers.put(taskType, consumer);
+        // class type
+        consumers.put(taskType, consumer);
 
-            // 启动队列监听器(如果尚未启动)
-            ensureQueueListenerRunning();
-        }
+        // 启动队列监听器(如果尚未启动)
+        ensureQueueListenerRunning();
     }
 
     /**
@@ -265,18 +280,20 @@ public class RedissonDelayedQueueService {
      */
     private void ensureQueueListenerRunning() {
         // 如果该队列的监听器已经在运行，直接返回
-        if (isRunning() && runningListeners.containsKey(this.delayQueueName))
+        if (isRunning() && runningListenerMap.containsKey(this.delayQueueName))
             return;
 
-        synchronized (runningListeners) {
-            // 再次检查(双重检查锁定模式)
-            if (isRunning() && runningListeners.containsKey(this.delayQueueName))
+        synchronized (this) {
+            // 再次检查(双检查DCL)
+            if (isRunning() && runningListenerMap.containsKey(this.delayQueueName))
                 return;
 
             // 启动队列监听器
             this.running = true;
-            Future<?> future = listenerExecutor.submit(() -> startQueueListener(this.delayQueueName));
-            runningListeners.put(this.delayQueueName, future);
+
+            // 使用 submit 后保存 Future，方便 stop 时 cancel
+            Future<?> future = getListenerExecutor().submit(() -> startQueueListener(this.delayQueueName));
+            runningListenerMap.put(this.delayQueueName, future);
             log.debug("Start the Delay-Queue listener ....");
         }
     }
@@ -287,12 +304,13 @@ public class RedissonDelayedQueueService {
      * @param queueName 队列名称
      */
     private void startQueueListener(String queueName) {
-        //RBlockingQueue<Object> blockingQueue = RedissonHelper.getClient().getBlockingQueue(queueName);
-
         while (isRunning()) {
             try {
-                // 阻塞获取队列中的任务
-                Object task = blockingQueue.take();
+                // 使用带超时的poll获取队列中的任务
+                Object task = blockingQueue.poll(1L, TimeUnit.SECONDS);
+                if(Objects.isNull(task))
+                    continue;
+
                 log.debug("Get delayed task, task type: {}", task.getClass().getSimpleName());
 
                 // 查找对应类型的消费者
@@ -300,14 +318,11 @@ public class RedissonDelayedQueueService {
                 if (Objects.isNull(consumers))
                     continue;
 
-                Consumer<?> consumer = null;
-                String taskId = null;
+                // 优先级：TaskId > ClassType > AssignableType
+                String taskId = (task instanceof AbstractTask at)? at.getTaskId() : null;
 
                 // 尝试task id匹配
-                if (task instanceof AbstractTask abstractTask) {
-                    taskId = abstractTask.getTaskId();
-                    consumer = consumers.get(taskId);
-                }
+                Consumer<?> consumer = StringUtils.isEmpty(taskId)? null : consumers.get(taskId);
 
                 // 尝试类型匹配
                 if (Objects.isNull(consumer))
@@ -315,13 +330,16 @@ public class RedissonDelayedQueueService {
 
                 // 如果没有匹配，尝试找到可兼容类型的消费者
                 if (Objects.isNull(consumer)) {
-                    for (Map.Entry<Object, Consumer<?>> entry : consumers.entrySet()) {
-                        if (entry.getKey() instanceof Class
-                                && ((Class<?>) entry.getKey()).isAssignableFrom(task.getClass())) {
-                            consumer = entry.getValue();
-                            break;
+                    consumer = compatibleTypeReference.computeIfAbsent(task.getClass(), taskClass->{
+                        // 最后尝试继承关系匹配
+                        for (Map.Entry<Object, Consumer<?>> entry : consumers.entrySet()) {
+                            if (entry.getKey() instanceof Class<?> clazz && clazz.isAssignableFrom(taskClass)) {
+                                return entry.getValue();
+                            }
                         }
-                    }
+
+                        return null;
+                    });
                 }
 
                 // 执行任务处理
@@ -331,7 +349,7 @@ public class RedissonDelayedQueueService {
                     final String finalTaskId = taskId;
 
                     // 使用线程池异步处理任务
-                    taskExecutor.execute(() -> {
+                    getTaskExecutor().execute(() -> {
                         try {
                             if (StringUtils.isNotEmpty(finalTaskId))
                                 rMapCache.fastRemove(finalTaskId);
@@ -360,19 +378,97 @@ public class RedissonDelayedQueueService {
         }
 
         // 监听器退出，从运行列表中移除
-        runningListeners.remove(queueName);
+        runningListenerMap.remove(queueName);
         log.info("Stopped the Delay-Queue listener，queue name: {}", queueName);
     }
 
     /**
      * 停止队列监听器
      */
-    public void stopQueueListener() {
+    public synchronized void stopQueueListener() {
         this.running = false;
-        Future<?> future = runningListeners.remove(this.delayQueueName);
+
+        Future<?> future = runningListenerMap.remove(this.delayQueueName);
         if (future != null) {
             future.cancel(true);
             log.info("Stopping the Delay-Queue listener ....");
+        }
+
+        if(Objects.nonNull(delayedQueue))
+            delayedQueue.destroy();
+    }
+
+    private ThreadPoolExecutor getTaskExecutor() {
+        if (Objects.isNull(taskExecutor))
+            initTaskExecutor();
+
+        return taskExecutor;
+    }
+
+    private ThreadPoolExecutor getListenerExecutor() {
+        if (Objects.isNull(listenerExecutor))
+            initListenerExecutor();
+
+        return listenerExecutor;
+    }
+
+    private void initTaskExecutor(){
+        if(Objects.isNull(taskExecutor)) {
+            synchronized (this) {
+                if(Objects.isNull(taskExecutor)) {
+                    taskExecutor = ExecutorFactory.newThreadPoolExecutor(
+                            2,
+                            Math.min(Runtime.getRuntime().availableProcessors() << 1, 4),
+                            60L, TimeUnit.SECONDS,
+                            new LinkedBlockingQueue<>(128),
+                            ExecutorFactory.newThreadFactory("delay-task-", false),
+                            new ThreadPoolExecutor.AbortPolicy());
+                }
+            }
+        }
+    }
+
+    private void initListenerExecutor(){
+        if(Objects.isNull(listenerExecutor)) {
+            synchronized (this) {
+                if (Objects.isNull(listenerExecutor)) {
+                    listenerExecutor = ExecutorFactory.newThreadPoolExecutor(
+                            1, 2,
+                            60L, TimeUnit.SECONDS,
+                            new LinkedBlockingQueue<>(32),
+                            ExecutorFactory.newThreadFactory("delay-listen-", true),
+                            new ThreadPoolExecutor.AbortPolicy());
+                }
+            }
+        }
+    }
+
+    private void shutdownExecutor(ExecutorService executor, String executorName, long awaitSeconds) {
+        if (Objects.isNull(executor) || executor.isShutdown())
+            return;
+
+        try {
+            // 1. shutdown graceful
+            executor.shutdown();
+
+            // 2. wait task completed
+            if (!executor.awaitTermination(awaitSeconds, java.util.concurrent.TimeUnit.SECONDS)) {
+                // 3. forced shutdown
+                List<Runnable> droppedTasks = executor.shutdownNow();
+
+                if(!droppedTasks.isEmpty())
+                    log.warn("{} dropped [{}] tasks during forced shutdown", executorName, droppedTasks.size());
+
+                // 4. wait task again
+                if (!executor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS))
+                    log.error("{} did not terminate even after forced shutdown", executorName);
+            }
+        } catch (InterruptedException e) {
+            log.error("{} shutdown interrupted", executorName, e);
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log.error("{} shutdown failed with unexpected error", executorName, e);
         }
     }
 }
