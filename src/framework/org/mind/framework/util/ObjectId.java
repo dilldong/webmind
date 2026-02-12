@@ -15,6 +15,7 @@ package org.mind.framework.util;
  * limitations under the License.
  */
 
+import org.mind.framework.security.SunCrypto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,6 @@ import java.io.Serializable;
 import java.net.NetworkInterface;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Objects;
@@ -56,7 +56,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
 
     private static final int MACHINE_IDENTIFIER;
     private static final short PROCESS_IDENTIFIER;
-    private static final AtomicInteger NEXT_COUNTER = new AtomicInteger(new SecureRandom().nextInt());
+    private static final AtomicInteger NEXT_COUNTER = new AtomicInteger(SunCrypto.SECURE_RANDOM.nextInt());
 
     private final int timestamp;
     private final int machineIdentifier;
@@ -479,7 +479,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
             machinePiece = sb.toString().hashCode();
         } catch (Throwable t) {
             // exception sometimes happens with IBM JVM, use random
-            machinePiece = (new SecureRandom().nextInt());
+            machinePiece = SunCrypto.SECURE_RANDOM.nextInt();
             LOGGER.warn("Failed to get machine identifier from network interface, using random number instead", t);
         }
         machinePiece = machinePiece & LOW_ORDER_THREE_BYTES;
@@ -499,7 +499,7 @@ public final class ObjectId implements Comparable<ObjectId>, Serializable {
             }
 
         } catch (Throwable t) {
-            processId = (short) new SecureRandom().nextInt();
+            processId = (short) SunCrypto.SECURE_RANDOM.nextInt();
             LOGGER.warn("Failed to get process identifier from JMX, using random number instead", t);
         }
 

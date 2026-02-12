@@ -1,6 +1,7 @@
 package org.mind.framework.util;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.mind.framework.security.SunCrypto;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
@@ -14,6 +15,8 @@ import java.util.function.UnaryOperator;
  * @version 1.1
  */
 public final class RandomCodeUtil {
+
+    private static final char[] HEX = "0123456789abcdef".toCharArray();
 
     private RandomCodeUtil() {
     }
@@ -67,6 +70,24 @@ public final class RandomCodeUtil {
      */
     public static String randomString(int length, boolean letters, boolean numbers) {
         return RandomStringUtils.secure().next(length, letters, numbers);
+    }
+
+    /**
+     * 基于位移运算的随机数生成, 相比@randomString()方法，效率更高，但熵值碰撞几率不如@randomString()
+     * @param length
+     * @return
+     */
+    public static String fastRandomString(int length){
+        byte[] randomBytes = new byte[length];
+        SunCrypto.SECURE_RANDOM.nextBytes(randomBytes);
+
+        char[] hexChars = new char[length << 1];
+        for (int i = 0; i < length; ++i) {
+            int v = randomBytes[i] & 0xFF;
+            hexChars[i << 1] = HEX[v >>> 4];
+            hexChars[(i << 1) + 1] = HEX[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
     public static int getRandomNums(int min, int max) {
