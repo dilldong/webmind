@@ -5,6 +5,7 @@ import org.mind.framework.service.threads.ExecutorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -108,18 +109,39 @@ public class GracefulShutdown {
     }
 
     protected void shutdown(ExecutorService executorService) {
+        if (Objects.isNull(executorService) || executorService.isShutdown())
+            return;
+
         try {
+            // 1. shutdown graceful
             executorService.shutdown();
+
+            // notify registered services
             this.consumer.accept(ShutDownSignalStatus.DOWN);
 
+            // 2. wait task completed
             if (!executorService.awaitTermination(awaitTime, awaitTimeUnit)) {
-                log.warn("'{}' didn't shutdown gracefully within '{} {}'. Proceeding with forceful shutdown",
-                        nameTag,
-                        awaitTime,
-                        awaitTimeUnit.name());
-                executorService.shutdownNow();
+                // 3. forced shutdown
+                List<Runnable> droppedTasks = executorService.shutdownNow();
+
+                if(!droppedTasks.isEmpty()) {
+                    log.warn("{} dropped [{}] tasks, did not shutdown gracefully within '{}{}'. Proceeding with forceful shutdown",
+                            nameTag,
+                            droppedTasks.size(),
+                            awaitTime,
+                            awaitTimeUnit.name());
+                }
+
+                // 4. wait task again
+                if (!executorService.awaitTermination(3, TimeUnit.SECONDS))
+                    log.error("{} did not terminate even after forced shutdown", nameTag);
             }
-        } catch (InterruptedException | IllegalStateException ignored) {
+        } catch (InterruptedException e) {
+            log.error("{} shutdown interrupted", nameTag, e);
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log.error("{} shutdown failed with unexpected error", nameTag, e);
         }
     }
 }
