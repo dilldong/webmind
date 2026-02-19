@@ -280,22 +280,49 @@ public class RedissonDelayedQueueService {
      */
     private void ensureQueueListenerRunning() {
         // 如果该队列的监听器已经在运行，直接返回
-        if (isRunning() && runningListenerMap.containsKey(this.delayQueueName))
+        if (isRunning() && isListenerActuallyRunning())
             return;
 
         synchronized (this) {
             // 再次检查(双检查DCL)
-            if (isRunning() && runningListenerMap.containsKey(this.delayQueueName))
+            if (isRunning() && isListenerActuallyRunning())
                 return;
 
             // 启动队列监听器
             this.running = true;
 
             // 使用 submit 后保存 Future，方便 stop 时 cancel
-            Future<?> future = getListenerExecutor().submit(() -> startQueueListener(this.delayQueueName));
+            Future<?> future = getListenerExecutor().submit(() -> {
+                try {
+                    startQueueListener(this.delayQueueName);
+                }catch (Exception e){
+                    log.error("Listener thread crashed unexpectedly", e);
+                    // 监听器崩溃，清理状态
+                    runningListenerMap.remove(this.delayQueueName);
+                    this.running = false;
+                }
+            });
             runningListenerMap.put(this.delayQueueName, future);
             log.debug("Start the Delay-Queue listener ....");
         }
+    }
+
+    /**
+     * 检查监听器是否真的在运行
+     */
+    private boolean isListenerActuallyRunning() {
+        Future<?> future = runningListenerMap.get(this.delayQueueName);
+        if (future == null)
+            return false;
+
+        // 检查 Future 是否完成（完成意味着监听器已退出）
+        if (future.isDone()) {
+            log.warn("Listener future is done, removing from map");
+            runningListenerMap.remove(this.delayQueueName);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -318,48 +345,15 @@ public class RedissonDelayedQueueService {
                 if (Objects.isNull(consumers))
                     continue;
 
-                // 优先级：TaskId > ClassType > AssignableType
-                String taskId = (task instanceof AbstractTask) ? ((AbstractTask) task).getTaskId() : null;
-
-                // 尝试task id匹配
-                Consumer<?> consumer = StringUtils.isEmpty(taskId) ? null : consumers.get(taskId);
-
-                // 尝试类型匹配
-                if (Objects.isNull(consumer))
-                    consumer = consumers.get(task.getClass());
-
-                // 如果没有匹配，尝试找到可兼容类型的消费者
-                if (Objects.isNull(consumer)) {
-                    consumer = compatibleTypeReference.computeIfAbsent(task.getClass(), taskClass -> {
-                        // 最后尝试继承关系匹配
-                        for (Map.Entry<Object, Consumer<?>> entry : consumers.entrySet()) {
-                            if (entry.getKey() instanceof Class && ((Class<?>) entry.getKey()).isAssignableFrom(taskClass)) {
-                                return entry.getValue();
-                            }
-                        }
-
-                        return null;
-                    });
-                }
+                Consumer<?> consumer = findConsumer(task, consumers);
 
                 // 执行任务处理
                 if (Objects.nonNull(consumer)) {
-                    final Consumer<Object> finalConsumer = (Consumer<Object>) consumer;
-                    final Object finalTask = task;
-                    final String finalTaskId = taskId;
-
-                    // 使用线程池异步处理任务
-                    getTaskExecutor().execute(() -> {
-                        try {
-                            if (StringUtils.isNotEmpty(finalTaskId))
-                                rMapCache.fastRemove(finalTaskId);
-
-                            finalConsumer.accept(finalTask);
-                        } catch (Exception e) {
-                            log.error("Handle delay-queue task exceptions, task: {}, error: {}",
-                                    finalTask, e.getMessage(), e);
-                        }
-                    });
+                    executeTask(task, consumer);
+                } else {
+                    log.warn("No matching consumer found for task type: {}, taskId: {}",
+                            task.getClass().getSimpleName(),
+                            task instanceof AbstractTask ? ((AbstractTask) task).getTaskId() : "N/A");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -379,7 +373,58 @@ public class RedissonDelayedQueueService {
 
         // 监听器退出，从运行列表中移除
         runningListenerMap.remove(queueName);
-        log.info("Stopped the Delay-Queue listener，queue name: {}", queueName);
+        synchronized (this) {
+            this.running = false;
+            log.info("Stopped the Delay-Queue listener，queue name: {}", queueName);
+        }
+    }
+
+    // 使用线程池异步处理任务
+    private void executeTask(Object task, Consumer<?> consumer){
+        final Object finalTask = task;
+        final String finalTaskId = (task instanceof AbstractTask) ? ((AbstractTask) task).getTaskId() : null;
+        final Consumer<Object> finalConsumer = (Consumer<Object>) consumer;
+
+        getTaskExecutor().execute(() -> {
+            try {
+                if (StringUtils.isNotEmpty(finalTaskId))
+                    rMapCache.fastRemove(finalTaskId);
+
+                finalConsumer.accept(finalTask);
+            } catch (Exception e) {
+                log.error("Handle delay-queue task exceptions, task: {}, error: {}",
+                        finalTask, e.getMessage(), e);
+            }
+        });
+    }
+
+    private Consumer<?> findConsumer(Object task, Map<Object, Consumer<?>> consumers) {
+        // 优先级：TaskId > ClassType > AssignableType
+        String taskId = (task instanceof AbstractTask) ? ((AbstractTask) task).getTaskId() : null;
+
+        // 尝试task id匹配
+        if(StringUtils.isNotEmpty(taskId)) {
+            Consumer<?> consumer = consumers.get(taskId);
+            if(Objects.nonNull(consumer))
+                return consumer;
+        }
+
+        // 尝试类型匹配
+        Consumer<?> consumer = consumers.get(task.getClass());
+        if(Objects.nonNull(consumer))
+            return consumer;
+
+        // 尝试找到可兼容类型的消费者
+        return compatibleTypeReference.computeIfAbsent(task.getClass(), taskClass -> {
+            // 最后尝试继承关系匹配
+            for (Map.Entry<Object, Consumer<?>> entry : consumers.entrySet()) {
+                if (entry.getKey() instanceof Class && ((Class<?>) entry.getKey()).isAssignableFrom(taskClass)) {
+                    return entry.getValue();
+                }
+            }
+
+            return null;
+        });
     }
 
     /**
@@ -433,11 +478,11 @@ public class RedissonDelayedQueueService {
             synchronized (this) {
                 if (Objects.isNull(listenerExecutor)) {
                     listenerExecutor = ExecutorFactory.newThreadPoolExecutor(
-                            1, 2,
+                            1, 1,
                             60L, TimeUnit.SECONDS,
-                            new LinkedBlockingQueue<>(32),
+                            new LinkedBlockingQueue<>(2),
                             ExecutorFactory.newThreadFactory("delay-listen-", true),
-                            new ThreadPoolExecutor.AbortPolicy());
+                            new ThreadPoolExecutor.CallerRunsPolicy());
                 }
             }
         }
