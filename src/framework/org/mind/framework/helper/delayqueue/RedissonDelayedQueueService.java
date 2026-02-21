@@ -132,15 +132,11 @@ public class RedissonDelayedQueueService {
             return false;
 
         String taskId = null;
-        boolean putable = false;
         try {
             if (task instanceof AbstractTask) {
                 taskId = ((AbstractTask) task).getTaskId();
-                putable = this.rMapCache.fastPut(taskId, task, delay, timeUnit);
-                if (!putable) {
-                    log.error("Failed to add a delay task, task: {}", task);
-                    return false;
-                }
+                // 如果taskId存在，这里会覆盖之前的任务
+                this.rMapCache.fastPut(taskId, task, delay, timeUnit);
             }
 
             this.delayedQueue.offer(task, delay, timeUnit);
@@ -152,7 +148,7 @@ public class RedissonDelayedQueueService {
             return true;
         } catch (Exception e) {
             // Rollback：如果队列添加失败，清理 map
-            if (putable && StringUtils.isNotEmpty(taskId))
+            if (StringUtils.isNotEmpty(taskId))
                 this.rMapCache.fastRemove(taskId);
 
             log.error("Failed to add a delay task, task: {}, error: {}", task, e.getMessage(), e);
@@ -245,14 +241,14 @@ public class RedissonDelayedQueueService {
 
         if (registerTaskType) {
             if (consumers.containsKey(clazz))
-                log.warn("Warn: Type overridden, task type{}", clazz.getSimpleName());
+                log.warn("Type overridden, task type: {}", clazz.getSimpleName());
 
             // class type
             consumers.put(task.getClass(), consumer);
         }
 
         if (consumers.containsKey(task.getTaskId()))
-            log.warn("Warn: Same taskId overridden, task id: {}, override type: {}", task.getTaskId(), clazz.getSimpleName());
+            log.warn("Same taskId overridden, task id: {}, override type: {}", task.getTaskId(), clazz.getSimpleName());
 
         // task id
         consumers.put(task.getTaskId(), consumer);
@@ -266,7 +262,7 @@ public class RedissonDelayedQueueService {
                 queueConsumerMap.computeIfAbsent(this.delayQueueName, k -> new ConcurrentHashMap<>(16));
 
         if (consumers.containsKey(taskType))
-            log.warn("Warn: Type overridden, task type{}", taskType.getSimpleName());
+            log.warn("Type overridden, task type: {}", taskType.getSimpleName());
 
         // class type
         consumers.put(taskType, consumer);
