@@ -167,6 +167,7 @@ public class RedissonDelayedQueueService {
      * @param consumer 消费者处理逻辑
      * @param <T>      任务类型
      */
+    @Deprecated
     public <T> boolean addDelayTask(T task, long delay, TimeUnit timeUnit, Consumer<T> consumer) {
         if (Objects.isNull(task))
             return false;

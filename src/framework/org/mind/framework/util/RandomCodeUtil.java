@@ -73,15 +73,15 @@ public final class RandomCodeUtil {
 
     /**
      * 基于位移的随机数生成，效率更高，但不如@randomString()方法的熵值碰撞率
-     * @param length
+     * @param byteSize
      * @return
      */
-    public static String fastRandomString(int length){
-        byte[] randomBytes = new byte[length];
+    public static String fastRandomString(int byteSize){
+        byte[] randomBytes = new byte[byteSize];
         SunCrypto.SECURE_RANDOM.nextBytes(randomBytes);
 
-        char[] hexChars = new char[length << 1];
-        for (int i = 0; i < length; ++i) {
+        char[] hexChars = new char[byteSize << 1];
+        for (int i = 0; i < byteSize; ++i) {
             int v = randomBytes[i] & 0xFF;
             hexChars[i << 1] = HEX[v >>> 4];
             hexChars[(i << 1) + 1] = HEX[v & 0x0F];
