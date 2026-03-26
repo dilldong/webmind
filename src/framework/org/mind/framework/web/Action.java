@@ -8,7 +8,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -40,7 +39,7 @@ public final class Action {
     }
 
     public String getRemoteIp(boolean... forAttr) {
-        return HttpUtils.getRequestIP(request, forAttr);
+        return HttpUtils.getRequestIP(getRequest(), forAttr);
     }
 
     /**
@@ -148,18 +147,18 @@ public final class Action {
      * Get the byte[] content of the post request
      */
     public byte[] getPostBytes() throws IOException {
-        return HttpUtils.getPostBytes(request);
+        return HttpUtils.getPostBytes(getRequest());
     }
 
     /**
      * Get the content of the post request
      */
     public String getPostString() throws IOException {
-        return HttpUtils.getPostString(request, true);
+        return HttpUtils.getPostString(getRequest(), true);
     }
 
     public String getJson() {
-        return HttpUtils.getJson(request);
+        return HttpUtils.getJson(getRequest());
     }
 
     public <V> V getJson(Class<V> clazz) {
@@ -185,7 +184,7 @@ public final class Action {
     }
 
     public String getString(String name) {
-        return request.getParameter(name);
+        return getRequest().getParameter(name);
     }
 
     public String getString(String name, String defaultValue) {
@@ -229,7 +228,7 @@ public final class Action {
     }
 
     public String getHeader(String name) {
-        return request.getHeader(name);
+        return getRequest().getHeader(name);
     }
 
     public String getHeader(String name, String defaultValue) {
@@ -237,32 +236,32 @@ public final class Action {
     }
 
     public int getIntHeader(String name) {
-        return request.getIntHeader(name);
+        return getRequest().getIntHeader(name);
     }
 
     public int getIntHeader(String name, int defaultValue) {
-        int value = request.getIntHeader(name);
+        int value = getRequest().getIntHeader(name);
         return value == -1 ? defaultValue : value;
     }
 
     public long getDateHeader(String name) {
-        return request.getDateHeader(name);
+        return getRequest().getDateHeader(name);
     }
 
     public Enumeration<String> getHeaderNames() {
-        return request.getHeaderNames();
+        return getRequest().getHeaderNames();
     }
 
     public Enumeration<String> getHeaders(String name) {
-        return request.getHeaders(name);
+        return getRequest().getHeaders(name);
     }
 
     public String acceptLanguage(){
-        return getHeader(HttpHeaders.ACCEPT_LANGUAGE);
+        return HttpUtils.getAcceptLanguage(getRequest());
     }
 
-    public String browserAgent(){
-        return getHeader(HttpHeaders.USER_AGENT);
+    public String userAgent(){
+        return HttpUtils.getUserAgent(getRequest());
     }
 
     /**
@@ -276,7 +275,7 @@ public final class Action {
      * Return current session object.
      */
     public HttpSession getSession() {
-        return request.getSession();
+        return getRequest().getSession();
     }
 
     /**

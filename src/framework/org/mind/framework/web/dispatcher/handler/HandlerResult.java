@@ -57,8 +57,9 @@ public interface HandlerResult {
         if (StringUtils.isNotEmpty(contentType) && contentType.startsWith(MediaType.APPLICATION_JSON_VALUE)) {
             String json = HttpUtils.getJson(request);
             if (StringUtils.isNotEmpty(json)) {
-                if (json.contains(JSON_RPC_TAG))
+                if (json.contains(JSON_RPC_TAG)) {
                     jsonObject.addProperty(JSON_METHOD, JsonUtils.getAttribute(JSON_RPC_METHOD, json));
+                }
                 jsonObject.addProperty(REQUEST_RAW_CONTENT, json);
             }
         } else {
@@ -75,6 +76,7 @@ public interface HandlerResult {
         jsonObject.addProperty(HttpHeaders.CONTENT_TYPE, request.getContentType());
         jsonObject.addProperty(HttpHeaders.REFERER, request.getHeader(HttpHeaders.REFERER));
         jsonObject.addProperty(HttpHeaders.ORIGIN, request.getHeader(HttpHeaders.ORIGIN));
+        jsonObject.addProperty(HttpHeaders.USER_AGENT, HttpUtils.getUserAgent(request));
 
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
     }
