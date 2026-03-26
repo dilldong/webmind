@@ -47,7 +47,7 @@ public final class MurmurHash3 {
         final int nblocks = length / 16;
 
         // 处理16字节的块
-        for (int i = 0; i < nblocks; i++) {
+        for (int i = 0; i < nblocks; ++i) {
             int index = offset + i * 16;
             long k1 = getLongLittleEndian(data, index);
             long k2 = getLongLittleEndian(data, index + 8);
