@@ -495,18 +495,17 @@ public class RedissonDelayedQueueService {
                 List<Runnable> droppedTasks = executor.shutdownNow();
 
                 if (!droppedTasks.isEmpty())
-                    log.warn("{} dropped [{}] tasks during forced shutdown", executorName, droppedTasks.size());
+                    log.warn("{} dropped {} tasks during forced shutdown", executorName, droppedTasks.size());
 
                 // 4. wait task again
                 if (!executor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS))
-                    log.error("{} did not terminate even after forced shutdown", executorName);
+                    log.error("{} did not terminate after forced shutdown", executorName);
             }
         } catch (InterruptedException e) {
-            log.error("{} shutdown interrupted", executorName, e);
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            log.error("{} shutdown failed with unexpected error", executorName, e);
+            log.error("{} shutdown failed unexpectedly", executorName, e);
         }
     }
 }
