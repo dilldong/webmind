@@ -7,11 +7,18 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.threads.ExecutorFactory;
-import org.redisson.api.RBlockingQueue;
-import org.redisson.api.RDelayedQueue;
+import org.redisson.api.Message;
+import org.redisson.api.MessageArgs;
 import org.redisson.api.RMapCache;
+import org.redisson.api.RReliableQueue;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.queue.AcknowledgeMode;
+import org.redisson.api.queue.QueueAckArgs;
+import org.redisson.api.queue.QueueAddArgs;
+import org.redisson.api.queue.QueuePollArgs;
+import org.redisson.api.queue.QueueRemoveArgs;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,23 +32,53 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
- * Redisson延迟队列服务
- * 可用于处理延迟任务、过期处理等场景
- * 采用线程池模式自动处理队列任务
+ * Redisson 可靠队列服务（基于 RReliableQueue, 仅限Redisson PRO）
+ *
+ * <p>相对于已废弃的 RDelayedQueue，RReliableQueue 提供：
+ * <ul>
+ *   <li>原生延迟投递（MessageArgs.delay）</li>
+ *   <li>消息可见性超时（Visibility Timeout）：消费者崩溃时自动重投</li>
+ *   <li>手动 ACK / NACK 机制，保证 at-least-once 语义</li>
+ *   <li>投递次数上限（deliveryLimit）+ 死信队列（DLQ）支持</li>
+ * </ul>
+ *
+ * <p>与旧版的关键差异：
+ * <ul>
+ *   <li>入队：{@code add(QueueAddArgs)} 替代 {@code offer(task, delay, timeUnit)}</li>
+ *   <li>出队：{@code poll(QueuePollArgs)} 返回 {@code Message<T>}，需手动提取 {@code getPayload()}</li>
+ *   <li>删除：依赖 msgId，入队时会将 msgId 持久化到 rMapCache 供后续删除使用</li>
+ *   <li>无需调用 {@code destroy()}，不依赖额外的 RBlockingQueue</li>
+ * </ul>
  *
  * @author Marcus
- * @version 1.0
- * @date 2025/5/22
+ * @version 2.0
+ * @date 2026/3/31
  */
 @Slf4j
-public class RedissonDelayedQueueService {
+public class RedissonReliableQueueService {
+
+    /**
+     * rMapCache 中存储 msgId 的 key 前缀，格式：{@code msgid:{taskId}}
+     */
+    private static final String MSG_ID_KEY_PREFIX = "rr:msgid:";
+
+    /**
+     * 消息可见性超时（默认 30 秒）：消费者在此时间内未 ACK，消息自动重新入队
+     */
+    private static final Duration DEFAULT_VISIBILITY = Duration.ofSeconds(30);
+
+    /**
+     * 长轮询等待时长：替代原 blockingQueue.poll(1, SECONDS)
+     */
+    private static final Duration POLL_WAIT_TIMEOUT = Duration.ofSeconds(1);
+
     private static final AtomicBoolean SHUTDOWN_HOOK_REGISTERED = new AtomicBoolean(false);
 
     @Getter
-    private final String delayQueueName;
+    private final String queueName;
 
     @Getter
-    private final String delayMapName;
+    private final String mapName;
 
     /**
      * 任务处理线程池
@@ -57,7 +94,7 @@ public class RedissonDelayedQueueService {
 
     /**
      * 存储队列与消费者的映射关系
-     * 支持按class type和task id添加映射
+     * 支持按 class type 和 task id 添加映射
      */
     private final Map<Object, Consumer<?>> queueConsumerMap = new ConcurrentHashMap<>();
 
@@ -71,31 +108,38 @@ public class RedissonDelayedQueueService {
      */
     private final Map<Class<?>, Consumer<?>> compatibleTypeReference = new ConcurrentHashMap<>();
 
-    private final RBlockingQueue<Object> blockingQueue;
-    private final RDelayedQueue<Object> delayedQueue;
+    /**
+     * RReliableQueue：统一承担入队、出队、ACK 职责
+     * 替代原来的 RBlockingQueue + RDelayedQueue 组合
+     */
+    private final RReliableQueue<Object> reliableQueue;
+
+    /**
+     * 存储任务对象（以 taskId 为 key）及 msgId（以 "msgid:{taskId}" 为 key）
+     */
     private final RMapCache<String, Object> rMapCache;
 
     @Getter
     private volatile boolean running;
 
-    public RedissonDelayedQueueService(String delayQueueName, String delayMapName) {
-        this.delayQueueName = delayQueueName;
-        this.delayMapName = delayMapName;
+
+    public RedissonReliableQueueService(String queueName, String mapName) {
+        this.queueName = queueName;
+        this.mapName = mapName;
 
         RedissonClient redissonClient = RedissonHelper.getClient();
-        this.blockingQueue = redissonClient.getBlockingQueue(delayQueueName);
-        this.delayedQueue = redissonClient.getDelayedQueue(blockingQueue);
-        this.rMapCache = redissonClient.getMapCache(delayMapName);
+        this.reliableQueue = redissonClient.getReliableQueue(queueName);
+        this.rMapCache = redissonClient.getMapCache(mapName);
 
         if (SHUTDOWN_HOOK_REGISTERED.compareAndSet(false, true)) {
             RedissonHelper.getInstance().addShutdownEvent(client -> {
-                this.stopQueueListener();
+                stopQueueListener();
 
                 // task shutdown graceful
-                shutdownExecutor(this.taskExecutor, "RDelayTask-Graceful", 10);
+                shutdownExecutor(taskExecutor, "ReliableTask-Graceful", 10);
 
                 // listener shutdown graceful
-                shutdownExecutor(this.listenerExecutor, "RDelayListen-Graceful", 5);
+                shutdownExecutor(listenerExecutor, "ReliableListener-Graceful", 5);
 
                 runningListenerMap.clear();
                 queueConsumerMap.clear();
@@ -114,10 +158,11 @@ public class RedissonDelayedQueueService {
 
     /**
      * 添加延迟任务
-     * 如果该队列已经注册了对应类型的消费者，会自动处理任务
-     * 注意：任务对象必须可序列化（实现 Serializable 接口）
+     * 任务对象必须可序列化（实现 Serializable 接口）
      *
-     * @param task     任务对象（必须可序列化）
+     * <p>入队后会返回 {@code Message}，其 msgId 将持久化到 rMapCache，用于后续 remove 操作。
+     *
+     * @param task     任务对象
      * @param delay    延迟时间
      * @param timeUnit 时间单位
      * @param <T>      任务类型
@@ -128,33 +173,44 @@ public class RedissonDelayedQueueService {
 
         String taskId = null;
         try {
+            Duration delayDuration = Duration.of(delay, timeUnit.toChronoUnit());
+
+            // 构建 MessageArgs，支持原生延迟投递
+            MessageArgs<Object> msgArgs =
+                    MessageArgs.payload((Object) task).delay(delayDuration);
+
+            Message<Object> msg = this.reliableQueue.add(QueueAddArgs.messages(msgArgs));
+
             if (task instanceof AbstractTask at) {
                 taskId = at.getTaskId();
-                // 如果taskId存在，这里会覆盖任务
+                // 持久化任务对象（供 get(taskId) 查询，TTL 与延迟时间一致）
                 this.rMapCache.fastPut(taskId, task, delay, timeUnit);
+
+                // 持久化 msgId（供 remove(taskId) 使用，无 TTL，由消费时或 remove 时清理）
+                this.rMapCache.fastPut(MSG_ID_KEY_PREFIX + taskId, msg.getId());
             }
 
-            this.delayedQueue.offer(task, delay, timeUnit);
-            log.debug("Added a delay task successfully, task type: {}, delay time: {} {}",
-                    task.getClass().getSimpleName(), delay, timeUnit);
+            if (log.isDebugEnabled()) {
+                log.debug("Added a reliable task successfully, task type: {}, msgId: {}, delay: {} {}",
+                        task.getClass().getSimpleName(), msg.getId(), delay, timeUnit);
+            }
 
             // 确保该队列有对应类型的消费者在运行
             ensureQueueListenerRunning();
             return true;
         } catch (Exception e) {
             // Rollback：如果队列添加失败，清理 map
-            if (StringUtils.isNotEmpty(taskId))
+            if (StringUtils.isNotEmpty(taskId)) {
                 this.rMapCache.fastRemove(taskId);
-
-            log.error("Failed to add a delay task, task: {}, error: {}", task, e.getMessage(), e);
+                this.rMapCache.fastRemove(MSG_ID_KEY_PREFIX + taskId);
+            }
+            log.error("Failed to add a reliable task, task: {}, error: {}", task, e.getMessage(), e);
             return false;
         }
     }
 
     /**
      * 添加延迟任务并注册消费者
-     * 如果该队列没有注册过消费者，会同时注册消费者
-     * 注意：任务对象必须可序列化（实现 Serializable 接口）
      *
      * @param task     任务对象（必须可序列化）
      * @param delay    延迟时间
@@ -180,6 +236,9 @@ public class RedissonDelayedQueueService {
     /**
      * 删除延迟任务
      *
+     * <p>内部通过 rMapCache 查找入队时持久化的 msgId，再从 RReliableQueue 中移除。
+     * 仅支持实现了 {@link AbstractTask} 的任务类型（需有 taskId）。
+     *
      * @param task 任务对象
      * @param <T>  任务类型
      * @return 是否删除成功
@@ -188,30 +247,46 @@ public class RedissonDelayedQueueService {
         if (Objects.isNull(task))
             return false;
 
-        try {
-            boolean result = delayedQueue.remove(task);
-            if (result && task instanceof AbstractTask at)
-                this.rMapCache.fastRemove(at.getTaskId());
+        if (!(task instanceof AbstractTask at)) {
+            log.warn("Remove(task) only supports AbstractTask subtypes. task type: {}", task.getClass().getSimpleName());
+            return false;
+        }
 
-            log.info("Delete delay-queue tasks: [{}], task: {}", result ? "OK" : "Failed", task);
+        return remove(at.getTaskId());
+    }
+
+    /**
+     * 按 taskId 删除延迟任务
+     */
+    public boolean remove(String taskId) {
+        if (StringUtils.isEmpty(taskId))
+            return false;
+
+        try {
+            // 从 rMapCache 取回入队时保存的 msgId
+            String msgId = (String) this.rMapCache.get(MSG_ID_KEY_PREFIX + taskId);
+            if (StringUtils.isEmpty(msgId)) {
+                log.warn("Cannot remove task: msgId not found in cache, taskId: {}", taskId);
+                return false;
+            }
+
+            boolean result = this.reliableQueue.remove(QueueRemoveArgs.ids(msgId));
+            if (result) {
+                this.rMapCache.fastRemove(taskId);
+                this.rMapCache.fastRemove(MSG_ID_KEY_PREFIX + taskId);
+            }
+
+            log.info("Delete reliable-queue task: [{}], taskId: {}, msgId: {}",
+                    result ? "OK" : "Failed", taskId, msgId);
             return result;
         } catch (Exception e) {
-            log.error("Failed to delete delayed task, task: {}, error: {}", task, e.getMessage(), e);
+            log.error("Failed to delete reliable task, taskId: {}, error: {}", taskId, e.getMessage(), e);
             return false;
         }
     }
 
-
     /**
-     * 删除延迟任务
-     */
-    public <T> boolean remove(String taskId) {
-        T task = this.get(taskId);
-        return remove(task);
-    }
-
-    /**
-     * 获取延迟任务的对象
+     * 获取延迟任务的对象（通过 taskId 从 MapCache 查询）
      */
     public <T> T get(String taskId) {
         if (StringUtils.isEmpty(taskId))
@@ -249,7 +324,7 @@ public class RedissonDelayedQueueService {
         // task id
         queueConsumerMap.put(task.getTaskId(), consumer);
 
-        // 启动队列监听器(如果尚未启动)
+        // 启动队列监听器（如果尚未启动）
         ensureQueueListenerRunning();
     }
 
@@ -263,7 +338,7 @@ public class RedissonDelayedQueueService {
         // 清除兼容类型缓存，防止后续查找时路由失效
         this.compatibleTypeReference.clear();
 
-        // 启动队列监听器(如果尚未启动)
+        // 启动队列监听器（如果尚未启动）
         ensureQueueListenerRunning();
     }
 
@@ -271,32 +346,26 @@ public class RedissonDelayedQueueService {
      * 确保队列监听器正在运行
      */
     private void ensureQueueListenerRunning() {
-        // 如果该队列的监听器已经在运行，直接返回
         if (isRunning() && isListenerActuallyRunning())
             return;
 
         synchronized (this) {
-            // 再次检查(双检查DCL)
             if (isRunning() && isListenerActuallyRunning())
                 return;
 
-            // 启动队列监听器
             this.running = true;
 
-            // 使用 submit 后保存 Future，方便 stop 时 cancel
             Future<?> future = getListenerExecutor().submit(() -> {
                 try {
-                    startQueueListener(this.delayQueueName);
+                    startQueueListener(this.queueName);
                 } catch (Exception e) {
                     log.error("Listener thread crashed unexpectedly", e);
-                    // 监听器崩溃，清理状态
-                    runningListenerMap.remove(this.delayQueueName);
+                    runningListenerMap.remove(this.queueName);
                     this.running = false;
                 }
             });
-
-            runningListenerMap.put(this.delayQueueName, future);
-            log.debug("Start the Delay-Queue listener ....");
+            runningListenerMap.put(this.queueName, future);
+            log.debug("Start the Reliable-Queue listener ....");
         }
     }
 
@@ -304,14 +373,13 @@ public class RedissonDelayedQueueService {
      * 检查监听器是否真的在运行
      */
     private boolean isListenerActuallyRunning() {
-        Future<?> future = runningListenerMap.get(this.delayQueueName);
+        Future<?> future = runningListenerMap.get(this.queueName);
         if (Objects.isNull(future))
             return false;
 
-        // 检查 Future 是否完成（完成意味着监听器已退出）
         if (future.isDone()) {
             log.warn("Listener future is done, removing from map");
-            runningListenerMap.remove(this.delayQueueName);
+            runningListenerMap.remove(this.queueName);
             return false;
         }
 
@@ -321,40 +389,54 @@ public class RedissonDelayedQueueService {
     /**
      * 启动队列监听器
      *
-     * @param queueName 队列名称
+     * <p>使用 RReliableQueue 的长轮询替代原来的 blockingQueue.poll()。
+     * 出队得到 {@code Message<Object>}，提取 payload 后交由消费者处理，处理完毕后手动 ACK。
+     * 若消费者异常且未 ACK，消息将在 visibilityTimeout 超时后自动重新可见（at-least-once 语义）。
      */
     private void startQueueListener(String queueName) {
+        QueuePollArgs pollArgs = QueuePollArgs.defaults()
+                .visibility(DEFAULT_VISIBILITY)
+                .acknowledgeMode(AcknowledgeMode.MANUAL)
+                .timeout(POLL_WAIT_TIMEOUT);
+
         while (isRunning()) {
             try {
-                // 使用带超时的poll获取队列中的任务
-                Object task = blockingQueue.poll(1L, TimeUnit.SECONDS);
-                if (Objects.isNull(task))
+                // 长轮询：等待最多 POLL_WAIT_TIMEOUT，无消息返回 null
+                Message<Object> msg = reliableQueue.poll(pollArgs);
+
+                if (Objects.isNull(msg))
                     continue;
 
-                if (log.isDebugEnabled())
-                    log.debug("Get delayed task, task type: {}", task.getClass().getSimpleName());
+                Object task = msg.getPayload();
+                String msgId = msg.getId();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("Get reliable-queue task, task type: {}, msgId: {}",
+                            task.getClass().getSimpleName(), msgId);
+                }
 
                 // 查找对应类型的消费者
-                if (queueConsumerMap.isEmpty())
+                if (queueConsumerMap.isEmpty()) {
+                    // 无消费者注册，不 ACK，等待可见性超时后自动重投
+                    log.warn("No consumer map found for queue: {}, msgId: {} will re-enqueue after visibility timeout",
+                            queueName, msgId);
                     continue;
+                }
 
                 Consumer<?> consumer = findConsumer(task);
 
-                // 执行任务处理
                 if (Objects.nonNull(consumer)) {
-                    executeTask(task, consumer);
+                    executeTask(task, msgId, consumer);
                 } else {
-                    log.warn("No matching consumer found for task type: {}, taskId: {}",
+                    // 无匹配消费者，直接 ACK 避免无限重投
+                    ackQuietly(msgId);
+                    log.warn("No matching consumer found for task type: {}, taskId: {}, msgId: {} (auto-acked)",
                             task.getClass().getSimpleName(),
-                            (task instanceof AbstractTask at) ? at.getTaskId() : "N/A");
+                            (task instanceof AbstractTask at) ? at.getTaskId() : "N/A",
+                            msgId);
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Delay-Queue listener is interrupted，queue name: {}", queueName);
-                break;
             } catch (Exception e) {
-                log.error("Delay-Queue listening error, queue name: {}, error: {}", queueName, e.getMessage(), e);
-                // 短暂休眠避免异常情况下的死循环占用CPU
+                log.error("Reliable-Queue listening error, queue name: {}, error: {}", queueName, e.getMessage(), e);
                 try {
                     TimeUnit.SECONDS.sleep(1L);
                 } catch (InterruptedException ie) {
@@ -368,34 +450,67 @@ public class RedissonDelayedQueueService {
         runningListenerMap.remove(queueName);
         synchronized (this) {
             this.running = false;
-            log.info("Stopped the Delay-Queue listener，queue name: {}", queueName);
+            log.info("Stopped the Reliable-Queue listener, queue name: {}", queueName);
         }
     }
 
-    // 使用线程池异步处理任务
-    private void executeTask(Object task, Consumer<?> consumer) {
-        final Object finalTask = task;
+    /**
+     * 使用线程池异步处理任务，处理完成后手动 ACK
+     *
+     * <p>ACK 策略：
+     * <ul>
+     *   <li>成功：ACK，消息从队列彻底移除</li>
+     *   <li>失败：不 ACK，visibilityTimeout 超时后消息重新可见并重投（at-least-once）</li>
+     *   <li>若不希望失败重投，可在 catch 块中调用 ackQuietly 改为 at-most-once 语义</li>
+     * </ul>
+     */
+    private void executeTask(Object task, String msgId, Consumer<?> consumer) {
         final String finalTaskId = (task instanceof AbstractTask at) ? at.getTaskId() : null;
         final Consumer<Object> finalConsumer = (Consumer<Object>) consumer;
 
         getTaskExecutor().execute(() -> {
+            boolean ackSuccess = false;
             try {
-                if (StringUtils.isNotEmpty(finalTaskId))
-                    rMapCache.fastRemove(finalTaskId);
+                // 如处理失败，直接抛出异常实现重投
+                finalConsumer.accept(task);
 
-                finalConsumer.accept(finalTask);
+                // Processed OK, manual ACK
+                ackSuccess = ackQuietly(msgId);
+
             } catch (Exception e) {
-                log.error("Handle delay-queue task exceptions, task: {}, error: {}",
-                        finalTask, e.getMessage(), e);
+                log.error("Handle reliable-queue task exception, task: {}, msgId: {}, error: {}",
+                        task, msgId, e.getMessage(), e);
+                // 不 ACK：消息将在 visibilityTimeout 超时后自动重新入队 at-least-once
+                // 如需 at-most-once 语义（失败也不重投）:
+                // ackQuietly(msgId);
+            } finally {
+                // 只有 ACK 成功后再清理元数据，保证重投时仍能 remove/get
+                if (ackSuccess && StringUtils.isNotEmpty(finalTaskId)) {
+                    rMapCache.fastRemove(finalTaskId);
+                    rMapCache.fastRemove(MSG_ID_KEY_PREFIX + finalTaskId);
+                }
             }
         });
+    }
+
+    /**
+     * 静默 ACK
+     */
+    private boolean ackQuietly(String msgId) {
+        try {
+            reliableQueue.acknowledge(QueueAckArgs.ids(msgId));
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to acknowledge message, msgId: {}, error: {}", msgId, e.getMessage(), e);
+            return false;
+        }
     }
 
     private Consumer<?> findConsumer(Object task) {
         // 优先级：TaskId > ClassType > AssignableType
         String taskId = (task instanceof AbstractTask at) ? at.getTaskId() : null;
 
-        // 尝试task id匹配
+        // 尝试 task id 匹配
         if (StringUtils.isNotEmpty(taskId)) {
             Consumer<?> consumer = queueConsumerMap.get(taskId);
             if (Objects.nonNull(consumer))
@@ -407,46 +522,40 @@ public class RedissonDelayedQueueService {
         if (Objects.nonNull(consumer))
             return consumer;
 
-        // 尝试找到可兼容类型的消费者
+        // 尝试找到可兼容类型的消费者（继承关系匹配）
         return compatibleTypeReference.computeIfAbsent(task.getClass(), taskClass -> {
-            // 最后尝试继承关系匹配
             for (Map.Entry<Object, Consumer<?>> entry : queueConsumerMap.entrySet()) {
                 if (entry.getKey() instanceof Class<?> clazz && clazz.isAssignableFrom(taskClass)) {
                     return entry.getValue();
                 }
             }
-
             return null;
         });
     }
 
     /**
      * 停止队列监听器
+     * RReliableQueue 无需 destroy()，直接停止监听线程即可
      */
     public synchronized void stopQueueListener() {
         this.running = false;
 
-        Future<?> future = runningListenerMap.remove(this.delayQueueName);
+        Future<?> future = runningListenerMap.remove(this.queueName);
         if (Objects.nonNull(future)) {
             future.cancel(true);
-            log.info("Stopping the Delay-Queue listener ....");
+            log.info("Stopping the Reliable-Queue listener ....");
         }
-
-        if (Objects.nonNull(delayedQueue))
-            delayedQueue.destroy();
     }
 
     private ThreadPoolExecutor getTaskExecutor() {
         if (Objects.isNull(taskExecutor))
             initTaskExecutor();
-
         return taskExecutor;
     }
 
     private ThreadPoolExecutor getListenerExecutor() {
         if (Objects.isNull(listenerExecutor))
             initListenerExecutor();
-
         return listenerExecutor;
     }
 
@@ -459,7 +568,7 @@ public class RedissonDelayedQueueService {
                             Math.min(Runtime.getRuntime().availableProcessors() << 1, 4),
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(128),
-                            ExecutorFactory.newThreadFactory("delay-task-", false),
+                            ExecutorFactory.newThreadFactory("reliable-task-", false),
                             new ThreadPoolExecutor.CallerRunsPolicy());
                 }
             }
@@ -474,7 +583,7 @@ public class RedissonDelayedQueueService {
                             1, 1,
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(2),
-                            ExecutorFactory.newThreadFactory("delay-listen-", true),
+                            ExecutorFactory.newThreadFactory("reliable-listen-", true),
                             new ThreadPoolExecutor.CallerRunsPolicy());
                 }
             }
@@ -498,7 +607,7 @@ public class RedissonDelayedQueueService {
                     log.warn("{} dropped [{}] tasks during forced shutdown", executorName, droppedTasks.size());
 
                 // 4. wait task again
-                if (!executor.awaitTermination(3, java.util.concurrent.TimeUnit.SECONDS))
+                if (!executor.awaitTermination(3, TimeUnit.SECONDS))
                     log.error("{} did not terminate even after forced shutdown", executorName);
             }
         } catch (InterruptedException e) {
