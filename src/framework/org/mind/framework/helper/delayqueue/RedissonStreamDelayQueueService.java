@@ -21,6 +21,7 @@ import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamMessageId;
 import org.redisson.api.stream.StreamCreateGroupArgs;
 import org.redisson.api.stream.StreamReadGroupArgs;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.net.InetAddress;
@@ -122,14 +123,14 @@ public class RedissonStreamDelayQueueService {
      * <p>ARGV[1] = 当前时间戳 ms（string），ARGV[2] = 最大批量数
      */
     private static final String LUA_PROMOTE_SCRIPT =
-            """
-                local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
-                for _, taskId in ipairs(due) do
-                  redis.call('ZREM', KEYS[1], taskId)
-                  redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
-                end
-                return #due
-            """;
+                """
+                    local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
+                    for _, taskId in ipairs(due) do
+                      redis.call('ZREM', KEYS[1], taskId)
+                      redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
+                    end
+                    return #due
+                """;
 
 
     /**
@@ -196,11 +197,11 @@ public class RedissonStreamDelayQueueService {
         this.replaceTypeCache();
 
         RedissonClient client = RedissonHelper.getClient();
-        this.scoredSortedSet = client.getScoredSortedSet(zsetKey);
-        this.rStream = client.getStream(streamKey);
+        this.scoredSortedSet = client.getScoredSortedSet(zsetKey, StringCodec.INSTANCE);
+        this.rStream = client.getStream(streamKey, StringCodec.INSTANCE);
         this.rMapCache = client.getMapCache(mapKey);
-        this.cancelledSet = client.getSetCache(cancelledKey);
-        this.rScript = client.getScript();
+        this.cancelledSet = client.getSetCache(cancelledKey, StringCodec.INSTANCE);
+        this.rScript = client.getScript(StringCodec.INSTANCE);
 
         // 尽早确保 Consumer Group 存在（幂等）
         ensureConsumerGroupExists();
@@ -411,7 +412,7 @@ public class RedissonStreamDelayQueueService {
      * </ol>
      */
     private void startStreamConsumer() {
-        while (isRunning()) {
+        while (running) {
             try {
                 // 1. PEL 重投（处理上次执行未 ACK 的消息）
                 reclaimStalePendingMessages();
