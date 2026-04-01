@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.ThreadUtils;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.threads.ExecutorFactory;
@@ -24,8 +25,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.net.InetAddress;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
- * 基于 RStream + RScoredSortedSet 的延迟队列服务。
+ * 基于 RStream + RScoredSortedSet 的延迟队列服务
  *
  * <h3>架构</h3>
  * <pre>
@@ -105,7 +106,7 @@ public class RedissonStreamDelayQueueService {
     /**
      * ZSet 单次扫描最大任务数（防止单批次过大阻塞调度线程）
      */
-    private static final int PROMOTE_BATCH_SIZE = 50;
+    private static final int PROMOTE_BATCH_SIZE = 30;
 
     /**
      * PEL 消息超过此空闲时长（ms）后触发 autoClaim 重投
@@ -122,13 +123,13 @@ public class RedissonStreamDelayQueueService {
      */
     private static final String LUA_PROMOTE_SCRIPT =
             """
-                        local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
-                        for _, taskId in ipairs(due) do
-                          redis.call('ZREM', KEYS[1], taskId)
-                          redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
-                        end
-                        return #due
-                    """;
+                local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
+                for _, taskId in ipairs(due) do
+                  redis.call('ZREM', KEYS[1], taskId)
+                  redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
+                end
+                return #due
+            """;
 
 
     /**
@@ -157,24 +158,25 @@ public class RedissonStreamDelayQueueService {
     private final RScript rScript;
 
     private final Map<Object, Consumer<?>> queueConsumerMap;
+
     private volatile Map<Class<?>, Consumer<?>> compatibleTypeReference;
 
     /**
      * 业务回调线程池（可由外部 setter 注入自定义线程池）
      */
     @Setter
-    private ThreadPoolExecutor taskExecutor;
+    private volatile ThreadPoolExecutor taskExecutor;
 
     /**
      * Stream consumer 线程池（单线程）
      */
     @Setter
-    private ThreadPoolExecutor listenerExecutor;
+    private volatile ThreadPoolExecutor listenerExecutor;
 
     /**
      * ZSet 定时扫描线程池（单线程）
      */
-    private ThreadPoolTaskScheduler schedulerExecutor;
+    private volatile ThreadPoolTaskScheduler schedulerExecutor;
 
     @Getter
     private volatile boolean running;
@@ -234,7 +236,7 @@ public class RedissonStreamDelayQueueService {
 
         String taskId = (task instanceof AbstractTask at) ? at.getTaskId() : UUID.randomUUID().toString();
         long delayMillis = timeUnit.toMillis(delay);
-        double triggerScore = Instant.now().plusMillis(delayMillis).toEpochMilli();
+        double triggerScore = DateUtils.CachedTime.currentMillis() + delayMillis;
 
         // MapCache: TTL = 延迟时间 + 24h（保证消费侧能取到task）
         long ttlMillis = delayMillis + DateUtils.ONE_DAY_MILLIS;
@@ -251,7 +253,7 @@ public class RedissonStreamDelayQueueService {
 
         } catch (Exception e) {
             // rollback
-            safeRemoveFromMap(taskId);
+            safeRemoveMapCache(taskId);
             scoredSortedSet.remove(taskId);
             log.error("Failed to add delay task, task: {}, error: {}", task, e.getMessage(), e);
             return false;
@@ -286,7 +288,7 @@ public class RedissonStreamDelayQueueService {
 
             if (removedFromZset) {
                 // 任务尚未触发，直接清理
-                safeRemoveFromMap(taskId);
+                safeRemoveMapCache(taskId);
                 log.info("Removed task from ZSet, taskId: {}", taskId);
                 return true;
             }
@@ -429,10 +431,6 @@ public class RedissonStreamDelayQueueService {
                     handleStreamMessage(entry.getKey(), entry.getValue());
                 }
 
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                log.warn("Stream consumer interrupted, stream: {}", streamKey);
-                break;
             } catch (Exception e) {
                 log.error("Stream consumer error, stream={}: {}", streamKey, e.getMessage(), e);
                 ThreadUtils.sleepQuietly(Duration.ofSeconds(1L));
@@ -457,11 +455,11 @@ public class RedissonStreamDelayQueueService {
             return;
         }
 
-        // 取消检查：remove(taskId) 在任务已进入 Stream 后会写入 cancelledSet
+        // remove(taskId) 在任务已进入 Stream 后会写入 cancelledSet
         if (cancelledSet.remove(taskId)) {
             log.info("Task {} was cancelled, skipping (msgId: {})", taskId, msgId);
             ackSilently(msgId);
-            safeRemoveFromMap(taskId);
+            safeRemoveMapCache(taskId);
             return;
         }
 
@@ -504,8 +502,8 @@ public class RedissonStreamDelayQueueService {
         final Consumer<Object> finalConsumer = (Consumer<Object>) consumer;
         getTaskExecutor().execute(() -> {
             try {
-                // 该任务已被其他消费者节点抢先处理并删除了, 这里利用 MapCache 充当了分布式锁的角色
-                if(!safeRemoveFromMap(taskId)){
+                // 该任务已被其他消费者节点抢先处理并删除了, 这里利用 MapCache 充当幂等守卫
+                if(!safeRemoveMapCache(taskId)){
                     ackSilently(msgId);
                     return;
                 }
@@ -627,7 +625,11 @@ public class RedissonStreamDelayQueueService {
                             .makeStream());  // 若 Stream 不存在则自动创建（MKSTREAM 标志）
             log.info("Consumer group '{}' created for stream: {}", CONSUMER_GROUP, streamKey);
         } catch (Exception e) {
-            log.info("Consumer group init: {}", e.getMessage(), e);
+            // BUSYGROUP 是正常情况（多实例启动 or 重启），静默降级
+            if (Strings.CS.contains(e.getMessage(), "BUSYGROUP"))
+                log.debug("Consumer group '{}' already exists, skipping", CONSUMER_GROUP);
+            else
+                log.warn("Consumer group init failed for stream: {}, error: {}", streamKey, e.getMessage());
         }
     }
 
@@ -636,7 +638,7 @@ public class RedissonStreamDelayQueueService {
         shutdownExecutor(taskExecutor, "RStreamTask-Graceful", 10);
         shutdownExecutor(listenerExecutor, "RStreamListen-Graceful", 5);
         queueConsumerMap.clear();
-        compatibleTypeReference.clear();
+        compatibleTypeReference = Collections.emptyMap();
     }
 
     private void ackSilently(StreamMessageId msgId) {
@@ -651,7 +653,7 @@ public class RedissonStreamDelayQueueService {
         }
     }
 
-    private boolean safeRemoveFromMap(String taskId) {
+    private boolean safeRemoveMapCache(String taskId) {
         try {
             long removedCount = rMapCache.fastRemove(taskId);
             return removedCount > 0L;
@@ -750,7 +752,7 @@ public class RedissonStreamDelayQueueService {
                     log.warn("{} dropped {} tasks during forced shutdown", name, dropped.size());
 
                 // 4. wait task again
-                if (!executor.awaitTermination(3, TimeUnit.SECONDS))
+                if (!executor.awaitTermination(3L, TimeUnit.SECONDS))
                     log.error("{} did not terminate after forced shutdown", name);
             }
         } catch (InterruptedException e) {

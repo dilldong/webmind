@@ -607,7 +607,7 @@ public class RedissonReliableQueueService {
                     log.warn("{} dropped {} tasks during forced shutdown", executorName, droppedTasks.size());
 
                 // 4. wait task again
-                if (!executor.awaitTermination(3, TimeUnit.SECONDS))
+                if (!executor.awaitTermination(3L, TimeUnit.SECONDS))
                     log.error("{} did not terminate after forced shutdown", executorName);
             }
         } catch (InterruptedException e) {
