@@ -10,8 +10,8 @@ import org.apache.commons.lang3.ThreadUtils;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.DateUtils;
-import org.mind.framework.util.RandomCodeUtil;
 import org.redisson.api.AutoClaimResult;
+import org.redisson.api.PendingEntry;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RScript;
@@ -20,6 +20,7 @@ import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamMessageId;
 import org.redisson.api.stream.StreamCreateGroupArgs;
+import org.redisson.api.stream.StreamPendingRangeArgs;
 import org.redisson.api.stream.StreamReadGroupArgs;
 import org.redisson.client.codec.StringCodec;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -123,20 +124,21 @@ public class RedissonStreamDelayQueueService {
      * <p>ARGV[1] = 当前时间戳 ms（string），ARGV[2] = 最大批量数
      */
     private static final String LUA_PROMOTE_SCRIPT =
-                """
-                    local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
-                    for _, taskId in ipairs(due) do
-                      redis.call('ZREM', KEYS[1], taskId)
-                      redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
-                    end
-                    return #due
-                """;
+            """
+                        local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
+                        for _, taskId in ipairs(due) do
+                          redis.call('ZREM', KEYS[1], taskId)
+                          redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
+                        end
+                        return #due
+                    """;
 
 
     /**
      * define: empty consumer
      */
-    private static final Consumer<Object> NO_OP_CONSUMER = t -> {};
+    private static final Consumer<Object> NO_OP_CONSUMER = t -> {
+    };
 
     @Getter
     private final String zsetKey;
@@ -359,7 +361,7 @@ public class RedissonStreamDelayQueueService {
      * 引用替换是原子的 (O(1))，不会阻塞任何正在进行 computeIfAbsent 的读取线程
      * 当注册消费者时，不再需要遍历清空旧数据，没有任何锁竞争
      */
-    private void replaceTypeCache(){
+    private void replaceTypeCache() {
         this.compatibleTypeReference = new ConcurrentHashMap<>(16);
     }
 
@@ -425,7 +427,7 @@ public class RedissonStreamDelayQueueService {
                                         .count(PROMOTE_BATCH_SIZE)
                                         .timeout(Duration.ofMillis(500)));
 
-                if (messages == null || messages.isEmpty())
+                if (Objects.isNull(messages) || messages.isEmpty())
                     continue;
 
                 for (Map.Entry<StreamMessageId, Map<String, String>> entry : messages.entrySet()) {
@@ -504,7 +506,7 @@ public class RedissonStreamDelayQueueService {
         getTaskExecutor().execute(() -> {
             try {
                 // 该任务已被其他消费者节点抢先处理并删除了, 这里利用 MapCache 充当幂等守卫
-                if(!safeRemoveMapCache(taskId)){
+                if (!safeRemoveMapCache(taskId)) {
                     ackSilently(msgId);
                     return;
                 }
@@ -555,7 +557,47 @@ public class RedissonStreamDelayQueueService {
 
         } catch (Exception e) {
             // autoClaim 非关键路径, 失败时静默忽略, 等待下次循环重试
-            log.debug("autoClaim skipped: {}", e.getMessage());
+            log.warn("autoClaim skipped: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 启动时恢复本 consumer 自己遗留在 PEL 中的消息
+     * <p>安全性：只认领归属于当前 consumerName 的消息，不会影响其他实例。
+     * 前提：consumerName 必须是稳定值（不含随机后缀）
+     */
+    private void recoverOwnPendingMessages() {
+        try {
+            List<PendingEntry> pending = rStream.listPending(
+                    StreamPendingRangeArgs.groupName(CONSUMER_GROUP)
+                            .startId(StreamMessageId.MIN)
+                            .endId(StreamMessageId.MAX)
+                            .count(PROMOTE_BATCH_SIZE)
+                            .consumerName(consumerName)
+            );
+
+            if (Objects.isNull(pending) || pending.isEmpty())
+                return;
+
+            log.info("Recovering {} pending messages on startup...", pending.size());
+
+            StreamMessageId[] ids = pending.stream()
+                    .map(PendingEntry::getId)
+                    .toArray(StreamMessageId[]::new);
+
+            // idle=0 表示不论空闲多久都强制认领，安全：只认领自己名下的消息
+            Map<StreamMessageId, Map<String, String>> messages =
+                    rStream.claim(CONSUMER_GROUP, consumerName, 0L, TimeUnit.MILLISECONDS, ids);
+
+            if (Objects.isNull(messages) || messages.isEmpty())
+                return;
+
+            for (Map.Entry<StreamMessageId, Map<String, String>> entry : messages.entrySet()) {
+                handleStreamMessage(entry.getKey(), entry.getValue());
+            }
+
+        } catch (Exception e) {
+            log.warn("Startup PEL recovery failed: {}", e.getMessage());
         }
     }
 
@@ -603,6 +645,8 @@ public class RedissonStreamDelayQueueService {
 
             getListenerExecutor().execute(() -> {
                 try {
+                    // 启动时先恢复自己遗留的 PEL 消息
+                    recoverOwnPendingMessages();
                     startStreamConsumer();
                 } catch (Exception e) {
                     log.error("Stream consumer thread crashed unexpectedly", e);
@@ -667,9 +711,9 @@ public class RedissonStreamDelayQueueService {
     private static String buildConsumerName() {
         try {
             String host = InetAddress.getLocalHost().getHostName();
-            return String.join("-", "consumer", host, RandomCodeUtil.fastRandomString(3));
+            return "consumer-" + host;
         } catch (Exception e) {
-            return "consumer-" + RandomCodeUtil.fastRandomString(4);
+            return "consumer-unknown";
         }
     }
 
