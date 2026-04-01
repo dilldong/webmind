@@ -19,6 +19,7 @@ import org.redisson.api.queue.QueuePollArgs;
 import org.redisson.api.queue.QueueRemoveArgs;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,6 +59,11 @@ import java.util.function.Consumer;
 public class RedissonReliableQueueService {
 
     /**
+     * define: empty consumer
+     */
+    private static final Consumer<Object> NO_OP_CONSUMER = t -> {};
+
+    /**
      * rMapCache 中存储 msgId 的 key 前缀，格式：{@code msgid:{taskId}}
      */
     private static final String MSG_ID_KEY_PREFIX = "rr:msgid:";
@@ -65,12 +71,12 @@ public class RedissonReliableQueueService {
     /**
      * 消息可见性超时（默认 30 秒）：消费者在此时间内未 ACK，消息自动重新入队
      */
-    private static final Duration DEFAULT_VISIBILITY = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_VISIBILITY = Duration.ofSeconds(30L);
 
     /**
      * 长轮询等待时长：替代原 blockingQueue.poll(1, SECONDS)
      */
-    private static final Duration POLL_WAIT_TIMEOUT = Duration.ofSeconds(1);
+    private static final Duration POLL_WAIT_TIMEOUT = Duration.ofSeconds(1L);
 
     private static final AtomicBoolean SHUTDOWN_HOOK_REGISTERED = new AtomicBoolean(false);
 
@@ -84,29 +90,29 @@ public class RedissonReliableQueueService {
      * 任务处理线程池
      */
     @Setter
-    private ThreadPoolExecutor taskExecutor;
+    private volatile ThreadPoolExecutor taskExecutor;
 
     /**
      * 队列监听线程池
      */
     @Setter
-    private ThreadPoolExecutor listenerExecutor;
+    private volatile ThreadPoolExecutor listenerExecutor;
 
     /**
      * 存储队列与消费者的映射关系
      * 支持按 class type 和 task id 添加映射
      */
-    private final Map<Object, Consumer<?>> queueConsumerMap = new ConcurrentHashMap<>();
+    private final Map<Object, Consumer<?>> queueConsumerMap = new ConcurrentHashMap<>(16);
 
     /**
      * 存储正在运行的队列监听器
      */
-    private final Map<String, Future<?>> runningListenerMap = new ConcurrentHashMap<>();
+    private final Map<String, Future<?>> runningListenerMap = new ConcurrentHashMap<>(16);
 
     /**
      * 缓存查找到的兼容数据类型
      */
-    private final Map<Class<?>, Consumer<?>> compatibleTypeReference = new ConcurrentHashMap<>();
+    private volatile Map<Class<?>, Consumer<?>> compatibleTypeReference = new ConcurrentHashMap<>(16);
 
     /**
      * RReliableQueue：统一承担入队、出队、ACK 职责
@@ -143,7 +149,7 @@ public class RedissonReliableQueueService {
 
                 runningListenerMap.clear();
                 queueConsumerMap.clear();
-                compatibleTypeReference.clear();
+                compatibleTypeReference = Collections.emptyMap();
             });
         }
     }
@@ -313,9 +319,7 @@ public class RedissonReliableQueueService {
 
             // class type
             queueConsumerMap.put(task.getClass(), consumer);
-
-            // 清除兼容类型缓存，防止后续查找时路由失效
-            this.compatibleTypeReference.clear();
+            replaceTypeCache();
         }
 
         if (queueConsumerMap.containsKey(task.getTaskId()))
@@ -334,9 +338,7 @@ public class RedissonReliableQueueService {
 
         // class type
         queueConsumerMap.put(taskType, consumer);
-
-        // 清除兼容类型缓存，防止后续查找时路由失效
-        this.compatibleTypeReference.clear();
+        replaceTypeCache();
 
         // 启动队列监听器（如果尚未启动）
         ensureQueueListenerRunning();
@@ -346,11 +348,11 @@ public class RedissonReliableQueueService {
      * 确保队列监听器正在运行
      */
     private void ensureQueueListenerRunning() {
-        if (isRunning() && isListenerActuallyRunning())
+        if (running && isListenerActuallyRunning())
             return;
 
         synchronized (this) {
-            if (isRunning() && isListenerActuallyRunning())
+            if (running && isListenerActuallyRunning())
                 return;
 
             this.running = true;
@@ -364,6 +366,7 @@ public class RedissonReliableQueueService {
                     this.running = false;
                 }
             });
+
             runningListenerMap.put(this.queueName, future);
             log.debug("Start the Reliable-Queue listener ....");
         }
@@ -384,6 +387,15 @@ public class RedissonReliableQueueService {
         }
 
         return true;
+    }
+
+    /**
+     * 核心修改：直接废弃旧 Map，赋予新 Map
+     * 引用替换是原子的 (O(1))，不会阻塞任何正在进行 computeIfAbsent 的读取线程
+     * 当注册消费者时，不再需要遍历清空旧数据，没有任何锁竞争
+     */
+    private void replaceTypeCache(){
+        this.compatibleTypeReference = new ConcurrentHashMap<>(16);
     }
 
     /**
@@ -425,7 +437,7 @@ public class RedissonReliableQueueService {
 
                 Consumer<?> consumer = findConsumer(task);
 
-                if (Objects.nonNull(consumer)) {
+                if (Objects.nonNull(consumer) && consumer != NO_OP_CONSUMER) {
                     executeTask(task, msgId, consumer);
                 } else {
                     // 无匹配消费者，直接 ACK 避免无限重投
@@ -522,14 +534,17 @@ public class RedissonReliableQueueService {
         if (Objects.nonNull(consumer))
             return consumer;
 
+        // 将 volatile 变量读取到局部变量中，保证在整个方法周期内使用的是同一个 Map 实例
+        Map<Class<?>, Consumer<?>> localCache = this.compatibleTypeReference;
+
         // 尝试找到可兼容类型的消费者（继承关系匹配）
-        return compatibleTypeReference.computeIfAbsent(task.getClass(), taskClass -> {
+        return localCache.computeIfAbsent(task.getClass(), taskClass -> {
             for (Map.Entry<Object, Consumer<?>> entry : queueConsumerMap.entrySet()) {
                 if (entry.getKey() instanceof Class<?> clazz && clazz.isAssignableFrom(taskClass)) {
                     return entry.getValue();
                 }
             }
-            return null;
+            return NO_OP_CONSUMER;// 防止"未找到"下的高频穿透
         });
     }
 

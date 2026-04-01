@@ -12,6 +12,7 @@ import org.redisson.api.RDelayedQueue;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RedissonClient;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +38,11 @@ import java.util.function.Consumer;
 public class RedissonDelayedQueueService {
     private static final AtomicBoolean SHUTDOWN_HOOK_REGISTERED = new AtomicBoolean(false);
 
+    /**
+     * define: empty consumer
+     */
+    private static final Consumer<Object> NO_OP_CONSUMER = t -> {};
+
     @Getter
     private final String delayQueueName;
 
@@ -47,29 +53,29 @@ public class RedissonDelayedQueueService {
      * 任务处理线程池
      */
     @Setter
-    private ThreadPoolExecutor taskExecutor;
+    private volatile ThreadPoolExecutor taskExecutor;
 
     /**
      * 队列监听线程池
      */
     @Setter
-    private ThreadPoolExecutor listenerExecutor;
+    private volatile ThreadPoolExecutor listenerExecutor;
 
     /**
      * 存储队列与消费者的映射关系
      * 支持按class type和task id添加映射
      */
-    private final Map<Object, Consumer<?>> queueConsumerMap = new ConcurrentHashMap<>();
+    private final Map<Object, Consumer<?>> queueConsumerMap = new ConcurrentHashMap<>(16);
 
     /**
      * 存储正在运行的队列监听器
      */
-    private final Map<String, Future<?>> runningListenerMap = new ConcurrentHashMap<>();
+    private final Map<String, Future<?>> runningListenerMap = new ConcurrentHashMap<>(16);
 
     /**
      * 缓存查找到的兼容数据类型
      */
-    private final Map<Class<?>, Consumer<?>> compatibleTypeReference = new ConcurrentHashMap<>();
+    private volatile Map<Class<?>, Consumer<?>> compatibleTypeReference = new ConcurrentHashMap<>(16);
 
     private final RBlockingQueue<Object> blockingQueue;
     private final RDelayedQueue<Object> delayedQueue;
@@ -99,7 +105,7 @@ public class RedissonDelayedQueueService {
 
                 runningListenerMap.clear();
                 queueConsumerMap.clear();
-                compatibleTypeReference.clear();
+                compatibleTypeReference = Collections.emptyMap();
             });
         }
     }
@@ -238,9 +244,7 @@ public class RedissonDelayedQueueService {
 
             // class type
             queueConsumerMap.put(task.getClass(), consumer);
-
-            // 清除兼容类型缓存，防止后续查找时路由失效
-            this.compatibleTypeReference.clear();
+            replaceTypeCache();
         }
 
         if (queueConsumerMap.containsKey(task.getTaskId()))
@@ -259,9 +263,7 @@ public class RedissonDelayedQueueService {
 
         // class type
         queueConsumerMap.put(taskType, consumer);
-
-        // 清除兼容类型缓存，防止后续查找时路由失效
-        this.compatibleTypeReference.clear();
+        replaceTypeCache();
 
         // 启动队列监听器(如果尚未启动)
         ensureQueueListenerRunning();
@@ -272,12 +274,12 @@ public class RedissonDelayedQueueService {
      */
     private void ensureQueueListenerRunning() {
         // 如果该队列的监听器已经在运行，直接返回
-        if (isRunning() && isListenerActuallyRunning())
+        if (running && isListenerActuallyRunning())
             return;
 
         synchronized (this) {
             // 再次检查(双检查DCL)
-            if (isRunning() && isListenerActuallyRunning())
+            if (running && isListenerActuallyRunning())
                 return;
 
             // 启动队列监听器
@@ -341,7 +343,7 @@ public class RedissonDelayedQueueService {
                 Consumer<?> consumer = findConsumer(task);
 
                 // 执行任务处理
-                if (Objects.nonNull(consumer)) {
+                if (Objects.nonNull(consumer) && consumer != NO_OP_CONSUMER) {
                     executeTask(task, consumer);
                 } else {
                     log.warn("No matching consumer found for task type: {}, taskId: {}",
@@ -407,8 +409,11 @@ public class RedissonDelayedQueueService {
         if (Objects.nonNull(consumer))
             return consumer;
 
+        // 将 volatile 变量读取到局部变量中，保证在整个方法周期内使用的是同一个 Map 实例
+        Map<Class<?>, Consumer<?>> localCache = this.compatibleTypeReference;
+
         // 尝试找到可兼容类型的消费者
-        return compatibleTypeReference.computeIfAbsent(task.getClass(), taskClass -> {
+        return localCache.computeIfAbsent(task.getClass(), taskClass -> {
             // 最后尝试继承关系匹配
             for (Map.Entry<Object, Consumer<?>> entry : queueConsumerMap.entrySet()) {
                 if (entry.getKey() instanceof Class<?> clazz && clazz.isAssignableFrom(taskClass)) {
@@ -416,7 +421,7 @@ public class RedissonDelayedQueueService {
                 }
             }
 
-            return null;
+            return NO_OP_CONSUMER;// 防止"未找到"下的高频穿透
         });
     }
 
@@ -434,6 +439,15 @@ public class RedissonDelayedQueueService {
 
         if (Objects.nonNull(delayedQueue))
             delayedQueue.destroy();
+    }
+
+    /**
+     * 核心修改：直接废弃旧 Map，赋予新 Map
+     * 引用替换是原子的 (O(1))，不会阻塞任何正在进行 computeIfAbsent 的读取线程
+     * 当注册消费者时，不再需要遍历清空旧数据，没有任何锁竞争
+     */
+    private void replaceTypeCache(){
+        this.compatibleTypeReference = new ConcurrentHashMap<>(16);
     }
 
     private ThreadPoolExecutor getTaskExecutor() {
