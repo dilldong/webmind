@@ -78,7 +78,7 @@ import java.util.function.Consumer;
  *   {baseName}:zset       RScoredSortedSet，延迟调度
  *   {baseName}:stream     RStream，可靠消费
  *   {baseName}:map        RMapCache，task 存储
- *   {baseName}:cancelled  RSet，取消标记（任务已进入 Stream 后不能直接删除时使用）
+ *   {baseName}:cancelled  RSetCache，取消标记
  * </pre>
  *
  * @author Marcus
