@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Strings;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.web.server.WebServerConfig;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -154,6 +155,14 @@ public class HttpUtils {
             return xforwardIp;
 
         return xforwardIp.substring(0, commaOffset);
+    }
+
+    public static String getAcceptLanguage(HttpServletRequest request){
+        return request.getHeader(HttpHeaders.ACCEPT_LANGUAGE);
+    }
+
+    public static String getUserAgent(HttpServletRequest request){
+        return request.getHeader(HttpHeaders.USER_AGENT);
     }
 
     public static String getJson(HttpServletRequest request) {

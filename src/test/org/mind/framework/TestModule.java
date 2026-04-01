@@ -64,7 +64,7 @@ public class TestModule {
         System.out.println("Testing dynamic thread pool...");
 
         // 提交一些任务
-        for (int i = 0; i < 2000; i++) {
+        for (int i = 0; i < 2000; ++i) {
             final int taskId = i;
             dynamicPool.execute(() -> {
                 try {

@@ -11,6 +11,8 @@ import com.google.gson.ToNumberStrategy;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.mind.framework.adapter.InstantTypeAdapter;
+import org.mind.framework.adapter.LocalDateTimeAdapter;
 import org.mind.framework.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -67,7 +71,9 @@ public class JsonUtils {
     private static class SingletonHolder {
         private static final Gson GSON_INSTANCE =
                 new GsonBuilder()
-                        .setDateFormat(DateUtils.DATE_TIME_PATTERN)
+                        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+                        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+                        .setDateFormat(DateUtils.DATE_TIME_PATTERN) // Other time pattern
                         .disableHtmlEscaping()
                         .setObjectToNumberStrategy(OBJECT_TO_NUMBER)
                         .create();
@@ -76,7 +82,9 @@ public class JsonUtils {
     private static class SingletonExposedHolder {
         private static final Gson GSON_INSTANCE =
                 new GsonBuilder()
-                        .setDateFormat(DateUtils.DATE_TIME_PATTERN)
+                        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+                        .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+                        .setDateFormat(DateUtils.DATE_TIME_PATTERN) // Other time pattern
                         .disableHtmlEscaping()
                         .excludeFieldsWithoutExposeAnnotation()
                         .setObjectToNumberStrategy(OBJECT_TO_NUMBER)
