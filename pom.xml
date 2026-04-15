@@ -39,7 +39,7 @@
 
     <properties>
         <spring.version>5.3.39</spring.version>
-        <tomcat.version>9.0.113</tomcat.version>
+        <tomcat.version>9.0.117</tomcat.version>
     </properties>
 
     <build>
