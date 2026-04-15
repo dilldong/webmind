@@ -355,16 +355,6 @@ public class RedissonStreamDelayQueueService {
         ensureRunning();
     }
 
-
-    /**
-     * 核心修改：直接废弃旧 Map，赋予新 Map
-     * 引用替换是原子的 (O(1))，不会阻塞任何正在进行 computeIfAbsent 的读取线程
-     * 当注册消费者时，不再需要遍历清空旧数据，没有任何锁竞争
-     */
-    private void replaceTypeCache() {
-        this.compatibleTypeReference = new ConcurrentHashMap<>(16);
-    }
-
     /**
      * 停止所有后台线程（调度 + 消费）。优雅退出：先停止新任务入队，再等待执行中的任务完成。
      */
@@ -378,6 +368,28 @@ public class RedissonStreamDelayQueueService {
 
         log.info("Stopped StreamDelayQueue, stream: {}", streamKey);
     }
+
+    /**
+     * 防止 Redis 元数据膨胀最佳实践:
+     * 1. consumerName 是固定的:
+     *  - 不要调用 removeConsumer, 当下次重启后，消费者能立刻读取自己的 PEL 恢复进度，不需要等待 autoClaim 的 30s 超时。
+     * 2. consumerName 是动态生成的(如docker中运行):
+     *  - 建议调用 removeConsumer。这可以保持 Redis 元数据的整洁，防止成千上万个"幽灵消费者"占用内存。消息无论如何都要靠 autoClaim 来打捞
+     *  - 另外,当docker频繁重启产生大量随机 consumerName，Redis 内部会记录，这会增加 autoClaim 扫描时的负担。
+     */
+    public void cleaConsumer(){
+        rStream.removeConsumer(CONSUMER_GROUP, consumerName);
+    }
+
+    /**
+     * 核心修改：直接废弃旧 Map，赋予新 Map
+     * 引用替换是原子的 (O(1))，不会阻塞任何正在进行 computeIfAbsent 的读取线程
+     * 当注册消费者时，不再需要遍历清空旧数据，没有任何锁竞争
+     */
+    private void replaceTypeCache() {
+        this.compatibleTypeReference = new ConcurrentHashMap<>(16);
+    }
+
 
     /**
      * 定时扫描 ZSet，将到期的 taskId 通过 Lua 脚本原子地迁移到 Stream。
