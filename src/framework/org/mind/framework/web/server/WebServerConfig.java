@@ -3,6 +3,7 @@ package org.mind.framework.web.server;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.util.ClassUtils;
@@ -143,7 +144,7 @@ public class WebServerConfig {
             this.tldSkipPatterns = properties.getProperty("server.tldSkipPatterns", tldSkipPatterns);
 
             this.bindAddress = properties.getProperty("server.bind-address");
-            this.http2Enabled = Boolean.parseBoolean(properties.getProperty("server.http2.enabled", "false"));
+            this.http2Enabled = Boolean.parseBoolean(properties.getProperty("server.http2.enabled", BooleanUtils.FALSE));
 
             this.compression = properties.getProperty("server.compression", compression);
             this.compressionMinSize = Integer.parseInt(properties.getProperty("server.compression.minSize", String.valueOf(compressionMinSize)));
@@ -169,7 +170,7 @@ public class WebServerConfig {
             this.updatePeriod = Math.max(updatePeriod, Long.parseLong(properties.getProperty("time.updatePeriod", String.valueOf(updatePeriod))));
 
             // enable monitor
-            this.enableLogStatus = Boolean.parseBoolean(properties.getProperty("server.monitor", "false"));
+            this.enableLogStatus = Boolean.parseBoolean(properties.getProperty("server.monitor", BooleanUtils.FALSE));
             this.logIntervalSeconds = Long.parseLong(properties.getProperty("server.monitor.logIntervalSeconds", String.valueOf(logIntervalSeconds)));
         }
     }

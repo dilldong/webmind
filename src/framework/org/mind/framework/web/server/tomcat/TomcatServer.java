@@ -16,6 +16,7 @@ import org.apache.catalina.startup.ContextConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.util.ServerInfo;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.coyote.AbstractProtocol;
 import org.apache.coyote.ProtocolHandler;
@@ -157,7 +158,7 @@ public class TomcatServer extends Tomcat {
             nioProtocol.setAddress(serverConfig.getBindAddress());
 
         // Don't bind to the socket prematurely if ApplicationContext is slow to start
-        connector.setProperty("bindOnInit", "false");
+        connector.setProperty("bindOnInit", BooleanUtils.FALSE);
 
         // support Http2
         if (serverConfig.isHttp2Enabled()) {

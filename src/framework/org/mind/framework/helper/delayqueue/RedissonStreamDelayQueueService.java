@@ -722,19 +722,12 @@ public class RedissonStreamDelayQueueService {
 
     // 优先读环境变量, jvm启动参数, hostname, 最后未知兜底
     private static String buildConsumerName() {
-        // environment
-        String instanceId = System.getenv("APP_INSTANCE_ID");
-        if (StringUtils.isNotBlank(instanceId))
-            return instanceId;
-
-        // jvm params
-        instanceId = Updatable.getAppInstanceId();
+        String instanceId = Updatable.getAppInstanceId();
         if (StringUtils.isNotBlank(instanceId))
             return instanceId;
 
         try {
-            String host = InetAddress.getLocalHost().getHostName();
-            return "consumer-" + host;
+            return "consumer-" + InetAddress.getLocalHost().getHostName();
         } catch (Exception e) {
             return "consumer-unknown";
         }
