@@ -10,6 +10,8 @@ public interface Service {
 
 	String SVC_REPLICA_NAME = "svc.replica";
 
+	String APP_INSTANCE_ID = "app.instance";
+
 	/**
 	 * 开启服务
 	 * 

@@ -4,23 +4,34 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
 
+/**
+ * @author marcus
+ */
 public interface Updatable {
 
     void doUpdate();
 
     /**
      * Read the startup command parameter: -Dsvc.replica=yes,
-     * <br/>Can be used to on/off work under multiple instances.
-     *
-     * @return
      */
     static boolean getEnvReplica() {
         return BooleanUtils.toBoolean(
-                System.getProperty(Service.SVC_REPLICA_NAME, "false"));
+                getEnvArgs(Service.SVC_REPLICA_NAME, "false"));
+    }
+
+    /**
+     * Read the startup command parameter: -app.instance=work-node-1,
+     */
+    static String getAppInstanceId() {
+        return getEnvArgs(Service.APP_INSTANCE_ID);
     }
 
     static String getEnvArgs(String key){
         return System.getProperty(key);
+    }
+
+    static String getEnvArgs(String key, String defaultValue){
+        return System.getProperty(key, defaultValue);
     }
 
     static <T> T getEnvArgs(String key, Class<T> parseClazz){
