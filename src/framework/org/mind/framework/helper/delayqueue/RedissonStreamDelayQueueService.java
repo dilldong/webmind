@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.ThreadUtils;
 import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.service.Updatable;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.DateUtils;
 import org.redisson.api.AutoClaimResult;
@@ -707,7 +708,18 @@ public class RedissonStreamDelayQueueService {
         }
     }
 
+    // 优先读环境变量, jvm启动参数, hostname, 最后未知兜底
     private static String buildConsumerName() {
+        // environment
+        String instanceId = System.getenv("APP_INSTANCE_ID");
+        if (StringUtils.isNotBlank(instanceId))
+            return instanceId;
+
+        // jvm params
+        instanceId = Updatable.getAppInstanceId();
+        if (StringUtils.isNotBlank(instanceId))
+            return instanceId;
+
         try {
             String host = InetAddress.getLocalHost().getHostName();
             return "consumer-" + host;
