@@ -18,8 +18,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 /**
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2023/6/26
  */
 @Configuration
@@ -41,7 +41,12 @@ public class AppConfiguration {
 
     @Bean(destroyMethod = "destroy")
     public QueueService queueService() {
-        QueueLittle queue = new QueueLittle(new QueueConfig().setEnableDynamicAdjust(true));
+        QueueConfig config =
+                new QueueConfig()
+                        .setMinConsumerThreads(1)
+                        .setMaxConsumerThreads(1);
+
+        QueueLittle queue = new QueueLittle(config);
         queue.start();
         return queue;
     }
