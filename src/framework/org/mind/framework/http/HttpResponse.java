@@ -1,10 +1,9 @@
 package org.mind.framework.http;
 
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.helper.AbstractGsonBase;
 import org.mind.framework.util.HttpUtils;
-import org.mind.framework.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,7 @@ import java.util.zip.GZIPInputStream;
  * @param <T> result type
  * @author marcus
  */
-public class HttpResponse<T> implements Closeable {
+public class HttpResponse<T> extends AbstractGsonBase<T> implements Closeable {
     protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
     protected int responseCode;
     protected String responseAsString;
@@ -36,6 +35,7 @@ public class HttpResponse<T> implements Closeable {
     protected boolean streamConsumed = false;
 
     public HttpResponse() {
+        super();
     }
 
     /**
@@ -138,10 +138,6 @@ public class HttpResponse<T> implements Closeable {
         return this.asJson(StandardCharsets.UTF_8);
     }
 
-    public T asJson(TypeToken<T> typeToken) throws IOException {
-        return this.asJson(StandardCharsets.UTF_8, typeToken);
-    }
-
     /**
      * Returns the response body as json.<br>
      * Disconnects the internal HttpURLConnection silently. @return response
@@ -152,15 +148,11 @@ public class HttpResponse<T> implements Closeable {
     }
 
     public T asJson(Charset charset) throws IOException {
-        return this.asJson(charset, new TypeToken<T>() {});
-    }
-
-    public T asJson(Charset charset, TypeToken<T> typeToken) throws IOException {
         if (this.streamConsumed && StringUtils.isNotEmpty(this.responseAsString))
-            return JsonUtils.fromJson(responseAsString, typeToken);
+            return super.fromJson(responseAsString);
 
         try (InputStreamReader reader = new InputStreamReader(this.inStream, charset)) {
-            return JsonUtils.fromJson(reader, typeToken);
+            return super.fromJson(reader);
         }
     }
 

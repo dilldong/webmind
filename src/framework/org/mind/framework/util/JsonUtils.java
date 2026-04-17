@@ -256,17 +256,21 @@ public class JsonUtils {
         return gsonBuilder.create().toJson(target, type);
     }
 
-    public static <V> V fromJson(String json, Class<V> clazz) {
-        return fromJson(json, TypeToken.get(clazz));
+    public static <V> V fromJson(String json, Class<V> clazz){
+        return fromJson(json, TypeToken.get(clazz).getType());
     }
 
     public static <V> V fromJson(String json, TypeToken<V> typeToken) {
-        return fromJson(json, typeToken, true);
+        return fromJson(json, typeToken.getType());
     }
 
-    public static <V> V fromJson(String json, TypeToken<V> typeToken, boolean printErrorStack) {
+    public static <V> V fromJson(String json, Type typeof){
+        return fromJson(json, typeof, true);
+    }
+
+    public static <V> V fromJson(String json, Type typeof, boolean printErrorStack) {
         try {
-            return getSingleton().fromJson(json, typeToken);
+            return getSingleton().fromJson(json, typeof);
         } catch (Exception ex) {
             if (printErrorStack)
                 log.error(ex.getMessage(), ex);
@@ -277,16 +281,20 @@ public class JsonUtils {
     }
 
     public static <V> V fromJson(Reader jsonReader, Class<V> clazz) {
-        return fromJson(jsonReader, TypeToken.get(clazz));
+        return fromJson(jsonReader, TypeToken.get(clazz).getType());
     }
 
     public static <V> V fromJson(Reader jsonReader, TypeToken<V> typeToken) {
-        return fromJson(jsonReader, typeToken, true);
+        return fromJson(jsonReader, typeToken.getType());
     }
 
-    public static <V> V fromJson(Reader jsonReader, TypeToken<V> typeToken, boolean printErrorStack) {
+    public static <V> V fromJson(Reader jsonReader, Type typeof) {
+        return fromJson(jsonReader, typeof, true);
+    }
+
+    public static <V> V fromJson(Reader jsonReader, Type typeof, boolean printErrorStack) {
         try {
-            return getSingleton().fromJson(jsonReader, typeToken);
+            return getSingleton().fromJson(jsonReader, typeof);
         } catch (Exception ex) {
             if (printErrorStack)
                 log.error(ex.getMessage(), ex);

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.springframework.util.MultiValueMap;
@@ -17,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.Enumeration;
 import java.util.Objects;
 
@@ -162,25 +165,27 @@ public final class Action {
     }
 
     public <V> V getJson(Class<V> clazz) {
-        return getJson(TypeToken.get(clazz));
+        return getJson(TypeToken.get(clazz).getType());
     }
 
     public <V> V getJson(TypeToken<V> typeToken) {
+        return getJson(typeToken.getType());
+    }
+
+    public <V> V getJson(Type typeOf) {
         String jsonString = getJson();
         if (!JsonUtils.isJson(jsonString))
             return null;
 
-        return JsonUtils.fromJson(jsonString, typeToken);
+        return JsonUtils.fromJson(jsonString, typeOf);
     }
 
     public JsonObject getJsonObject() {
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonObject>() {
-        });
+        return JsonUtils.fromJson(getJson(), JsonObject.class);
     }
 
     public JsonArray getJsonArray() {
-        return JsonUtils.fromJson(getJson(), new TypeToken<JsonArray>() {
-        });
+        return JsonUtils.fromJson(getJson(), JsonArray.class);
     }
 
     public String getString(String name) {
@@ -191,16 +196,29 @@ public final class Action {
         return StringUtils.defaultIfEmpty(getString(name), defaultValue);
     }
 
+    public BigDecimal getDecimal(String name){
+        return new BigDecimal(getString(name));
+    }
+
+    public BigDecimal getDecimal(String name, BigDecimal defaultValue){
+        String value = getString(name);
+
+        if(NumberUtils.isParsable(value))
+            return new BigDecimal(value);
+
+        return defaultValue;
+    }
+
     public long getLong(String name) {
         return Long.parseLong(getString(name));
     }
 
     public long getLong(String name, long defaultValue) {
         String value = getString(name);
-        if (StringUtils.isEmpty(value))
-            return defaultValue;
+        if (NumberUtils.isParsable(value))
+            return Long.parseLong(value);
 
-        return Long.parseLong(value);
+        return defaultValue;
     }
 
     public int getInt(String name) {
@@ -209,10 +227,10 @@ public final class Action {
 
     public int getInt(String name, int defaultValue) {
         String value = getString(name);
-        if (StringUtils.isEmpty(value))
-            return defaultValue;
+        if (NumberUtils.isParsable(value))
+            return Integer.parseInt(value);
 
-        return Integer.parseInt(value);
+        return defaultValue;
     }
 
     public boolean getBoolean(String name) {

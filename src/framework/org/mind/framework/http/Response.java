@@ -13,6 +13,9 @@ import org.mind.framework.web.Action;
 
 import java.util.Objects;
 
+/**
+ * @author marcus
+ */
 @Getter
 @NoArgsConstructor
 public class Response<T> {
@@ -60,7 +63,7 @@ public class Response<T> {
     /**
      * Set response-code follow code
      */
-    public Response<T> followHttpStatus(){
+    public Response<T> followHttpStatus() {
         Action.getActionContext().getResponse().setStatus(code);
         return this;
     }
@@ -85,11 +88,10 @@ public class Response<T> {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
-        return
-                JsonUtils.toJson(
-                        this,
-                        new TypeToken<Response<T>>(){}.getType(),
-                        ofExpose);
+        return JsonUtils.toJson(
+                this,
+                TypeToken.getParameterized(Response.class, result.getClass()).getType(),
+                ofExpose);
     }
 
     @Override
@@ -127,16 +129,17 @@ public class Response<T> {
     /**
      * 设置需要跳过的字段
      *
-     * @param ofExpose      true:只显示带@Expose的字段, false:全部显示
-     * @param isShowField   显示/隐藏
-     * @param fieldName     字段名称，根据isShowField是否显示该字段
+     * @param ofExpose    true:只显示带@Expose的字段, false:全部显示
+     * @param isShowField 显示/隐藏
+     * @param fieldName   字段名称，根据isShowField是否显示该字段
      */
     public String toJson(boolean ofExpose, final boolean isShowField, final String... fieldName) {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
-        return JsonUtils.toJson(this,
-                new TypeToken<Response<T>>(){}.getType(),
+        return JsonUtils.toJson(
+                this,
+                TypeToken.getParameterized(Response.class, result.getClass()).getType(),
                 ofExpose,
                 isShowField,
                 fieldName);
