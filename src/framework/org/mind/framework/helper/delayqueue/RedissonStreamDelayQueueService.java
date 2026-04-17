@@ -65,16 +65,18 @@ import java.util.function.Consumer;
  *      └─► TaskExecutor：业务回调成功 → ACK, 失败 → 留在 PEL 等待重投
  *
  *  PEL Monitor（Consumer Thread 内联）
- *      └─► autoClaim 30s 未 ACK 的消息，重新投递
+ *      ├─► (启动时) 强制认领自己的遗留消息，防止服务崩溃夹层时出现"孤儿消息"的情况
+ *      └─► (每轮循环) autoClaim 30s 未 ACK 的消息，重新投递
+ *
  * </pre>
  *
  * <h3>对比原 RedissonDelayedQueueService 方案</h3>
  * <ul>
- *   <li>原方案：消费者 poll 成功后崩溃 → 任务丢失（无 ACK 机制）</li>
- *   <li>新方案：未 ACK 的消息驻留 PEL，30s 后自动 autoClaim 重投，保证 at-least-once</li>
+ *   <li>原方案：消费者 poll 成功后崩溃(夹层) → 任务丢失（无 ACK 机制）</li>
+ *   <li>新方案：未 ACK 的消息驻留 PEL，30s 后自动 autoClaim 重投和启动时强制认领，保证 at-least-once</li>
  * </ul>
  *
- * <h3>命名约定（baseName = 构造参数）</h3>
+ * <h3>命名约定</h3>
  * <pre>
  *   {baseName}:zset       RScoredSortedSet，延迟调度
  *   {baseName}:stream     RStream，可靠消费
@@ -575,8 +577,10 @@ public class RedissonStreamDelayQueueService {
 
     /**
      * 启动时恢复本 consumer 自己遗留在 PEL 中的消息
+     * <p>场景：autoClaim 认领消息后 -> for 循环执行前服务崩溃
      * <p>安全性：只认领归属于当前 consumerName 的消息，不会影响其他实例。
-     * 前提：consumerName 必须是稳定值（不含随机后缀）
+     * <p>通过 listPending 精准查出自己名下的消息，用 idle=0 强制认领并处理。
+     * <p><b>前提：<b/>consumerName 必须是稳定值（不含随机后缀）
      */
     private void recoverOwnPendingMessages() {
         try {
