@@ -2,7 +2,6 @@ package org.mind.framework.http;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mind.framework.helper.AbstractGsonBase;
 import org.mind.framework.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,7 @@ import java.util.zip.GZIPInputStream;
  * @param <T> result type
  * @author marcus
  */
-public class HttpResponse<T> extends AbstractGsonBase<T> implements Closeable {
+public class HttpResponse<T> implements Closeable {
     protected static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
     protected int responseCode;
     protected String responseAsString;
@@ -92,10 +91,6 @@ public class HttpResponse<T> extends AbstractGsonBase<T> implements Closeable {
         return this.asString(StandardCharsets.UTF_8);
     }
 
-    public String asString(String charset) throws IOException {
-        return this.asString(Charset.forName(charset));
-    }
-
     /**
      * Returns the response body as string.<br>
      * Disconnects the internal HttpURLConnection silently. @return response
@@ -127,33 +122,6 @@ public class HttpResponse<T> extends AbstractGsonBase<T> implements Closeable {
 
     public boolean isSuccessful() {
         return this.responseCode == HttpURLConnection.HTTP_OK;
-    }
-
-    /**
-     * Returns the response body as json.<br>
-     * Disconnects the internal HttpURLConnection silently. @return response
-     * body as json @throws
-     */
-    public T asJson() throws IOException {
-        return this.asJson(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Returns the response body as json.<br>
-     * Disconnects the internal HttpURLConnection silently. @return response
-     * body as json @throws
-     */
-    public T asJson(String charset) throws IOException {
-        return this.asJson(Charset.forName(charset));
-    }
-
-    public T asJson(Charset charset) throws IOException {
-        if (this.streamConsumed && StringUtils.isNotEmpty(this.responseAsString))
-            return super.fromJson(responseAsString);
-
-        try (InputStreamReader reader = new InputStreamReader(this.inStream, charset)) {
-            return super.fromJson(reader);
-        }
     }
 
     @Override

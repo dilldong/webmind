@@ -88,9 +88,10 @@ public class Response<T> {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
+        Class<?> clazz = Objects.isNull(result)? String.class : result.getClass();
         return JsonUtils.toJson(
                 this,
-                TypeToken.getParameterized(Response.class, result.getClass()).getType(),
+                TypeToken.getParameterized(Response.class, clazz).getType(),
                 ofExpose);
     }
 
@@ -137,9 +138,10 @@ public class Response<T> {
         if (StringUtils.isEmpty(status))
             this.status = isSuccessful() ? SUCCESS : FAILED;
 
+        Class<?> clazz = Objects.isNull(result)? String.class : result.getClass();
         return JsonUtils.toJson(
                 this,
-                TypeToken.getParameterized(Response.class, result.getClass()).getType(),
+                TypeToken.getParameterized(Response.class, clazz).getType(),
                 ofExpose,
                 isShowField,
                 fieldName);

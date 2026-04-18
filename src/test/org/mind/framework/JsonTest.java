@@ -2,6 +2,7 @@ package org.mind.framework;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.reflect.TypeToken;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.ViewResolver;
 import org.springframework.http.HttpStatus;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +24,19 @@ import java.util.Map;
 public class JsonTest {
 
     @Test
+    public void test04(){
+        String json = new Response<String>(HttpServletResponse.SC_OK, "OK").toJson();
+        System.out.println(json);
+    }
+
+    @Test
     public void test03() {
         A<List<Object>> a = new A<>(23, "dasef", List.of("value1", "value2", 0.00, DateUtils.currentMillis()));
         String json = ViewResolver.<A>response(HttpStatus.OK, a).toJson(false);
         System.out.println(json);
 
-        Response<A> resp = JsonUtils.fromJson(json, new TypeToken<Response<A>>(){});
+        Type typeof = TypeToken.getParameterized(Response.class, a.getClass()).getType();
+        Response<A> resp = JsonUtils.fromJson(json, typeof);
         System.out.println(resp);
         System.out.println(resp.toJson());
 
@@ -55,7 +64,8 @@ public class JsonTest {
         System.out.println();
         System.out.println("A[]->Array fromJson: " + Arrays.toString(JsonUtils.fromJson(as, A[].class)));
 
-        List<A> fromList = JsonUtils.fromJson(as, new TypeToken<List<A>>(){});
+        Type type = TypeToken.getParameterized(List.class, a1.getClass()).getType();
+        List<A> fromList = JsonUtils.fromJson(as, type);
         System.out.println();
         System.out.println("A[]->List fromJson: ");
         fromList.forEach(System.out::println);

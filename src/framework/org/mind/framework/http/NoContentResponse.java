@@ -5,7 +5,6 @@ import okhttp3.Headers;
 import okhttp3.MediaType;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Objects;
@@ -42,21 +41,6 @@ public class NoContentResponse extends HttpResponse<Void> {
 
     @Override
     public String asString(Charset charset) {
-        throw new IllegalStateException("Cannot read raw response body of a converted body.");
-    }
-
-    @Override
-    public Void asJson(Charset charset) {
-        throw new IllegalStateException("Cannot read raw response body of a converted body.");
-    }
-
-    @Override
-    public Void asJson() throws IOException {
-        throw new IllegalStateException("Cannot read raw response body of a converted body.");
-    }
-
-    @Override
-    public Void asJson(String charset) throws IOException {
         throw new IllegalStateException("Cannot read raw response body of a converted body.");
     }
 }

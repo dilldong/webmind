@@ -1,5 +1,6 @@
 package org.mind.framework.helper;
 
+import lombok.Getter;
 import org.mind.framework.util.JsonUtils;
 
 import java.io.Reader;
@@ -11,12 +12,13 @@ import java.lang.reflect.Type;
  * 而 Gson 的 TypeToken 需要在编译时捕获确定的类型,
  * 在 Gson 新版本中, 更加强制了这一做法。
  * <p>底层逻辑：</p>
- * <p>TypeToken 的工作原理是创建一个匿名内部类，利用 getGenericSuperclass() 获取父类的泛型参数。如果参数是 T（类型变量），Gson 就不知道该把 JSON 映射到哪个具体的类（是 User 还是 Order？），因此抛出异常。
+ * <p>TypeToken 的工作原理是创建一个匿名内部类，利用 getGenericSuperclass() 获取父类的泛型参数。
  *
  * @author Marcus
  * @version 1.0
  * @date 2026/4/18
  */
+@Getter
 public abstract class AbstractGsonBase<T> {
     private final Type type;
 
