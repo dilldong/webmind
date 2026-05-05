@@ -723,7 +723,7 @@ public class RedissonStreamDelayQueueService {
         }
     }
 
-    // 优先读环境变量, jvm启动参数, hostname, 最后未知兜底
+    // 按顺序读环境变量, jvm启动参数, hostname, 最后未知兜底
     private static String buildConsumerName() {
         String instanceId = Updatable.getAppInstanceId();
         if (StringUtils.isNotBlank(instanceId))
