@@ -1,6 +1,7 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
@@ -49,7 +50,6 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     private Cacheable cacheable;
     private BeanFactory beanFactory;
 
-    
     @Override
     public ClassFilter getClassFilter() {
         return this.pointcut.getClassFilter();
@@ -190,7 +190,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Class<?> clazz) {
+        public boolean matches(@NotNull Class<?> clazz) {
             return super.matches(clazz) || this.methodResolver.hasAnnotatedMethods(clazz);
         }
     }

@@ -18,7 +18,7 @@ import java.util.Arrays;
 @Getter
 public class Execution {
 
-    private final static RequestMethod[] NON_METHODS = {RequestMethod.GET, RequestMethod.POST};
+    private final static RequestMethod[] DEFAULT_METHODS = {RequestMethod.GET, RequestMethod.POST};
 
     // Action instance
     private final Object actionInstance;
@@ -80,7 +80,7 @@ public class Execution {
 
     public String methodString() {
         return requestMethods == null || requestMethods.length == 0 ?
-                Arrays.toString(NON_METHODS) :
+                Arrays.toString(DEFAULT_METHODS) :
                 Arrays.toString(requestMethods);
     }
 }

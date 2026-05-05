@@ -162,11 +162,10 @@ public class SpringApplication {
                 } else
                     log4jInputStream = ClassUtils.getResourceAsStream(configClass, log4j);
 
-                try {
-                    // load log4j2
-                    try(LoggerContext context = org.apache.logging.log4j.core.config.Configurator.initialize(
-                            null,
-                            new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream))){}
+                // load log4j2
+                try (LoggerContext context = org.apache.logging.log4j.core.config.Configurator.initialize(
+                        null,
+                        new org.apache.logging.log4j.core.config.ConfigurationSource(log4jInputStream))){
 
                     // load logback
 //                    ch.qos.logback.classic.LoggerContext.LoggerContext context =
@@ -177,7 +176,7 @@ public class SpringApplication {
 //                    configurator.doConfigure(log4jInputStream);
 
                     // load log4j 1.x
-                    //org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);
+                    // org.apache.log4j.PropertyConfigurator.configure(log4jInputStream);
 
                     log.info("Logger was reset and started successfully!");
                 } catch (Exception e) {

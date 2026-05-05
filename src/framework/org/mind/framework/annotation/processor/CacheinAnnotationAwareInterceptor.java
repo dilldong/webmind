@@ -4,6 +4,7 @@ import lombok.Setter;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.cache.Cacheable;
 import org.springframework.aop.IntroductionInterceptor;
@@ -23,8 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Interceptor that parses the cachein metadata on the method it is invoking and delegates
  * to an appropriate CacheinOperationsInterceptor.
  *
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2022/9/5
  */
 public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor, BeanFactoryAware {
@@ -34,12 +35,12 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
     private Cacheable defaultCache;
 
     @Override
-    public boolean implementsInterface(Class<?> clazz) {
+    public boolean implementsInterface(@NotNull Class<?> clazz) {
         return Cacheable.class.isAssignableFrom(clazz);
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
@@ -57,28 +58,27 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         if (Objects.isNull(delegate)) {
             Cachein cachein = AnnotatedElementUtils.findMergedAnnotation(method, Cachein.class);
 
-            // for class
-            if (Objects.isNull(cachein)) {
-                cachein = classLevelAnnotation(method, Cachein.class);
-            }
-
             // for method
             if (Objects.isNull(cachein)) {
                 cachein = findAnnotationOnMethod(target, method, Cachein.class);
             }
 
+            // for class
+            if (Objects.isNull(cachein)) {
+                cachein = classLevelAnnotation(method, Cachein.class);
+            }
+
             if (Objects.nonNull(cachein)) {
-                delegate = this.getDefaultInterceptor(invocation.getArguments(), method, cachein);
+                delegate = this.getDefaultInterceptor(cachein);
 
                 // Customizable implementation of interceptor
 //                if (StringUtils.isNotEmpty(cachein.interceptor()))
 //                    delegate = this.beanFactory.getBean(cachein.interceptor(), MethodInterceptor.class);
 
-                if (Objects.nonNull(delegate))
-                    cachedMethods.putIfAbsent(method, delegate);
+                cachedMethods.putIfAbsent(method, delegate);
             }
         }
-        return Objects.nonNull(delegate) ? delegate.invoke(invocation) : invocation.proceed();
+        return Objects.isNull(delegate) ? invocation.proceed() : delegate.invoke(invocation);
     }
 
     private <V extends Annotation> V findAnnotationOnMethod(Object target, Method method, Class<V> annotation) {
@@ -98,21 +98,19 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         return AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), annotation);
     }
 
-    private MethodInterceptor getDefaultInterceptor(Object[] params, Method method, Cachein cachein) {
-        Cacheable cacheable = defaultCache;
-
-        if (StringUtils.isNotEmpty(cachein.cacheable()))
-            cacheable = this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
+    private MethodInterceptor getDefaultInterceptor(Cachein cachein) {
+        Cacheable cacheable =
+                StringUtils.isEmpty(cachein.cacheable()) ?
+                        defaultCache : this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
 
         CacheinOperationInterceptor opInterceptor =
                 new CacheinOperationInterceptor(
                         cacheable,
                         cachein.strategy(),
-                        cachein.penetration(),
+                        cachein.cacheNull(),
                         cachein.expire(),
                         cachein.unit(),
-                        cachein.inRedis(),
-                        cachein.redisType());
+                        cachein.levels());
 
         boolean isPrefix = StringUtils.isNotEmpty(cachein.prefix());
         boolean isSuffix = StringUtils.isNotEmpty(cachein.suffix());
@@ -124,7 +122,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         else if (isSuffix)
             opInterceptor.setKey(cachein.suffix());
         else
-            throw new IllegalArgumentException("At least one of 'prefix' or 'suffix'.");
+            throw new IllegalArgumentException("At least one of 'prefix' or 'suffix'");
 
         return opInterceptor;
     }

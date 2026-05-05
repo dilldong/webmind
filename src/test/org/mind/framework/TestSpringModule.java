@@ -12,6 +12,7 @@ import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.config.AppConfiguration;
+import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.queue.QueueService;
@@ -43,9 +44,6 @@ import java.util.Locale;
 //@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
 @ContextConfiguration(classes = AppConfiguration.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
-
-    @Resource
-    private TestService testService;
 
     @Resource
     private TestServiceComponent testServiceComponent;
@@ -204,28 +202,29 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(CalculateUtils.formatNumberSymbol("1002"));
     }
 
+    @SneakyThrows
     @Test
     public void testLocalCache(){
-        System.out.println("testServiceComponent: ");
-        System.out.println(testServiceComponent.byCache(22222));
-        System.out.println(testServiceComponent.getClass().getName());
-    }
+        RedissonHelper.getInstance();
+//        System.out.println("1.call string:");
+//        System.out.println(testServiceComponent.getWithCache(22222L));
+//        Thread.sleep(1000L);
+//        System.out.println("2.call string:");
+//        System.out.println(testServiceComponent.getWithCache(22222L));
 
-    @Test
-    public void test04() {
-//        RedissonHelper.getInstance()
-//                .deleteList(String.join(AbstractCache.CACHE_DELIMITER, "user_by_id", "832834", "first"));
-        List<Object> list = testService.get("first", 832834L);
-        System.out.println("1: "+ list);
-        list = testService.get("first", 832834L);
-        System.out.println("2: "+ list);
+//        System.out.println("1st call list:");
+//        testServiceComponent.getWithCache("first", 832834L).forEach(System.out::println);
+//        Thread.sleep(1000L);
+//        System.out.println("2st call list:");
+//        testServiceComponent.getWithCache("first", 832834L).forEach(System.out::println);
 
-//        testService.get("second", 23784234).forEach(System.out::println);
-//        testService.get("first", 832834L).forEach(System.out::println);
-//
-        System.out.println(testService.byCache(323421));
-        System.out.println(testService.byCache(323421));
-//        System.out.println(testService.getClass().getName());
+        System.out.println("1st call null:");
+        List<String> list = testServiceComponent.getNullWithCache();
+        System.out.println(list);
+        Thread.sleep(1000L);
+        System.out.println("2st call null:");
+        list = testServiceComponent.getNullWithCache();
+        System.out.println(list);
     }
 
     @Test

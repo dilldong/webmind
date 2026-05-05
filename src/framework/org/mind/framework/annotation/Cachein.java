@@ -32,17 +32,15 @@ public @interface Cachein {
 
     String cacheable() default StringUtils.EMPTY;
 
-    Cloneable.CloneType strategy() default Cloneable.CloneType.ORIGINAL;
+    // 是否进行对象拷贝（防止修改本地缓存）
+    Cloneable.CloneType strategy() default Cloneable.CloneType.NONE;
 
     long expire() default 0L;
 
     TimeUnit unit() default TimeUnit.MILLISECONDS;
 
-    boolean inRedis() default false;
+    CacheLevel[] levels() default {CacheLevel.LOCAL, CacheLevel.REDIS};
 
-    // When inRedis=true, should specify the returned java type
-    Class<?>[] redisType() default {};
-
-    // When set false, the object in the cache is returned first, even if it is empty.
-    boolean penetration() default true;
+    // 是否缓存null（防穿透）
+    boolean cacheNull() default false;
 }

@@ -6,6 +6,7 @@ import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,7 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CacheElement {
+/**
+ * Cached wrapper object
+ *
+ * @author dp
+ * @date Nov 26, 2010
+ */
+public class CacheElement implements Serializable {
 
     // cached object
     private Object value;
@@ -40,7 +47,7 @@ public class CacheElement {
         this.key = key;
 
         switch (type) {
-            case ORIGINAL:
+            case NONE:
                 this.value = data;
                 break;
             case CLONE:
@@ -54,7 +61,7 @@ public class CacheElement {
     }
 
     public CacheElement(Object data, String key) {
-        this(data, key, Cloneable.CloneType.ORIGINAL);
+        this(data, key, Cloneable.CloneType.NONE);
     }
 
     public void recordVisited() {
@@ -70,7 +77,7 @@ public class CacheElement {
     }
 
     public Object getValue() {
-        return getValue(Cloneable.CloneType.ORIGINAL);
+        return getValue(Cloneable.CloneType.NONE);
     }
 
     public Object getValue(Cloneable.CloneType cloneType) {
@@ -152,7 +159,7 @@ public class CacheElement {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
                 .append("key", key)
                 .append(" value", value)
                 .append(" firstTime", firstTime)
