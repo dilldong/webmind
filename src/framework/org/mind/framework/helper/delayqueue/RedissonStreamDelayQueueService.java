@@ -687,7 +687,7 @@ public class RedissonStreamDelayQueueService {
         } catch (Exception e) {
             // BUSYGROUP 是正常情况（多实例启动 or 重启），静默降级
             if (Strings.CS.contains(e.getMessage(), "BUSYGROUP"))
-                log.debug("Consumer group '{}' already exists, skipping", CONSUMER_GROUP);
+                log.info("Consumer group '{}' already exists, skipping", CONSUMER_GROUP);
             else
                 log.warn("Consumer group init failed for stream: {}, error: {}", streamKey, e.getMessage());
         }

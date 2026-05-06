@@ -18,8 +18,6 @@ import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
@@ -50,7 +48,6 @@ import java.util.stream.Stream;
 @Setter
 @NoArgsConstructor
 public class CacheinOperationInterceptor implements MethodInterceptor {
-    private static final Logger log = LoggerFactory.getLogger("org.mind.framework.annotation.Cachein");
     private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
     private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
 
