@@ -34,4 +34,5 @@ public @interface EnableCache {
 
     boolean exposeProxy() default false;
 
+    CacheLevel[] levels() default {};
 }

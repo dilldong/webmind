@@ -12,7 +12,7 @@ import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.config.AppConfiguration;
-import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.queue.QueueService;
@@ -41,7 +41,7 @@ import java.util.Locale;
  * @author Marcus
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-//@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
+//@ContextConfiguration(locations = {"classpath:spring/springContext.xml"})
 @ContextConfiguration(classes = AppConfiguration.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
@@ -50,6 +50,9 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Resource
     private QueueService queueService;
+
+    @Resource
+    private RedissonStreamBroadcastService broadcastService;
 
     @SneakyThrows
     @Test
@@ -205,7 +208,6 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void testLocalCache(){
-        RedissonHelper.getInstance();
 //        System.out.println("1.call string:");
 //        System.out.println(testServiceComponent.getWithCache(22222L));
 //        Thread.sleep(1000L);

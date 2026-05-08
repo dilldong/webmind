@@ -2,7 +2,9 @@ package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
 import org.jetbrains.annotations.NotNull;
+import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
+import org.mind.framework.annotation.EnableCache;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.aop.ClassFilter;
@@ -21,9 +23,12 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ImportAware;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.OrderComparator;
+import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ObjectUtils;
 
 import java.lang.annotation.Annotation;
@@ -42,12 +47,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2022/9/5
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton, ImportAware {
     public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.processor.EnableCacheConfiguration";
 
     private Pointcut pointcut;
     private Advice advice;
     private Cacheable cacheable;
+    private CacheLevel[] cacheLevels;
     private BeanFactory beanFactory;
 
     @Override
@@ -91,8 +97,18 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
         this.advice = buildAdvice();
-        if (this.advice instanceof BeanFactoryAware)
-            ((BeanFactoryAware) advice).setBeanFactory(beanFactory);
+        ((BeanFactoryAware) advice).setBeanFactory(beanFactory);
+    }
+
+    @Override
+    public void setImportMetadata(AnnotationMetadata importMetadata) {
+        // 从触发 @Import 的那个类上读取 @EnableCache 的属性
+        AnnotationAttributes attrs = AnnotationAttributes.fromMap(
+                importMetadata.getAnnotationAttributes(EnableCache.class.getName())
+        );
+
+        if (Objects.nonNull(attrs))
+            this.cacheLevels = (CacheLevel[]) attrs.get("levels");
     }
 
     @Override
@@ -152,6 +168,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     private CacheinAnnotationAwareInterceptor buildAdvice() {
         CacheinAnnotationAwareInterceptor interceptor = new CacheinAnnotationAwareInterceptor();
         interceptor.setDefaultCache(cacheable);
+        interceptor.setDefaultLevels(cacheLevels);
         return interceptor;
     }
 

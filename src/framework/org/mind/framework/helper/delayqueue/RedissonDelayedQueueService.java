@@ -35,6 +35,7 @@ import java.util.function.Consumer;
  * @date 2025/5/22
  */
 @Slf4j
+@Deprecated
 public class RedissonDelayedQueueService {
     private static final AtomicBoolean SHUTDOWN_HOOK_REGISTERED = new AtomicBoolean(false);
 

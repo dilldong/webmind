@@ -39,7 +39,7 @@ public @interface Cachein {
 
     TimeUnit unit() default TimeUnit.MILLISECONDS;
 
-    CacheLevel[] levels() default {CacheLevel.LOCAL, CacheLevel.REDIS};
+    CacheLevel[] levels() default {};
 
     // 是否缓存null（防穿透）
     boolean cacheNull() default false;

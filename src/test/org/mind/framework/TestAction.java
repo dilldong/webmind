@@ -1,5 +1,6 @@
 package org.mind.framework;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
@@ -22,8 +23,18 @@ import java.util.stream.IntStream;
  * @version 1.0
  */
 @Slf4j
+@RequiredArgsConstructor
 @Controller
 public class TestAction {
+
+    private final TestServiceComponent testServiceComponent;
+
+    @Mapping(value = "/cache")
+    public String cache() {
+        String userId = testServiceComponent.getWithCache(123L);
+        testServiceComponent.clear(123L);
+        return userId;
+    }
 
     @Mapping(value = {"/", "/index"})
     public String first() {

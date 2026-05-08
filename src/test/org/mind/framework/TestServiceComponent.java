@@ -1,9 +1,11 @@
 package org.mind.framework;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Cachein;
-import org.mind.framework.annotation.EnableCache;
-import org.springframework.stereotype.Service;
+import org.mind.framework.cache.AbstractCache;
+import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,9 +17,10 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/9/5
  */
 @Slf4j
-@Service
-@EnableCache(exposeProxy = true)
+@Component
+@RequiredArgsConstructor
 public class TestServiceComponent {
+    private final RedissonStreamBroadcastService broadcastService;
 
     private static final String CACHE_KEY = "user_by_id";
 
@@ -48,4 +51,8 @@ public class TestServiceComponent {
         return "bycache_" + userId;
     }
 
+    public void clear(long userId){
+        log.info("发布消息");
+        broadcastService.publish(String.join(AbstractCache.CACHE_DELIMITER, CACHE_KEY, String.valueOf(userId)));
+    }
 }

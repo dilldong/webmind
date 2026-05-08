@@ -45,6 +45,11 @@
         </constructor-arg>
     </bean>
 
+    <!-- Email service -->
+    <bean id="emailService" class="org.mind.framework.mail.service.EmailServiceImpl">
+        <property name="queueService" ref="queueService"/>
+    </bean>
+
     <!-- WEB main service -->
     <bean id="mainService" class="org.mind.framework.service.MainService" destroy-method="stop">
         <property name="childServices">
