@@ -68,7 +68,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public Cacheable newLinkedMap(LinkedHashMap<String, CacheElement> newMap) {
+    public Cacheable newMap(LinkedHashMap<String, CacheElement> newMap) {
         this.itemsMap = newMap;
         return this;
     }
@@ -95,7 +95,7 @@ public class LruCache extends AbstractCache implements Cacheable {
      */
     @Override
     public Cacheable addCache(String key, Object value, boolean check) {
-        return addCache(key, value, check, Cloneable.CloneType.ORIGINAL);
+        return addCache(key, value, check, Cloneable.CloneType.NONE);
     }
 
     @Override
@@ -306,7 +306,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public long getTimeOut() {
+    public long getTimeout() {
         return timeout;
     }
 }

@@ -12,25 +12,25 @@ public interface Updatable {
     void doUpdate();
 
     /**
-     * Read the startup command parameter: -Dsvc.replica=yes,
+     * Read the startup command parameter: -Dsvc.replica=yes
      */
-    static boolean getEnvReplica() {
-        String replica = getEnvArgs(Service.SVC_REPLICA_NAME_ENV);
+    static boolean isReplica() {
+        String replica = getRunArgs(Service.SVC_REPLICA_NAME);
         if(StringUtils.isNotBlank(replica))
             return BooleanUtils.toBoolean(replica);
 
-        return BooleanUtils.toBoolean(getRunArgs(Service.SVC_REPLICA_NAME, BooleanUtils.FALSE));
+        return BooleanUtils.toBoolean(getEnvArgs(Service.SVC_REPLICA_NAME_ENV, BooleanUtils.FALSE));
     }
 
     /**
-     * Read the startup command parameter: -app.instance=work-node-1,
+     * Read the startup command parameter: -Dapp.instance=work-node-1
      */
     static String getAppInstanceId() {
-        String instanceId = getEnvArgs(Service.APP_INSTANCE_ID_ENV);
+        String instanceId = getRunArgs(Service.APP_INSTANCE_ID);
         if(StringUtils.isNotBlank(instanceId))
             return instanceId;
 
-        return getRunArgs(Service.APP_INSTANCE_ID);
+        return getEnvArgs(Service.APP_INSTANCE_ID_ENV);
     }
 
     static String getEnvArgs(String key){

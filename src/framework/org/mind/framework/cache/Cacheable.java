@@ -27,7 +27,7 @@ public interface Cacheable extends Serializable, Destroyable {
      * @param newMap
      * @return
      */
-    Cacheable newLinkedMap(LinkedHashMap<String, CacheElement> newMap);
+    Cacheable newMap(LinkedHashMap<String, CacheElement> newMap);
 
     /**
      * 添加一个新条目，如果该条目已经存在，将不做任何操作
@@ -147,5 +147,5 @@ public interface Cacheable extends Serializable, Destroyable {
 
     int getCapacity();
 
-    long getTimeOut();
+    long getTimeout();
 }
