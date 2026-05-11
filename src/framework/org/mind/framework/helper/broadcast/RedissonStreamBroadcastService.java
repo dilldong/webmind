@@ -134,7 +134,10 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
         }
 
         try {
-            // 按间隔裁剪 Stream，使用近似 MAXLEN（~ 符号）性能更优
+            /*
+             * 按间隔裁剪 Stream，使用近似 MAXLEN（~ 符号）性能更优;
+             * 注意： noLimit() 保证的是“只要执行裁剪，就尽可能删干净”，但它不抵消 trimNonStrict() 的“近似”特性。
+             */
             rStream.add(StreamAddArgs.entry(FIELD_PAYLOAD, payload)
                     .trimNonStrict()
                     .maxLen(maxStreamLen)
