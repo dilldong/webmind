@@ -134,7 +134,7 @@ public class GracefulShutdown {
                 }
 
                 // 4. wait task again
-                if (!executorService.awaitTermination(3, TimeUnit.SECONDS))
+                if (!executorService.awaitTermination(3L, TimeUnit.SECONDS))
                     log.error("{} did not terminate even after forced shutdown", nameTag);
             }
         } catch (InterruptedException e) {
@@ -142,7 +142,7 @@ public class GracefulShutdown {
             executorService.shutdownNow();
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            log.error("{} shutdown failed with unexpected error", nameTag, e);
+            log.error("{} shutdown failed unexpectedly", nameTag, e);
         }
     }
 }

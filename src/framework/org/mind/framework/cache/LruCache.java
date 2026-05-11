@@ -14,10 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Cache implementation of LRU(Least Recently Used)
@@ -32,20 +29,16 @@ public class LruCache extends AbstractCache implements Cacheable {
     /*
      * The maximum number of active cache entries, the default capacity is 1024
      */
-    private int capacity = 1024;
+    private volatile int capacity = 1024;
 
     /*
      * entry timeout
      */
-    private long timeout = 0L;
+    private volatile long timeout = 0L;
 
-    private Map<String, CacheElement> itemsMap;
+    private final Map<String, CacheElement> itemsMap;
 
-    private transient final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-
-    private transient final Lock read = readWriteLock.readLock();
-
-    private transient final Lock write = readWriteLock.writeLock();
+    private transient final ReentrantLock lock = new ReentrantLock();
 
     public static LruCache initCache() {
         return CacheHolder.CACHE_INSTANCE;
@@ -67,12 +60,6 @@ public class LruCache extends AbstractCache implements Cacheable {
         };
     }
 
-    @Override
-    public Cacheable newMap(LinkedHashMap<String, CacheElement> newMap) {
-        this.itemsMap = newMap;
-        return this;
-    }
-
     /**
      * 添加一个新条目，如果该条目已经存在，将不做任何操作
      *
@@ -90,7 +77,7 @@ public class LruCache extends AbstractCache implements Cacheable {
      *
      * @param key
      * @param value
-     * @param check false:若条目存在，不做任何操作。 true:先移除存在的条目，再重新装入;
+     * @param check false:若条目存在，不做任何操作。 true: 先移除存在的条目，再重新装入;
      * @author dp
      */
     @Override
@@ -110,24 +97,17 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public Cacheable addCache(String key, CacheElement element, boolean check) {
-        if (this.containsKey(key)) {
-            if (check)
-                return this.replace(key, element);
+        String realKey = super.realKey(key);
+        lock.lock();
+        try {
+            // 若 check=true，直接 put 即可实现“替换并移至 LRU 尾部”
+            // 若 check=false，仅在不存时才 put
+            if (check || !this.itemsMap.containsKey(realKey))
+                itemsMap.put(realKey, element);
 
-            if (log.isDebugEnabled())
-                log.debug("The Cache key already exists.");
             return this;
-        }
-
-        while (true) {
-            if (write.tryLock()) {
-                try {
-                    itemsMap.put(super.realKey(key), element);
-                    return this;
-                } finally {
-                    write.unlock();
-                }
-            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -138,45 +118,36 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public CacheElement getCache(String key, long interval) {
-        CacheElement element = this.getElement(key);
-        if (Objects.isNull(element))
-            return null;
+        String realKey = super.realKey(key);
+        lock.lock();
+        try {
+            CacheElement element = this.itemsMap.get(realKey);
 
-        if (interval > 0 && (DateUtils.CachedTime.currentMillis() - element.getFirstTime()) > interval) {
-            this.removeCache(key);
-            if (log.isDebugEnabled())
-                log.debug("Remove Cache key, The access time interval expires. key = {}", key);
-            return null;
-        }
+            if (Objects.isNull(element))
+                return null;
 
-        while (true) {
-            if (write.tryLock()) {
-                try {
-                    element.recordVisited();// record count of visit
-                    element.recordTime(DateUtils.CachedTime.currentMillis()); // record time of visit
-                    return element;
-                } finally {
-                    write.unlock();
-                }
+            long gap = DateUtils.CachedTime.currentMillis() - element.getFirstTime();
+            if (interval > 0 && gap > interval) {
+                itemsMap.remove(realKey);
+                return null;
             }
-        }
 
+            element.recordVisited();// record count of visit
+            element.recordTime(DateUtils.CachedTime.currentMillis()); // record time of visit
+            return element;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public CacheElement removeCache(String key) {
-        if (this.containsKey(key)) {
-            while (true) {
-                if (write.tryLock()) {
-                    try {
-                        return itemsMap.remove(super.realKey(key));
-                    } finally {
-                        write.unlock();
-                    }
-                }
-            }
+        lock.lock();
+        try {
+            return itemsMap.remove(super.realKey(key));
+        } finally {
+            lock.unlock();
         }
-        return null;
     }
 
     @Override
@@ -191,107 +162,92 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule) {
-        if (this.isEmpty())
-            return Collections.emptyList();
+        lock.lock();
+        try {
+            if (this.isEmpty())
+                return Collections.emptyList();
 
-        List<CacheElement> removeList = new ArrayList<>();
-        Iterator<Entry<String, CacheElement>> iterator = this.getEntries().iterator();
-        boolean exclude;
+            List<CacheElement> removeList = new ArrayList<>();
+            Iterator<Entry<String, CacheElement>> iterator = itemsMap.entrySet().iterator();
+            boolean exclude;
 
-        while (iterator.hasNext()) {
-            Map.Entry<String, CacheElement> entry = iterator.next();
-            if (StringUtils.containsIgnoreCase(entry.getKey(), searchStr)) {
-                // Exclude
-                if (excludes != null && excludes.length > 0) {
-                    // true: continue find, false: for delete
-                    exclude = false;
-                    for (String exKey : excludes) {
-                        exclude = Cacheable.CompareType.EQ_FULL == excludesRule ?
-                                StringUtils.equals(entry.getKey(), exKey) :
-                                StringUtils.contains(entry.getKey(), exKey);
+            while (iterator.hasNext()) {
+                Map.Entry<String, CacheElement> entry = iterator.next();
+                if (StringUtils.containsIgnoreCase(entry.getKey(), searchStr)) {
+                    // Exclude
+                    if (excludes != null && excludes.length > 0) {
+                        // true: continue find, false: for delete
+                        exclude = false;
+                        for (String exKey : excludes) {
+                            exclude = Cacheable.CompareType.EQ_FULL == excludesRule ?
+                                    StringUtils.equals(entry.getKey(), exKey) :
+                                    StringUtils.contains(entry.getKey(), exKey);
+                            if (exclude)
+                                break;
+                        }
+
                         if (exclude)
-                            break;
+                            continue;
                     }
 
-                    if (exclude)
-                        continue;
+                    iterator.remove();
+                    removeList.add(entry.getValue());
                 }
-
-                iterator.remove();
-                removeList.add(entry.getValue());
             }
-        }
 
-        return removeList;
+            return removeList;
+        }finally {
+            lock.unlock();
+        }
     }
 
 
     @Override
-    public synchronized void destroy() {
+    public void destroy() {
         super.destroy();
-        if (!this.isEmpty()) {
-            itemsMap.clear();
-            itemsMap = null;
-            log.info("Destroy Cacheable@{}, clear all items.", this.getClass().getSimpleName());
+
+        lock.lock();
+        try {
+            if (!this.isEmpty()) {
+                itemsMap.clear();
+                log.info("Destroy Cacheable@{}, clear all items.", this.getClass().getSimpleName());
+            }
+        }finally {
+            lock.unlock();
         }
     }
 
     @Override
     public boolean isEmpty() {
-        return Objects.isNull(this.itemsMap) || this.itemsMap.isEmpty();
+        return this.itemsMap.isEmpty();
     }
 
     @Override
-    public Set<Entry<String, CacheElement>> getEntries() {
-        if (this.isEmpty())
-            return Collections.emptySet();
-
-        return itemsMap.entrySet();
+    public List<CacheElement> getValues() {
+        lock.lock();
+        try {
+            return this.isEmpty()? Collections.emptyList() : new ArrayList<>(itemsMap.values());
+        }finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public boolean containsKey(String key) {
-        read.lock();
+        lock.lock();
         try {
             if (this.isEmpty())
                 return false;
 
             return this.itemsMap.containsKey(super.realKey(key));
         } finally {
-            read.unlock();
+            lock.unlock();
         }
     }
 
-    private CacheElement getElement(String key) {
-        read.lock();
-        try {
-            if (this.isEmpty())
-                return null;
-
-            String realKey = super.realKey(key);
-            if (this.itemsMap.containsKey(realKey))
-                return this.itemsMap.get(realKey);
-
-            return null;
-        } finally {
-            read.unlock();
-        }
-    }
-
-    private Cacheable replace(String key, CacheElement element) {
-        while (true) {
-            if (write.tryLock()) {
-                try {
-                    itemsMap.replace(super.realKey(key), element);
-                    return this;
-                } finally {
-                    write.unlock();
-                }
-            }
-        }
-    }
-
-
+    /**
+     * 仅对后续新增生效
+     */
     @Override
     public void setCapacity(int capacity) {
         this.capacity = capacity;

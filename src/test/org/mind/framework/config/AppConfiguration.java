@@ -74,7 +74,7 @@ public class AppConfiguration {
 
 
     @Bean
-    public RedissonStreamBroadcastService broadcastService(){
+    public RedissonStreamBroadcastService cacheBroadcastService(){
         RedissonStreamBroadcastService broadcastService = new RedissonStreamBroadcastService("webmind");
         System.out.println(broadcastService.getConsumerName());
         broadcastService.registerHandler(k -> {

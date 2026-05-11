@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class TestServiceComponent {
-    private final RedissonStreamBroadcastService broadcastService;
+    private final RedissonStreamBroadcastService cacheBroadcastService;
 
     private static final String CACHE_KEY = "user_by_id";
 
@@ -53,6 +53,6 @@ public class TestServiceComponent {
 
     public void clear(long userId){
         log.info("发布消息");
-        broadcastService.publish(String.join(AbstractCache.CACHE_DELIMITER, CACHE_KEY, String.valueOf(userId)));
+        cacheBroadcastService.publish(String.join(AbstractCache.CACHE_DELIMITER, CACHE_KEY, String.valueOf(userId)));
     }
 }

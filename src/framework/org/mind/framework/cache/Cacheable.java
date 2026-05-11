@@ -4,10 +4,7 @@ import org.mind.framework.service.Cloneable;
 import org.mind.framework.web.Destroyable;
 
 import java.io.Serializable;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Cache Capability Interface
@@ -20,14 +17,6 @@ public interface Cacheable extends Serializable, Destroyable {
     enum CompareType {
         EQ_FULL, EQ_PART
     }
-
-    /**
-     * 指定新的LinkedHashMap<String, Object>
-     *
-     * @param newMap
-     * @return
-     */
-    Cacheable newMap(LinkedHashMap<String, CacheElement> newMap);
 
     /**
      * 添加一个新条目，如果该条目已经存在，将不做任何操作
@@ -130,10 +119,11 @@ public interface Cacheable extends Serializable, Destroyable {
      * @return
      * @date July 8, 2021
      */
-    Set<Map.Entry<String, CacheElement>> getEntries();
+    List<CacheElement> getValues();
 
     /**
      * 指定有效的缓存容量
+     * 注意: 仅对后续新增生效
      *
      * @param capacity
      */

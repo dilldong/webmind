@@ -12,7 +12,7 @@ import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.config.AppConfiguration;
-import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
+import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.queue.QueueService;
@@ -21,6 +21,10 @@ import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
+import org.redisson.api.RMapCache;
+import org.redisson.api.map.event.EntryExpiredListener;
+import org.redisson.api.map.event.EntryRemovedListener;
+import org.redisson.api.map.event.EntryUpdatedListener;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -50,9 +54,6 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Resource
     private QueueService queueService;
-
-    @Resource
-    private RedissonStreamBroadcastService broadcastService;
 
     @SneakyThrows
     @Test
@@ -208,11 +209,13 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void testLocalCache(){
-//        System.out.println("1.call string:");
-//        System.out.println(testServiceComponent.getWithCache(22222L));
-//        Thread.sleep(1000L);
+        System.out.println("1.call string:");
+        System.out.println(testServiceComponent.getWithCache(22222L));
+        Thread.sleep(1000L);
+
 //        System.out.println("2.call string:");
 //        System.out.println(testServiceComponent.getWithCache(22222L));
+
 
 //        System.out.println("1st call list:");
 //        testServiceComponent.getWithCache("first", 832834L).forEach(System.out::println);
@@ -220,13 +223,29 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 //        System.out.println("2st call list:");
 //        testServiceComponent.getWithCache("first", 832834L).forEach(System.out::println);
 
-        System.out.println("1st call null:");
-        List<String> list = testServiceComponent.getNullWithCache();
-        System.out.println(list);
-        Thread.sleep(1000L);
-        System.out.println("2st call null:");
-        list = testServiceComponent.getNullWithCache();
-        System.out.println(list);
+//        System.out.println("1st call null:");
+//        List<String> list = testServiceComponent.getNullWithCache();
+//        System.out.println(list);
+//        Thread.sleep(1000L);
+//        System.out.println("2st call null:");
+//        list = testServiceComponent.getNullWithCache();
+//        System.out.println(list);
+    }
+
+    private void cacheListen(){
+        RMapCache<String, Object> cache = RedissonHelper.getClient().getMapCache("myCache");
+
+        cache.addListener((EntryRemovedListener<String, Object>) event -> {
+            System.out.println("Entry removed, key=" + event.getKey());
+        });
+
+        cache.addListener((EntryExpiredListener<String, Object>) event -> {
+            System.out.println("Entry expired, key=" + event.getKey());
+        });
+
+        cache.addListener((EntryUpdatedListener<String, Object>) event -> {
+            System.out.println("Entry updated, key=" + event.getKey() + ", newVal=" + event.getValue());
+        });
     }
 
     @Test

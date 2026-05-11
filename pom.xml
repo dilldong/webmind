@@ -306,6 +306,13 @@
             </exclusions>
         </dependency>
 
+        <!-- caffeine -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.2.4</version>
+        </dependency>
+
         <!--Redisson-->
         <dependency>
             <groupId>org.redisson</groupId>
