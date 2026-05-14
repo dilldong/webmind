@@ -32,17 +32,17 @@ public interface Cacheable extends Serializable, Destroyable {
      *
      * @param key
      * @param value
-     * @param check <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;false: default, 若条目存在，不做任何操作
-     *              <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;true: 先移除存在的条目，再重新装入
+     * @param forceUpdate <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;false: 默认值, 若条目存在，不做任何操作
+     *                    <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;true: 先移除存在的条目，再重新装入
      * @return
      */
-    Cacheable addCache(String key, Object value, boolean check);
+    Cacheable addCache(String key, Object value, boolean forceUpdate);
 
-    Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type);
+    Cacheable addCache(String key, Object value, boolean forceUpdate, Cloneable.CloneType type);
 
     Cacheable addCache(String key, CacheElement element);
 
-    Cacheable addCache(String key, CacheElement element, boolean check);
+    Cacheable addCache(String key, CacheElement element, boolean forceUpdate);
 
     /**
      * 删除缓存

@@ -44,10 +44,10 @@ public class TestServiceComponent {
 
     @Cachein(prefix = CACHE_KEY,
             suffix = "#{userId}",
-            expire = 1L,
-            unit = TimeUnit.HOURS)
+            expire = 15L,
+            unit = TimeUnit.SECONDS)
     public String getWithCache(long userId) {
-        log.debug("-------2.call orig method-------");
+        log.debug("-------call orig method-------");
         return "bycache_" + userId;
     }
 

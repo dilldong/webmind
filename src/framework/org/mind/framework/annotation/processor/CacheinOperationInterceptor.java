@@ -96,10 +96,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                         .anyMatch(v -> CacheLevel.LOCAL == v);
         if (isLocal) {
             ResolveResult result = forLocal(resolverKey, nullTypeValue);
-            if (result.isShouldShortCircuit())
-                return result.getResult();
-
-            if (!isEmpty(result.getResult()))
+            if (result.isShouldShortCircuit() || !isEmpty(result.getResult()))
                 return result.getResult();
         }
 
@@ -109,14 +106,12 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                         .anyMatch(v -> CacheLevel.REDIS == v);
         if (isRedis) {
             ResolveResult result = forRedis(resolverKey, nullTypeValue);
-            if (result.isShouldShortCircuit()) {
+
+            if (result.isShouldShortCircuit() || !isEmpty(result.getResult())) {
                 if (isLocal)
                     save2local(resolverKey, result.getResult(), nullTypeValue);
                 return result.getResult();
             }
-
-            if (!isEmpty(result.getResult()))
-                return result.getResult();
         }
 
         // for implementation
@@ -131,7 +126,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         return result;
     }
 
-    private ResolveResult forRedis(String resolverKey, TypeMatchResult nullTypeValue) throws Throwable {
+    private ResolveResult forRedis(String resolverKey, TypeMatchResult nullTypeValue){
         return resolveCacheValue(
                 nullTypeValue.getNullMarker(),
                 () -> RedissonHelper.getInstance().getWithLock(resolverKey),// 用于验证: NULL marker
@@ -140,7 +135,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         );
     }
 
-    private ResolveResult forLocal(String resolverKey, TypeMatchResult nullTypeValue) throws Throwable {
+    private ResolveResult forLocal(String resolverKey, TypeMatchResult nullTypeValue){
         CacheElement element = this.cacheable.getCache(resolverKey, timeUnit.toMillis(expire));
         if (Objects.isNull(element))
             return new ResolveResult(nullTypeValue.getEmptyValue(), false);
@@ -205,12 +200,21 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
     private void save2local(String resolverKey, Object result, TypeMatchResult nullTypeValue) {
         if (isEmpty(result)) {
-            if (this.cacheNull)
-                cacheable.addCache(resolverKey, nullTypeValue.getNullMarker(), true, cloneType);
+            if (this.cacheNull) {
+                cacheable.addCache(
+                        resolverKey,
+                        new CacheElement(nullTypeValue.getNullMarker(), resolverKey, timeUnit.toMillis(expire), cloneType),
+                        true
+                );
+            }
             return;
         }
 
-        cacheable.addCache(resolverKey, result, true, cloneType);
+        cacheable.addCache(
+                resolverKey,
+                new CacheElement(result, resolverKey, timeUnit.toMillis(expire), cloneType),
+                true
+        );
     }
 
     private void save2redis(String resolverKey, Object result, TypeMatchResult nullTypeValue) {

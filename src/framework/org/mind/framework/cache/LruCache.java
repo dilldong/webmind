@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Cache implementation of LRU(Least Recently Used)
+ * Local cache implementation of LRU(Least Recently Used)
  *
  * @author dp
  * @date Nov 26, 2010
@@ -77,17 +77,17 @@ public class LruCache extends AbstractCache implements Cacheable {
      *
      * @param key
      * @param value
-     * @param check false:若条目存在，不做任何操作。 true: 先移除存在的条目，再重新装入;
+     * @param forceUpdate false:若条目存在，不做任何操作。 true: 先移除存在的条目，再重新装入;
      * @author dp
      */
     @Override
-    public Cacheable addCache(String key, Object value, boolean check) {
-        return addCache(key, value, check, Cloneable.CloneType.NONE);
+    public Cacheable addCache(String key, Object value, boolean forceUpdate) {
+        return addCache(key, value, forceUpdate, Cloneable.CloneType.NONE);
     }
 
     @Override
-    public Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type) {
-        return this.addCache(key, new CacheElement(value, key, type), check);
+    public Cacheable addCache(String key, Object value, boolean forceUpdate, Cloneable.CloneType type) {
+        return this.addCache(key, new CacheElement(value, key, type), forceUpdate);
     }
 
     @Override
@@ -96,13 +96,13 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public Cacheable addCache(String key, CacheElement element, boolean check) {
+    public Cacheable addCache(String key, CacheElement element, boolean forceUpdate) {
         String realKey = super.realKey(key);
         lock.lock();
         try {
             // 若 check=true，直接 put 即可实现“替换并移至 LRU 尾部”
             // 若 check=false，仅在不存时才 put
-            if (check || !this.itemsMap.containsKey(realKey))
+            if (forceUpdate || !this.itemsMap.containsKey(realKey))
                 itemsMap.put(realKey, element);
 
             return this;
@@ -126,10 +126,12 @@ public class LruCache extends AbstractCache implements Cacheable {
             if (Objects.isNull(element))
                 return null;
 
-            long gap = DateUtils.CachedTime.currentMillis() - element.getFirstTime();
-            if (interval > 0 && gap > interval) {
-                itemsMap.remove(realKey);
-                return null;
+            if (interval > 0L) {
+                long gap = DateUtils.CachedTime.currentMillis() - element.getFirstTime();
+                if (gap > interval) {
+                    itemsMap.remove(realKey);
+                    return null;
+                }
             }
 
             element.recordVisited();// record count of visit
@@ -161,7 +163,7 @@ public class LruCache extends AbstractCache implements Cacheable {
     }
 
     @Override
-    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule) {
+    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, CompareType excludesRule) {
         lock.lock();
         try {
             if (this.isEmpty())
@@ -169,34 +171,22 @@ public class LruCache extends AbstractCache implements Cacheable {
 
             List<CacheElement> removeList = new ArrayList<>();
             Iterator<Entry<String, CacheElement>> iterator = itemsMap.entrySet().iterator();
-            boolean exclude;
 
             while (iterator.hasNext()) {
                 Map.Entry<String, CacheElement> entry = iterator.next();
-                if (StringUtils.containsIgnoreCase(entry.getKey(), searchStr)) {
-                    // Exclude
-                    if (excludes != null && excludes.length > 0) {
-                        // true: continue find, false: for delete
-                        exclude = false;
-                        for (String exKey : excludes) {
-                            exclude = Cacheable.CompareType.EQ_FULL == excludesRule ?
-                                    StringUtils.equals(entry.getKey(), exKey) :
-                                    StringUtils.contains(entry.getKey(), exKey);
-                            if (exclude)
-                                break;
-                        }
 
-                        if (exclude)
-                            continue;
-                    }
+                if (!StringUtils.containsIgnoreCase(entry.getKey(), searchStr))
+                    continue;
 
-                    iterator.remove();
-                    removeList.add(entry.getValue());
-                }
+                if (excludes != null && excludes.length > 0 && isExcluded(entry.getKey(), excludes, excludesRule))
+                    continue;
+
+                iterator.remove();
+                removeList.add(entry.getValue());
             }
 
             return removeList;
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -210,9 +200,9 @@ public class LruCache extends AbstractCache implements Cacheable {
         try {
             if (!this.isEmpty()) {
                 itemsMap.clear();
-                log.info("Destroy Cacheable@{}, clear all items.", this.getClass().getSimpleName());
+                log.info("Destroy LruCache, clear all items.");
             }
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -226,8 +216,8 @@ public class LruCache extends AbstractCache implements Cacheable {
     public List<CacheElement> getValues() {
         lock.lock();
         try {
-            return this.isEmpty()? Collections.emptyList() : new ArrayList<>(itemsMap.values());
-        }finally {
+            return this.isEmpty() ? Collections.emptyList() : new ArrayList<>(itemsMap.values());
+        } finally {
             lock.unlock();
         }
     }

@@ -37,6 +37,19 @@ public abstract class AbstractCache implements Destroyable {
         return String.join(CACHE_DELIMITER, prefix, key);
     }
 
+    protected boolean isExcluded(String key, String[] excludes, Cacheable.CompareType rule) {
+        for (String ex : excludes) {
+            boolean match = Cacheable.CompareType.EQ_FULL == rule
+                    ? StringUtils.equals(key, ex)
+                    : StringUtils.contains(key, ex);
+
+            if (match)
+                return true;
+        }
+        return false;
+    }
+
+
     @Override
     public void destroy() {
         if(log.isDebugEnabled())

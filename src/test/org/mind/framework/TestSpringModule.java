@@ -22,6 +22,8 @@ import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
 import org.redisson.api.RMapCache;
+import org.redisson.api.RPatternTopic;
+import org.redisson.api.map.event.EntryCreatedListener;
 import org.redisson.api.map.event.EntryExpiredListener;
 import org.redisson.api.map.event.EntryRemovedListener;
 import org.redisson.api.map.event.EntryUpdatedListener;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @version 1.0
@@ -54,6 +57,9 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Resource
     private QueueService queueService;
+
+    @Resource
+    private Cacheable cacheable;
 
     @SneakyThrows
     @Test
@@ -213,32 +219,86 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(testServiceComponent.getWithCache(22222L));
         Thread.sleep(1000L);
 
-//        System.out.println("2.call string:");
-//        System.out.println(testServiceComponent.getWithCache(22222L));
-
-
-//        System.out.println("1st call list:");
-//        testServiceComponent.getWithCache("first", 832834L).forEach(System.out::println);
-//        Thread.sleep(1000L);
-//        System.out.println("2st call list:");
-//        testServiceComponent.getWithCache("first", 832834L).forEach(System.out::println);
-
-//        System.out.println("1st call null:");
-//        List<String> list = testServiceComponent.getNullWithCache();
-//        System.out.println(list);
-//        Thread.sleep(1000L);
-//        System.out.println("2st call null:");
-//        list = testServiceComponent.getNullWithCache();
-//        System.out.println(list);
+        System.out.println("2.call string:");
+        System.out.println(testServiceComponent.getWithCache(22222L));
     }
 
-    private void cacheListen(){
-        RMapCache<String, Object> cache = RedissonHelper.getClient().getMapCache("myCache");
+    @SneakyThrows
+    @Test
+    public void keySpaceEvent(){
+        // 订阅删除事件
+        RPatternTopic delTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:del");
+        delTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被删除: " + message);
+        });
+
+        // 订阅过期事件
+        RPatternTopic expiredTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:expired");
+        expiredTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 已过期: " + message);
+        });
+
+        // 订阅淘汰事件
+        RPatternTopic evictedTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:evicted");
+        evictedTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被淘汰: " + message);
+        });
+
+        // 订阅创建事件
+        RPatternTopic newTopic = RedissonHelper.getClient().getPatternTopic("__keyspace@0__:newKey");
+        newTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被创建: " + message);
+        });
+
+        // 订阅创建事件
+        RPatternTopic overrideTopic = RedissonHelper.getClient().getPatternTopic("__keyspace@0__:counter");
+        overrideTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被覆盖: " + message);
+        });
+
+        System.out.println("Redis 全局事件监听器已启动");
+        System.in.read();
+    }
+
+    @SneakyThrows
+    @Test
+    public void keyListenAll(){
+        // 订阅所有 key 的事件（注意频道格式）
+        // __keyevent@0__:* 中的 0 代表 db0，根据你的 Redis 数据库序号调整
+        RPatternTopic topic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:*");
+
+        topic.addListener(String.class,  (pattern, channel, message) -> {
+            String eventChannel = channel.toString();
+            String key = message;
+
+            System.out.println("收到事件 - 频道: " + eventChannel + ", Key: " + key);
+
+            // 判断事件类型
+            if (eventChannel.endsWith(":del")) {
+                System.out.println("Key 被删除: " + key);
+                // 在这里执行你的业务逻辑
+            } else if (eventChannel.endsWith(":expired")) {
+                System.out.println("Key 已过期: " + key);
+            } else if (eventChannel.endsWith(":evicted")) {
+                System.out.println("Key 被内存淘汰: " + key);
+            }
+        });
+
+        System.out.println("Redis 全局事件监听器已启动");
+        System.in.read();
+    }
+
+    @SneakyThrows
+    @Test
+    public void cacheListen(){
+//        所有删除事件 → __keyevent@0__:del
+//        所有过期事件 → __keyevent@0__:expired
+//        所有淘汰事件 → __keyevent@0__:evicted
+        RMapCache<String, Object> cache = RedissonHelper.getClient().getMapCache("webmind:cachemap:listen");
 
         cache.addListener((EntryRemovedListener<String, Object>) event -> {
             System.out.println("Entry removed, key=" + event.getKey());
         });
-
         cache.addListener((EntryExpiredListener<String, Object>) event -> {
             System.out.println("Entry expired, key=" + event.getKey());
         });
@@ -246,6 +306,24 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         cache.addListener((EntryUpdatedListener<String, Object>) event -> {
             System.out.println("Entry updated, key=" + event.getKey() + ", newVal=" + event.getValue());
         });
+
+        cache.addListener((EntryCreatedListener<String, Object>) event -> {
+            System.out.println("Entry created, key=" + event.getKey() + ", newVal=" + event.getValue());
+        });
+
+
+        System.out.println("new ...");
+        cache.fastPut("user_by_1", StringUtils.EMPTY, 60L, TimeUnit.SECONDS);
+        cache.fastPut("user_by_2", StringUtils.EMPTY, 10L, TimeUnit.SECONDS);
+
+        TimeUnit.SECONDS.sleep(3L);
+        System.out.println("deleted ...");
+        cache.fastRemove("user_by_2");
+
+        System.out.println("update ...");
+        cache.fastPut("user_by_2", "update", 5L, TimeUnit.SECONDS);
+
+        System.in.read();
     }
 
     @Test

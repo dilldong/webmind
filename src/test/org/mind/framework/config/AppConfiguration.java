@@ -6,6 +6,7 @@ import org.apache.velocity.spring.VelocityEngineFactoryBean;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.EnableCache;
 import org.mind.framework.cache.Cacheable;
+import org.mind.framework.cache.CaffeineCache;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
@@ -17,11 +18,11 @@ import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.PropertiesUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -42,12 +43,27 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @ComponentScan(basePackages = {"org.mind.framework"})
 public class AppConfiguration {
 
-    private final Environment environment;
+    @Value("${mind.cache.provider:caffeine}")
+    private String provider;
+
+    @Value("${mind.cache.capacity:1024}")
+    private int capacity;
+
+    @Value("${mind.cache.ttl:0}")
+    private long ttl;
 
     @Bean(destroyMethod = "destroy")
     public Cacheable cacheable() {
+        if ("caffeine".equalsIgnoreCase(provider)) {
+            log.info("Local cache provider: Caffeine (capacity={}, timeout={}ms)", capacity, ttl);
+            return CaffeineCache.of(capacity, ttl);
+        }
+
+        log.info("Local cache provider: LRU (capacity={}, timeout={}ms)", capacity, ttl);
+
         Cacheable cacheable = LruCache.initCache();
-        cacheable.setCapacity(1024);
+        cacheable.setCapacity(capacity);
+        cacheable.setTimeout(ttl);
         return cacheable;
     }
 
@@ -74,12 +90,11 @@ public class AppConfiguration {
 
 
     @Bean
-    public RedissonStreamBroadcastService cacheBroadcastService(){
+    public RedissonStreamBroadcastService cacheBroadcastService() {
         RedissonStreamBroadcastService broadcastService = new RedissonStreamBroadcastService("webmind");
-        System.out.println(broadcastService.getConsumerName());
         broadcastService.registerHandler(k -> {
             long delete = RedissonHelper.getClient().getKeys().delete(k);
-            log.info("收到消息: {}, {}", k, delete);
+            log.info("Receive Message: {}, {}", k, delete);
         });
 
         broadcastService.init();
