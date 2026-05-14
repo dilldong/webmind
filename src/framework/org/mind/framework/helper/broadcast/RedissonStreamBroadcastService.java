@@ -155,7 +155,7 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
             return;
 
         this.running = false;
-        log.info("[Broadcast] Listener stopped, stream: {}", streamKey);
+        log.info("[Broadcast] Listener stopped, stream: {}", getStreamKey());
     }
 
     /**

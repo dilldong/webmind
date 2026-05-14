@@ -53,9 +53,9 @@ public abstract class AbstractRStream implements Destroyable {
 
     protected String consumerGroup;
 
-    protected String streamKey;
+    private final String streamKey;
 
-    protected String listenThreadPrefix;
+    private final String listenThreadPrefix;
 
     protected final RStream<String, String> rStream;
 
@@ -70,11 +70,11 @@ public abstract class AbstractRStream implements Destroyable {
     public abstract void init();
     protected abstract void handleMessage(StreamMessageId msgId, Map<String, String> fields);
 
-    public AbstractRStream(String consumerGroup, String streamKey, String listenThreadNamePrefix) {
-        this.consumerName = buildConsumerName();
+    public AbstractRStream(String consumerGroup, String streamKey, String listenThreadPrefix) {
         this.consumerGroup = consumerGroup;
         this.streamKey = streamKey;
-        this.listenThreadPrefix = listenThreadNamePrefix;
+        this.listenThreadPrefix = listenThreadPrefix;
+        this.consumerName = buildConsumerName();
 
         this.rStream = RedissonHelper.getClient().getStream(streamKey, StringCodec.INSTANCE);
         RedissonHelper.getInstance().addShutdownEvent(c -> destroy());

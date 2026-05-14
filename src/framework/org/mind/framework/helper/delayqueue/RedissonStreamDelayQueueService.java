@@ -148,9 +148,8 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * @param baseName Redis key 前缀，如 {@code "payment:delay"}。
      *                 实际生成 4 个 key：{baseName}:zset / :stream / :map / :cancelled
      */
-    public RedissonStreamDelayQueueService(String baseName) {
-        // 同一 baseName 下所有实例共享同一 Group，确保消息不重复投递
-        super("rz-delay-group", baseName + ":stream", "delay-listen-");
+    public RedissonStreamDelayQueueService(String baseName, String consumerGroup) {
+        super(consumerGroup, baseName + ":stream", "rd-listen-");
 
         this.zsetKey = baseName + ":zset";
         this.mapKey = baseName + ":map";
@@ -325,7 +324,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         if (Objects.nonNull(schedulerExecutor))
             schedulerExecutor.shutdown();
 
-        log.info("Stopped StreamDelayQueue, stream: {}", streamKey);
+        log.info("Stopped StreamDelayQueue, stream: {}", getStreamKey());
     }
 
     /**
@@ -361,14 +360,14 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
                     RScript.Mode.READ_WRITE,
                     LUA_PROMOTE_SCRIPT,
                     RScript.ReturnType.INTEGER,
-                    Arrays.asList(zsetKey, streamKey),
+                    Arrays.asList(zsetKey, getStreamKey()),
                     String.valueOf(DateUtils.CachedTime.currentMillis()),
                     String.valueOf(PROMOTE_BATCH_SIZE));
 
             if (result instanceof Long) {
                 Long count = (Long) result;
                 if (count.compareTo(0L) > 0)
-                    log.debug("Promoted {} task(s) to stream: {}", count, streamKey);
+                    log.debug("Promoted {} task(s) to stream: {}", count, getStreamKey());
             }
 
         } catch (Exception e) {
