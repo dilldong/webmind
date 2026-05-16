@@ -112,7 +112,7 @@ public abstract class AbstractRStream implements Destroyable {
                 }
 
             } catch (Exception e) {
-                log.error("Stream consumer error, stream={}: {}", streamKey, e.getMessage(), e);
+                log.error("Stream consumer error, stream: {} - {}", streamKey, e.getMessage(), e);
                 ThreadUtils.sleepQuietly(Duration.ofSeconds(1L));
             }
         }

@@ -80,8 +80,7 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
     private volatile Consumer<String> broadcastHandler;
 
     /**
-     * Stream 最大保留条数（近似）。超过后自动裁剪旧消息。
-     * 建议设置为：实例数 × 预期高峰消息速率 × 最长消费延迟秒数 的若干倍。
+     * Stream 最大保留条数（近似）, 超过后自动裁剪旧消息
      */
     @Setter
     @Getter
@@ -91,10 +90,10 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
      * @param baseName Redis key 前缀，如 {@code "cache:user"}。
      *                 实际 Stream key 为 {@code "{baseName}:broadcast:stream"}。
      */
-    public RedissonStreamBroadcastService(String baseName) {
-        super("broadcast:group:", baseName + ":broadcast:stream", "broadcast-listen-");
+    public RedissonStreamBroadcastService(String baseName, String consumerGroup) {
+        super(consumerGroup, baseName + ":broadcast:stream", "broadcast-listen-");
 
-        // 为每个实例创建不同的consumerGroup
+        // 为每个实例创建不同的 consumerGroup
         super.consumerGroup += super.consumerName;
 
         // 尽早建立 ConsumerGroup（幂等），MKSTREAM 自动创建 Stream
@@ -196,7 +195,7 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
      */
     @Override
     protected void reclaimStalePendingMessages(){
-        // nothing
+        // do nothing
     }
 
     @Override

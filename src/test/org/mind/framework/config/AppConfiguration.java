@@ -10,6 +10,7 @@ import org.mind.framework.cache.CaffeineCache;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
+import org.mind.framework.helper.delayqueue.RedissonStreamDelayQueueService;
 import org.mind.framework.mail.service.EmailService;
 import org.mind.framework.mail.service.EmailServiceImpl;
 import org.mind.framework.service.queue.QueueConfig;
@@ -27,6 +28,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Marcus
@@ -88,17 +93,48 @@ public class AppConfiguration {
         return velocityEngine;
     }
 
-
     @Bean
     public RedissonStreamBroadcastService cacheBroadcastService() {
-        RedissonStreamBroadcastService broadcastService = new RedissonStreamBroadcastService("webmind");
+        RedissonStreamBroadcastService broadcastService = new RedissonStreamBroadcastService("webmind", "broadcast:group:a");
         broadcastService.registerHandler(k -> {
             long delete = RedissonHelper.getClient().getKeys().delete(k);
-            log.info("Receive Message: {}, {}", k, delete);
+            log.info("broadcast: Receive Message: {}, {}", k, delete);
         });
 
         broadcastService.init();
         return broadcastService;
+    }
+
+    @Bean
+    public RedissonStreamDelayQueueService redissonStreamDelayQueueService() {
+        RedissonStreamDelayQueueService delayedQueueService =
+                new RedissonStreamDelayQueueService("test:delay:queue:a", "a-group");
+
+        delayedQueueService.setTaskExecutor(ExecutorFactory.newThreadPoolExecutor(
+                1, 1,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(32),
+                ExecutorFactory.newThreadFactory("delay-task-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()));
+
+        delayedQueueService.init();
+        return delayedQueueService;
+    }
+
+    @Bean
+    public RedissonStreamDelayQueueService redissonStreamDelayQueueService02() {
+        RedissonStreamDelayQueueService delayedQueueService =
+                new RedissonStreamDelayQueueService("test:delay:queue:b", "b-group");
+
+        delayedQueueService.setTaskExecutor(ExecutorFactory.newThreadPoolExecutor(
+                1, 1,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(32),
+                ExecutorFactory.newThreadFactory("delay-task-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()));
+
+        delayedQueueService.init();
+        return delayedQueueService;
     }
 
     @Bean(value = "asyncExecutor", destroyMethod = "destroy")
