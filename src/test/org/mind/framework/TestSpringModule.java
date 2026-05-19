@@ -27,6 +27,7 @@ import org.redisson.api.map.event.EntryCreatedListener;
 import org.redisson.api.map.event.EntryExpiredListener;
 import org.redisson.api.map.event.EntryRemovedListener;
 import org.redisson.api.map.event.EntryUpdatedListener;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -227,9 +228,9 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @Test
     public void keySpaceEvent(){
         // 订阅删除事件
-        RPatternTopic delTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:del");
-        delTopic.addListener(String.class, (pattern, channel, message) -> {
-            System.out.println("key 被删除: " + message);
+        RPatternTopic delTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:del", StringCodec.INSTANCE);
+        delTopic.addListener(String.class, ( pattern, channel, message) -> {
+            System.out.println("[KeyEvent] 被删除: " + message);
         });
 
         // 订阅过期事件
@@ -256,7 +257,7 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
             System.out.println("key 被覆盖: " + message);
         });
 
-        System.out.println("Redis 全局事件监听器已启动");
+        System.out.println("Redis KeySpace事件监听器已启动");
         System.in.read();
     }
 
@@ -291,26 +292,8 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void cacheListen(){
-//        所有删除事件 → __keyevent@0__:del
-//        所有过期事件 → __keyevent@0__:expired
-//        所有淘汰事件 → __keyevent@0__:evicted
         RMapCache<String, Object> cache = RedissonHelper.getClient().getMapCache("webmind:cachemap:listen");
-
-        cache.addListener((EntryRemovedListener<String, Object>) event -> {
-            System.out.println("Entry removed, key=" + event.getKey());
-        });
-        cache.addListener((EntryExpiredListener<String, Object>) event -> {
-            System.out.println("Entry expired, key=" + event.getKey());
-        });
-
-        cache.addListener((EntryUpdatedListener<String, Object>) event -> {
-            System.out.println("Entry updated, key=" + event.getKey() + ", newVal=" + event.getValue());
-        });
-
-        cache.addListener((EntryCreatedListener<String, Object>) event -> {
-            System.out.println("Entry created, key=" + event.getKey() + ", newVal=" + event.getValue());
-        });
-
+        registryEvent(cache);
 
         System.out.println("new ...");
         cache.fastPut("user_by_1", StringUtils.EMPTY, 60L, TimeUnit.SECONDS);
@@ -324,6 +307,21 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         cache.fastPut("user_by_2", "update", 5L, TimeUnit.SECONDS);
 
         System.in.read();
+    }
+
+    private void registryEvent(RMapCache<String, Object> cache){
+        cache.addListener((EntryRemovedListener<String, Object>) event -> {
+            System.out.println("Entry removed, key=" + event.getKey());
+        });
+        cache.addListener((EntryExpiredListener<String, Object>) event -> {
+            System.out.println("Entry expired, key=" + event.getKey());
+        });
+        cache.addListener((EntryUpdatedListener<String, Object>) event -> {
+            System.out.println("Entry updated, key=" + event.getKey() + ", newVal=" + event.getValue());
+        });
+        cache.addListener((EntryCreatedListener<String, Object>) event -> {
+            System.out.println("Entry created, key=" + event.getKey() + ", newVal=" + event.getValue());
+        });
     }
 
     @Test

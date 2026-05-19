@@ -52,8 +52,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     private Pointcut pointcut;
     private Advice advice;
-    private Cacheable cacheable;
-    private CacheLevel[] cacheLevels;
+    private CacheLevel[] defaultLevels;
     private BeanFactory beanFactory;
 
     @Override
@@ -66,7 +65,6 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         // do nothing
     }
 
-    
     @Override
     public Class<?>[] getInterfaces() {
         return new Class[]{org.mind.framework.cache.Cacheable.class};
@@ -91,13 +89,12 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.cacheable = this.findBean(Cacheable.class);
+        Cacheable cacheable = this.findBean(Cacheable.class);
 //        Set<Class<? extends Annotation>> cacheinAnnotationTypes = new LinkedHashSet<>(1);
 //        cacheinAnnotationTypes.add(Cachein.class);
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
-        this.advice = buildAdvice();
-        ((BeanFactoryAware) advice).setBeanFactory(beanFactory);
+        this.advice = new CacheinAnnotationAwareInterceptor(cacheable, defaultLevels, beanFactory);
     }
 
     @Override
@@ -108,7 +105,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         );
 
         if (Objects.nonNull(attrs))
-            this.cacheLevels = (CacheLevel[]) attrs.get("levels");
+            this.defaultLevels = (CacheLevel[]) attrs.get("levels");
     }
 
     @Override
@@ -163,13 +160,6 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     private Pointcut buildPointcut(Class<? extends Annotation> cacheinAnnotationType) {
         Pointcut filter = new AnnotationClassOrMethodPointcut(cacheinAnnotationType);
         return new ComposablePointcut(filter);
-    }
-
-    private CacheinAnnotationAwareInterceptor buildAdvice() {
-        CacheinAnnotationAwareInterceptor interceptor = new CacheinAnnotationAwareInterceptor();
-        interceptor.setDefaultCache(cacheable);
-        interceptor.setDefaultLevels(cacheLevels);
-        return interceptor;
     }
 
     private static class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {

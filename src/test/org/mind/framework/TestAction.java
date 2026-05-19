@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
+import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.Action;
 import org.mind.framework.web.renderer.Render;
 import org.mind.framework.web.renderer.TemplateRender;
@@ -31,9 +32,15 @@ public class TestAction {
 
     @Mapping(value = "/cache")
     public String cache() {
-        String userId = testServiceComponent.getWithCache(123L);
+        List<Object> result = testServiceComponent.getWithCache("cache", 123L);
         testServiceComponent.clear(123L);
-        return userId;
+        return JsonUtils.toJson(result);
+    }
+
+    @Mapping(value = "/send")
+    public String send() {
+        testServiceComponent.sendMessage();
+        return "OK";
     }
 
     @Mapping(value = {"/", "/index"})
