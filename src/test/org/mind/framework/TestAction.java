@@ -1,9 +1,11 @@
 package org.mind.framework;
 
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
+import org.mind.framework.util.JsonUtils;
 import org.mind.framework.web.Action;
 import org.mind.framework.web.renderer.Render;
 import org.mind.framework.web.renderer.TemplateRender;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,8 +24,24 @@ import java.util.stream.IntStream;
  * @version 1.0
  */
 @Slf4j
+@RequiredArgsConstructor
 @Controller
 public class TestAction {
+
+    private final TestServiceComponent testServiceComponent;
+
+    @Mapping(value = "/cache")
+    public String cache() {
+        List<Object> result = testServiceComponent.getWithCache("cache", 123L);
+        testServiceComponent.clear(123L);
+        return JsonUtils.toJson(result);
+    }
+
+    @Mapping(value = "/send")
+    public String send() {
+        testServiceComponent.sendMessage();
+        return "OK";
+    }
 
     @Mapping(value = {"/", "/index"})
     public String first() {
@@ -31,7 +50,7 @@ public class TestAction {
 
     @Mapping(value = "/request/text", method = RequestMethod.GET)
     public String withText() {
-        return "Hello, This is mind-framework.";
+        return "Hello,This is mind-framework.";
     }
 
     @Mapping(value = "/request/value/${type}", method = RequestMethod.GET)
@@ -51,15 +70,14 @@ public class TestAction {
 
     @Mapping("/request/json01")
     public String withJsonResult() {
-        Map<String, Object> dataMap = Map.of(
-                "name", "Smith",
-                "age", 26,
-                "gender", "Male",
-                "session-id", Action.getActionContext().getSession().getId()
-        );
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Smith");
+        data.put("age", 26);
+        data.put("gender", "Male");
+        data.put("session-id", Action.getActionContext().getSession().getId());
 
         return new Response<Map<String, Object>>(HttpServletResponse.SC_OK, "OK")
-                .setResult(dataMap)
+                .setResult(data)
                 .toJson();
     }
 
@@ -83,7 +101,7 @@ public class TestAction {
         return new TemplateRender(
                 "index.vm",
                 "listItem",
-                List.of(11, 22, 32, 3, 62, 92));
+                Arrays.asList(11, 22, 32, 3, 62, 92));
     }
 
     @Mapping("/number/${value}")

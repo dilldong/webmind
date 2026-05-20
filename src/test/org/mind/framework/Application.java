@@ -9,7 +9,7 @@ public class Application {
 
     public static void main(String[] args) {
         SpringApplication.run(
-                new String[]{"spring/springContext.xml", "spring/businessConfig.xml"},
+                new String[]{"spring/springContext.xml"},
                 args);
 
 //        SpringApplication.run(Application.class, args);

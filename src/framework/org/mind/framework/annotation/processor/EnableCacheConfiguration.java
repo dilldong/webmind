@@ -1,6 +1,7 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
@@ -42,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Basic configuration for <code>@Cachein</code> processing.
  *
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2022/9/5
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -52,10 +53,9 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     private Pointcut pointcut;
     private Advice advice;
-    private Cacheable cacheable;
-    private CacheLevel[] cacheLevels;
+    private CacheLevel[] defaultLevels;
     private BeanFactory beanFactory;
-
+    private String cacheSyncName;
 
     @Override
     public ClassFilter getClassFilter() {
@@ -66,7 +66,6 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     public void validateInterfaces() throws IllegalArgumentException {
         // do nothing
     }
-
 
     @Override
     public Class<?>[] getInterfaces() {
@@ -92,13 +91,13 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.cacheable = this.findBean(Cacheable.class);
+        Cacheable cacheable = this.findBean(Cacheable.class);
 //        Set<Class<? extends Annotation>> cacheinAnnotationTypes = new LinkedHashSet<>(1);
 //        cacheinAnnotationTypes.add(Cachein.class);
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
-        this.advice = buildAdvice();
-        ((BeanFactoryAware) advice).setBeanFactory(beanFactory);
+        this.advice = new CacheinAnnotationAwareInterceptor(
+                cacheable, defaultLevels, cacheSyncName, beanFactory);
     }
 
     @Override
@@ -108,8 +107,13 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
                 importMetadata.getAnnotationAttributes(EnableCache.class.getName())
         );
 
-        if (Objects.nonNull(attrs))
-            this.cacheLevels = (CacheLevel[]) attrs.get("levels");
+        if (Objects.nonNull(attrs)) {
+            this.defaultLevels = (CacheLevel[]) attrs.get("levels");
+            this.cacheSyncName = StringUtils.defaultIfEmpty(
+                    attrs.getString("cacheSyncName"),
+                    CacheEventPublisher.KEY_EVENT_MAPCACHE
+            );
+        }
     }
 
     @Override
@@ -164,13 +168,6 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         return new ComposablePointcut(filter);
     }
 
-    private CacheinAnnotationAwareInterceptor buildAdvice() {
-        CacheinAnnotationAwareInterceptor interceptor = new CacheinAnnotationAwareInterceptor();
-        interceptor.setDefaultCache(cacheable);
-        interceptor.setDefaultLevels(cacheLevels);
-        return interceptor;
-    }
-
     private static class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {
         private final MethodMatcher methodResolver;
 
@@ -189,10 +186,10 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
             if (this == other)
                 return true;
 
-            if (other instanceof AnnotationClassOrMethodPointcut otherAdvisor)
-                return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
+            if (!(other instanceof AnnotationClassOrMethodPointcut otherAdvisor))
+                return false;
 
-            return false;
+            return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
         }
     }
 
@@ -212,18 +209,18 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     private record AnnotationMethodsResolver(Class<? extends Annotation> annotationType) {
         public boolean hasAnnotatedMethods(Class<?> clazz) {
-                final AtomicBoolean found = new AtomicBoolean(false);
-                ReflectionUtils.doWithMethods(clazz, method -> {
-                    if (found.get())
-                        return;
+            final AtomicBoolean found = new AtomicBoolean(false);
+            ReflectionUtils.doWithMethods(clazz, method -> {
+                if (found.get())
+                    return;
 
-                    Annotation annotation = AnnotationUtils.findAnnotation(
-                            method,
-                            AnnotationMethodsResolver.this.annotationType);
-                    if (Objects.nonNull(annotation))
-                        found.set(true);
-                });
-                return found.get();
-            }
+                Annotation annotation = AnnotationUtils.findAnnotation(
+                        method,
+                        AnnotationMethodsResolver.this.annotationType);
+                if (Objects.nonNull(annotation))
+                    found.set(true);
+            });
+            return found.get();
         }
+    }
 }

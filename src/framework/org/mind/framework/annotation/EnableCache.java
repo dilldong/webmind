@@ -1,5 +1,6 @@
 package org.mind.framework.annotation;
 
+import org.mind.framework.annotation.processor.CacheEventPublisher;
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
@@ -35,4 +36,6 @@ public @interface EnableCache {
     boolean exposeProxy() default false;
 
     CacheLevel[] levels() default {};
+
+    String cacheSyncName() default CacheEventPublisher.KEY_EVENT_MAPCACHE;
 }

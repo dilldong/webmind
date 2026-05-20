@@ -102,12 +102,15 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * <p>ARGV[1] = 当前时间戳 ms（string），ARGV[2] = 最大批量数
      */
     private static final String LUA_PROMOTE_SCRIPT =
-            "local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])\n" +
-                    "for _, taskId in ipairs(due) do\n" +
-                    "  redis.call('ZREM', KEYS[1], taskId)\n" +
-                    "  redis.call('XADD', KEYS[2], '*', 'taskId', taskId)\n" +
-                    "end\n" +
-                    "return #due";
+            """
+                        local due = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, ARGV[2])
+                        for _, taskId in ipairs(due) do
+                          redis.call('ZREM', KEYS[1], taskId)
+                          redis.call('XADD', KEYS[2], '*', 'taskId', taskId)
+                        end
+                        return #due
+                    """;
+
 
     /**
      * define: empty consumer
@@ -141,16 +144,12 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      */
     private volatile ThreadPoolTaskScheduler schedulerExecutor;
 
-    @Getter
-    private volatile boolean running;
-
     /**
      * @param baseName Redis key 前缀，如 {@code "payment:delay"}。
      *                 实际生成 4 个 key：{baseName}:zset / :stream / :map / :cancelled
      */
-    public RedissonStreamDelayQueueService(String baseName) {
-        // 同一 baseName 下所有实例共享同一 Group，确保消息不重复投递
-        super("rz-delay-group", baseName + ":stream", "delay-listen-");
+    public RedissonStreamDelayQueueService(String baseName, String consumerGroup) {
+        super(consumerGroup, baseName + ":stream", "rdq-listen-");
 
         this.zsetKey = baseName + ":zset";
         this.mapKey = baseName + ":map";
@@ -194,7 +193,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         if (Objects.isNull(task))
             return false;
 
-        String taskId = (task instanceof AbstractTask) ? ((AbstractTask) task).getTaskId() : UUID.randomUUID().toString();
+        String taskId = (task instanceof AbstractTask v) ? v.getTaskId() : UUID.randomUUID().toString();
         long delayMillis = timeUnit.toMillis(delay);
         double triggerScore = DateUtils.CachedTime.currentMillis() + delayMillis;
 
@@ -205,8 +204,8 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
             rMapCache.fastPut(taskId, task, ttlMillis, TimeUnit.MILLISECONDS);
             scoredSortedSet.add(triggerScore, taskId);
 
-            if(log.isDebugEnabled()) {
-                log.debug("Added delay task, type: {}, taskId: {}, delay: {} {}",
+            if (log.isDebugEnabled()) {
+                log.debug("[RStream-Delay] Added delay task, type: {}, taskId: {}, delay: {} {}",
                         task.getClass().getSimpleName(), taskId, delay, timeUnit);
             }
 
@@ -217,7 +216,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
             // rollback
             safeRemoveMapCache(taskId);
             scoredSortedSet.remove(taskId);
-            log.error("Failed to add delay task, task: {}, error: {}", task, e.getMessage(), e);
+            log.error("[RStream-Delay] Failed to add delay task, task: {}, error: {}", task, e.getMessage(), e);
             return false;
         }
     }
@@ -251,17 +250,17 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
             if (removedFromZset) {
                 // 任务尚未触发，直接清理
                 safeRemoveMapCache(taskId);
-                log.info("Removed task from ZSet, taskId: {}", taskId);
+                log.info("[RStream-Delay] Removed task from ZSet, taskId: {}", taskId);
                 return true;
             }
 
             // 任务已迁移到 Stream，标记为取消；Consumer 侧在 handleStreamMessage 中检查并跳过
             cancelledSet.add(taskId, DateUtils.ONE_DAY_MILLIS, TimeUnit.MILLISECONDS);
-            log.info("Task already promoted to Stream, marked as cancelled, taskId: {}", taskId);
+            log.info("[RStream-Delay] Task already promoted to Stream, marked as cancelled, taskId: {}", taskId);
             return true;
 
         } catch (Exception e) {
-            log.error("Failed to remove task, taskId: {}, error: {}", taskId, e.getMessage(), e);
+            log.error("[RStream-Delay] Failed to remove task, taskId: {}, error: {}", taskId, e.getMessage(), e);
             return false;
         }
     }
@@ -289,14 +288,14 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         boolean registerType = ArrayUtils.isEmpty(onlyTaskId) || !onlyTaskId[0];
         if (registerType) {
             if (queueConsumerMap.containsKey(task.getClass()))
-                log.warn("Consumer type overridden: {}", task.getClass().getSimpleName());
+                log.warn("[RStream-Delay] Consumer type overridden: {}", task.getClass().getSimpleName());
 
             queueConsumerMap.put(task.getClass(), consumer);
             replaceTypeCache();
         }
 
         if (queueConsumerMap.containsKey(task.getTaskId()))
-            log.warn("Consumer taskId overridden: {}", task.getTaskId());
+            log.warn("[RStream-Delay] Consumer taskId overridden: {}", task.getTaskId());
 
         queueConsumerMap.put(task.getTaskId(), consumer);
         ensureRunning();
@@ -307,7 +306,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      */
     public <T> void registerConsumer(Class<T> taskType, Consumer<T> consumer) {
         if (queueConsumerMap.containsKey(taskType))
-            log.warn("Consumer type overridden: {}", taskType.getSimpleName());
+            log.warn("[RStream-Delay] Consumer type overridden: {}", taskType.getSimpleName());
 
         queueConsumerMap.put(taskType, consumer);
         replaceTypeCache();
@@ -325,7 +324,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         if (Objects.nonNull(schedulerExecutor))
             schedulerExecutor.shutdown();
 
-        log.info("Stopped StreamDelayQueue, stream: {}", streamKey);
+        log.info("[RStream-Delay] Stopped RStream Delay Queue, stream: {}", getStreamKey());
     }
 
     /**
@@ -337,7 +336,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * - 另外,当容器频繁重启产生大量随机 consumerName，Redis 内部会记录，这会增加 autoClaim 扫描时的负担, 因为消息无论如何都要靠 autoClaim 来打捞
      */
     public void cleaConsumer() {
-        rStream.removeConsumer(this.consumerGroup, consumerName);
+        rStream.removeConsumer(consumerGroup, consumerName);
     }
 
     /**
@@ -361,18 +360,17 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
                     RScript.Mode.READ_WRITE,
                     LUA_PROMOTE_SCRIPT,
                     RScript.ReturnType.INTEGER,
-                    Arrays.asList(zsetKey, streamKey),
+                    Arrays.asList(zsetKey, getStreamKey()),
                     String.valueOf(DateUtils.CachedTime.currentMillis()),
                     String.valueOf(PROMOTE_BATCH_SIZE));
 
-            if (result instanceof Long) {
-                Long count = (Long) result;
+            if (result instanceof Long count) {
                 if (count.compareTo(0L) > 0)
-                    log.debug("Promoted {} task(s) to stream: {}", count, streamKey);
+                    log.debug("[RStream-Delay] Promoted {} task(s) to stream: {}", count, getStreamKey());
             }
 
         } catch (Exception e) {
-            log.error("Failed to promote tasks from ZSet to Stream: {}", e.getMessage(), e);
+            log.error("[RStream-Delay] Failed to promote tasks from ZSet to Stream: {}", e.getMessage(), e);
         }
     }
 
@@ -387,14 +385,14 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         String taskId = fields.get(STREAM_FIELD_TASK_ID);
 
         if (StringUtils.isEmpty(taskId)) {
-            log.warn("Stream message {} has no taskId field, acking and skipping", msgId);
+            log.warn("[RStream-Delay] Stream message {} has no taskId field, acking and skipping", msgId);
             ackSilently(msgId);
             return;
         }
 
         // remove(taskId) 在任务已进入 Stream 后会写入 cancelledSet
         if (cancelledSet.remove(taskId)) {
-            log.info("Task {} was cancelled, skipping (msgId: {})", taskId, msgId);
+            log.info("[RStream-Delay] Task {} was cancelled, skipping msgId: {}", taskId, msgId);
             ackSilently(msgId);
             safeRemoveMapCache(taskId);
             return;
@@ -404,7 +402,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         Object task = rMapCache.get(taskId);
         if (Objects.isNull(task)) {
             // 可能原因：TTL 过期（超过 24h 未消费）或重复消费后 Map 已清理
-            log.warn("Task body not found for taskId: {} (msgId: {}), acking to avoid infinite loop", taskId, msgId);
+            log.warn("[RStream-Delay] Task body not found for taskId: {}, msgId: {}", taskId, msgId);
             ackSilently(msgId);
             return;
         }
@@ -412,7 +410,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         // 查找消费者
         Consumer<?> consumer = findConsumer(task, taskId);
         if (Objects.isNull(consumer) || consumer == NO_OP_CONSUMER) {
-            log.warn("No consumer for taskId: {}, type: {}, acking to avoid infinite loop",
+            log.warn("[RStream-Delay] No consumer for taskId: {}, type: {}",
                     taskId, task.getClass().getSimpleName());
             ackSilently(msgId);
             return;
@@ -451,14 +449,14 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
                 ackSilently(msgId);
 
                 if (log.isDebugEnabled())
-                    log.debug("Task executed and acked, taskId: {}", taskId);
+                    log.debug("[RStream-Delay] Task executed and acked, taskId: {}", taskId);
 
             } catch (Exception e) {
                 // 补偿: 重新放入 MapCache
                 rMapCache.fastPut(taskId, task, DateUtils.ONE_DAY_MILLIS, TimeUnit.MILLISECONDS);
 
                 // 业务失败 → 不 ACK，等待 PEL 重投
-                log.error("Task execution failed, taskId: {}, will be redelivered: {}", taskId, e.getMessage(), e);
+                log.error("[RStream-Delay] Task execution failed, taskId: {}, will be redelivered: {}", taskId, e.getMessage(), e);
             }
         });
     }
@@ -485,7 +483,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         // 3. 继承/接口兼容匹配（结果缓存）
         return localCache.computeIfAbsent(task.getClass(), cls -> {
             for (Map.Entry<Object, Consumer<?>> entry : queueConsumerMap.entrySet()) {
-                if (entry.getKey() instanceof Class<?> && ((Class<?>) entry.getKey()).isAssignableFrom(cls))
+                if (entry.getKey() instanceof Class<?> key && key.isAssignableFrom(cls))
                     return entry.getValue();
             }
             return NO_OP_CONSUMER;// 防止"未找到"下的高频穿透
@@ -497,7 +495,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
             long removedCount = rMapCache.fastRemove(taskId);
             return removedCount > 0L;
         } catch (Exception e) {
-            log.warn("Failed to remove taskId: {} from MapCache: {}", taskId, e.getMessage());
+            log.warn("[RStream-Delay] Failed to remove taskId: {} from MapCache: {}", taskId, e.getMessage());
             return false;
         }
     }
@@ -546,8 +544,8 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
     @Override
     public void destroy() {
         stopQueueListener();
-        shutdownExecutor(taskExecutor, "RStreamTask-Graceful", 10);
-        shutdownExecutor(listenerExecutor, "RStreamListen-Graceful", 5);
+        shutdownExecutor(taskExecutor, "RStreamTask-Graceful", 10L);
+        shutdownExecutor(listenerExecutor, "RStreamListen-Graceful", 5L);
         queueConsumerMap.clear();
         compatibleTypeReference = Collections.emptyMap();
     }
