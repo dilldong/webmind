@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.EnableCache;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.aop.ClassFilter;
@@ -95,7 +96,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 //        Set<Class<? extends Annotation>> cacheinAnnotationTypes = new LinkedHashSet<>(1);
 //        cacheinAnnotationTypes.add(Cachein.class);
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
-        this.pointcut = buildPointcut(Cachein.class);
+        this.pointcut = buildPointcut();
         this.advice = new CacheinAnnotationAwareInterceptor(cacheable, defaultLevels, cacheSyncName, beanFactory);
     }
 
@@ -163,8 +164,8 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         return result;
     }
 
-    private Pointcut buildPointcut(Class<? extends Annotation> cacheinAnnotationType) {
-        Pointcut filter = new AnnotationClassOrMethodPointcut(cacheinAnnotationType);
+    private Pointcut buildPointcut() {
+        Pointcut filter = new AnnotationClassOrMethodPointcut(Cachein.class);
         return new ComposablePointcut(filter);
     }
 
@@ -177,7 +178,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Method method, Class<?> targetClass) {
+        public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
             return getClassFilter().matches(targetClass) || this.methodResolver.matches(method, targetClass);
         }
 

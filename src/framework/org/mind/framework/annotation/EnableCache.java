@@ -1,7 +1,7 @@
 package org.mind.framework.annotation;
 
-import org.mind.framework.annotation.processor.CacheEventPublisher;
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
