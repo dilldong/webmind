@@ -1,7 +1,7 @@
 package org.mind.framework.annotation;
 
-import org.mind.framework.annotation.processor.CacheEventPublisher;
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
@@ -37,5 +37,9 @@ public @interface EnableCache {
 
     CacheLevel[] levels() default {};
 
+    /**
+     * 用于 Redisson RMapCache 同步器的名称，
+     * L2 -> L1 缓存基于 RMapCache 进行同步。
+     */
     String cacheSyncName() default CacheEventPublisher.KEY_EVENT_MAPCACHE;
 }

@@ -1,6 +1,4 @@
-package org.mind.framework.annotation.processor;
-
-import org.mind.framework.cache.Cacheable;
+package org.mind.framework.cache;
 
 import java.util.concurrent.TimeUnit;
 

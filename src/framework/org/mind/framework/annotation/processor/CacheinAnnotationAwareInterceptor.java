@@ -8,15 +8,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
+import org.mind.framework.cache.CacheEventHandler;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
-import org.mind.framework.helper.RedissonHelper;
-import org.mind.framework.util.DateUtils;
-import org.mind.framework.util.MatcherUtils;
-import org.redisson.api.RMapCache;
-import org.redisson.api.map.event.EntryCreatedListener;
-import org.redisson.api.map.event.EntryExpiredListener;
-import org.redisson.api.map.event.EntryRemovedListener;
-import org.redisson.api.map.event.EntryUpdatedListener;
+import org.mind.framework.cache.DefaultCacheEventPublisher;
 import org.springframework.aop.IntroductionInterceptor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -25,15 +20,10 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Interceptor that parses the cachein metadata on the method it is invoking and delegates
@@ -44,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2022/9/5
  */
 @Slf4j
-public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor, CacheEventPublisher {
+public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor {
     /**
      * 没有 @Cachein 注释的缓存方法的哨兵值
      * 防止反复反射扫描
@@ -57,19 +47,13 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     private final Map<String, Map<Method, MethodInterceptor>> delegates;
 
-    /**
-     * Cacheable → staticKey 列表。
-     * 同一 Cacheable 对象引用可能对应多个不同的 staticKey
-     */
-    private final Map<Cacheable, Set<String>> cacheableRegistry;
-
     private final Cacheable defaultCache;
 
     private final CacheLevel[] defaultLevels;
 
     private final String cacheSyncName;
 
-    private volatile RMapCache<String, String> cacheEventListener;
+    private volatile CacheEventPublisher cacheEventPublisher;
 
     private CacheEventHandler cacheEventHandler;
 
@@ -83,18 +67,16 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         this.delegates = new ConcurrentReferenceHashMap<>();
         this.beanFactory = beanFactory;
 
-        // IdentityHashMap 用 == 而非 equals 判重, 不依赖 equals/hashCode 的实现
-        this.cacheableRegistry = Collections.synchronizedMap(new IdentityHashMap<>());
-
-        if (this.enableRedis(defaultLevels))
-            this.initCacheEventListener();
-
         // 自定义缓存事件接收器
         try {
-            this.cacheEventHandler = this.beanFactory.getBean(CacheEventHandler.BEAN_NAME, CacheEventHandler.class);
-        } catch (NoSuchBeanDefinitionException e) {
-            this.cacheEventHandler = null;
+            cacheEventHandler = this.beanFactory.getBean(CacheEventHandler.BEAN_NAME, CacheEventHandler.class);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            cacheEventHandler = null;
         }
+
+        // 缓存同步器
+        this.cacheEventPublisher =
+                this.enableRedis(defaultLevels) ? buildPublisher() : CacheEventPublisher.NO_PUBLISHER;
     }
 
     @Override
@@ -115,39 +97,6 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         });
 
         return delegate == NULL_INTERCEPTOR ? invocation.proceed() : delegate.invoke(invocation);
-    }
-
-    @Override
-    public void publish(String key, long expire, TimeUnit unit) {
-        // Redis level not active for this interceptor — nothing to publish
-        if (Objects.isNull(cacheEventListener))
-            return;
-
-        if(expire == 0L) {
-            cacheEventListener.fastPutAsync(key, Instant.MAX.toString());
-            return;
-        }
-
-        long delay = unit.toMillis(expire) - 20L;
-        cacheEventListener.fastPutAsync(
-                key,
-                Instant.ofEpochMilli(DateUtils.CachedTime.currentMillis() + delay).toString(),
-                delay,
-                TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void registerCacheable(String key, Cacheable cacheable) {
-        Set<String> result = cacheableRegistry.computeIfAbsent(cacheable, keys -> ConcurrentHashMap.newKeySet());
-
-        // 拆解 key 前缀
-        if (MatcherUtils.checkCount(key, MatcherUtils.PARAM_MATCH_PATTERN) > 0) {
-            String prefix = StringUtils.substringBefore(key, "#{");
-            result.add(prefix);
-            return;
-        }
-
-        result.add(key);
     }
 
     private Cachein resolveCachein(Object target, Method method) {
@@ -188,27 +137,36 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                         defaultCache : this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
 
         CacheLevel[] levels = ArrayUtils.isEmpty(cachein.levels()) ? defaultLevels : cachein.levels();
-        CacheEventPublisher eventPublisher = CacheEventPublisher.NO_PUBLISHER;
 
         // 计算静态 key
         String staticKey = resolveStaticKey(cachein);
 
         if (this.enableRedis(levels)) {
-            // init sync key listener
-            this.initCacheEventListener();
+
+            // 防止未初始化, 构造函数是针对全局配置, 而在方法上则允许启用 Redis Level
+            this.initCacheEventPublisher();
 
             // 注册 prefix → cacheable 映射，供事件回调使用
-            this.registerCacheable(staticKey, cacheable);
-
-            eventPublisher = this;
+            cacheEventPublisher.registerCacheable(staticKey, cacheable);
         }
 
         return new CacheinOperationInterceptor(
                 cacheable,
                 cachein,
                 levels,
-                eventPublisher,
+                cacheEventPublisher,
                 staticKey);
+    }
+
+    private void initCacheEventPublisher(){
+        if(cacheEventPublisher != CacheEventPublisher.NO_PUBLISHER)
+            return;
+
+        synchronized (this) {
+            if(cacheEventPublisher == CacheEventPublisher.NO_PUBLISHER) {
+                cacheEventPublisher = buildPublisher();
+            }
+        }
     }
 
     private String resolveStaticKey(Cachein cachein) {
@@ -229,64 +187,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         return Arrays.stream(cacheLevels).anyMatch(v -> CacheLevel.REDIS == v);
     }
 
-    private void initCacheEventListener() {
-        if (Objects.nonNull(this.cacheEventListener))
-            return;
-
-        synchronized (this) {
-            if (Objects.isNull(this.cacheEventListener)) {
-                RMapCache<String, String> eventListener = RedissonHelper.getClient().getMapCache(cacheSyncName);
-
-                eventListener.addListener((EntryRemovedListener<String, String>) event -> {
-                    log.debug("Entry removed, key: {}, expire: {}", event.getKey(), event.getValue());
-                    evictLocalCache(event.getKey());
-
-                    if (Objects.nonNull(cacheEventHandler))
-                        cacheEventHandler.onRemoved(event.getKey());
-                });
-
-                eventListener.addListener((EntryExpiredListener<String, String>) event -> {
-                    log.debug("Entry expired, key: {}, expire: {}", event.getKey(), event.getValue());
-                    evictLocalCache(event.getKey());
-
-                    if (Objects.nonNull(cacheEventHandler))
-                        cacheEventHandler.onExpired(event.getKey());
-                });
-
-                eventListener.addListener((EntryUpdatedListener<String, String>) event -> {
-                    log.debug("Entry updated, key: {}, expire: {}", event.getKey(), event.getValue());
-                    evictLocalCache(event.getKey());
-
-                    if (Objects.nonNull(cacheEventHandler))
-                        cacheEventHandler.onUpdated(event.getKey());
-                });
-
-                eventListener.addListener((EntryCreatedListener<String, String>) event -> {
-                    log.debug("Entry created, key: {}, expire: {}", event.getKey(), event.getValue());
-
-                    if (Objects.nonNull(cacheEventHandler))
-                        cacheEventHandler.onCreated(event.getKey());
-                });
-
-                // 安全发布 (safe publication) 模式
-                // 所有 listener 注册完毕后，再发布给其他线程
-                this.cacheEventListener = eventListener;
-            }
-        }
-    }
-
-    /**
-     * 根据完整 key 匹配注册表中的前缀，定向清除对应 Cacheable 的本地缓存。
-     * 匹配规则：完整 key 以注册的前缀开头（兼容静态key和带动态参数的key）。
-     */
-    private void evictLocalCache(String key) {
-        cacheableRegistry.forEach((cacheable, staticKeys) -> {
-            boolean matched = staticKeys.stream().anyMatch(key::startsWith);
-
-            if (matched) {
-                cacheable.removeCache(key);
-                log.debug("Evicted local cache key: {}", key);
-            }
-        });
+    private CacheEventPublisher buildPublisher() {
+        return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
     }
 }
