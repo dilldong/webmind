@@ -8,7 +8,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
  * Action method annotation for mapping URI
  *
@@ -21,7 +20,7 @@ public @interface Mapping {
 
     String[] value() default {"/"};
 
-    RequestMethod[] method() default {};
+    RequestMethod[] method() default {RequestMethod.GET, RequestMethod.POST};
 
     /**
      * Enable request logging
