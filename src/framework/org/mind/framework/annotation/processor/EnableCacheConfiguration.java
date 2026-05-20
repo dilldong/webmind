@@ -1,6 +1,7 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
@@ -53,6 +54,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     private Pointcut pointcut;
     private Advice advice;
     private CacheLevel[] defaultLevels;
+    private String cacheSyncName;
     private BeanFactory beanFactory;
 
     @Override
@@ -94,7 +96,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 //        cacheinAnnotationTypes.add(Cachein.class);
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
         this.pointcut = buildPointcut(Cachein.class);
-        this.advice = new CacheinAnnotationAwareInterceptor(cacheable, defaultLevels, beanFactory);
+        this.advice = new CacheinAnnotationAwareInterceptor(cacheable, defaultLevels, cacheSyncName, beanFactory);
     }
 
     @Override
@@ -104,8 +106,12 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
                 importMetadata.getAnnotationAttributes(EnableCache.class.getName())
         );
 
-        if (Objects.nonNull(attrs))
+        if (Objects.nonNull(attrs)) {
             this.defaultLevels = (CacheLevel[]) attrs.get("levels");
+            this.cacheSyncName = StringUtils.defaultIfEmpty(
+                    attrs.getString("cacheSyncName"), CacheEventPublisher.KEY_EVENT_MAPCACHE
+            );
+        }
     }
 
     @Override

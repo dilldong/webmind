@@ -67,15 +67,19 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     private final CacheLevel[] defaultLevels;
 
+    private final String cacheSyncName;
+
     private volatile RMapCache<String, String> cacheEventListener;
 
     private CacheEventHandler cacheEventHandler;
 
     public CacheinAnnotationAwareInterceptor(Cacheable defaultCache,
                                              CacheLevel[] defaultLevels,
+                                             String cacheSyncName,
                                              BeanFactory beanFactory) {
         this.defaultCache = defaultCache;
         this.defaultLevels = defaultLevels;
+        this.cacheSyncName = cacheSyncName;
         this.delegates = new ConcurrentReferenceHashMap<>();
         this.beanFactory = beanFactory;
 
@@ -231,7 +235,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
         synchronized (this) {
             if (Objects.isNull(this.cacheEventListener)) {
-                RMapCache<String, String> eventListener = RedissonHelper.getClient().getMapCache(KEY_EVENT_MAPCACHE);
+                RMapCache<String, String> eventListener = RedissonHelper.getClient().getMapCache(cacheSyncName);
 
                 eventListener.addListener((EntryRemovedListener<String, String>) event -> {
                     log.debug("Entry removed, key: {}, expire: {}", event.getKey(), event.getValue());
