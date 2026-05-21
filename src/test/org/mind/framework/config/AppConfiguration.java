@@ -21,6 +21,7 @@ import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.PropertiesUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -40,8 +41,9 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableScheduling
 @RequiredArgsConstructor
-@EnableCache(levels = {CacheLevel.LOCAL, CacheLevel.REDIS}, cacheSyncName = "test:sync")
+@EnableCache(levels = {CacheLevel.LOCAL, CacheLevel.REDIS}, cacheSyncName = "test:cache:sync:listener")
 @PropertySource("classpath:frame.properties")
+@ComponentScan(basePackages = {"org.mind.framework"})
 public class AppConfiguration {
 
     @Value("${mind.cache.provider:caffeine}")
