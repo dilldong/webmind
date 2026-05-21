@@ -21,7 +21,7 @@ public @interface Mapping {
 
     String[] value() default {"/"};
 
-    RequestMethod[] method() default {};
+    RequestMethod[] method() default {RequestMethod.GET, RequestMethod.POST};
 
     /**
      * Enable request logging

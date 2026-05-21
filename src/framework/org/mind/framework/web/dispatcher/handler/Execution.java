@@ -2,6 +2,7 @@ package org.mind.framework.web.dispatcher.handler;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,8 +18,6 @@ import java.util.Arrays;
  */
 @Getter
 public class Execution {
-
-    private final static RequestMethod[] NON_METHODS = {RequestMethod.GET, RequestMethod.POST};
 
     // Action instance
     private final Object actionInstance;
@@ -68,8 +67,8 @@ public class Execution {
     }
 
     public boolean isSupportMethod(String method) {
-        if (requestMethods == null || requestMethods.length == 0)
-            return method.equals(RequestMethod.GET.name()) || method.equals(RequestMethod.POST.name());
+        if (ArrayUtils.isEmpty(requestMethods))
+            return false;
 
         for (RequestMethod m : requestMethods)
             if (method.equals(m.name()))
@@ -79,8 +78,6 @@ public class Execution {
     }
 
     public String methodString() {
-        return requestMethods == null || requestMethods.length == 0 ?
-                Arrays.toString(NON_METHODS) :
-                Arrays.toString(requestMethods);
+        return ArrayUtils.isEmpty(requestMethods) ? null : Arrays.toString(requestMethods);
     }
 }

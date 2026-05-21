@@ -4,10 +4,7 @@ import org.mind.framework.service.Cloneable;
 import org.mind.framework.web.Destroyable;
 
 import java.io.Serializable;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Cache Capability Interface
@@ -20,14 +17,6 @@ public interface Cacheable extends Serializable, Destroyable {
     enum CompareType {
         EQ_FULL, EQ_PART
     }
-
-    /**
-     * 指定新的LinkedHashMap<String, Object>
-     *
-     * @param newMap
-     * @return
-     */
-    Cacheable newLinkedMap(LinkedHashMap<String, CacheElement> newMap);
 
     /**
      * 添加一个新条目，如果该条目已经存在，将不做任何操作
@@ -43,17 +32,17 @@ public interface Cacheable extends Serializable, Destroyable {
      *
      * @param key
      * @param value
-     * @param check <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;false: default, 若条目存在，不做任何操作
-     *              <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;true: 先移除存在的条目，再重新装入
+     * @param forceUpdate <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;false: 默认值, 若条目存在，不做任何操作
+     *                    <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;true: 先移除存在的条目，再重新装入
      * @return
      */
-    Cacheable addCache(String key, Object value, boolean check);
+    Cacheable addCache(String key, Object value, boolean forceUpdate);
 
-    Cacheable addCache(String key, Object value, boolean check, Cloneable.CloneType type);
+    Cacheable addCache(String key, Object value, boolean forceUpdate, Cloneable.CloneType type);
 
     Cacheable addCache(String key, CacheElement element);
 
-    Cacheable addCache(String key, CacheElement element, boolean check);
+    Cacheable addCache(String key, CacheElement element, boolean forceUpdate);
 
     /**
      * 删除缓存
@@ -130,10 +119,11 @@ public interface Cacheable extends Serializable, Destroyable {
      * @return
      * @date July 8, 2021
      */
-    Set<Map.Entry<String, CacheElement>> getEntries();
+    List<CacheElement> getValues();
 
     /**
      * 指定有效的缓存容量
+     * 注意: 仅对后续新增生效
      *
      * @param capacity
      */
@@ -147,5 +137,5 @@ public interface Cacheable extends Serializable, Destroyable {
 
     int getCapacity();
 
-    long getTimeOut();
+    long getTimeout();
 }

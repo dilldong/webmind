@@ -1,5 +1,8 @@
 package org.mind.framework.exception;
 
+/**
+ * @author dp
+ */
 public interface ThrowProvider {
     /**
      * Lamanda internally throws checked exception

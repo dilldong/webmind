@@ -1,6 +1,5 @@
 package org.mind.framework.http;
 
-import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -42,11 +41,6 @@ public class NoContentResponse extends HttpResponse<Void> {
 
     @Override
     public String asString(Charset charset) {
-        throw new IllegalStateException("Cannot read raw response body of a converted body.");
-    }
-
-    @Override
-    public Void asJson(Charset charset, TypeToken<Void> typeToken) {
         throw new IllegalStateException("Cannot read raw response body of a converted body.");
     }
 }

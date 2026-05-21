@@ -62,7 +62,6 @@ public class RedissonHelper {
     private static final String JAR_REDISSON = String.format("%s/%s", JAR_IN_CLASSES, DEFAULT_REDISSON);
     public static final String LOCK_PREFIX = "LK:";
     public static final String RATE_LIMITED_PREFIX = "RL:";
-    public static final String INCREMENT_PREFIX = "ICR:";
     public static final String UNIQUE_ID = "UNIQUE:ID";
     public static final String RESET_ID4DAY = "RESET:ID4DAY";
     public static final String NULL_MARKER = "NULL";

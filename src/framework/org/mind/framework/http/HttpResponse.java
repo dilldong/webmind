@@ -1,10 +1,8 @@
 package org.mind.framework.http;
 
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.util.HttpUtils;
-import org.mind.framework.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +34,7 @@ public class HttpResponse<T> implements Closeable {
     protected boolean streamConsumed = false;
 
     public HttpResponse() {
+        super();
     }
 
     /**
@@ -92,10 +91,6 @@ public class HttpResponse<T> implements Closeable {
         return this.asString(StandardCharsets.UTF_8);
     }
 
-    public String asString(String charset) throws IOException {
-        return this.asString(Charset.forName(charset));
-    }
-
     /**
      * Returns the response body as string.<br>
      * Disconnects the internal HttpURLConnection silently. @return response
@@ -127,41 +122,6 @@ public class HttpResponse<T> implements Closeable {
 
     public boolean isSuccessful() {
         return this.responseCode == HttpURLConnection.HTTP_OK;
-    }
-
-    /**
-     * Returns the response body as json.<br>
-     * Disconnects the internal HttpURLConnection silently. @return response
-     * body as json @throws
-     */
-    public T asJson() throws IOException {
-        return this.asJson(StandardCharsets.UTF_8);
-    }
-
-    public T asJson(TypeToken<T> typeToken) throws IOException {
-        return this.asJson(StandardCharsets.UTF_8, typeToken);
-    }
-
-    /**
-     * Returns the response body as json.<br>
-     * Disconnects the internal HttpURLConnection silently. @return response
-     * body as json @throws
-     */
-    public T asJson(String charset) throws IOException {
-        return this.asJson(Charset.forName(charset));
-    }
-
-    public T asJson(Charset charset) throws IOException {
-        return this.asJson(charset, new TypeToken<T>() {});
-    }
-
-    public T asJson(Charset charset, TypeToken<T> typeToken) throws IOException {
-        if (this.streamConsumed && StringUtils.isNotEmpty(this.responseAsString))
-            return JsonUtils.fromJson(responseAsString, typeToken);
-
-        try (InputStreamReader reader = new InputStreamReader(this.inStream, charset)) {
-            return JsonUtils.fromJson(reader, typeToken);
-        }
     }
 
     @Override

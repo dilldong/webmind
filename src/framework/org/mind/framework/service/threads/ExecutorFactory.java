@@ -60,19 +60,14 @@ public class ExecutorFactory {
                                                            TimeUnit unit,
                                                            BlockingQueue<Runnable> workQueue,
                                                            ThreadFactory threadFactory) {
-        ThreadPoolExecutor executor =
-                new ThreadPoolExecutor(
-                        corePoolSize,
-                        Math.max(maxPoolSize, corePoolSize),
-                        keepAliveTime,
-                        unit,
-                        workQueue,
-                        threadFactory);
-
-        // pre-start all core threads
-        if (corePoolSize > 0)
-            executor.prestartAllCoreThreads();
-        return executor;
+        return newThreadPoolExecutor(
+                corePoolSize,
+                maxPoolSize,
+                keepAliveTime,
+                unit,
+                workQueue,
+                threadFactory,
+                new ThreadPoolExecutor.AbortPolicy());
     }
 
 
@@ -84,7 +79,7 @@ public class ExecutorFactory {
                                                            ThreadFactory threadFactory,
                                                            RejectedExecutionHandler handler) {
         ThreadPoolExecutor executor =
-                new ThreadPoolExecutor(
+                new MdcAwareThreadPoolExecutor(
                         corePoolSize,
                         Math.max(maxPoolSize, corePoolSize),
                         keepAliveTime, unit,

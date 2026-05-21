@@ -1,8 +1,12 @@
 package org.mind.framework.annotation.processor;
 
 import org.aopalliance.aop.Advice;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
+import org.mind.framework.annotation.EnableCache;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.aop.ClassFilter;
@@ -21,9 +25,12 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ImportAware;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.OrderComparator;
+import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ObjectUtils;
 
 import java.lang.annotation.Annotation;
@@ -37,20 +44,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Basic configuration for <code>@Cachein</code> processing.
  *
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2022/9/5
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton {
+public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements IntroductionAdvisor, BeanFactoryAware, InitializingBean, SmartInitializingSingleton, ImportAware {
     public static final String ATTR_BEAN_NAME = "org.mind.framework.annotation.processor.EnableCacheConfiguration";
 
     private Pointcut pointcut;
     private Advice advice;
-    private Cacheable cacheable;
+    private CacheLevel[] defaultLevels;
     private BeanFactory beanFactory;
+    private String cacheSyncName;
 
-    
     @Override
     public ClassFilter getClassFilter() {
         return this.pointcut.getClassFilter();
@@ -61,19 +68,18 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         // do nothing
     }
 
-    
     @Override
     public Class<?>[] getInterfaces() {
         return new Class[]{org.mind.framework.cache.Cacheable.class};
     }
 
-    
+
     @Override
     public Pointcut getPointcut() {
         return pointcut;
     }
 
-    
+
     @Override
     public Advice getAdvice() {
         return advice;
@@ -86,14 +92,29 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.cacheable = this.findBean(Cacheable.class);
+        Cacheable cacheable = this.findBean(Cacheable.class);
 //        Set<Class<? extends Annotation>> cacheinAnnotationTypes = new LinkedHashSet<>(1);
 //        cacheinAnnotationTypes.add(Cachein.class);
 //        this.pointcut = buildPointcut(cacheinAnnotationTypes);
-        this.pointcut = buildPointcut(Cachein.class);
-        this.advice = buildAdvice();
-        if (this.advice instanceof BeanFactoryAware adviceAware)
-            adviceAware.setBeanFactory(beanFactory);
+        this.pointcut = buildPointcut();
+        this.advice = new CacheinAnnotationAwareInterceptor(
+                cacheable, defaultLevels, cacheSyncName, beanFactory);
+    }
+
+    @Override
+    public void setImportMetadata(AnnotationMetadata importMetadata) {
+        // 从触发 @Import 的那个类上读取 @EnableCache 的属性
+        AnnotationAttributes attrs = AnnotationAttributes.fromMap(
+                importMetadata.getAnnotationAttributes(EnableCache.class.getName())
+        );
+
+        if (Objects.nonNull(attrs)) {
+            this.defaultLevels = (CacheLevel[]) attrs.get("levels");
+            this.cacheSyncName = StringUtils.defaultIfEmpty(
+                    attrs.getString("cacheSyncName"),
+                    CacheEventPublisher.KEY_EVENT_MAPCACHE
+            );
+        }
     }
 
     @Override
@@ -143,15 +164,9 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         return result;
     }
 
-    private Pointcut buildPointcut(Class<? extends Annotation> cacheinAnnotationType) {
-        Pointcut filter = new AnnotationClassOrMethodPointcut(cacheinAnnotationType);
+    private Pointcut buildPointcut() {
+        Pointcut filter = new AnnotationClassOrMethodPointcut(Cachein.class);
         return new ComposablePointcut(filter);
-    }
-
-    private CacheinAnnotationAwareInterceptor buildAdvice() {
-        CacheinAnnotationAwareInterceptor interceptor = new CacheinAnnotationAwareInterceptor();
-        interceptor.setDefaultCache(cacheable);
-        return interceptor;
     }
 
     private static class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {
@@ -163,7 +178,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         @Override
-        public boolean matches(Method method, Class<?> targetClass) {
+        public boolean matches(@NotNull Method method, @NotNull Class<?> targetClass) {
             return getClassFilter().matches(targetClass) || this.methodResolver.matches(method, targetClass);
         }
 
@@ -172,10 +187,10 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
             if (this == other)
                 return true;
 
-            if (other instanceof AnnotationClassOrMethodPointcut otherAdvisor)
-                return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
+            if (!(other instanceof AnnotationClassOrMethodPointcut otherAdvisor))
+                return false;
 
-            return false;
+            return ObjectUtils.nullSafeEquals(this.methodResolver, otherAdvisor.methodResolver);
         }
     }
 
@@ -195,18 +210,18 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     private record AnnotationMethodsResolver(Class<? extends Annotation> annotationType) {
         public boolean hasAnnotatedMethods(Class<?> clazz) {
-                final AtomicBoolean found = new AtomicBoolean(false);
-                ReflectionUtils.doWithMethods(clazz, method -> {
-                    if (found.get())
-                        return;
+            final AtomicBoolean found = new AtomicBoolean(false);
+            ReflectionUtils.doWithMethods(clazz, method -> {
+                if (found.get())
+                    return;
 
-                    Annotation annotation = AnnotationUtils.findAnnotation(
-                            method,
-                            AnnotationMethodsResolver.this.annotationType);
-                    if (Objects.nonNull(annotation))
-                        found.set(true);
-                });
-                return found.get();
-            }
+                Annotation annotation = AnnotationUtils.findAnnotation(
+                        method,
+                        AnnotationMethodsResolver.this.annotationType);
+                if (Objects.nonNull(annotation))
+                    found.set(true);
+            });
+            return found.get();
         }
+    }
 }

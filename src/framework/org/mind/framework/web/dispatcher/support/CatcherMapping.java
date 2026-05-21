@@ -45,10 +45,12 @@ public class CatcherMapping extends Catcher {
     @Override
     public boolean matchOne(String value, int... flags) {
         // first excludeRegex
-        if (excludesRegex != null)
-            for (String exclude : excludesRegex)
+        if (excludesRegex != null) {
+            for (String exclude : excludesRegex) {
                 if (exclude.equals(value) || MatcherUtils.matcher(value, exclude, flags).matches())// matched
                     return false;
+            }
+        }
 
         // intercept regex
         return super.matchOne(value, flags);

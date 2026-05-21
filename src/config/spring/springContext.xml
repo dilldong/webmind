@@ -4,7 +4,8 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 			http://www.springframework.org/schema/beans/spring-beans.xsd
-           	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+           	http://www.springframework.org/schema/context
+           	http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:component-scan base-package="org.mind.framework"/>
     <context:property-placeholder location="classpath:frame.properties"/>
@@ -33,15 +34,35 @@
         <property name="configLocation" value="classpath:velocity.properties"/>
     </bean>
 
-    <!-- Queue config -->
+    <!-- MQ config -->
     <bean id="queueService" class="org.mind.framework.service.queue.QueueLittle" init-method="start" destroy-method="destroy">
         <constructor-arg>
             <bean class="org.mind.framework.service.queue.QueueConfig">
-                <property name="queueCapacity" value="128"/>
+                <property name="queueCapacity" value="1024"/>
                 <property name="minConsumerThreads" value="1"/>
                 <property name="maxConsumerThreads" value="2"/>
             </bean>
         </constructor-arg>
     </bean>
+
+    <!-- Email service -->
+    <bean id="emailService" class="org.mind.framework.mail.service.EmailServiceImpl">
+        <property name="queueService" ref="queueService"/>
+    </bean>
+
+    <!-- WEB main service -->
+    <bean id="mainService" class="org.mind.framework.service.MainService" destroy-method="stop">
+        <property name="childServices">
+            <list>
+                <!-- start MQ service -->
+                <bean class="org.mind.framework.service.UpdateLoopService">
+                    <property name="serviceName" value="Loop-Queue-Svc"/>
+                    <property name="spaceTime" value="10"/><!-- ms, 0 not loop -->
+                    <property name="daemon" value="false"/><!-- daemon thread -->
+                </bean>
+            </list>
+        </property>
+    </bean>
+
 
 </beans>

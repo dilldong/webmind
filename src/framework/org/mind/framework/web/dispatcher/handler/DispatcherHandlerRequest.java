@@ -266,7 +266,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
          * validation request method
          */
         if (!execution.isSupportMethod(processedRequest.getMethod())) {
-            log.warn("[{}] - HTTP method {} is not supported by this URI, specified as: {}",
+            log.warn("[{}] - HTTP method {} is not supported, specified as: {}",
                     requestURI, processedRequest.getMethod(), execution.methodString());
             this.renderError(
                     HttpServletResponse.SC_METHOD_NOT_ALLOWED,

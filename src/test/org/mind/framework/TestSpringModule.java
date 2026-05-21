@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
+import org.mind.framework.config.AppConfiguration;
+import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.service.queue.QueueService;
@@ -20,6 +22,13 @@ import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.IOUtils;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
+import org.redisson.api.RMapCache;
+import org.redisson.api.RPatternTopic;
+import org.redisson.api.map.event.EntryCreatedListener;
+import org.redisson.api.map.event.EntryExpiredListener;
+import org.redisson.api.map.event.EntryRemovedListener;
+import org.redisson.api.map.event.EntryUpdatedListener;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
@@ -33,24 +42,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @version 1.0
  * @author Marcus
  */
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(locations = {"classpath:spring/springContext.xml", "classpath:spring/businessConfig.xml"})
-//@ContextConfiguration(classes = AppConfiguration.class)
+//@ContextConfiguration(locations = {"classpath:spring/springContext.xml"})
+@ContextConfiguration(classes = AppConfiguration.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
-
-    @Resource
-    private TestService testService;
 
     @Resource
     private TestServiceComponent testServiceComponent;
 
     @Resource
     private QueueService queueService;
+
+    @Resource
+    private Cacheable cacheable;
 
     @SneakyThrows
     @Test
@@ -203,29 +213,115 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
         System.out.println(CalculateUtils.formatNumberSymbol("1002"));
     }
 
-
+    @SneakyThrows
     @Test
     public void testLocalCache(){
-        System.out.println("testServiceComponent: ");
-        System.out.println(testServiceComponent.byCache(22222));
-        System.out.println(testServiceComponent.getClass().getName());
+        System.out.println("1.call string:");
+        System.out.println(testServiceComponent.getWithCache(22222L));
+        Thread.sleep(1000L);
+
+        System.out.println("2.call string:");
+        System.out.println(testServiceComponent.getWithCache(22222L));
     }
 
+    @SneakyThrows
     @Test
-    public void test04() {
-//        RedissonHelper.getInstance()
-//                .deleteList(String.join(AbstractCache.CACHE_DELIMITER, "user_by_id", "832834", "first"));
-        List<Object> list = testService.get("first", 832834L);
-        System.out.println("1: "+ list);
-        list = testService.get("first", 832834L);
-        System.out.println("2: "+ list);
+    public void keySpaceEvent(){
+        // 订阅删除事件
+        RPatternTopic delTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:del", StringCodec.INSTANCE);
+        delTopic.addListener(String.class, ( pattern, channel, message) -> {
+            System.out.println("[KeyEvent] 被删除: " + message);
+        });
 
-//        testService.get("second", 23784234).forEach(System.out::println);
-//        testService.get("first", 832834L).forEach(System.out::println);
-//
-        System.out.println(testService.byCache(323421));
-        System.out.println(testService.byCache(323421));
-//        System.out.println(testService.getClass().getName());
+        // 订阅过期事件
+        RPatternTopic expiredTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:expired");
+        expiredTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 已过期: " + message);
+        });
+
+        // 订阅淘汰事件
+        RPatternTopic evictedTopic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:evicted");
+        evictedTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被淘汰: " + message);
+        });
+
+        // 订阅创建事件
+        RPatternTopic newTopic = RedissonHelper.getClient().getPatternTopic("__keyspace@0__:newKey");
+        newTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被创建: " + message);
+        });
+
+        // 订阅创建事件
+        RPatternTopic overrideTopic = RedissonHelper.getClient().getPatternTopic("__keyspace@0__:counter");
+        overrideTopic.addListener(String.class, (pattern, channel, message) -> {
+            System.out.println("key 被覆盖: " + message);
+        });
+
+        System.out.println("Redis KeySpace事件监听器已启动");
+        System.in.read();
+    }
+
+    @SneakyThrows
+    @Test
+    public void keyListenAll(){
+        // 订阅所有 key 的事件（注意频道格式）
+        // __keyevent@0__:* 中的 0 代表 db0，根据你的 Redis 数据库序号调整
+        RPatternTopic topic = RedissonHelper.getClient().getPatternTopic("__keyevent@0__:*");
+
+        topic.addListener(String.class,  (pattern, channel, message) -> {
+            String eventChannel = channel.toString();
+            String key = message;
+
+            System.out.println("收到事件 - 频道: " + eventChannel + ", Key: " + key);
+
+            // 判断事件类型
+            if (eventChannel.endsWith(":del")) {
+                System.out.println("Key 被删除: " + key);
+                // 在这里执行你的业务逻辑
+            } else if (eventChannel.endsWith(":expired")) {
+                System.out.println("Key 已过期: " + key);
+            } else if (eventChannel.endsWith(":evicted")) {
+                System.out.println("Key 被内存淘汰: " + key);
+            }
+        });
+
+        System.out.println("Redis 全局事件监听器已启动");
+        System.in.read();
+    }
+
+    @SneakyThrows
+    @Test
+    public void cacheListen(){
+        RMapCache<String, Object> cache = RedissonHelper.getClient().getMapCache("webmind:cachemap:listen");
+        registryEvent(cache);
+
+        System.out.println("new ...");
+        cache.fastPut("user_by_1", StringUtils.EMPTY, 60L, TimeUnit.SECONDS);
+        cache.fastPut("user_by_2", StringUtils.EMPTY, 10L, TimeUnit.SECONDS);
+
+        TimeUnit.SECONDS.sleep(3L);
+        System.out.println("deleted ...");
+        cache.fastRemove("user_by_2");
+
+        System.out.println("update ...");
+        cache.fastPut("user_by_2", "update", 5L, TimeUnit.SECONDS);
+
+        System.in.read();
+    }
+
+    private void registryEvent(RMapCache<String, Object> cache){
+        cache.addListener((EntryRemovedListener<String, Object>) event -> {
+            System.out.println("Entry removed, key=" + event.getKey());
+        });
+        cache.addListener((EntryExpiredListener<String, Object>) event -> {
+            System.out.println("Entry expired, key=" + event.getKey());
+        });
+        cache.addListener((EntryUpdatedListener<String, Object>) event -> {
+            System.out.println("Entry updated, key=" + event.getKey() + ", newVal=" + event.getValue());
+        });
+        cache.addListener((EntryCreatedListener<String, Object>) event -> {
+            System.out.println("Entry created, key=" + event.getKey() + ", newVal=" + event.getValue());
+        });
     }
 
     @Test

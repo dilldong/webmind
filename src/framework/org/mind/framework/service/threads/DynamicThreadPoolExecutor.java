@@ -2,8 +2,11 @@ package org.mind.framework.service.threads;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.util.DateUtils;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +76,23 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
 
         if (t != null)
             log.error("Task execution failed: {}", t.getMessage(), t);
+    }
+
+    @Override
+    public void execute(@NotNull Runnable command) {
+        super.execute(ThreadContextPropagator.wrap(command));
+    }
+
+    @NotNull
+    @Override
+    public Future<?> submit(@NotNull Runnable task) {
+        return super.submit(ThreadContextPropagator.wrap(task));
+    }
+
+    @NotNull
+    @Override
+    public <T> Future<T> submit(@NotNull Callable<T> task) {
+        return super.submit(ThreadContextPropagator.wrap(task));
     }
 
     /**

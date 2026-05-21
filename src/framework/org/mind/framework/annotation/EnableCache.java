@@ -1,9 +1,9 @@
 package org.mind.framework.annotation;
 
 import org.mind.framework.annotation.processor.EnableCacheConfiguration;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -31,10 +31,15 @@ public @interface EnableCache {
      * <br/>2.CGLIB dynamic proxy: when the proxy target doesn't implement the interface, whether proxyTargetClass is true or false.
      * @return
      */
-    @AliasFor(annotation = EnableAspectJAutoProxy.class, attribute = "proxyTargetClass")
     boolean proxyTargetClass() default false;
 
-    @AliasFor(annotation = EnableAspectJAutoProxy.class, attribute = "exposeProxy")
     boolean exposeProxy() default false;
 
+    CacheLevel[] levels() default {};
+
+    /**
+     * 用于 Redisson RMapCache 同步器的名称，
+     * L2 -> L1 缓存基于 RMapCache 进行同步。
+     */
+    String cacheSyncName() default CacheEventPublisher.KEY_EVENT_MAPCACHE;
 }
