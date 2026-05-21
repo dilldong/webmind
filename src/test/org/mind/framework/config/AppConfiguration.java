@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableScheduling
 @RequiredArgsConstructor
-@EnableCache(levels = {CacheLevel.LOCAL, CacheLevel.REDIS})
+@EnableCache(levels = {CacheLevel.LOCAL, CacheLevel.REDIS}, cacheSyncName = "test:cache:sync:listener")
 @PropertySource("classpath:frame.properties")
 @ComponentScan(basePackages = {"org.mind.framework"})
 public class AppConfiguration {
