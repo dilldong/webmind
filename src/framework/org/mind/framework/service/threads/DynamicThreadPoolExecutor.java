@@ -2,8 +2,11 @@ package org.mind.framework.service.threads;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.util.DateUtils;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +48,7 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
                 Math.max(8, CPU_COUNT << 2),          // 最大线程数更宽松
                 120L,                                 // 更长的存活时间
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(QUEUE_SIZE),  // 较小的队列，促进线程创建
+                new LinkedBlockingQueue<>(QUEUE_SIZE),// 较小的队列，促进线程创建
                 ExecutorFactory.newThreadFactory("dynamic-task-", false),
                 new CallerRunsPolicy()
         );
@@ -73,6 +76,21 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
 
         if (t != null)
             log.error("Task execution failed: {}", t.getMessage(), t);
+    }
+
+    @Override
+    public void execute(@NotNull Runnable command) {
+        super.execute(ThreadContextPropagator.wrap(command));
+    }
+
+    @Override
+    public Future<?> submit(@NotNull Runnable task) {
+        return super.submit(ThreadContextPropagator.wrap(task));
+    }
+
+    @Override
+    public <T> Future<T> submit(@NotNull Callable<T> task) {
+        return super.submit(ThreadContextPropagator.wrap(task));
     }
 
     /**

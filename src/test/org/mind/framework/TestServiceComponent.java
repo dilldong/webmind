@@ -7,6 +7,7 @@ import org.mind.framework.cache.AbstractCache;
 import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
 import org.mind.framework.helper.delayqueue.DelayTask;
 import org.mind.framework.helper.delayqueue.RedissonStreamDelayQueueService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -70,6 +71,7 @@ public class TestServiceComponent {
         return "bycache_" + userId;
     }
 
+    @Async("asyncExecutor")
     public void clear(long userId){
         log.info("发布消息");
         cacheBroadcastService.publish(String.join(AbstractCache.CACHE_DELIMITER, CACHE_KEY, String.valueOf(userId)));

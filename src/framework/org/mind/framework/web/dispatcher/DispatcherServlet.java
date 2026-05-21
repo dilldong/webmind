@@ -1,9 +1,12 @@
 package org.mind.framework.web.dispatcher;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.Service;
+import org.mind.framework.util.RandomCodeUtil;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.handler.DispatcherHandlerRequest;
 import org.mind.framework.web.dispatcher.handler.HandlerRequest;
@@ -138,7 +141,15 @@ public class DispatcherServlet extends HttpServlet {
      */
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
+            ThreadContext.put(
+                    HandlerResult.REQUEST_IN_LOG,
+                    StringUtils.defaultIfEmpty(
+                            request.getHeader(HandlerResult.REQUEST_ID),
+                            RandomCodeUtil.fastRandomString(6))
+            );
+
             this.handler.processor(request, response);
+
         } catch (Throwable e) {
             Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
             request.setAttribute(BaseException.SYS_EXCEPTION, c);
@@ -146,6 +157,7 @@ public class DispatcherServlet extends HttpServlet {
             ThrowProvider.doThrow(c);
         } finally {
             this.handler.clear(request);
+            ThreadContext.remove(HandlerResult.REQUEST_IN_LOG);
         }
     }
 

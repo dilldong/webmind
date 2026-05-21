@@ -2,6 +2,7 @@ package org.mind.framework.web.dispatcher.handler;
 
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
@@ -34,6 +35,9 @@ public interface HandlerResult {
     String JSON_RPC_ID = "id";
     String JSON_RPC_TAG = "jsonrpc";
     String JSON_RPC_METHOD = "method";
+
+    String REQUEST_ID = "X-Request-Id";
+    String REQUEST_IN_LOG = "requestId";
 
     void handleResult(Object result, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException;
 
@@ -77,6 +81,7 @@ public interface HandlerResult {
         jsonObject.addProperty(HttpHeaders.REFERER, request.getHeader(HttpHeaders.REFERER));
         jsonObject.addProperty(HttpHeaders.ORIGIN, request.getHeader(HttpHeaders.ORIGIN));
         jsonObject.addProperty(HttpHeaders.USER_AGENT, HttpUtils.getUserAgent(request));
+        jsonObject.addProperty(REQUEST_IN_LOG, ThreadContext.getImmutableContext().get(REQUEST_IN_LOG));
 
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
     }

@@ -10,13 +10,13 @@
     <Appenders>
         <!-- 控制台输出 -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] %c{0}.%M(%L) - %m%n%ex"/>
+            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] [%X{requestId}] %c{0}.%M(%L) - %m%n%ex"/>
         </Console>
 
         <!-- 日志轮换 -->
         <!-- AsyncAppender or AsyncLogger will auto-flush in batches, so switch off immediateFlush. -->
         <RollingFile name="RollingFile" fileName="${logPath}/${logFile}" filePattern="${logPath}/${logFile}.%i.%d{yyyy-MM-dd}">
-            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] %c{0}.%M(%L) - %m%n%ex"/>
+            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%-5level] [%t] [%X{requestId}] %c{0}.%M(%L) - %m%n%ex"/>
             <Policies>
                 <!-- 根据filePattern日期轮换 -->
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>

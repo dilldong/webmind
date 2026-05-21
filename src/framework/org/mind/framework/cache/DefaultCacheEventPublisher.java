@@ -84,7 +84,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
     private RMapCache<String, String> registerCacheSyncListener() {
         RMapCache<String, String> eventListener = RedissonHelper.getClient().getMapCache(cacheSyncName);
 
-        eventListener.addListener((EntryRemovedListener<String, String>) event -> {
+        eventListener.addListenerAsync((EntryRemovedListener<String, String>) event -> {
             log.debug("Entry removed, key: {}, expire: {}", event.getKey(), event.getValue());
             evictLocalCache(event.getKey());
 
@@ -92,7 +92,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
                 cacheEventHandler.onRemoved(event.getKey());
         });
 
-        eventListener.addListener((EntryExpiredListener<String, String>) event -> {
+        eventListener.addListenerAsync((EntryExpiredListener<String, String>) event -> {
             log.debug("Entry expired, key: {}, expire: {}", event.getKey(), event.getValue());
             evictLocalCache(event.getKey());
 
@@ -100,7 +100,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
                 cacheEventHandler.onExpired(event.getKey());
         });
 
-        eventListener.addListener((EntryUpdatedListener<String, String>) event -> {
+        eventListener.addListenerAsync((EntryUpdatedListener<String, String>) event -> {
             log.debug("Entry updated, key: {}, expire: {}", event.getKey(), event.getValue());
             evictLocalCache(event.getKey());
 
@@ -108,7 +108,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
                 cacheEventHandler.onUpdated(event.getKey());
         });
 
-        eventListener.addListener((EntryCreatedListener<String, String>) event -> {
+        eventListener.addListenerAsync((EntryCreatedListener<String, String>) event -> {
             log.debug("Entry created, key: {}, expire: {}", event.getKey(), event.getValue());
 
             if (Objects.nonNull(cacheEventHandler))
