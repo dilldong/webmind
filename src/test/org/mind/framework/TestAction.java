@@ -30,19 +30,6 @@ public class TestAction {
 
     private final TestServiceComponent testServiceComponent;
 
-    @Mapping(value = "/cache")
-    public String cache() {
-        List<Object> result = testServiceComponent.getWithCache("cache", 123L);
-        testServiceComponent.clear(123L);
-        return JsonUtils.toJson(result);
-    }
-
-    @Mapping(value = "/send")
-    public String send() {
-        testServiceComponent.sendMessage();
-        return "OK";
-    }
-
     @Mapping(value = {"/", "/index"})
     public String first() {
         return "Welcome usage mind-framework.";
@@ -132,4 +119,21 @@ public class TestAction {
                 .build();
     }
 
+    @Mapping(value = "/cache")
+    public String cache() {
+        List<Object> result = testServiceComponent.getWithCache("cache", 123L);
+        testServiceComponent.clear(123L);
+        return JsonUtils.toJson(result);
+    }
+
+    @Mapping(value = "/send")
+    public String send() {
+        testServiceComponent.sendMessage();
+        return "OK";
+    }
+
+    @Mapping(value = "/error")
+    public String error() {
+        throw new IllegalArgumentException("for exception");
+    }
 }

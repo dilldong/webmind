@@ -424,7 +424,6 @@ public class TomcatServer extends Tomcat {
         });
 
         propertySources.forEach(res -> {
-
             if (res.getName().startsWith("class path resource"))
                 log.info("Loading resource: [{}]",
                         StringUtils.substringBetween(res.getName(), JsonUtils.BEGIN_ARRAY, JsonUtils.END_ARRAY));

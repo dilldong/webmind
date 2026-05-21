@@ -17,6 +17,7 @@ import org.mind.framework.service.queue.QueueConfig;
 import org.mind.framework.service.queue.QueueLittle;
 import org.mind.framework.service.queue.QueueService;
 import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.ClassUtils;
 import org.mind.framework.util.PropertiesUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -39,6 +41,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Configuration
+@EnableAsync
 @EnableScheduling
 @RequiredArgsConstructor
 @EnableCache(levels = {CacheLevel.LOCAL, CacheLevel.REDIS}, cacheSyncName = "test:cache:sync:listener")
@@ -142,6 +145,8 @@ public class AppConfiguration {
         taskExecutor.setMaxPoolSize(16);
         taskExecutor.setQueueCapacity(1024);
 
+        taskExecutor.setTaskDecorator(ThreadContextPropagator::wrap);
+
         taskExecutor.setThreadFactory(ExecutorFactory.newThreadFactory("async-spring-group", "async-task-"));
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         taskExecutor.setAwaitTerminationSeconds(15);
@@ -156,6 +161,8 @@ public class AppConfiguration {
         taskScheduler.setThreadNamePrefix("task-schedule-");
         taskScheduler.setWaitForTasksToCompleteOnShutdown(true);
         taskScheduler.setAwaitTerminationSeconds(15);
+        taskScheduler.setTaskDecorator(ThreadContextPropagator::wrap);
+
         taskScheduler.initialize();
         return taskScheduler;
     }
