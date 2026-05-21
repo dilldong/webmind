@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.DateUtils;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RScoredSortedSet;
@@ -509,6 +510,8 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
 
         schedulerExecutor.setWaitForTasksToCompleteOnShutdown(true);
         schedulerExecutor.setAwaitTerminationSeconds(10);
+
+        schedulerExecutor.setTaskDecorator(ThreadContextPropagator::wrap);
 
         // init
         schedulerExecutor.initialize();
