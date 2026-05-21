@@ -161,7 +161,6 @@ public class AppConfiguration {
         taskScheduler.setThreadNamePrefix("task-schedule-");
         taskScheduler.setWaitForTasksToCompleteOnShutdown(true);
         taskScheduler.setAwaitTerminationSeconds(15);
-        taskScheduler.setTaskDecorator(ThreadContextPropagator::wrap);
 
         taskScheduler.initialize();
         return taskScheduler;
