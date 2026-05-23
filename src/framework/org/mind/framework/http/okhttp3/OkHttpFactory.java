@@ -287,7 +287,7 @@ public class OkHttpFactory {
             bytes = responseBody.bytes();
 
         // Set return content length
-        CONTENT_LENGTH_LOCAL.remove();
+        clearContentLength();
         CONTENT_LENGTH_LOCAL.set(bytes.length);
 
         return new ByteArrayInputStream(bytes);
