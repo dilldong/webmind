@@ -1,5 +1,6 @@
 package org.mind.framework.service.threads;
 
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.web.server.GracefulShutdown;
 
 import java.util.concurrent.Callable;
@@ -28,7 +29,7 @@ public class Async {
                 TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 ExecutorFactory.newThreadFactory("async-group", "async-pool-"),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+                new CallerRunsExecutionHandler());
 
         GracefulShutdown.newShutdown("Async-Graceful", SYNCHRONOUS_EXECUTOR)
                 .awaitTime(15L, TimeUnit.SECONDS)

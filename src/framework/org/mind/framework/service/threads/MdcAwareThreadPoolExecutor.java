@@ -29,17 +29,17 @@ public class MdcAwareThreadPoolExecutor extends ThreadPoolExecutor {
 
 
     @Override
-    public void execute(Runnable command) {
+    public void execute(@NotNull Runnable command) {
         super.execute(ThreadContextPropagator.wrap(command));
     }
 
     @Override
-    public <T> Future<T> submit(Callable<T> task) {
+    public <T> Future<T> submit(@NotNull Callable<T> task) {
         return super.submit(ThreadContextPropagator.wrap(task));
     }
 
     @Override
-    public Future<?> submit(Runnable task) {
+    public Future<?> submit(@NotNull Runnable task) {
         return super.submit(ThreadContextPropagator.wrap(task));
     }
 }

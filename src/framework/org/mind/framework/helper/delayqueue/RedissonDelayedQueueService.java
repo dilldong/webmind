@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RDelayedQueue;
@@ -42,7 +43,8 @@ public class RedissonDelayedQueueService {
     /**
      * define: empty consumer
      */
-    private static final Consumer<Object> NO_OP_CONSUMER = t -> {};
+    private static final Consumer<Object> NO_OP_CONSUMER = t -> {
+    };
 
     @Getter
     private final String delayQueueName;
@@ -447,7 +449,7 @@ public class RedissonDelayedQueueService {
      * 引用替换是原子的 (O(1))，不会阻塞任何正在进行 computeIfAbsent 的读取线程
      * 当注册消费者时，不再需要遍历清空旧数据，没有任何锁竞争
      */
-    private void replaceTypeCache(){
+    private void replaceTypeCache() {
         this.compatibleTypeReference = new ConcurrentHashMap<>(16);
     }
 
@@ -475,7 +477,7 @@ public class RedissonDelayedQueueService {
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(128),
                             ExecutorFactory.newThreadFactory("delay-task-", false),
-                            new ThreadPoolExecutor.CallerRunsPolicy());
+                            new CallerRunsExecutionHandler());
                 }
             }
         }
@@ -490,7 +492,7 @@ public class RedissonDelayedQueueService {
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(2),
                             ExecutorFactory.newThreadFactory("delay-listen-", true),
-                            new ThreadPoolExecutor.CallerRunsPolicy());
+                            new CallerRunsExecutionHandler());
                 }
             }
         }
