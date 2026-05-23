@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.redisson.api.Message;
 import org.redisson.api.MessageArgs;
@@ -584,7 +585,7 @@ public class RedissonReliableQueueService {
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(128),
                             ExecutorFactory.newThreadFactory("reliable-task-", false),
-                            new ThreadPoolExecutor.CallerRunsPolicy());
+                            new CallerRunsExecutionHandler());
                 }
             }
         }
@@ -599,7 +600,7 @@ public class RedissonReliableQueueService {
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(2),
                             ExecutorFactory.newThreadFactory("reliable-listen-", true),
-                            new ThreadPoolExecutor.CallerRunsPolicy());
+                            new CallerRunsExecutionHandler());
                 }
             }
         }

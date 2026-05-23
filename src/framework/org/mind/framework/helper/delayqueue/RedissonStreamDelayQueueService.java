@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.helper.RedissonHelper;
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.DateUtils;
 import org.redisson.api.RMapCache;
@@ -424,7 +425,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * <p>ACK 时机：业务回调 {@code consumer.accept(task)} 正常返回后才调用 ACK，
      * 若抛出异常则不 ACK，消息留在 PEL，30s 后被 autoClaim 重投。
      *
-     * <p>注意：若 TaskExecutor 队列满触发 {@link ThreadPoolExecutor.CallerRunsPolicy}，
+     * <p>注意：若 TaskExecutor 队列满触发 {@link CallerRunsExecutionHandler}，
      * 则 Consumer 线程会在此阻塞直到任务执行完成，期间不会读取新消息，起到背压作用。
      */
     private void dispatchToTaskExecutor(StreamMessageId msgId,
@@ -534,7 +535,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
                         60L, TimeUnit.SECONDS,
                         new LinkedBlockingQueue<>(128),
                         ExecutorFactory.newThreadFactory("delay-task-", false),
-                        new ThreadPoolExecutor.CallerRunsPolicy());
+                        new CallerRunsExecutionHandler());
             }
         }
     }

@@ -11,8 +11,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2022/11/5
  */
 @Slf4j
@@ -70,7 +70,6 @@ public class ExecutorFactory {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
-
     public static ThreadPoolExecutor newThreadPoolExecutor(int corePoolSize,
                                                            int maxPoolSize,
                                                            long keepAliveTime,
@@ -78,6 +77,29 @@ public class ExecutorFactory {
                                                            BlockingQueue<Runnable> workQueue,
                                                            ThreadFactory threadFactory,
                                                            RejectedExecutionHandler handler) {
+        ThreadPoolExecutor executor =
+                new ThreadPoolExecutor(
+                        corePoolSize,
+                        Math.max(maxPoolSize, corePoolSize),
+                        keepAliveTime, unit,
+                        workQueue,
+                        threadFactory,
+                        handler);
+
+        // pre-start all core threads
+        if (corePoolSize > 0)
+            executor.prestartAllCoreThreads();
+        return executor;
+    }
+
+
+    public static ThreadPoolExecutor newMdcAwareThreadPoolExecutor(int corePoolSize,
+                                                                   int maxPoolSize,
+                                                                   long keepAliveTime,
+                                                                   TimeUnit unit,
+                                                                   BlockingQueue<Runnable> workQueue,
+                                                                   ThreadFactory threadFactory,
+                                                                   RejectedExecutionHandler handler) {
         ThreadPoolExecutor executor =
                 new MdcAwareThreadPoolExecutor(
                         corePoolSize,
