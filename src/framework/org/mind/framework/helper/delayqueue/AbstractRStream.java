@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ThreadUtils;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Updatable;
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.web.Destroyable;
 import org.redisson.api.AutoClaimResult;
@@ -274,7 +275,7 @@ public abstract class AbstractRStream implements Destroyable {
                             60L, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<>(2),
                             ExecutorFactory.newThreadFactory(listenThreadPrefix, true),
-                            new ThreadPoolExecutor.CallerRunsPolicy());
+                            new CallerRunsExecutionHandler());
                 }
             }
         }

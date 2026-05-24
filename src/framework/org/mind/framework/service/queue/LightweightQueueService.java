@@ -80,7 +80,7 @@ public class LightweightQueueService {
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(),
                 ExecutorFactory.newThreadFactory("loop-queue-", false),
-                new RejectedExecutionHandler()
+                new CallerRunsExecutionHandler()
         );
 
         // 核心线程不超时，保证服务稳定性

@@ -16,6 +16,7 @@ import okio.Okio;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.http.NoContentResponse;
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
@@ -79,7 +80,7 @@ public class OkHttpFactory {
                         TimeUnit.SECONDS,
                         new SynchronousQueue<>(),
                         ExecutorFactory.newThreadFactory("okhttp3-group", "okhttp3-exec-"),
-                        new ThreadPoolExecutor.CallerRunsPolicy());
+                        new CallerRunsExecutionHandler());
 
         // 允许核心线程超时回收
         executorService.allowCoreThreadTimeOut(true);
@@ -286,7 +287,7 @@ public class OkHttpFactory {
             bytes = responseBody.bytes();
 
         // Set return content length
-        CONTENT_LENGTH_LOCAL.remove();
+        clearContentLength();
         CONTENT_LENGTH_LOCAL.set(bytes.length);
 
         return new ByteArrayInputStream(bytes);

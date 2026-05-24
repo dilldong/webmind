@@ -13,6 +13,7 @@ import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
 import org.mind.framework.helper.delayqueue.RedissonStreamDelayQueueService;
 import org.mind.framework.mail.service.EmailService;
 import org.mind.framework.mail.service.EmailServiceImpl;
+import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.service.queue.QueueConfig;
 import org.mind.framework.service.queue.QueueLittle;
 import org.mind.framework.service.queue.QueueService;
@@ -31,7 +32,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -116,7 +116,7 @@ public class AppConfiguration {
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(32),
                 ExecutorFactory.newThreadFactory("delay-task-", false),
-                new ThreadPoolExecutor.CallerRunsPolicy()));
+                new CallerRunsExecutionHandler()));
 
         delayedQueueService.init();
         return delayedQueueService;
@@ -132,7 +132,7 @@ public class AppConfiguration {
                 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(32),
                 ExecutorFactory.newThreadFactory("delay-task-", false),
-                new ThreadPoolExecutor.CallerRunsPolicy()));
+                new CallerRunsExecutionHandler()));
 
         delayedQueueService.init();
         return delayedQueueService;
