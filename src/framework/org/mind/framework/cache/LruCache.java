@@ -1,6 +1,6 @@
 package org.mind.framework.cache;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateUtils;
 import org.slf4j.Logger;
@@ -175,7 +175,7 @@ public class LruCache extends AbstractCache implements Cacheable {
             while (iterator.hasNext()) {
                 Map.Entry<String, CacheElement> entry = iterator.next();
 
-                if (!StringUtils.containsIgnoreCase(entry.getKey(), searchStr))
+                if (!Strings.CI.contains(entry.getKey(), searchStr))
                     continue;
 
                 if (excludes != null && excludes.length > 0 && isExcluded(entry.getKey(), excludes, excludesRule))

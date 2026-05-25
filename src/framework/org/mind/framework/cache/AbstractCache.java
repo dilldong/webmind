@@ -1,6 +1,7 @@
 package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.web.Destroyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +41,8 @@ public abstract class AbstractCache implements Destroyable {
     protected boolean isExcluded(String key, String[] excludes, Cacheable.CompareType rule) {
         for (String ex : excludes) {
             boolean match = Cacheable.CompareType.EQ_FULL == rule
-                    ? StringUtils.equals(key, ex)
-                    : StringUtils.contains(key, ex);
+                    ? Strings.CS.equals(key, ex)
+                    : Strings.CS.contains(key, ex);
 
             if (match)
                 return true;

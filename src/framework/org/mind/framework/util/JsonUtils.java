@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.ToNumberStrategy;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.adapter.InstantTypeAdapter;
 import org.mind.framework.adapter.LocalDateTimeAdapter;
 import org.mind.framework.http.Response;
@@ -242,7 +243,7 @@ public class JsonUtils {
                                 if (fieldMap.containsKey(field.getName()))
                                     return false;
 
-                                boolean isSkip = StringUtils.contains(fieldNameString, field.getName());
+                                boolean isSkip = Strings.CS.contains(fieldNameString, field.getName());
                                 return isShowField != isSkip;
                             }
 

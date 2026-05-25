@@ -7,7 +7,7 @@ import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateUtils;
 
@@ -164,7 +164,7 @@ public class CaffeineCache extends AbstractCache implements Cacheable {
         List<CacheElement> removed = new CopyOnWriteArrayList<>();
 
         store.asMap().entrySet().removeIf(entry -> {
-            if (!StringUtils.containsIgnoreCase(entry.getKey(), searchStr))
+            if (!Strings.CI.contains(entry.getKey(), searchStr))
                 return false;
 
             if (nonNullExcludes && isExcluded(entry.getKey(), excludes, excludesRule))
