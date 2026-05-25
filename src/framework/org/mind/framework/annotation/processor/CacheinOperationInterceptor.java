@@ -15,7 +15,6 @@ import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
-import org.redisson.client.RedisException;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
@@ -295,7 +294,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                     return new ResolveResult(emptyValue, true);  // 提前中断
 
                 isNullValue = Objects.isNull(value);
-            } catch (RedisException e){
+            } catch (RuntimeException e){
                 if(!e.getMessage().contains("WRONGTYPE"))
                     throw e;
             }
