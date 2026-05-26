@@ -1,5 +1,7 @@
 package org.mind.framework.cache;
 
+import org.redisson.api.RMapCache;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -9,6 +11,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface CacheEventPublisher {
     String KEY_EVENT_MAPCACHE = "webmind:sync:cache:listener";
+    String BEAN_NAME = "cacheEventPublisher";
 
     CacheEventPublisher NO_PUBLISHER = new CacheEventPublisher() {
         @Override
@@ -19,6 +22,11 @@ public interface CacheEventPublisher {
         @Override
         public void publish(String key, long expire, TimeUnit unit) {
             // do nothing
+        }
+
+        @Override
+        public RMapCache<String, String> getCacheEventListener() {
+            return null;
         }
     };
 
@@ -31,4 +39,9 @@ public interface CacheEventPublisher {
      * 发布缓存事件
      */
     void publish(String key, long expire, TimeUnit unit);
+
+    /**
+     * 获取当前的 (RMapCache) 同步器对象
+     */
+    RMapCache<String, String> getCacheEventListener();
 }

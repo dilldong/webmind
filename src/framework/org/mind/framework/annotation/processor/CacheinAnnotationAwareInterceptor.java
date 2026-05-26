@@ -187,7 +187,12 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         return Arrays.stream(cacheLevels).anyMatch(v -> CacheLevel.REDIS == v);
     }
 
+    // 自定义缓存事件发布器
     private CacheEventPublisher buildPublisher() {
-        return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
+        try {
+            return this.beanFactory.getBean(CacheEventPublisher.BEAN_NAME, CacheEventPublisher.class);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
+        }
     }
 }
