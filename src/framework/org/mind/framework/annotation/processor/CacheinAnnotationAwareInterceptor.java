@@ -55,8 +55,6 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     private volatile CacheEventPublisher cacheEventPublisher;
 
-    private CacheEventHandler cacheEventHandler;
-
     public CacheinAnnotationAwareInterceptor(Cacheable defaultCache,
                                              CacheLevel[] defaultLevels,
                                              String cacheSyncName,
@@ -66,13 +64,6 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         this.cacheSyncName = cacheSyncName;
         this.delegates = new ConcurrentReferenceHashMap<>();
         this.beanFactory = beanFactory;
-
-        // 自定义缓存事件接收器
-        try {
-            cacheEventHandler = this.beanFactory.getBean(CacheEventHandler.BEAN_NAME, CacheEventHandler.class);
-        } catch (NoSuchBeanDefinitionException ignored) {
-            cacheEventHandler = null;
-        }
 
         // 缓存同步器
         this.cacheEventPublisher =
@@ -191,8 +182,14 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
     private CacheEventPublisher buildPublisher() {
         try {
             return this.beanFactory.getBean(CacheEventPublisher.BEAN_NAME, CacheEventPublisher.class);
-        } catch (NoSuchBeanDefinitionException ignored) {
-            return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
-        }
+        } catch (NoSuchBeanDefinitionException ignored) {}
+
+        // 自定义缓存事件接收器
+        CacheEventHandler cacheEventHandler = null;
+        try {
+            cacheEventHandler = this.beanFactory.getBean(CacheEventHandler.BEAN_NAME, CacheEventHandler.class);
+        } catch (NoSuchBeanDefinitionException ignored) {}
+
+        return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
     }
 }
