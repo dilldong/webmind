@@ -1,5 +1,7 @@
 package org.mind.framework.service.queue;
 
+import org.mind.framework.service.threads.ThreadContextPropagator;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,12 +23,12 @@ public class QueueLittle extends LightweightQueueService implements QueueService
 
     @Override
     public boolean producer(DelegateMessage message) {
-        return this.offer(message);
+        return this.offer(ThreadContextPropagator.wrap(message));
     }
 
     @Override
     public boolean producer(DelegateMessage message, long timeout, TimeUnit unit) throws InterruptedException {
-        return this.offer(message, timeout, unit);
+        return this.offer(ThreadContextPropagator.wrap(message), timeout, unit);
     }
 
     @Override
