@@ -58,19 +58,19 @@ public class ThreadContextPropagator {
     }
 
     /**
-     * 捕获当前线程的 MDC 快照
-     */
-    public static Map<String, String> capture() {
-        Map<String, String> ctx = MDC.getCopyOfContextMap();
-        return Objects.nonNull(ctx) ? ctx : Collections.emptyMap();
-    }
-
-    /**
      * 包装 DelegateMessage
      */
     public static DelegateMessage wrap(DelegateMessage task) {
         Map<String, String> context = capture();
         return () -> restore(context, task::process);
+    }
+
+    /**
+     * 捕获当前线程的 MDC 快照
+     */
+    public static Map<String, String> capture() {
+        Map<String, String> ctx = MDC.getCopyOfContextMap();
+        return Objects.nonNull(ctx) ? ctx : Collections.emptyMap();
     }
 
     /**
