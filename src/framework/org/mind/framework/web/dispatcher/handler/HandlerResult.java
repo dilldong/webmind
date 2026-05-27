@@ -2,8 +2,8 @@ package org.mind.framework.web.dispatcher.handler;
 
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.ThreadContext;
 import org.mind.framework.exception.BaseException;
+import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.springframework.http.HttpHeaders;
@@ -81,7 +81,7 @@ public interface HandlerResult {
         jsonObject.addProperty(HttpHeaders.REFERER, request.getHeader(HttpHeaders.REFERER));
         jsonObject.addProperty(HttpHeaders.ORIGIN, request.getHeader(HttpHeaders.ORIGIN));
         jsonObject.addProperty(HttpHeaders.USER_AGENT, HttpUtils.getUserAgent(request));
-        jsonObject.addProperty(REQUEST_IN_LOG, ThreadContext.getImmutableContext().get(REQUEST_IN_LOG));
+        jsonObject.addProperty(REQUEST_IN_LOG, ThreadContextPropagator.capture().getOrDefault(REQUEST_IN_LOG, StringUtils.EMPTY));
 
         request.setAttribute(BaseException.EXCEPTION_REQUEST, jsonObject);
     }
