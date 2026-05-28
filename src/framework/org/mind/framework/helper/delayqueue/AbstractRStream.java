@@ -98,13 +98,7 @@ public abstract class AbstractRStream implements Destroyable {
                 reclaimStalePendingMessages();
 
                 // 2. 读取新消息（从未投递的消息）
-                Map<StreamMessageId, Map<String, String>> messages =
-                        rStream.readGroup(
-                                consumerGroup, consumerName,
-                                StreamReadGroupArgs.neverDelivered()
-                                        .count(BATCH_SIZE)
-                                        .timeout(READ_BLOCK_MS));
-
+                Map<StreamMessageId, Map<String, String>> messages = this.readGroupSafely();
                 if (Objects.isNull(messages) || messages.isEmpty())
                     continue;
 
@@ -317,6 +311,22 @@ public abstract class AbstractRStream implements Destroyable {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             log.error("{} shutdown failed unexpectedly", name, e);
+        }
+    }
+
+    /**
+     * Redisson 内部在无新消息时，错误地将其转为 Collections.emptyList() 再强转 Map，触发 CCE。
+     */
+    private Map<StreamMessageId, Map<String, String>> readGroupSafely() {
+        try {
+            return rStream.readGroup(
+                    consumerGroup, consumerName,
+                    StreamReadGroupArgs.neverDelivered()
+                            .count(BATCH_SIZE)
+                            .timeout(READ_BLOCK_MS));
+        } catch (ClassCastException e) {
+            // 无新消息时 Redisson 3.x 的已知 bug，视为空结果静默处理
+            return null;
         }
     }
 }
