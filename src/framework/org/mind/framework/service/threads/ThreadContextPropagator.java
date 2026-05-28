@@ -30,7 +30,7 @@ public class ThreadContextPropagator {
     /**
      * 包装 Callable
      */
-    public static <T> Callable<T> wrap(Callable<T> task) {
+    public static <T> Callable<T> wrapCallable(Callable<T> task) {
         Map<String, String> context = capture();
         return () -> restoreAndGet(context, () -> {
             try {
@@ -44,7 +44,7 @@ public class ThreadContextPropagator {
     /**
      * 包装 Supplier
      */
-    public static <T> Supplier<T> wrap(Supplier<T> task) {
+    public static <T> Supplier<T> wrapSupplier(Supplier<T> task) {
         Map<String, String> context = capture();
         return () -> restoreAndGet(context, task);
     }
@@ -58,19 +58,19 @@ public class ThreadContextPropagator {
     }
 
     /**
-     * 捕获当前线程的 MDC 快照
-     */
-    public static Map<String, String> capture() {
-        Map<String, String> ctx = MDC.getCopyOfContextMap();
-        return Objects.nonNull(ctx) ? ctx : Collections.emptyMap();
-    }
-
-    /**
      * 包装 DelegateMessage
      */
     public static DelegateMessage wrap(DelegateMessage task) {
         Map<String, String> context = capture();
         return () -> restore(context, task::process);
+    }
+
+    /**
+     * 捕获当前线程的 MDC 快照
+     */
+    public static Map<String, String> capture() {
+        Map<String, String> ctx = MDC.getCopyOfContextMap();
+        return Objects.nonNull(ctx) ? ctx : Collections.emptyMap();
     }
 
     /**
@@ -110,6 +110,5 @@ public class ThreadContextPropagator {
             }
         }
     }
-
 
 }
