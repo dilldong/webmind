@@ -30,7 +30,7 @@ public class ThreadContextPropagator {
     /**
      * 包装 Callable
      */
-    public static <T> Callable<T> wrap(Callable<T> task) {
+    public static <T> Callable<T> wrapCallable(Callable<T> task) {
         Map<String, String> context = capture();
         return () -> restoreAndGet(context, () -> {
             try {
@@ -44,7 +44,7 @@ public class ThreadContextPropagator {
     /**
      * 包装 Supplier
      */
-    public static <T> Supplier<T> wrap(Supplier<T> task) {
+    public static <T> Supplier<T> wrapSupplier(Supplier<T> task) {
         Map<String, String> context = capture();
         return () -> restoreAndGet(context, task);
     }

@@ -89,8 +89,8 @@ public class DynamicThreadPoolExecutor extends ThreadPoolExecutor {
     }
 
     @Override
-    public <T> Future<T> submit(@NotNull Callable<T> task) {
-        return super.submit(ThreadContextPropagator.wrap(task));
+    public <T> Future<T> submit(@NotNull Callable<T> callable) {
+        return super.submit(ThreadContextPropagator.wrapCallable(callable));
     }
 
     /**
