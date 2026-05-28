@@ -355,12 +355,8 @@
                     <artifactId>reactive-streams</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.jboss.marshalling</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
+                    <groupId>com.esotericsoftware</groupId>
+                    <artifactId>kryo</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
