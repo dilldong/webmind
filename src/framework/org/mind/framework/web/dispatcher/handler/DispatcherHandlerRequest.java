@@ -12,10 +12,12 @@ import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.http.Response;
+import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
 import org.mind.framework.util.MatcherUtils;
+import org.mind.framework.util.RandomCodeUtil;
 import org.mind.framework.util.ViewResolver;
 import org.mind.framework.web.Action;
 import org.mind.framework.web.container.ContainerAware;
@@ -477,5 +479,10 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     protected void customizeResponse(HttpServletRequest request, HttpServletResponse response) {
         response.addHeader("X-Powered-By", WebServerConfig.POWER_BY_NAME);
+        response.addHeader(
+                HandlerResult.REQUEST_ID,
+                ThreadContextPropagator.capture().getOrDefault(
+                        HandlerResult.REQUEST_IN_LOG, RandomCodeUtil.fastRandomString(6))
+        );
     }
 }

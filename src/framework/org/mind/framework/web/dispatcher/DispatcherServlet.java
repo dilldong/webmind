@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.ThreadContext;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
@@ -20,6 +19,7 @@ import org.mind.framework.web.dispatcher.support.WebContainerGenerator;
 import org.mind.framework.web.renderer.template.TemplateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.http.HttpHeaders;
 
@@ -141,7 +141,7 @@ public class DispatcherServlet extends HttpServlet {
      */
     private void process(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         try {
-            ThreadContext.put(
+            MDC.put(
                     HandlerResult.REQUEST_IN_LOG,
                     StringUtils.defaultIfEmpty(
                             request.getHeader(HandlerResult.REQUEST_ID),
@@ -157,7 +157,7 @@ public class DispatcherServlet extends HttpServlet {
             ThrowProvider.doThrow(c);
         } finally {
             this.handler.clear(request);
-            ThreadContext.remove(HandlerResult.REQUEST_IN_LOG);
+            MDC.remove(HandlerResult.REQUEST_IN_LOG);
         }
     }
 
