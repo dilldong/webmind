@@ -11,6 +11,8 @@ import org.mind.framework.exception.BaseException;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.service.Service;
 import org.mind.framework.util.RandomCodeUtil;
+import org.mind.framework.web.async.AsyncDispatcherHandlerRequest;
+import org.mind.framework.web.async.AsyncServletExecutorService;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.handler.DispatcherHandlerRequest;
 import org.mind.framework.web.dispatcher.handler.HandlerRequest;
@@ -22,9 +24,9 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * DispatcherServlet must be mapped to root URL "/". It handles ALL requests
@@ -48,6 +50,12 @@ public class DispatcherServlet extends HttpServlet {
      * Guice/Spring web container
      */
     private ContainerAware webContainer;
+
+    private final boolean asyncSupported;
+
+    public DispatcherServlet(boolean asyncSupported) {
+        this.asyncSupported = asyncSupported;
+    }
 
     @Override
     public void init() throws ServletException {
@@ -91,7 +99,7 @@ public class DispatcherServlet extends HttpServlet {
      */
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if ("PATCH".equalsIgnoreCase(request.getMethod())) {
+        if (HttpMethod.PATCH.name().equalsIgnoreCase(request.getMethod())) {
             this.process(request, response);
             return;
         }
@@ -122,6 +130,7 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) {
         resp.setHeader(HttpHeaders.ALLOW, "GET, POST, PUT, DELETE, HEAD, OPTIONS");
+        resp.setStatus(HttpServletResponse.SC_OK);
     }
 
     @Override
@@ -134,7 +143,7 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     /**
-     * Process requests.
+     * Process requests
      *
      * @throws IOException
      * @throws ServletException
@@ -150,13 +159,18 @@ public class DispatcherServlet extends HttpServlet {
 
             this.handler.processor(request, response);
 
-        } catch (Throwable e) {
-            Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
-            request.setAttribute(BaseException.SYS_EXCEPTION, c);
+        } catch (Throwable ex) {
+            Throwable tx = ThrowProvider.unwrapCause(ex);
+            request.setAttribute(BaseException.SYS_EXCEPTION, tx);
             HandlerResult.setRequestAttribute(request);
-            ThrowProvider.doThrow(c);
+            ThrowProvider.doThrow(tx);
         } finally {
-            this.handler.clear(request);
+            if (!asyncSupported)
+                this.handler.clear(request);
+
+            // 始终清理 IO 线程的 MDC，无论同步 or 异步
+            // 异步路径：worker 线程有自己从快照恢复的 MDC，IO 线程职责已终止
+            // 同步路径：请求处理完毕，正常清理
             MDC.remove(HandlerResult.REQUEST_IN_LOG);
         }
     }
@@ -164,7 +178,12 @@ public class DispatcherServlet extends HttpServlet {
     private HandlerRequest initHandlerRequest() {
         try {
             return ContextSupport.getBean(HANDLER_REQUEST_BEAN_NAME, HandlerRequest.class);
-        } catch (NoSuchBeanDefinitionException ignored) {}
+        } catch (NoSuchBeanDefinitionException ignored) {
+        }
+
+        // Async supported
+        if (this.asyncSupported)
+            return new AsyncDispatcherHandlerRequest(new AsyncServletExecutorService());
 
         return new DispatcherHandlerRequest();
     }

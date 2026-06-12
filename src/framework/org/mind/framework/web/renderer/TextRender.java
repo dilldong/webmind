@@ -50,6 +50,9 @@ public class TextRender extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (response.isCommitted())
+            return;
+
         // json
         boolean isJson = JsonUtils.isJson(text);
         String charset = StringUtils.defaultIfEmpty(characterEncoding, StandardCharsets.UTF_8.name());

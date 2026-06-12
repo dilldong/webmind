@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
- *
+ * @author marcus
  */
 public class ViewResolver {
     protected ViewResolver() {
