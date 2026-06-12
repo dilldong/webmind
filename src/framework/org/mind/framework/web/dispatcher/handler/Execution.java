@@ -3,12 +3,16 @@ package org.mind.framework.web.dispatcher.handler;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.ArrayUtils;
+import org.mind.framework.annotation.AsyncAction;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 
 /**
  * Execution contains all information that needed to invocation of method.
@@ -17,6 +21,8 @@ import java.util.Arrays;
  */
 @Getter
 public class Execution {
+    // Key: regex
+    private final Set<String> regex;
 
     // Action instance
     private final Object actionInstance;
@@ -43,11 +49,15 @@ public class Execution {
     // Simple one line logging
     private final boolean simpleLogging;
 
+    // Async action
+    private final AsyncAction async;
+
     public Execution(Object actionInstance, Method method, Mapping mapping) {
         this(actionInstance, method, null, mapping);
     }
 
     public Execution(Object actionInstance, Method method, Object[] arguments, Mapping mapping) {
+        this.regex = new HashSet<>();
         this.actionInstance = actionInstance;
         this.method = method;
         this.parameterTypes = method.getParameterTypes();
@@ -55,6 +65,7 @@ public class Execution {
         this.requestMethods = mapping.method();
         this.requestLog = mapping.requestLog();
         this.simpleLogging = mapping.simpleLogging();
+        this.async = mapping.async();
     }
 
     public Object execute() {
@@ -63,6 +74,10 @@ public class Execution {
 
     public Object execute(Object[] arguments) {
         return ReflectionUtils.invokeMethod(method, actionInstance, arguments);
+    }
+
+    public void addRegex(String regex) {
+        this.regex.add(regex);
     }
 
     public boolean isSupportMethod(String method) {

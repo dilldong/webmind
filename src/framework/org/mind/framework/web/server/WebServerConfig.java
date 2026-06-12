@@ -39,7 +39,9 @@ public class WebServerConfig {
 
     private String nioMode = "nio";
 
-    private long updatePeriod = 1L;
+    private boolean asyncSupported = false;
+
+    private long updatePeriod = 10L;
 
     @Setter
     private String tomcatBaseDir = StringUtils.EMPTY;
@@ -71,6 +73,8 @@ public class WebServerConfig {
     private int acceptCount = 100;
 
     private int sessionTimeout = 30;
+
+    private int keepAliveTimeout = 15_000;
 
     private String staticSuffix = "css|js|jpg|png|gif|jpeg|webp|ico|svg|html|htm|rtf|ttf|tof|woff|woff2|csv|xls|xlsx|doc|docx|ppt|pptx|pdf|rar|zip|txt|xml|mov|mp3|aac|avi|mpeg|swf";
 
@@ -132,6 +136,7 @@ public class WebServerConfig {
         if (Objects.nonNull(properties)) {
             this.serverName = properties.getProperty("server", serverName);
             this.nioMode = properties.getProperty("server.nio.mode", contextPath);
+            this.asyncSupported = BooleanUtils.toBoolean(properties.getProperty("server.servlet.async", BooleanUtils.FALSE));
             this.contextPath = properties.getProperty("server.contextPath", contextPath);
             this.tomcatBaseDir = properties.getProperty("server.baseDir", tomcatBaseDir);
             this.resourceDir = properties.getProperty("server.resourceDirectory", resourceDir);
@@ -143,10 +148,11 @@ public class WebServerConfig {
             this.maxThreads = Integer.parseInt(properties.getProperty("server.maxThreads", String.valueOf(maxThreads)));
             this.minSpareThreads = Integer.parseInt(properties.getProperty("server.minThreads", String.valueOf(minSpareThreads)));
             this.acceptCount = Integer.parseInt(properties.getProperty("server.acceptCount", String.valueOf(acceptCount)));
+            this.keepAliveTimeout = Integer.parseInt(properties.getProperty("server.keepAliveTimeout", String.valueOf(keepAliveTimeout)));
             this.tldSkipPatterns = properties.getProperty("server.tldSkipPatterns", tldSkipPatterns);
 
             this.bindAddress = properties.getProperty("server.bind-address");
-            this.http2Enabled = Boolean.parseBoolean(properties.getProperty("server.http2.enabled", BooleanUtils.FALSE));
+            this.http2Enabled = BooleanUtils.toBoolean(properties.getProperty("server.http2.enabled", BooleanUtils.FALSE));
 
             this.compression = properties.getProperty("server.compression", compression);
             this.compressionMinSize = Integer.parseInt(properties.getProperty("server.compression.minSize", String.valueOf(compressionMinSize)));
@@ -172,7 +178,7 @@ public class WebServerConfig {
             this.updatePeriod = Math.max(updatePeriod, Long.parseLong(properties.getProperty("time.updatePeriod", String.valueOf(updatePeriod))));
 
             // enable monitor
-            this.enableLogStatus = Boolean.parseBoolean(properties.getProperty("server.monitor", BooleanUtils.FALSE));
+            this.enableLogStatus = BooleanUtils.toBoolean(properties.getProperty("server.monitor", BooleanUtils.FALSE));
             this.logIntervalSeconds = Long.parseLong(properties.getProperty("server.monitor.logIntervalSeconds", String.valueOf(logIntervalSeconds)));
         }
     }

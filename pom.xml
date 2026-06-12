@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>4.7.11</version>
+    <version>4.7.12</version>
 
     <licenses>
         <license>
@@ -39,7 +39,7 @@
 
     <properties>
         <spring.version>5.3.39</spring.version>
-        <tomcat.version>9.0.117</tomcat.version>
+        <tomcat.version>9.0.118</tomcat.version>
     </properties>
 
     <build>

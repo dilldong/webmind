@@ -36,6 +36,9 @@ public class BinaryRender extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (response.isCommitted())
+            return;
+
         response.setContentType(
                 StringUtils.isEmpty(contentType) ? MediaType.APPLICATION_OCTET_STREAM_VALUE : contentType);
 

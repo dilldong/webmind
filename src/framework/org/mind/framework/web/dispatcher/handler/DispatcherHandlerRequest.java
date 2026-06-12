@@ -1,5 +1,6 @@
 package org.mind.framework.web.dispatcher.handler;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -8,7 +9,6 @@ import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.http.Response;
-import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.DateUtils;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
@@ -16,6 +16,7 @@ import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.util.RandomCodeUtil;
 import org.mind.framework.util.ViewResolver;
 import org.mind.framework.web.Action;
+import org.mind.framework.web.async.AsyncRequestContext;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.support.Catcher;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
@@ -27,6 +28,7 @@ import org.mind.framework.web.renderer.TextRender;
 import org.mind.framework.web.server.WebServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,7 +51,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
-
 /**
  * Dispatcher handles ALL requests from clients, and dispatches to appropriate
  * handler to handle each request.
@@ -61,7 +62,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     private static final Map<String, ExtendedLogger> TARGET_LOG_CACHEMAP = new ConcurrentHashMap<>();
 
     private Map<String, Execution> actions;// URI regex mapping object
-    private List<String> urisRegex; // URI regex list
+    private List<String> uriRegexList; // URI regex list
 
     // interceptor mapping
     private List<Catcher> interceptorsCatcher;
@@ -75,12 +76,16 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
     // upload size exceeded exception
     private ErrorInterceptor multipartException;
 
+    // gloabl exception
+    @Getter
+    private ErrorInterceptor gloablException;
+
     @Override
     public void init(ContainerAware container) throws ServletException {
-        this.urisRegex = new ArrayList<>();
+        this.uriRegexList = new ArrayList<>();
         this.interceptorsCatcher = new ArrayList<>();
 
-        // init Action Maps, support hot load, so used java.util.concurrent.ConcurrentHashMap.
+        // init Action Maps
         this.actions = new HashMap<String, Execution>(16) {
             @Override
             public Execution put(String key, Execution value) {
@@ -97,8 +102,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
                 // add uri regex to List
                 if (!key.equals(regexKey))
-                    urisRegex.add(regexKey);
+                    uriRegexList.add(regexKey);
 
+                value.addRegex(regexKey);
                 return super.put(regexKey, value);
             }
         };
@@ -125,6 +131,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         this.initMultipartResolver();
         this.initMultipartException();
 
+        // init global exception
+        this.initGloablException();
+
         // init ResourceHandler
         this.initResourceHandler(container.getServletConfig());
     }
@@ -147,6 +156,13 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         }
     }
 
+    protected void initGloablException() {
+        try {
+            this.gloablException = ContextSupport.getBean(GLOBAL_EXCEPTION, ErrorInterceptor.class);
+        } catch (NoSuchBeanDefinitionException ignored) {
+        }
+    }
+
     protected void initResourceHandler(ServletConfig servletConfig) {
         try {
             this.resourceRequest = ContextSupport.getBean(RESOURCE_HANDLER_BEAN_NAME, ResourceRequest.class);
@@ -161,18 +177,14 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         if (!actions.isEmpty())
             actions.clear();
 
-        if (!urisRegex.isEmpty())
-            urisRegex.clear();
+        if (!uriRegexList.isEmpty())
+            uriRegexList.clear();
 
         if (!interceptorsCatcher.isEmpty())
             interceptorsCatcher.clear();
 
         if (!TARGET_LOG_CACHEMAP.isEmpty())
             TARGET_LOG_CACHEMAP.clear();
-
-        actions = null;
-        urisRegex = null;
-        interceptorsCatcher = null;
     }
 
     @Override
@@ -182,172 +194,193 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         // customize response
         this.customizeResponse(request, response);
 
-        // check request is multipart request.
-        HttpServletRequest processedRequest = this.checkMultipart(request, response);
+        // check request is multipart request
+        HttpServletRequest processedRequest = checkMultipart(request, response);
         if (Objects.isNull(processedRequest))
             return;
 
-        final String requestURI = HttpUtils.getURI(processedRequest, false);
+        final String requestUri = HttpUtils.getURI(processedRequest, false);
 
-        /*
-         * Global interceptors for application containers
-         *
-         * interceptor.doBefore(execution, request, response);
-         * doAfter();
-         * renderCompletion();
-         */
-        List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
-        if (Objects.nonNull(interceptorsCatcher)) {
-            for (Catcher catcher : interceptorsCatcher) {
-                if (!catcher.matchOne(requestURI, MatcherUtils.DEFAULT_EQ))// not-match
-                    continue;
-
-                HandlerInterceptor interceptor = catcher.getHandler();
-
-                // Interceptor doBefore
-                // return false, Return to the request page
-                if (!interceptor.doBefore(processedRequest, response)) {
-                    if (log.isDebugEnabled())
-                        log.debug("Intercept access request URI: {}, The interception class is: {}", requestURI, interceptor.getClass().getSimpleName());
-                    return;
-                }
-
-                // Continue to use later: doAfter(), renderCompletion()
-                currentInterceptors.add(interceptor);
-            }
-        }
-
-        // set default character encoding to "utf-8" if encoding is not set:
-        if (StringUtils.isEmpty(processedRequest.getCharacterEncoding()))
-            processedRequest.setCharacterEncoding(StandardCharsets.UTF_8.name());
-
-        // static resource
-        if (this.resourceRequest.checkStaticResource(processedRequest, response))
+        // find action
+        Execution execution = resolveExecution(requestUri, processedRequest, response);
+        if (Objects.isNull(execution))
             return;
 
-        // set response no-cache
-        this.processNoCache(response);
-
-        /*
-         * find and process action
-         */
-        Execution execution = null;
-        Object[] args = null;
-
-        // exact match
-        if (this.actions.containsKey(requestURI)) {
-            execution = this.actions.get(requestURI);
-            args = this.checkRequestArguments(execution);
-        } else {// regex find match
-            Matcher matcher;
-            for (String regex : this.urisRegex) {
-                matcher = MatcherUtils.matcher(requestURI, regex, MatcherUtils.DEFAULT_EQ);
-                if (!matcher.matches())// not-match
-                    continue;
-
-                execution = this.actions.get(regex);
-                args = this.checkRequestArguments(execution, matcher, requestURI);
-                break;
-            }
-        }
-
-        /*
-         * Status code (404) indicating that the requested resource is not available.
-         */
-        if (Objects.isNull(execution)) {
-            log.warn("(404) Not found: [{}]", requestURI);
-            this.renderError(
-                    HttpServletResponse.SC_NOT_FOUND,
-                    "The requested URL (404) Not found",
-                    Render.NOT_FOUND_HTML,
-                    processedRequest,
-                    response);
+        // pre-interceptor
+        final List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
+        if (doBeforeInterceptors(requestUri, processedRequest, response, currentInterceptors))
             return;
-        }
 
-        /*
-         * validation request method
-         */
-        if (!execution.isSupportMethod(processedRequest.getMethod())) {
-            log.warn("[{}] - HTTP method {} is not supported, specified as: {}",
-                    requestURI, processedRequest.getMethod(), execution.methodString());
-            this.renderError(
-                    HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                    String.format("This URL does not support the HTTP method '%s'", processedRequest.getMethod()),
-                    Render.METHOD_NOT_ALLOWED_HTML,
-                    processedRequest,
-                    response);
-            return;
-        }
-
-        if (execution.isRequestLog() && !execution.isSimpleLogging()) {
-            this.targetLog(execution, new ParameterizedMessage("[{}]", requestURI));
-        }
+        // logging
+        if (execution.isRequestLog() && !execution.isSimpleLogging())
+            targetLog(execution, new ParameterizedMessage("[{}]", requestUri));
 
         // execute action
-        Object result;
+        Action.setActionContext(processedRequest, response);
         try {
-            Action.setActionContext(processedRequest, response);
-            result = execution.execute(args);
+            execute(requestUri, execution, processedRequest, response, currentInterceptors);
+        } catch (Throwable ex) {
+            Throwable root = ThrowProvider.unwrapCause(ex);
+            boolean result =
+                    Objects.nonNull(getGloablException())
+                            && getGloablException().handleFailure(processedRequest, response, root);
 
-            // Interceptor doAfter
-            if (!currentInterceptors.isEmpty()) {
-                for (HandlerInterceptor interceptor : currentInterceptors)
-                    interceptor.doAfter(processedRequest, response);
-            }
-
-            // resolver result
-            this.handleResult(result, processedRequest, response);
-
-            // Interceptor renderCompletion
-            if (!currentInterceptors.isEmpty())
-                currentInterceptors.forEach(interceptor -> interceptor.renderCompletion(processedRequest, response));
-
-        } catch (IOException | ServletException e) {
-            throw e;
-        } catch (Throwable e) {
-            Throwable c = Objects.isNull(e.getCause()) ? e : e.getCause();
-            if (c instanceof IOException || c instanceof ServletException)
-                ThrowProvider.doThrow(c);
-            else
-                throw new ServletException(c.getMessage(), c);// other exception throws with ServletException.
+            if (!result)
+                ThrowProvider.doThrow(root);
         } finally {
             Action.removeActionContext();
-            HandlerRequest.super.clear(request);
 
             if (execution.isRequestLog()) {
                 long spendor = DateUtils.CachedTime.currentMillis() - begin;
                 this.targetLog(execution,
                         execution.isSimpleLogging() ?
-                                new ParameterizedMessage("[{}] - [{}ms]", requestURI, spendor) :
+                                new ParameterizedMessage("[{}] - [{}ms]", requestUri, spendor) :
                                 new ParameterizedMessage("Used time(ms): {}", spendor)
                 );
             }
         }
     }
 
-    private void targetLog(Execution execution, ParameterizedMessage message) {
-        Class<?> target = execution.getActionInstance().getClass();
-        ExtendedLogger targetLoger = TARGET_LOG_CACHEMAP.computeIfAbsent(
-                target.getName(),
-                className -> (ExtendedLogger) LogManager.getLogger(className)
-        );
+    @Override
+    public void execute(String requestUri,
+                        Execution execution,
+                        HttpServletRequest request,
+                        HttpServletResponse response,
+                        List<HandlerInterceptor> interceptors) throws ServletException, IOException {
+        // 1. resolve arguments
+        Object[] args = resolveArguments(execution, requestUri);
 
-        StackTraceElement location = new StackTraceElement(
-                target.getName(),                   // the fully declaring class name of class
-                execution.getMethod().getName(),    // method name
-                target.getSimpleName() + ".java",   // the file name of class
-                0                                   // line number(No got it)
-        );
+        // 2. execute action
+        Object result = execution.execute(args);
 
-        targetLoger.logMessage(
-                Level.INFO,
-                null,
-                target.getName(),
-                location,
-                message,
-                null
-        );
+        // 3. Post-interceptors
+        interceptors.forEach(i -> i.doAfter(request, response));
+
+        // 4. resolver result
+        handleResult(result, request, response);
+
+        // 5. renderCompletion
+        interceptors.forEach(i -> i.renderCompletion(request, response));
+    }
+
+    @Override
+    public void execute(String requestUri,
+                        Execution execution,
+                        AsyncRequestContext asyncContext,
+                        List<HandlerInterceptor> interceptors) throws ServletException, IOException {
+        // 1. resolve arguments
+        Object[] args = resolveArguments(execution, requestUri);
+
+        // 2. execute action
+        if (asyncContext.isCancelled())
+            return;
+
+        Object result = execution.execute(args);
+
+        // 3. Post-interceptors
+        if (asyncContext.isCancelled())
+            return;
+
+        interceptors.forEach(i -> i.doAfter(asyncContext.getRequest(), asyncContext.getResponse()));
+
+        // 4. resolver result
+        if (asyncContext.isCancelled())
+            return;
+
+        handleResult(result, asyncContext.getRequest(), asyncContext.getResponse());
+
+        // 5. renderCompletion
+        interceptors.forEach(i -> i.renderCompletion(asyncContext.getRequest(), asyncContext.getResponse()));
+    }
+
+    // 路由解析，找不到时直接写 404/405 响应
+    protected Execution resolveExecution(String requestUri,
+                                         HttpServletRequest request,
+                                         HttpServletResponse response) throws IOException, ServletException {
+
+        // set default character encoding to "utf-8" if encoding is not set:
+        if (StringUtils.isEmpty(request.getCharacterEncoding()))
+            request.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+        // static resource
+        if (this.resourceRequest.checkStaticResource(request, response))
+            return null;
+
+        // set response no-cache
+        this.processNoCache(response);
+
+        /*
+         * Find action
+         * 1.exact match
+         */
+        Execution execution = null;
+        if (this.actions.containsKey(requestUri)) {
+            execution = this.actions.get(requestUri);
+        } else {
+            // 2. regex match
+            for (String regex : this.uriRegexList) {
+                Matcher matcher = MatcherUtils.matcher(requestUri, regex, MatcherUtils.DEFAULT_EQ);
+                if (!matcher.matches())// not-match
+                    continue;
+
+                execution = this.actions.get(regex);
+                break;
+            }
+        }
+
+        if (Objects.isNull(execution)) {
+            log.warn("(404) Not found: [{}]", requestUri);
+            this.renderError(
+                    HttpServletResponse.SC_NOT_FOUND,
+                    "The requested URL (404) Not found",
+                    Render.NOT_FOUND_HTML, request, response);
+            return null;
+        }
+
+        // validation request method
+        if (!execution.isSupportMethod(request.getMethod())) {
+            log.warn("[{}] - HTTP method {} not supported, specified as: {}",
+                    requestUri, request.getMethod(), execution.methodString());
+
+            this.renderError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                    String.format("This URL does not support '%s'", request.getMethod()),
+                    Render.METHOD_NOT_ALLOWED_HTML, request, response);
+            return null;
+        }
+        return execution;
+    }
+
+    /**
+     * Run the pre-interceptor
+     *
+     * @return true: has been intercepted else false
+     */
+    @Override
+    public boolean doBeforeInterceptors(String requestUri,
+                                        HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        List<HandlerInterceptor> out) {
+        if (Objects.isNull(interceptorsCatcher))
+            return false;
+
+        for (Catcher catcher : interceptorsCatcher) {
+            if (!catcher.matchOne(requestUri, MatcherUtils.DEFAULT_EQ)) // not-match
+                continue;
+
+            HandlerInterceptor interceptor = catcher.getHandler();
+
+            // Interceptor doBefore
+            // return false, Return to the request page
+            if (!interceptor.doBefore(request, response)) {
+                log.debug("Intercept: {} by {}", requestUri, interceptor.getClass().getSimpleName());
+                out.clear();
+                return true;
+            }
+
+            out.add(interceptor);
+        }
+
+        return false;
     }
 
     /**
@@ -380,6 +413,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
 
     @Override
     public void clear(HttpServletRequest request) {
+        HttpUtils.clearRequestAttribute(request);
         if (Objects.isNull(this.multipartResolver))
             return;
 
@@ -392,8 +426,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             this.multipartResolver.cleanupMultipart((MultipartHttpServletRequest) multipartRequest);
             request.removeAttribute(CHECK_MULTIPART);
 
-            if (log.isDebugEnabled())
-                log.debug("Cleanup Multipart....");
+            log.debug("Cleanup Multipart: [{}]", HttpUtils.getURI(request));
         }
     }
 
@@ -432,43 +465,48 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         response.setDateHeader(HttpHeaders.EXPIRES, 0L);
     }
 
-    protected Object[] checkRequestArguments(Execution execution, Matcher matcher, String requestURI) {
-        Object[] args = null;
+    protected Object[] resolveArguments(Execution execution, String requestUri) {
         int number = execution.getArgsNumber();
-        if (number > 0) {
-            args = new Object[number];
+        if (number == 0)
+            return null;
 
-            // Fetch request parameters in the URI
-            Class<?> type;
-            for (int i = 0; i < number; ++i) {
+        Object[] args = new Object[number];
+        Matcher matcher = null;
+
+        for (String regex : execution.getRegex()) {
+            matcher = MatcherUtils.matcher(requestUri, regex, MatcherUtils.DEFAULT_EQ);
+            if (matcher.matches())
+                break;
+        }
+
+        // Fetch request parameters in the URI
+        Class<?> type;
+        for (int i = 0; i < number; ++i) {
+            try {
+                type = execution.getParameterTypes()[i];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw new IllegalArgumentException("[" + requestUri + "] - Method is missing URL parameter. " + e.getMessage());
+            }
+
+            if (String.class.getName().equals(type.getName()))
+                args[i] = matcher.group(i + 1);// segmentation fetch
+            else {
                 try {
-                    type = execution.getParameterTypes()[i];
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    throw new IllegalArgumentException("[" + requestURI + "] - Method is missing URL parameter. " + e.getMessage());
-                }
-
-                if (String.class.getName().equals(type.getName()))
-                    args[i] = matcher.group(i + 1);// segmentation fetch
-                else {
-                    try {
-                        args[i] = ConverterFactory.getInstance().convert(type, matcher.group(i + 1));
-                    } catch (NumberFormatException | NullPointerException e) {
-                        throw new IllegalArgumentException("[" + requestURI + "] - URL parameters type was incorrect. " + e.getMessage());
-                    }
+                    args[i] = ConverterFactory.getInstance().convert(type, matcher.group(i + 1));
+                } catch (NumberFormatException | NullPointerException e) {
+                    throw new IllegalArgumentException("[" + requestUri + "] - URL parameters type was incorrect. " + e.getMessage());
                 }
             }
         }
         return args;
     }
 
-    protected Object[] checkRequestArguments(Execution execution) {
-        int number = execution.getArgsNumber();
-        if (number > 0)
-            return new Object[number];
-        return null;
-    }
-
-    protected void renderError(int statusCode, String jsonMessage, String htmlMessage, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    @Override
+    public void renderError(int statusCode,
+                            String jsonMessage,
+                            String htmlMessage,
+                            HttpServletRequest request,
+                            HttpServletResponse response) throws ServletException, IOException {
         response.setStatus(statusCode);
         String contentType = request.getContentType();
         // json body
@@ -479,12 +517,43 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             ViewResolver.text(htmlMessage).render(request, response);
     }
 
-    protected void customizeResponse(HttpServletRequest request, HttpServletResponse response) {
+    @Override
+    public void customizeResponse(HttpServletRequest request, HttpServletResponse response) {
         response.addHeader("X-Powered-By", WebServerConfig.POWER_BY_NAME);
         response.addHeader(
                 HandlerResult.REQUEST_ID,
-                ThreadContextPropagator.capture().getOrDefault(
-                        HandlerResult.REQUEST_IN_LOG, RandomCodeUtil.fastRandomString(6))
+                StringUtils.defaultIfEmpty(
+                        MDC.get(HandlerResult.REQUEST_IN_LOG),
+                        RandomCodeUtil.fastRandomString(6))
         );
     }
+
+    /**
+     * Use {@link StackTraceElement} to mask the log source as an Action class,
+     * so logs are directly pinpointed to the business method
+     */
+    protected void targetLog(Execution execution, ParameterizedMessage message) {
+        Class<?> target = execution.getActionInstance().getClass();
+        ExtendedLogger targetLoger = TARGET_LOG_CACHEMAP.computeIfAbsent(
+                target.getName(),
+                className -> (ExtendedLogger) LogManager.getLogger(className)
+        );
+
+        StackTraceElement location = new StackTraceElement(
+                target.getName(),                   // the fully declaring class name of class
+                execution.getMethod().getName(),    // method name
+                target.getSimpleName() + ".java",   // the file name of class
+                0                                   // line number(No got it)
+        );
+
+        targetLoger.logMessage(
+                Level.INFO,
+                null,
+                target.getName(),
+                location,
+                message,
+                null
+        );
+    }
+
 }

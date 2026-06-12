@@ -53,13 +53,10 @@ public class VelocityTemplate implements Template {
         response.setContentType(sb.toString());
         response.setCharacterEncoding(charset);
 
-//        HttpSession session = request.getSession();
         ServletContext servletContext = request.getServletContext();
         LocalDate localDate = DateUtils.dateNow();
 
-//        model.put("sessionScope", session);
         model.put("contextPath", servletContext.getContextPath());
-//        model.put("applicationScope", servletContext);
         model.put("currentYear", localDate.getYear());
         model.put("currentMonth", localDate.getMonthValue());
         model.put("currentDay", localDate.getDayOfMonth());

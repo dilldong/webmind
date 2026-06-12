@@ -1,6 +1,5 @@
 package org.mind.framework.service.threads;
 
-import org.mind.framework.service.queue.CallerRunsExecutionHandler;
 import org.mind.framework.web.server.GracefulShutdown;
 
 import java.util.concurrent.Callable;

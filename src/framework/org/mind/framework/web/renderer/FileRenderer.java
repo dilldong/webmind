@@ -47,6 +47,9 @@ public class FileRenderer extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (response.isCommitted())
+            return;
+
         if (Objects.isNull(file) || !file.exists()) {
             HandlerResult.setRequestAttribute(request);
             response.sendError(HttpServletResponse.SC_NOT_FOUND);

@@ -196,7 +196,7 @@ public class TomcatServer extends Tomcat {
         nioProtocol.setAcceptCount(serverConfig.getAcceptCount());
         nioProtocol.setMaxConnections(serverConfig.getMaxConnections());
         nioProtocol.setMinSpareThreads(serverConfig.getMinSpareThreads());
-        nioProtocol.setKeepAliveTimeout(15_000);//KeepAlive 连接空闲超时时间
+        nioProtocol.setKeepAliveTimeout(serverConfig.getKeepAliveTimeout());
         return connector;
     }
 
@@ -350,7 +350,7 @@ public class TomcatServer extends Tomcat {
         ctx.addLifecycleListener(new Tomcat.FixContextListener());
         ctx.addLifecycleListener(getContextListener(host));
 
-        Wrapper wrapper = Tomcat.addServlet(ctx, ServerContext.SERVLET_NAME, new DispatcherServlet());
+        Wrapper wrapper = Tomcat.addServlet(ctx, ServerContext.SERVLET_NAME, new DispatcherServlet(serverConfig.isAsyncSupported()));
 
         wrapper.addInitParameter("container", serverConfig.getContainerAware());
         if (StringUtils.isNotEmpty(serverConfig.getTemplateEngine()))
@@ -359,7 +359,7 @@ public class TomcatServer extends Tomcat {
         wrapper.addInitParameter("resource", serverConfig.getStaticSuffix());
         wrapper.addInitParameter("expires", serverConfig.getResourceExpires());
         wrapper.setLoadOnStartup(1);
-        //wrapper.setAsyncSupported(true);
+        wrapper.setAsyncSupported(serverConfig.isAsyncSupported());
 
         ctx.setSessionTimeout(serverConfig.getSessionTimeout());
         ctx.addServletMappingDecoded(IOUtils.DIR_SEPARATOR, ServerContext.SERVLET_NAME);
@@ -380,7 +380,7 @@ public class TomcatServer extends Tomcat {
                 // ac.registerShutdownHook();
 
                 // Listen when spring starts by ContextLoaderListener
-                ctx.addApplicationLifecycleListener(new WebContextLoadListener(ac, ctx));
+                ctx.addApplicationLifecycleListener(new WebContextLoadListener(ac, ctx, serverConfig));
 
                 // setting spring context
                 ContextSupport.setApplicationContext(ac);
@@ -404,7 +404,7 @@ public class TomcatServer extends Tomcat {
         // xmas.registerShutdownHook();
 
         // Listen when spring starts by ContextLoaderListener
-        ctx.addApplicationLifecycleListener(new WebContextLoadListener(xmas, ctx));
+        ctx.addApplicationLifecycleListener(new WebContextLoadListener(xmas, ctx, serverConfig));
 
         // setting spring context
         ContextSupport.setApplicationContext(xmas);

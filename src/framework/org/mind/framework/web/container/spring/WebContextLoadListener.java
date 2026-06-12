@@ -5,6 +5,7 @@ import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.mind.framework.exception.WebServerException;
 import org.mind.framework.web.dispatcher.support.EventRegistration;
 import org.mind.framework.web.dispatcher.support.FilterRegistrationSupport;
+import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -25,10 +26,13 @@ import javax.servlet.ServletException;
  */
 public class WebContextLoadListener extends ContextLoaderListener {
 
+    private final WebServerConfig serverConfig;
     private final StandardContext standardContext;
-    public WebContextLoadListener(WebApplicationContext wac, StandardContext ctx) {
+
+    public WebContextLoadListener(WebApplicationContext wac, StandardContext ctx, WebServerConfig config) {
         super(wac);
         this.standardContext = ctx;
+        this.serverConfig = config;
     }
 
     @Override
@@ -38,7 +42,7 @@ public class WebContextLoadListener extends ContextLoaderListener {
         // filter registration by Spring.
         try {
             EventRegistration registration = new FilterRegistrationSupport(getCurrentWebApplicationContext());
-            registration.registration(event.getServletContext(), standardContext);
+            registration.registration(event.getServletContext(), standardContext, serverConfig);
         } catch (ServletException e) {
             throw new WebServerException(e.getMessage(), e);
         }

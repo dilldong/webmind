@@ -2,6 +2,7 @@ package org.mind.framework;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.mind.framework.annotation.AsyncAction;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.http.Response;
 import org.mind.framework.util.JsonUtils;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
@@ -130,6 +132,17 @@ public class TestAction {
     public String send() {
         testServiceComponent.sendMessage();
         return "OK";
+    }
+
+    @Mapping(value = "/async/${id}", async = @AsyncAction(value = true, timeoutMs = 3_000L))
+    public String async(Long id) {
+        log.info("id: {}", id);
+        try {
+            TimeUnit.SECONDS.sleep(1L);
+            log.info("Hello, Async request");
+        } catch (InterruptedException e) {}
+
+        return "Async-OK";
     }
 
     @Mapping(value = "/error")

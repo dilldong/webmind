@@ -89,6 +89,9 @@ public class ExecutorFactory {
         // pre-start all core threads
         if (corePoolSize > 0)
             executor.prestartAllCoreThreads();
+
+        // 核心线程保活，避免冷启动
+        executor.allowCoreThreadTimeOut(false);
         return executor;
     }
 
@@ -112,6 +115,9 @@ public class ExecutorFactory {
         // pre-start all core threads
         if (corePoolSize > 0)
             executor.prestartAllCoreThreads();
+
+        // 核心线程保活，避免冷启动
+        executor.allowCoreThreadTimeOut(false);
         return executor;
     }
 
@@ -128,7 +134,6 @@ public class ExecutorFactory {
     }
 
     public static ThreadFactory newThreadFactory(String threadNamePrefix, boolean daemon, int priority) {
-        // Executors.defaultThreadFactory();
         return new TaskThreadFactory(threadNamePrefix, daemon, priority);
     }
 

@@ -31,4 +31,9 @@ public @interface Mapping {
      * Simple one line logging
      */
     boolean simpleLogging() default false;
+
+    /**
+     * Support async action
+     */
+    AsyncAction async() default @AsyncAction;
 }

@@ -32,6 +32,9 @@ public class NullRender extends Render {
 
     @Override
     public void render(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        if (response.isCommitted())
+            return;
+
         switch (type) {
             case REDIRECT:
                 if (uri.startsWith(IOUtils.DIR_SEPARATOR))

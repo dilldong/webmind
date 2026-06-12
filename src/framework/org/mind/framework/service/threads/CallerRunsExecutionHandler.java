@@ -1,4 +1,4 @@
-package org.mind.framework.service.queue;
+package org.mind.framework.service.threads;
 
 import lombok.extern.slf4j.Slf4j;
 
