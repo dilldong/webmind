@@ -2,6 +2,7 @@ package org.mind.framework.cache;
 
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.ContextSupport;
+import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.helper.RedissonHelper;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RType;
@@ -27,7 +28,6 @@ public final class CacheUtils {
         return get(key, cacheable, NO_OP);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T get(String key, Cacheable cacheable, Supplier<?> action) {
         CacheElement element = cacheable.getCache(key);
 
@@ -116,12 +116,11 @@ public final class CacheUtils {
 
                 })
                 .exceptionally(ex -> {
-                    log.error("Clear cache error: {}", ex.getCause().getMessage());
+                    log.error("Clear cache error: {}", ThrowProvider.unwrapCause(ex).getMessage());
                     return Boolean.FALSE;
                 });
     }
 
-    @SuppressWarnings("unchecked")
     private static <T> T inferAndConvertNull(Object value) {
         if (value instanceof String) {
             if (Objects.equals(value, RedissonHelper.NULL_MARKER))
