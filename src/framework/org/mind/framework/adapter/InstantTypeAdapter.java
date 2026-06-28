@@ -37,7 +37,7 @@ public class InstantTypeAdapter extends TypeAdapter<Instant> {
 
         String dateStr = in.nextString();
         try {
-            return Instant.parse(in.nextString());
+            return Instant.parse(dateStr);
         }catch (DateTimeParseException e){
             throw new JsonParseException("Cannot parse Instant: " + dateStr, e);
         }
