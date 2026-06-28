@@ -11,6 +11,7 @@ import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.mind.framework.annotation.Filter;
 import org.mind.framework.web.filter.FilterRegistration;
 import org.mind.framework.web.filter.HandlerFilter;
+import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.ArrayList;
@@ -32,7 +33,9 @@ public class FilterRegistrationSupport implements EventRegistration {
     private final WebApplicationContext applicationContext;
 
     @Override
-    public void registration(ServletContext servletContext, StandardContext standardContext) throws ServletException {
+    public void registration(ServletContext servletContext,
+                             StandardContext standardContext,
+                             WebServerConfig serverConfig) throws ServletException {
         Map<String, HandlerFilter> filterOfType = applicationContext.getBeansOfType(HandlerFilter.class);
         if (filterOfType.isEmpty())
             return;
@@ -65,6 +68,7 @@ public class FilterRegistrationSupport implements EventRegistration {
             FilterDef filterDef = new FilterDef();
             filterDef.setFilterName(filter.getName());
             filterDef.setFilter(filter.getHandler());
+            filterDef.setAsyncSupported(String.valueOf(serverConfig.isAsyncSupported()));
             standardContext.addFilterDef(filterDef);
 
             // add filter mapping

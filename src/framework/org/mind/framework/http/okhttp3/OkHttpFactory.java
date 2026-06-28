@@ -16,7 +16,7 @@ import okio.Okio;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.RequestException;
 import org.mind.framework.http.NoContentResponse;
-import org.mind.framework.service.queue.CallerRunsExecutionHandler;
+import org.mind.framework.service.threads.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;

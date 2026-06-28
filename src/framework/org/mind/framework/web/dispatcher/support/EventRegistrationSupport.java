@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.core.StandardContext;
 import org.apache.commons.lang3.Strings;
+import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -27,7 +28,9 @@ public class EventRegistrationSupport implements EventRegistration {
     private final WebApplicationContext applicationContext;
 
     @Override
-    public void registration(ServletContext servletContext, StandardContext standardContext) throws ServletException {
+    public void registration(ServletContext servletContext,
+                             StandardContext standardContext,
+                             WebServerConfig serverConfig) throws ServletException {
         Map<String, EventListener> beansOfType = applicationContext.getBeansOfType(EventListener.class);
 
         if (beansOfType.isEmpty())

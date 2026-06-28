@@ -4,6 +4,7 @@ import org.mind.framework.annotation.processor.EnableCacheConfiguration;
 import org.mind.framework.cache.CacheEventPublisher;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -29,10 +30,11 @@ public @interface EnableCache {
      * Default force cglib proxy.
      * <br/>1.JDK dynamic proxy: when the proxyTargetClass is false and the proxy target implements the interface.
      * <br/>2.CGLIB dynamic proxy: when the proxy target doesn't implement the interface, whether proxyTargetClass is true or false.
-     * @return
      */
+    @AliasFor(annotation = EnableAspectJAutoProxy.class, attribute = "proxyTargetClass")
     boolean proxyTargetClass() default false;
 
+    @AliasFor(annotation = EnableAspectJAutoProxy.class, attribute = "exposeProxy")
     boolean exposeProxy() default false;
 
     CacheLevel[] levels() default {};

@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>5.0.6.1</version>
+    <version>5.0.9</version>
 
     <licenses>
         <license>
@@ -39,7 +39,7 @@
 
     <properties>
         <spring.version>6.2.17</spring.version>
-        <tomcat.version>10.1.54</tomcat.version>
+        <tomcat.version>10.1.55</tomcat.version>
         <gson.version>2.13.2</gson.version>
     </properties>
 
@@ -72,8 +72,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <release>17</release>
                     <encoding>UTF-8</encoding>
                     <compilerArgs>
                         <arg>-parameters</arg>
@@ -355,12 +354,8 @@
                     <artifactId>reactive-streams</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.jboss.marshalling</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
+                    <groupId>com.esotericsoftware</groupId>
+                    <artifactId>kryo</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
