@@ -18,8 +18,10 @@ import org.mind.framework.exception.RequestException;
 import org.mind.framework.http.NoContentResponse;
 import org.mind.framework.service.threads.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
+import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.mind.framework.web.server.GracefulShutdown;
 import org.mind.framework.web.server.WebServerConfig;
 import org.springframework.http.HttpHeaders;
@@ -34,7 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -56,15 +58,6 @@ public class OkHttpFactory {
 
     // 线程本地变量，用于存储响应内容长度
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
-
-    /**
-     * The list of {@link ConnectionSpec} instances used by the connection.
-     */
-    private static final List<ConnectionSpec> CONNECTION_SPEC_LIST =
-            List.of(
-                    new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build(),
-                    ConnectionSpec.CLEARTEXT
-            );
 
     static {
         log.info("Init OkHttpClient ....");
@@ -96,7 +89,7 @@ public class OkHttpFactory {
         // 构建OkHttpClient
         OkHttpClient.Builder builder =
                 new OkHttpClient.Builder()
-                        .connectionSpecs(CONNECTION_SPEC_LIST)
+                        .connectionSpecs(Collections.singletonList(ConnectionSpec.RESTRICTED_TLS))// 默认MODERN_TLS
                         .dispatcher(dispatcher)
 //                        .followSslRedirects(false)
 //                        .followRedirects(false)
@@ -184,7 +177,7 @@ public class OkHttpFactory {
      * Execute Http request and return a NoContentResponse
      */
     public static NoContentResponse requestNobody(Request request) throws IOException {
-        try (okhttp3.Response response = client().newCall(request).execute()) {
+        try (okhttp3.Response response = client().newCall(buildRequest(request)).execute()) {
             ResponseBody body = response.body();
             return new NoContentResponse(
                     response.headers(),
@@ -218,7 +211,11 @@ public class OkHttpFactory {
     }
 
     public static InputStream requestStream(Request request, Consumer<Headers> processHeaders) throws IOException {
-        try (okhttp3.Response response = client().newCall(request).execute()) {
+        return requestStream(client(), request, processHeaders);
+    }
+
+    public static InputStream requestStream(OkHttpClient client, Request request, Consumer<Headers> processHeaders) throws IOException {
+        try (okhttp3.Response response = client.newCall(buildRequest(request)).execute()) {
             if (Objects.nonNull(processHeaders))
                 processHeaders.accept(response.headers());
 
@@ -251,6 +248,20 @@ public class OkHttpFactory {
      */
     public static <T> T request(Request request, TypeToken<T> typeReference) throws IOException {
         try (InputStream in = requestStream(request)) {
+            if (Objects.isNull(in))
+                return null;
+
+            try (InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+                return JsonUtils.fromJson(reader, typeReference);
+            }
+        }
+    }
+
+    /**
+     * Execute Http request and return a json serialized object
+     */
+    public static <T> T request(OkHttpClient client, Request request, TypeToken<T> typeReference) throws IOException {
+        try (InputStream in = requestStream(client, request, null)) {
             if (Objects.isNull(in))
                 return null;
 
@@ -305,6 +316,18 @@ public class OkHttpFactory {
         }
 
         return responseBody.string();
+    }
+
+    /**
+     * Add request id
+     */
+    private static Request buildRequest(Request request) {
+        return request.newBuilder().addHeader(
+                HandlerResult.REQUEST_ID,
+                ThreadContextPropagator.capture().getOrDefault(
+                        HandlerResult.REQUEST_IN_LOG,
+                        StringUtils.EMPTY)
+        ).build();
     }
 
     /**
