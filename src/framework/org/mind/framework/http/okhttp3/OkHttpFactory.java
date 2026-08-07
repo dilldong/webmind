@@ -2,7 +2,6 @@ package org.mind.framework.http.okhttp3;
 
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.CipherSuite;
 import okhttp3.ConnectionSpec;
 import okhttp3.Dispatcher;
 import okhttp3.Headers;
@@ -19,8 +18,10 @@ import org.mind.framework.exception.RequestException;
 import org.mind.framework.http.NoContentResponse;
 import org.mind.framework.service.threads.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
+import org.mind.framework.service.threads.ThreadContextPropagator;
 import org.mind.framework.util.HttpUtils;
 import org.mind.framework.util.JsonUtils;
+import org.mind.framework.web.dispatcher.handler.HandlerResult;
 import org.mind.framework.web.server.GracefulShutdown;
 import org.mind.framework.web.server.ShutDownSignalStatus;
 import org.mind.framework.web.server.WebServerConfig;
@@ -36,8 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 
 /**
  * @author dp
- * @version 1.0
+ * @version 1.1
  * @date 2021-08-24
  */
 @Slf4j
@@ -59,54 +59,6 @@ public class OkHttpFactory {
 
     // 线程本地变量，用于存储响应内容长度
     private static final ThreadLocal<Integer> CONTENT_LENGTH_LOCAL = new ThreadLocal<>();
-
-    /**
-     * 默认支持的密码套件列表
-     * Copied from {@link ConnectionSpec.APPROVED_CIPHER_SUITES}.
-     */
-    private static final CipherSuite[] DEFAULT_CIPHER_SUITES =
-            new CipherSuite[]{
-                    // 现代安全的密码套件
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-
-                    // 为了兼容性保留的密码套件（不推荐用于生产环境）
-                    // Note that the following cipher suites are all on HTTP/2's bad cipher suites list.
-                    // We'll
-                    // continue to include them until better suites are commonly available. For example,
-                    // none
-                    // of the better cipher suites listed above shipped with Android 4.4 or Java 7.
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-                    CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-                    CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-                    CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-
-                    // Additional CipherSuites
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-                    CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256
-            };
-
-    private static final ConnectionSpec DEFAULT_CIPHER_SUITE_SPEC =
-            new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                    .cipherSuites(DEFAULT_CIPHER_SUITES)
-                    .build();
-
-    /**
-     * The list of {@link ConnectionSpec} instances used by the connection.
-     */
-    private static final List<ConnectionSpec> CONNECTION_SPEC_LIST =
-            Arrays.asList(DEFAULT_CIPHER_SUITE_SPEC, ConnectionSpec.CLEARTEXT);
 
     static {
         log.info("Init OkHttpClient ....");
@@ -138,7 +90,7 @@ public class OkHttpFactory {
         // 构建OkHttpClient
         OkHttpClient.Builder builder =
                 new OkHttpClient.Builder()
-                        .connectionSpecs(CONNECTION_SPEC_LIST)
+                        .connectionSpecs(Collections.singletonList(ConnectionSpec.RESTRICTED_TLS))// 默认MODERN_TLS
                         .dispatcher(dispatcher)
 //                        .followSslRedirects(false)
 //                        .followRedirects(false)
@@ -226,7 +178,7 @@ public class OkHttpFactory {
      * Execute Http request and return a NoContentResponse
      */
     public static NoContentResponse requestNobody(Request request) throws IOException {
-        try (okhttp3.Response response = client().newCall(request).execute()) {
+        try (okhttp3.Response response = client().newCall(buildRequest(request)).execute()) {
             ResponseBody body = response.body();
             return new NoContentResponse(
                     response.headers(),
@@ -260,7 +212,11 @@ public class OkHttpFactory {
     }
 
     public static InputStream requestStream(Request request, Consumer<Headers> processHeaders) throws IOException {
-        try (okhttp3.Response response = client().newCall(request).execute()) {
+        return requestStream(client(), request, processHeaders);
+    }
+
+    public static InputStream requestStream(OkHttpClient client, Request request, Consumer<Headers> processHeaders) throws IOException {
+        try (okhttp3.Response response = client.newCall(buildRequest(request)).execute()) {
             if (Objects.nonNull(processHeaders))
                 processHeaders.accept(response.headers());
 
@@ -293,6 +249,20 @@ public class OkHttpFactory {
      */
     public static <T> T request(Request request, TypeToken<T> typeReference) throws IOException {
         try (InputStream in = requestStream(request)) {
+            if (Objects.isNull(in))
+                return null;
+
+            try (InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+                return JsonUtils.fromJson(reader, typeReference);
+            }
+        }
+    }
+
+    /**
+     * Execute Http request and return a json serialized object
+     */
+    public static <T> T request(OkHttpClient client, Request request, TypeToken<T> typeReference) throws IOException {
+        try (InputStream in = requestStream(client, request, null)) {
             if (Objects.isNull(in))
                 return null;
 
@@ -347,6 +317,18 @@ public class OkHttpFactory {
         }
 
         return responseBody.string();
+    }
+
+    /**
+     * Add request id
+     */
+    private static Request buildRequest(Request request) {
+        return request.newBuilder().addHeader(
+                HandlerResult.REQUEST_ID,
+                ThreadContextPropagator.capture().getOrDefault(
+                        HandlerResult.REQUEST_IN_LOG,
+                        StringUtils.EMPTY)
+        ).build();
     }
 
     /**
