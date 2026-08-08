@@ -37,9 +37,12 @@ public final class CacheUtils {
         }
 
         // L2
-        RType rType = RedissonHelper.getClient()
-                .getKeys()
-                .getType(key);
+        RType rType = null;
+        try {
+            rType = RedissonHelper.getClient()
+                    .getKeys()
+                    .getType(key);
+        } catch (Exception ignored) {}
 
         if (Objects.isNull(rType)) {
             return (T) action.get();
