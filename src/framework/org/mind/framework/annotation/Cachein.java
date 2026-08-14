@@ -43,4 +43,7 @@ public @interface Cachein {
 
     // 是否缓存null（防穿透）
     boolean cacheNull() default false;
+
+    // 无锁回源
+    boolean exclusive() default false;
 }

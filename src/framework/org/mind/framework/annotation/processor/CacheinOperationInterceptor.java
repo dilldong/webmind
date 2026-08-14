@@ -6,11 +6,13 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.CacheinFace;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.CacheEventPublisher;
+import org.mind.framework.cache.CacheUtils;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.helper.RedissonHelper;
@@ -97,7 +99,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                         .anyMatch(v -> CacheLevel.LOCAL == v);
         if (isLocal) {
             ResolveResult result = forLocal(resolverKey, nullTypeValue);
-            if (result.isShouldShortCircuit() || !isEmpty(result.getResult()))
+            if (result.isShouldShortCircuit() || !CacheUtils.isEmpty(result.getResult()))
                 return result.getResult();
         }
 
@@ -108,9 +110,9 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (isRedis) {
             ResolveResult result = forRedis(resolverKey, nullTypeValue);
 
-            if (result.isShouldShortCircuit() || !isEmpty(result.getResult())) {
+            if (result.isShouldShortCircuit() || !CacheUtils.isEmpty(result.getResult())) {
                 if (isLocal)
-                    save2local(resolverKey, result.getResult(), nullTypeValue);
+                    save2local(resolverKey, result.getResult(), nullTypeValue, true);
                 return result.getResult();
             }
         }
@@ -200,12 +202,21 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
 
-    private void save2local(String resolverKey, Object result, TypeMatchResult nullTypeValue) {
-        if (isEmpty(result)) {
+    private void save2local(String resolverKey, Object result, TypeMatchResult nullTypeValue, boolean... remainTimeToLive) {
+        long remainMs = ArrayUtils.isEmpty(remainTimeToLive) || !remainTimeToLive[0] ?
+                timeUnit.toMillis(expire) :
+                RedissonHelper.getInstance().rBucket(resolverKey).remainTimeToLive();
+
+        // -2 表示 key 在读值和查 TTL 之间刚好消失
+        // -1 表示无过期时间
+        if(remainMs < -1)
+            return;
+
+        if (CacheUtils.isEmpty(result)) {
             if (this.cacheNull) {
                 cacheable.addCache(
                         resolverKey,
-                        new CacheElement(nullTypeValue.getNullMarker(), resolverKey, timeUnit.toMillis(expire), cloneType),
+                        new CacheElement(nullTypeValue.getNullMarker(), resolverKey, Math.max(remainMs, 0L), cloneType),
                         true
                 );
             }
@@ -214,15 +225,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
         cacheable.addCache(
                 resolverKey,
-                new CacheElement(result, resolverKey, timeUnit.toMillis(expire), cloneType),
+                new CacheElement(result, resolverKey, Math.max(remainMs, 0L), cloneType),
                 true
         );
     }
 
     private void save2redis(String resolverKey, Object result, TypeMatchResult nullTypeValue) {
-        if (isEmpty(result)) {
+        long expireTime = expire <= 0L? -1L : expire;
+        if (CacheUtils.isEmpty(result)) {
             if (this.cacheNull) {
-                RedissonHelper.getInstance().setWithLock(resolverKey, nullTypeValue.getNullMarker(), expire, timeUnit);
+                RedissonHelper.getInstance().setWithLock(resolverKey, nullTypeValue.getNullMarker(), expireTime, timeUnit);
                 eventPublisher.publish(resolverKey, expire, timeUnit);
             }
             return;
@@ -230,13 +242,13 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
         // 需要验证 result 类型，便于在redis中存储时指定类型
         if (result instanceof List)
-            RedissonHelper.getInstance().setWithLock(resolverKey, (List<?>) result, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, (List<?>) result, expireTime, timeUnit);
         else if (result instanceof Set)
-            RedissonHelper.getInstance().setWithLock(resolverKey, (Set<?>) result, expire, timeUnit);
-        else if (result instanceof Map<?, ?>)
-            RedissonHelper.getInstance().setWithLock(resolverKey, (Map<?, ?>) result, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, (Set<?>) result, expireTime, timeUnit);
+        else if (result instanceof Map)
+            RedissonHelper.getInstance().setWithLock(resolverKey, (Map<?, ?>) result, expireTime, timeUnit);
         else
-            RedissonHelper.getInstance().setWithLock(resolverKey, result, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, result, expireTime, timeUnit);
 
         eventPublisher.publish(resolverKey, expire, timeUnit);
     }
@@ -270,7 +282,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         // Object type array
         return Stream.of((Object[]) obj).map(v -> {
             if (v instanceof CacheinFace)
-                return String.valueOf(((CacheinFace<? extends Serializable>) v).getValue());
+                return String.valueOf(((CacheinFace<?>) v).getValue());
             return String.valueOf(v);
         }).collect(Collectors.joining(delimiter));
     }
@@ -297,8 +309,8 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                     return new ResolveResult(emptyValue, true);  // 提前中断
 
                 isNullValue = Objects.isNull(value);
-            }catch (RuntimeException e){
-                if(!e.getMessage().contains("WRONGTYPE"))
+            } catch (RuntimeException e) {
+                if (!Strings.CS.contains(e.getMessage(), "WRONGTYPE"))
                     throw e;
             }
         }
@@ -308,20 +320,6 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             return new ResolveResult(emptyValue, false);
 
         return new ResolveResult(result, false);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isEmpty(Object value) {
-        if (Objects.isNull(value))
-            return true;
-
-        if (value instanceof Collection)
-            return ((Collection) value).isEmpty();
-
-        if (value instanceof Map)
-            return ((Map) value).isEmpty();
-
-        return false;
     }
 
     @Getter

@@ -92,7 +92,7 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public Cacheable addCache(String key, CacheElement element) {
-        return this.addCache(key, element, false);
+        return this.addCache(key, element, true);
     }
 
     @Override
