@@ -11,7 +11,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RMapCache;
 import org.redisson.api.RType;
 import org.redisson.api.options.KeysScanOptions;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -34,6 +33,7 @@ import java.util.function.Supplier;
 @Slf4j
 public final class CacheUtils {
     private static final Supplier<?> NO_OP = () -> null;
+    public static final long WAIT_TIME = 5L;
     public static final String BACKFILL_CACHE = ":backfill:cache";
 
     public static <T> T getOnly(String key, Cacheable cacheable) {
@@ -57,11 +57,11 @@ public final class CacheUtils {
         return action.get();
     }
 
-    public static <T> T get(String key, Cacheable cacheable, Duration duration, Supplier<T> action) {
-        return get(key, cacheable, duration, false, action);
+    public static <T> T getAndSet(String key, Cacheable cacheable, Duration duration, Supplier<T> action) {
+        return getAndSet(key, cacheable, duration, false, action);
     }
 
-    public static <T> T get(String key, Cacheable cacheable, Duration duration, boolean cacheNull, Supplier<T> loader) {
+    public static <T> T getAndSet(String key, Cacheable cacheable, Duration duration, boolean cacheNull, Supplier<T> loader) {
         // L1
         if (cacheable != null) {
             CacheElement element = cacheable.getCache(key);
@@ -90,7 +90,9 @@ public final class CacheUtils {
 
         return loadWithGuard(
                 key,
-                5L,
+                WAIT_TIME,
+                cacheable,
+                cacheNull,
                 loader,
                 () -> readFromRedis(key),
                 (k, value) -> backfill(k, cacheable, value, Math.max(duration.toMillis(), 0L), cacheNull),
@@ -100,59 +102,26 @@ public final class CacheUtils {
                     return result;
                 }
         );
-
-        // double-check + 锁回源，防击穿
-        RLock lock = helper.getLock(key + BACKFILL_CACHE);
-        try {
-            if (lock.tryLock(5L, TimeUnit.SECONDS)) {
-                try {
-                    // double-check
-                    Object again = readFromRedis(key);
-                    if (Objects.nonNull(again)) {
-                        backfillL1(key, cacheable, again, cacheNull);
-                        return inferAndConvertNull(again);
-                    }
-
-                    // loader
-                    T result = loader.get();
-                    backfill(key, cacheable, result, Math.max(duration.toMillis(), 0L), cacheNull);
-                    return result;
-                } finally {
-                    if (lock.isHeldByCurrentThread())
-                        lock.unlock();
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while loading cache: " + key, e);
-        }
-
-        // tryLock 返回 false 或被中断后
-        Object again = readFromRedis(key);
-        if (Objects.nonNull(again)) {
-            backfillL1(key, cacheable, again, cacheNull);
-            return inferAndConvertNull(again);
-        }
-
-        // degrade to L1-only
-        T result = loader.get();
-        backfillL1(key, cacheable, result, Math.max(duration.toMillis(), 0L), cacheNull);
-        return result;
     }
 
     public static <T> T loadWithGuard(String key,
                                       long waitTimeSecs,
+                                      Cacheable cacheable,
+                                      boolean cacheNull,
                                       Supplier<T> loader,
-                                      Supplier<Object> l2Reader,           // double-check 读取器
-                                      BiConsumer<String, Object> writer,   // 双写 + publish
+                                      Supplier<Object> l2Reader,
+                                      BiConsumer<String, Object> writer,
                                       Supplier<T> degradeLoader) {
+
         RLock lock = RedissonHelper.getInstance().getLock(key + BACKFILL_CACHE);
         try {
             if (lock.tryLock(waitTimeSecs, TimeUnit.SECONDS)) {
                 try {
                     Object again = l2Reader.get();
-                    if (Objects.nonNull(again))
-                        return convert(again);
+                    if (Objects.nonNull(again)) {
+                        backfillL1(key, cacheable, again, cacheNull);
+                        return inferAndConvertNull(again);
+                    }
 
                     T result = loader.get();
                     writer.accept(key, result);
@@ -167,11 +136,17 @@ public final class CacheUtils {
             throw new IllegalStateException("Interrupted while loading cache: " + key, e);
         }
 
-        // 超时降级：pre-read → 本地回源
+        // 降级：pre-read → 本地回源
         Object again = l2Reader.get();
-        if (Objects.nonNull(again))
-            return convert(again);
+        if (Objects.nonNull(again)) {
+            backfillL1(key, cacheable, again, cacheNull);
+            return inferAndConvertNull(again);
+        }
 
+        log.warn("Cache load lock timeout({} s), degrade to local load: {}",
+                waitTimeSecs, key);
+
+        // degrade to L1-only
         return degradeLoader.get();
     }
 
@@ -211,7 +186,7 @@ public final class CacheUtils {
                 .forEach(listKeys::add);
 
         if (listKeys.isEmpty()) {
-            RMapCache<String, String> rMapCache = getEventSyncCache();
+            RMapCache<String, String> rMapCache = getCacheEventPublisher().getCacheEventListener();
             // 直接筛选 keyEventSync（RMapCache）同步器中的 key
             // 防止 redis 中手动清除，但没有清除本地缓存
             listKeys.addAll(rMapCache.keySet(keyPattern));
@@ -234,7 +209,7 @@ public final class CacheUtils {
                     // 2. 从 keyEventSync（RMapCache）同步器中移除对应记录
                     // 即使在第 1 步中异常，这里也干脆的在同步器中移除，主要原因是本地缓存无手动清除功能，
                     // 但redis可以在 cli 或 UI 界面中手动清除，为此提供了便利性。
-                    long localCount = getEventSyncCache().fastRemove(keyArray);
+                    long localCount = getCacheEventPublisher().getCacheEventListener().fastRemove(keyArray);
                     log.debug("Remove from redis: {}, local: {}", count, localCount);
                 });
     }
@@ -246,7 +221,7 @@ public final class CacheUtils {
                         log.error("Clear cache error: {}", ex.getMessage());
 
                     // 从 keyEventSync（RMapCache）同步器中移除对应记录
-                    long count = getEventSyncCache().fastRemove(key);
+                    long count = getCacheEventPublisher().getCacheEventListener().fastRemove(key);
                     log.debug("Remove count: {}", count);
 
                 })
@@ -270,10 +245,8 @@ public final class CacheUtils {
         return (T) value;
     }
 
-    private static RMapCache<String, String> getEventSyncCache() {
-        return ContextSupport
-                .getBean(CacheEventPublisher.BEAN_NAME, CacheEventPublisher.class)
-                .getCacheEventListener();
+    private static CacheEventPublisher getCacheEventPublisher() {
+        return ContextSupport.getBean(CacheEventPublisher.BEAN_NAME, CacheEventPublisher.class);
     }
 
     private static void backfillL1(String key, Cacheable cacheable, Object value, boolean cacheNull) {
@@ -304,42 +277,35 @@ public final class CacheUtils {
     }
 
     private static void backfill(String key, Cacheable cacheable, Object value, long expireMs, boolean cacheNull) {
+        // L2
+        if (cacheNull || !isEmpty(value)) {
+            Object wrapValue = cacheNull ? wrapEmpty(value) : value;
+            long redisExpireMs = expireMs == 0L ? -1L : expireMs;
+
+            if (wrapValue instanceof List)
+                RedissonHelper.getInstance().set(key, (List<?>) wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
+            else if (wrapValue instanceof Set)
+                RedissonHelper.getInstance().set(key, (Set<?>) wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
+            else if (wrapValue instanceof Map)
+                RedissonHelper.getInstance().set(key, (Map<?, ?>) wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
+            else
+                RedissonHelper.getInstance().set(key, wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
+
+            // publish cache event
+            getCacheEventPublisher().publish(key, expireMs, TimeUnit.MILLISECONDS);
+        }
+
         // L1
         backfillL1(key, cacheable, value, expireMs, cacheNull);
-
-        // L2
-        if (!cacheNull && isEmpty(value))
-            return;
-
-        Object wrapValue = cacheNull ? wrapEmpty(value) : value;
-        long redisExpireMs = expireMs == 0L ? -1L : expireMs;
-
-        if (wrapValue instanceof List)
-            RedissonHelper.getInstance().set(key, (List<?>) wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
-        else if (wrapValue instanceof Set)
-            RedissonHelper.getInstance().set(key, (Set<?>) wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
-        else if (wrapValue instanceof Map<?, ?>)
-            RedissonHelper.getInstance().set(key, (Map<?, ?>) wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
-        else
-            RedissonHelper.getInstance().set(key, wrapValue, redisExpireMs, TimeUnit.MILLISECONDS);
-
-        // publish cache event
-        try {
-            CacheEventPublisher publisher = ContextSupport.getBean(CacheEventPublisher.BEAN_NAME, CacheEventPublisher.class);
-            // Use expireMs here
-            publisher.publish(key, expireMs, TimeUnit.MILLISECONDS);
-        } catch (NoSuchBeanDefinitionException ignored) {
-        }
     }
 
-    private static Object readFromRedis(String key) {
+    public static Object readFromRedis(String key) {
         RType rType = null;
         try {
             rType = RedissonHelper.getClient()
                     .getKeys()
                     .getType(key);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         if (Objects.isNull(rType))
             return null;

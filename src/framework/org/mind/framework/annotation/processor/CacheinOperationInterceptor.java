@@ -2,11 +2,12 @@ package org.mind.framework.annotation.processor;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
+import org.mind.framework.annotation.BeaconGuard;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.CacheinFace;
@@ -19,6 +20,7 @@ import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
+import org.redisson.api.RLock;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
@@ -46,6 +48,7 @@ import java.util.stream.Stream;
  * @version 1.0
  * @date 2022/9/6
  */
+@Slf4j(topic = "Cachein")
 public class CacheinOperationInterceptor implements MethodInterceptor {
     private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
     private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
@@ -59,6 +62,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private final CacheLevel[] cacheLevels;
     private final CacheEventPublisher eventPublisher;
     private final String delimiter;
+    private final BeaconGuard beaconGuard;
 
     static {
         NULL_TYPE_MAP.put(List.class, RedissonHelper.EMPTY_LIST_MARKER);
@@ -78,8 +82,18 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         this.timeUnit = cachein.unit();
         this.cacheLevels = cacheLevels;
         this.delimiter = cachein.delimiter();
+        this.beaconGuard = cachein.beaconGuard();
         this.staticKey = staticKey;
         this.eventPublisher = eventPublisher;
+
+        if(this.beaconGuard.exclusive()){
+            boolean isRedis =
+                    Arrays.stream(cacheLevels)
+                            .anyMatch(v -> CacheLevel.REDIS == v);
+
+            if(!isRedis)
+                throw new IllegalArgumentException("When exclusive=true, the levels must include REDIS.");
+        }
     }
 
     @Override
@@ -118,22 +132,78 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         }
 
         // for implementation
+        if(beaconGuard.exclusive() && isRedis)
+            return loadWithGuard(resolverKey, invocation, nullTypeValue, isLocal);
+
+        return loader(resolverKey, invocation, nullTypeValue, isRedis, isLocal);
+    }
+
+    // Local source
+    private Object loader(String key,
+                          MethodInvocation invocation,
+                          TypeMatchResult nullTypeValue,
+                          boolean isRedis,
+                          boolean isLocal) throws Exception {
         Object result = this.callback(invocation);
+        if (isRedis)
+            save2redis(key, result, nullTypeValue);
 
         if (isLocal)
-            save2local(resolverKey, result, nullTypeValue);
+            save2local(key, result, nullTypeValue);
 
-        if (isRedis)
-            save2redis(resolverKey, result, nullTypeValue);
+        return result;
+    }
 
+    private Object loadWithGuard(String key,
+                                 MethodInvocation invocation,
+                                 TypeMatchResult nullTypeValue,
+                                 boolean isLocal) throws Exception {
+
+        // The same CacheUtils.loadWithGuard()
+        RLock lock = RedissonHelper.getInstance().getLock(key + CacheUtils.BACKFILL_CACHE);
+        try {
+            if (lock.tryLock(beaconGuard.waitTime(), beaconGuard.timeUnit())) {
+                try {
+                    ResolveResult again = forRedis(key, nullTypeValue);
+                    if (again.isShouldShortCircuit() || !CacheUtils.isEmpty(again.getResult())) {
+                        if(isLocal)
+                            save2local(key, again.getResult(), nullTypeValue, true);
+                        return again.getResult();
+                    }
+
+                    return loader(key, invocation, nullTypeValue, true, isLocal);
+                } finally {
+                    if (lock.isHeldByCurrentThread())
+                        lock.unlock();
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while loading cache: " + key, e);
+        }
+
+        // 降级：pre-read → 本地回源
+        ResolveResult again = forRedis(key, nullTypeValue);
+        if (again.isShouldShortCircuit() || !CacheUtils.isEmpty(again.getResult())) {
+            if(isLocal)
+                save2local(key, again.getResult(), nullTypeValue, true);
+            return again.getResult();
+        }
+
+        log.warn("Cache load lock timeout({} {}), degrade to local load: {}",
+                beaconGuard.waitTime(), beaconGuard.timeUnit(), key);
+
+        // degrade to L1-only (与 CacheUtils 对齐)
+        Object result = this.callback(invocation);
+        if(isLocal)
+            save2local(key, result, nullTypeValue);
         return result;
     }
 
     private ResolveResult forRedis(String resolverKey, TypeMatchResult nullTypeValue) {
         return resolveCacheValue(
                 nullTypeValue.getNullMarker(),
-                () -> RedissonHelper.getInstance().getWithLock(resolverKey),// 用于验证: NULL marker
-                () -> nullTypeValue.loadReids(resolverKey),                 // 加载结果
+                () -> nullTypeValue.loadReids(resolverKey),// Loader
                 nullTypeValue.getEmptyValue()
         );
     }
@@ -146,8 +216,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         Object result = element.getValue(cloneType);
         return resolveCacheValue(
                 nullTypeValue.getNullMarker(),
-                () -> result,// 用于验证: NULL marker
-                () -> result,// 加载结果
+                () -> result,// Loader
                 nullTypeValue.getEmptyValue()
         );
     }
@@ -295,31 +364,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         return TypeMatchResult.of(RedissonHelper.NULL_MARKER);
     }
 
-    private <T> ResolveResult resolveCacheValue(
+    private ResolveResult resolveCacheValue(
             String nullMarker,
-            Supplier<Object> rawGetter,
-            Supplier<T> dataGetter,
-            T emptyValue) {
+            Supplier<Object> dataLoader,
+            Object emptyValue) {
 
-        boolean isNullValue = false;
-        if (this.cacheNull) {
-            try {
-                Object value = rawGetter.get();
-                if (Objects.equals(nullMarker, value))
-                    return new ResolveResult(emptyValue, true);  // 提前中断
-
-                isNullValue = Objects.isNull(value);
-            } catch (RuntimeException e) {
-                if (!Strings.CS.contains(e.getMessage(), "WRONGTYPE"))
-                    throw e;
-            }
-        }
-
-        T result = isNullValue ? emptyValue : dataGetter.get();
+        Object result = dataLoader.get();
         if (Objects.equals(nullMarker, result))
-            return new ResolveResult(emptyValue, false);
+            return new ResolveResult(emptyValue, cacheNull);
 
-        return new ResolveResult(result, false);
+        return new ResolveResult(result == null? emptyValue : result, false);
     }
 
     @Getter
@@ -328,15 +382,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         private final String nullMarker;
 
         public Object loadReids(String name) {
-            RedissonHelper helper = RedissonHelper.getInstance();
-            if (isListType())
-                return helper.getListWithLock(name);
-            else if (isMapType())
-                return helper.getMapWithLock(name);
-            else if (isSetType())
-                return helper.getSetWithLock(name);
-            else
-                return helper.getWithLock(name);
+            return CacheUtils.readFromRedis(name);
         }
 
         public <T> T getEmptyValue() {

@@ -35,6 +35,7 @@ public @interface Cachein {
     // 是否进行对象拷贝（防止修改本地缓存）
     Cloneable.CloneType strategy() default Cloneable.CloneType.NONE;
 
+    // default: unlimited
     long expire() default 0L;
 
     TimeUnit unit() default TimeUnit.MILLISECONDS;
@@ -44,6 +45,10 @@ public @interface Cachein {
     // 是否缓存null（防穿透）
     boolean cacheNull() default false;
 
-    // 无锁回源
-    boolean exclusive() default false;
+    /**
+     * 默认无锁回源
+     * 当 exclusive=true 时，要求 levels 包含 REDIS
+     * 其中 beaconGuard.waitTime 应大于目标方法的 P99 耗时
+     */
+    BeaconGuard beaconGuard() default @BeaconGuard();
 }
