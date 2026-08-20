@@ -95,7 +95,7 @@ public class CaffeineCache extends AbstractCache implements Cacheable {
 
     @Override
     public Cacheable addCache(String key, CacheElement element) {
-        return addCache(key, element, false);
+        return addCache(key, element, true);
     }
 
     @Override

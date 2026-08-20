@@ -160,7 +160,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> setAsync(String name, List<V> list) {
-        return this.setAsync(name, list, -1, TimeUnit.MILLISECONDS);
+        return this.setAsync(name, list, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> setAsync(String name, List<V> list, long expire, TimeUnit unit) {
@@ -189,7 +189,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, List<V> list) {
-        return this.set(name, list, -1, TimeUnit.MILLISECONDS);
+        return this.set(name, list, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit) {
@@ -197,7 +197,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, List<V> list, RLock lock) {
-        return this.set(name, list, -1, TimeUnit.MILLISECONDS, lock);
+        return this.set(name, list, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean set(String name, List<V> list, long expire, TimeUnit unit, RLock lock) {
@@ -211,7 +211,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean setWithLock(String name, List<V> list) {
-        return this.setWithLock(name, list, -1, TimeUnit.MILLISECONDS);
+        return this.setWithLock(name, list, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean setWithLock(String name, List<V> list, long expire, TimeUnit unit) {
@@ -219,7 +219,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> addByListAsync(String name, V v) {
-        return this.addByListAsync(name, v, -1, TimeUnit.MILLISECONDS);
+        return this.addByListAsync(name, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> addByListAsync(String name, V v, long expire, TimeUnit unit) {
@@ -231,7 +231,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addByList(String name, V v) {
-        return this.addByList(name, v, -1, TimeUnit.MILLISECONDS);
+        return this.addByList(name, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addByList(String name, V v, long expire, TimeUnit unit) {
@@ -239,7 +239,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addByList(String name, V v, RLock lock) {
-        return this.addByList(name, v, -1, TimeUnit.MILLISECONDS, lock);
+        return this.addByList(name, v, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean addByList(String name, V v, long expire, TimeUnit unit, RLock lock) {
@@ -253,7 +253,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addByListWithLock(String name, V v) {
-        return this.addByListWithLock(name, v, -1, TimeUnit.MILLISECONDS);
+        return this.addByListWithLock(name, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addByListWithLock(String name, V v, long expire, TimeUnit unit) {
@@ -368,7 +368,7 @@ public class RedissonHelper {
     }
 
     public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map) {
-        return this.setAsync(name, map, -1, TimeUnit.MILLISECONDS);
+        return this.setAsync(name, map, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> RFuture<Boolean> setAsync(String name, Map<K, V> map, long expire, TimeUnit unit) {
@@ -389,7 +389,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean set(String name, Map<K, V> map) {
-        return this.set(name, map, -1, TimeUnit.MILLISECONDS);
+        return this.set(name, map, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit) {
@@ -397,7 +397,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, RLock lock) {
-        return this.set(name, map, -1, TimeUnit.MILLISECONDS, lock);
+        return this.set(name, map, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <K, V> boolean set(String name, Map<K, V> map, long expire, TimeUnit unit, RLock lock) {
@@ -411,7 +411,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean setWithLock(String name, Map<K, V> map) {
-        return this.setWithLock(name, map, -1, TimeUnit.MILLISECONDS);
+        return this.setWithLock(name, map, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean setWithLock(String name, Map<K, V> map, long expire, TimeUnit unit) {
@@ -419,7 +419,7 @@ public class RedissonHelper {
     }
 
     public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v) {
-        return this.putByMapAsync(name, k, v, -1, TimeUnit.MILLISECONDS);
+        return this.putByMapAsync(name, k, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> RFuture<Boolean> putByMapAsync(String name, K k, V v, long expire, TimeUnit unit) {
@@ -447,7 +447,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean putByMap(String name, K k, V v) {
-        return this.putByMap(name, k, v, -1, TimeUnit.MILLISECONDS);
+        return this.putByMap(name, k, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit) {
@@ -455,7 +455,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, RLock lock) {
-        return this.putByMap(name, k, v, -1, TimeUnit.MILLISECONDS, lock);
+        return this.putByMap(name, k, v, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <K, V> boolean putByMap(String name, K k, V v, long expire, TimeUnit unit, RLock lock) {
@@ -469,7 +469,7 @@ public class RedissonHelper {
     }
 
     public <K, V> boolean putByMapWithLock(String name, K k, V v) {
-        return this.putByMapWithLock(name, k, v, -1, TimeUnit.MILLISECONDS);
+        return this.putByMapWithLock(name, k, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <K, V> boolean putByMapWithLock(String name, K k, V v, long expire, TimeUnit unit) {
@@ -567,7 +567,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> setAsync(String name, Set<V> set) {
-        return this.setAsync(name, set, -1, TimeUnit.MILLISECONDS);
+        return this.setAsync(name, set, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> setAsync(String name, Set<V> set, long expire, TimeUnit unit) {
@@ -592,7 +592,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, Set<V> set) {
-        return set(name, set, -1, TimeUnit.MILLISECONDS);
+        return set(name, set, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit) {
@@ -600,7 +600,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean set(String name, Set<V> set, RLock lock) {
-        return set(name, set, -1, TimeUnit.MILLISECONDS, lock);
+        return set(name, set, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean set(String name, Set<V> set, long expire, TimeUnit unit, RLock lock) {
@@ -614,7 +614,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean setWithLock(String name, Set<V> set) {
-        return setWithLock(name, set, -1, TimeUnit.MILLISECONDS);
+        return setWithLock(name, set, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean setWithLock(String name, Set<V> set, long expire, TimeUnit unit) {
@@ -622,7 +622,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Boolean> addBySetAsync(String name, V v) {
-        return addBySetAsync(name, v, -1, TimeUnit.MILLISECONDS);
+        return addBySetAsync(name, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Boolean> addBySetAsync(String name, V v, long expire, TimeUnit unit) {
@@ -654,7 +654,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addBySet(String name, V v) {
-        return addBySet(name, v, -1, TimeUnit.MILLISECONDS);
+        return addBySet(name, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit) {
@@ -662,7 +662,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addBySet(String name, V v, RLock lock) {
-        return addBySet(name, v, -1, TimeUnit.MILLISECONDS, lock);
+        return addBySet(name, v, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> boolean addBySet(String name, V v, long expire, TimeUnit unit, RLock lock) {
@@ -676,7 +676,7 @@ public class RedissonHelper {
     }
 
     public <V> boolean addBySetWithLock(String name, V v) {
-        return addBySetWithLock(name, v, -1, TimeUnit.MILLISECONDS);
+        return addBySetWithLock(name, v, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> boolean addBySetWithLock(String name, V v, long expire, TimeUnit unit) {
@@ -767,7 +767,7 @@ public class RedissonHelper {
     }
 
     public <V> RFuture<Void> setAsync(String name, V value) {
-        return setAsync(name, value, -1, TimeUnit.MILLISECONDS);
+        return setAsync(name, value, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> RFuture<Void> setAsync(String name, V value, long expire, TimeUnit unit) {
@@ -778,7 +778,7 @@ public class RedissonHelper {
     }
 
     public <V> void set(String name, V value) {
-        set(name, value, -1, TimeUnit.MILLISECONDS);
+        set(name, value, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> void set(String name, V value, long expire, TimeUnit unit) {
@@ -786,7 +786,7 @@ public class RedissonHelper {
     }
 
     public <V> void setWithLock(String name, V value) {
-        setWithLock(name, value, -1, TimeUnit.MILLISECONDS);
+        setWithLock(name, value, -1L, TimeUnit.MILLISECONDS);
     }
 
     public <V> void setWithLock(String name, V value, long expire, TimeUnit unit) {
@@ -794,7 +794,7 @@ public class RedissonHelper {
     }
 
     public <V> void set(String name, V value, RLock lock) {
-        set(name, value, -1, TimeUnit.MILLISECONDS, lock);
+        set(name, value, -1L, TimeUnit.MILLISECONDS, lock);
     }
 
     public <V> void set(String name, V value, long expire, TimeUnit unit, RLock Lock) {

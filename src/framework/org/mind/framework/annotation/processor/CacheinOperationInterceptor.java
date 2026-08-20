@@ -1,20 +1,24 @@
 package org.mind.framework.annotation.processor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mind.framework.annotation.BeaconGuard;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.CacheinFace;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.CacheEventPublisher;
+import org.mind.framework.cache.CacheUtils;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.MatcherUtils;
 import org.mind.framework.web.dispatcher.support.ConverterFactory;
+import org.redisson.api.RLock;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.DefaultParameterNameDiscoverer;
@@ -41,6 +45,7 @@ import java.util.stream.Stream;
  * @version 1.0
  * @date 2022/9/6
  */
+@Slf4j(topic = "Cachein")
 public class CacheinOperationInterceptor implements MethodInterceptor {
     private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
     private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
@@ -54,6 +59,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private final CacheLevel[] cacheLevels;
     private final CacheEventPublisher eventPublisher;
     private final String delimiter;
+    private final BeaconGuard beaconGuard;
 
     static {
         NULL_TYPE_MAP.put(List.class, RedissonHelper.EMPTY_LIST_MARKER);
@@ -73,8 +79,18 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         this.timeUnit = cachein.unit();
         this.cacheLevels = cacheLevels;
         this.delimiter = cachein.delimiter();
+        this.beaconGuard = cachein.beaconGuard();
         this.staticKey = staticKey;
         this.eventPublisher = eventPublisher;
+
+        if(this.beaconGuard.exclusive()){
+            boolean isRedis =
+                    Arrays.stream(cacheLevels)
+                            .anyMatch(v -> CacheLevel.REDIS == v);
+
+            if(!isRedis)
+                throw new IllegalArgumentException("When exclusive=true, the levels must include REDIS.");
+        }
     }
 
     @Override
@@ -94,7 +110,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                         .anyMatch(v -> CacheLevel.LOCAL == v);
         if (isLocal) {
             ResolveResult result = forLocal(resolverKey, nullTypeValue);
-            if (result.shouldShortCircuit() || !isEmpty(result.result()))
+            if (result.shouldShortCircuit() || !CacheUtils.isEmpty(result.result()))
                 return result.result();
         }
 
@@ -105,30 +121,86 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         if (isRedis) {
             ResolveResult result = forRedis(resolverKey, nullTypeValue);
 
-            if (result.shouldShortCircuit() || !isEmpty(result.result())) {
+            if (result.shouldShortCircuit() || !CacheUtils.isEmpty(result.result())) {
                 if (isLocal)
-                    save2local(resolverKey, result.result(), nullTypeValue);
+                    save2local(resolverKey, result.result(), nullTypeValue, true);
                 return result.result();
             }
         }
 
         // for implementation
+        if(beaconGuard.exclusive() && isRedis)
+            return loadWithGuard(resolverKey, invocation, nullTypeValue, isLocal);
+
+        return loader(resolverKey, invocation, nullTypeValue, isRedis, isLocal);
+    }
+
+    // Local source
+    private Object loader(String key,
+                          MethodInvocation invocation,
+                          TypeMatchResult nullTypeValue,
+                          boolean isRedis,
+                          boolean isLocal) throws Exception {
         Object result = this.callback(invocation);
+        if (isRedis)
+            save2redis(key, result, nullTypeValue);
 
         if (isLocal)
-            save2local(resolverKey, result, nullTypeValue);
+            save2local(key, result, nullTypeValue);
 
-        if (isRedis)
-            save2redis(resolverKey, result, nullTypeValue);
+        return result;
+    }
 
+    private Object loadWithGuard(String key,
+                                 MethodInvocation invocation,
+                                 TypeMatchResult nullTypeValue,
+                                 boolean isLocal) throws Exception {
+
+        // The same CacheUtils.loadWithGuard()
+        RLock lock = RedissonHelper.getInstance().getLock(key + CacheUtils.BACKFILL_CACHE);
+        try {
+            if (lock.tryLock(beaconGuard.waitTime(), beaconGuard.timeUnit())) {
+                try {
+                    ResolveResult again = forRedis(key, nullTypeValue);
+                    if (again.shouldShortCircuit() || !CacheUtils.isEmpty(again.result())) {
+                        if(isLocal)
+                            save2local(key, again.result(), nullTypeValue, true);
+                        return again.result();
+                    }
+
+                    return loader(key, invocation, nullTypeValue, true, isLocal);
+                } finally {
+                    if (lock.isHeldByCurrentThread())
+                        lock.unlock();
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while loading cache: " + key, e);
+        }
+
+        // 降级：pre-read → 本地回源
+        ResolveResult again = forRedis(key, nullTypeValue);
+        if (again.shouldShortCircuit() || !CacheUtils.isEmpty(again.result())) {
+            if(isLocal)
+                save2local(key, again.result(), nullTypeValue, true);
+            return again.result();
+        }
+
+        log.warn("Cache load lock timeout({} {}), degrade to local load: {}",
+                beaconGuard.waitTime(), beaconGuard.timeUnit(), key);
+
+        // degrade to L1-only (与 CacheUtils 对齐)
+        Object result = this.callback(invocation);
+        if(isLocal)
+            save2local(key, result, nullTypeValue);
         return result;
     }
 
     private ResolveResult forRedis(String resolverKey, TypeMatchResult nullTypeValue) {
         return resolveCacheValue(
                 nullTypeValue.nullMarker(),
-                () -> RedissonHelper.getInstance().getWithLock(resolverKey),// 用于验证: NULL marker
-                () -> nullTypeValue.loadReids(resolverKey),                 // 加载结果
+                () -> nullTypeValue.loadReids(resolverKey),// Loader
                 nullTypeValue.getEmptyValue()
         );
     }
@@ -141,8 +213,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         Object result = element.getValue(cloneType);
         return resolveCacheValue(
                 nullTypeValue.nullMarker(),
-                () -> result,// 用于验证: NULL marker
-                () -> result,// 加载结果
+                () -> result,// Loader
                 nullTypeValue.getEmptyValue()
         );
     }
@@ -196,13 +267,21 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         return resolveKey;
     }
 
+    private void save2local(String resolverKey, Object result, TypeMatchResult nullTypeValue, boolean... remainTimeToLive) {
+        long remainMs = ArrayUtils.isEmpty(remainTimeToLive) || !remainTimeToLive[0] ?
+                timeUnit.toMillis(expire) :
+                RedissonHelper.getInstance().rBucket(resolverKey).remainTimeToLive();
 
-    private void save2local(String resolverKey, Object result, TypeMatchResult nullTypeValue) {
-        if (isEmpty(result)) {
+        // -2 表示 key 在读值和查 TTL 之间刚好消失
+        // -1 表示无过期时间
+        if(remainMs < -1)
+            return;
+
+        if (CacheUtils.isEmpty(result)) {
             if (this.cacheNull) {
                 cacheable.addCache(
                         resolverKey,
-                        new CacheElement(nullTypeValue.nullMarker(), resolverKey, timeUnit.toMillis(expire), cloneType),
+                        new CacheElement(nullTypeValue.nullMarker(), resolverKey, Math.max(remainMs, 0L), cloneType),
                         true
                 );
             }
@@ -211,29 +290,30 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
         cacheable.addCache(
                 resolverKey,
-                new CacheElement(result, resolverKey, timeUnit.toMillis(expire), cloneType),
+                new CacheElement(result, resolverKey, Math.max(remainMs, 0L), cloneType),
                 true
         );
     }
 
     private void save2redis(String resolverKey, Object result, TypeMatchResult nullTypeValue) {
-        if (isEmpty(result)) {
+        long expireTime = expire <= 0L? -1L : expire;
+        if (CacheUtils.isEmpty(result)) {
             if (this.cacheNull) {
-                RedissonHelper.getInstance().setWithLock(resolverKey, nullTypeValue.nullMarker(), expire, timeUnit);
+                RedissonHelper.getInstance().setWithLock(resolverKey, nullTypeValue.nullMarker(), expireTime, timeUnit);
                 eventPublisher.publish(resolverKey, expire, timeUnit);
             }
             return;
         }
 
-        // 需要验证 result 类型，便于在redis中存储时指定类型
+        // 需要验证 result 类型，便于在 redis 中存储时指定类型
         if (result instanceof List<?> v)
-            RedissonHelper.getInstance().setWithLock(resolverKey, v, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, v, expireTime, timeUnit);
         else if (result instanceof Set<?> v)
-            RedissonHelper.getInstance().setWithLock(resolverKey, v, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, v, expireTime, timeUnit);
         else if (result instanceof Map<?, ?> v)
-            RedissonHelper.getInstance().setWithLock(resolverKey, v, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, v, expireTime, timeUnit);
         else
-            RedissonHelper.getInstance().setWithLock(resolverKey, result, expire, timeUnit);
+            RedissonHelper.getInstance().setWithLock(resolverKey, result, expireTime, timeUnit);
 
         eventPublisher.publish(resolverKey, expire, timeUnit);
     }
@@ -280,45 +360,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         return TypeMatchResult.of(RedissonHelper.NULL_MARKER);
     }
 
-    private <T> ResolveResult resolveCacheValue(
+    private ResolveResult resolveCacheValue(
             String nullMarker,
-            Supplier<Object> rawGetter,
-            Supplier<T> dataGetter,
-            T emptyValue) {
+            Supplier<Object> dataLoader,
+            Object emptyValue) {
 
-        boolean isNullValue = false;
-        if (this.cacheNull) {
-            try{
-                Object value = rawGetter.get();
-                if (Objects.equals(nullMarker, value))
-                    return new ResolveResult(emptyValue, true);  // 提前中断
-
-                isNullValue = Objects.isNull(value);
-            } catch (RuntimeException e){
-                if(!e.getMessage().contains("WRONGTYPE"))
-                    throw e;
-            }
-        }
-
-        T result = isNullValue ? emptyValue : dataGetter.get();
+        Object result = dataLoader.get();
         if (Objects.equals(nullMarker, result))
-            return new ResolveResult(emptyValue, false);
+            return new ResolveResult(emptyValue, cacheNull);
 
-        return new ResolveResult(result, false);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isEmpty(Object value) {
-        if (Objects.isNull(value))
-            return true;
-
-        if (value instanceof Collection v)
-            return v.isEmpty();
-
-        if (value instanceof Map v)
-            return v.isEmpty();
-
-        return false;
+        return new ResolveResult(result == null? emptyValue : result, false);
     }
 
     private record TypeMatchResult(String nullMarker) {

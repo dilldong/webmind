@@ -13,6 +13,7 @@ import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.config.AppConfiguration;
+import org.mind.framework.config.TestSpringContextInitializer;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.security.RSA2Utils;
 import org.mind.framework.service.Cloneable;
@@ -50,7 +51,7 @@ import java.util.concurrent.TimeUnit;
  */
 @ExtendWith(SpringExtension.class)
 //@ContextConfiguration(locations = {"classpath:spring/springContext.xml"})
-@ContextConfiguration(classes = AppConfiguration.class)
+@ContextConfiguration(classes = AppConfiguration.class, initializers = TestSpringContextInitializer.class)
 public class TestSpringModule extends AbstractJUnit4SpringContextTests {
 
     @Resource

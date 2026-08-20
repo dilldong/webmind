@@ -40,6 +40,9 @@ public interface Cacheable extends Serializable, Destroyable {
 
     Cacheable addCache(String key, Object value, boolean forceUpdate, Cloneable.CloneType type);
 
+    /**
+     * 添加一个新条目, 默认强制更新缓存
+     */
     Cacheable addCache(String key, CacheElement element);
 
     Cacheable addCache(String key, CacheElement element, boolean forceUpdate);

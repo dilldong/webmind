@@ -285,6 +285,18 @@ public class OkHttpFactory {
         CONTENT_LENGTH_LOCAL.remove();
     }
 
+    /**
+     * Add request id
+     */
+    public static Request buildRequest(Request request) {
+        return request.newBuilder().addHeader(
+                HandlerResult.REQUEST_ID,
+                ThreadContextPropagator.capture().getOrDefault(
+                        HandlerResult.REQUEST_IN_LOG,
+                        StringUtils.EMPTY)
+        ).build();
+    }
+
     private static InputStream buildInputStream(Headers responseHeaders, ResponseBody responseBody) throws IOException {
         byte[] bytes;
 
@@ -316,18 +328,6 @@ public class OkHttpFactory {
         }
 
         return responseBody.string();
-    }
-
-    /**
-     * Add request id
-     */
-    private static Request buildRequest(Request request) {
-        return request.newBuilder().addHeader(
-                HandlerResult.REQUEST_ID,
-                ThreadContextPropagator.capture().getOrDefault(
-                        HandlerResult.REQUEST_IN_LOG,
-                        StringUtils.EMPTY)
-        ).build();
     }
 
     /**
