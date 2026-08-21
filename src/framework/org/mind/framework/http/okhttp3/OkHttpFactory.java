@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -89,7 +89,7 @@ public class OkHttpFactory {
         // 构建OkHttpClient
         OkHttpClient.Builder builder =
                 new OkHttpClient.Builder()
-                        .connectionSpecs(Collections.singletonList(ConnectionSpec.RESTRICTED_TLS))// 默认MODERN_TLS
+                        .connectionSpecs(Arrays.asList(ConnectionSpec.MODERN_TLS, ConnectionSpec.CLEARTEXT))
                         .dispatcher(dispatcher)
 //                        .followSslRedirects(false)
 //                        .followRedirects(false)
