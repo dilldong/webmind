@@ -7,9 +7,10 @@ import org.mind.framework.ContextSupport;
 import org.mind.framework.exception.ThrowProvider;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
+import org.redisson.RedissonKeys;
+import org.redisson.api.RFuture;
 import org.redisson.api.RLock;
 import org.redisson.api.RMapCache;
-import org.redisson.api.RType;
 import org.redisson.api.options.KeysScanOptions;
 
 import java.time.Duration;
@@ -300,11 +301,11 @@ public final class CacheUtils {
     }
 
     public static Object readFromRedis(String key) {
-        RType rType = null;
+        CacheType rType = null;
         try {
-            rType = RedissonHelper.getClient()
-                    .getKeys()
-                    .getType(key);
+            RedissonKeys keys = (RedissonKeys) RedissonHelper.getClient().getKeys();
+            Object value = keys.getCommandExecutor().get((RFuture<?>) keys.getTypeAsync(key));
+            rType = CacheType.find(value.toString());
         } catch (Exception ignored) {}
 
         if (Objects.isNull(rType))
