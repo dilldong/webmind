@@ -374,15 +374,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
 
     private record TypeMatchResult(String nullMarker) {
         public Object loadReids(String name) {
-            RedissonHelper helper = RedissonHelper.getInstance();
-            if (isListType())
-                return helper.getListWithLock(name);
-            else if (isMapType())
-                return helper.getMapWithLock(name);
-            else if (isSetType())
-                return helper.getSetWithLock(name);
-            else
-                return helper.getWithLock(name);
+            return CacheUtils.readFromRedis(name);
         }
 
         public <T> T getEmptyValue() {
