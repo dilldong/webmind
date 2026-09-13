@@ -86,25 +86,39 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
     @Getter
     private int maxStreamLen = 10_000;
 
+    public RedissonStreamBroadcastService(String baseName, String consumerGroup) {
+        this(baseName, consumerGroup, false);
+    }
+
     /**
      * @param baseName Redis key 前缀，如 {@code "cache:user"}。
      *                 实际 Stream key 为 {@code "{baseName}:broadcast:stream"}。
      */
-    public RedissonStreamBroadcastService(String baseName, String consumerGroup) {
-        super(consumerGroup, baseName + ":broadcast:stream", "broadcast-listen-");
+    public RedissonStreamBroadcastService(String baseName, String consumerGroup, boolean producerOnly) {
+        super(consumerGroup, baseName + ":broadcast:stream", "broadcast-listen-", producerOnly);
 
-        // 为每个实例创建不同的 consumerGroup
-        super.consumerGroup += super.consumerName;
+        if (!producerOnly) {
+            // 为每个实例创建不同的 consumerGroup
+            super.consumerGroup = consumerGroup + ":" + super.consumerName;
 
-        // 尽早建立 ConsumerGroup（幂等），MKSTREAM 自动创建 Stream
-        ensureConsumerGroupExists(StreamMessageId.NEWEST);
+            // 尽早建立 ConsumerGroup（幂等），MKSTREAM 自动创建 Stream
+            ensureConsumerGroupExists(StreamMessageId.NEWEST);
+        }
     }
+
+    public static RedissonStreamBroadcastService newPublisher(String baseName) {
+        return new RedissonStreamBroadcastService(baseName, baseName + "-publisher", true);
+    }
+
 
     /**
      * 初始化线程池并启动消费循环
      */
     @Override
     public void init() {
+        if (isProducerOnly())
+            return;
+
         initListenerExecutor();
         ensureRunning();
     }
@@ -115,6 +129,7 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
      * @param handler 接收 payload 字符串（如 cacheKey），执行 L1 失效等操作。
      */
     public void registerHandler(Consumer<String> handler) {
+        checkConsumerMode("registerHandler");
         this.broadcastHandler = handler;
         ensureRunning();
     }
@@ -210,6 +225,9 @@ public class RedissonStreamBroadcastService extends AbstractRStream {
 
     @Override
     public void destroy() {
+        if (isProducerOnly())
+            return;
+
         stopListener();
         shutdownExecutor(listenerExecutor, "Broadcast-Graceful", 5L);
     }
