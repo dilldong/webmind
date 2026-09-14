@@ -1,5 +1,8 @@
 package org.mind.framework.helper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.exception.ThrowProvider;
@@ -27,6 +30,7 @@ import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
 import org.redisson.client.codec.Codec;
 import org.redisson.client.protocol.RedisCommands;
+import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.command.CommandAsyncExecutor;
 import org.redisson.config.Config;
 import org.redisson.misc.CompletableFutureWrapper;
@@ -90,6 +94,13 @@ public class RedissonHelper {
 
             // read config from file
             config = Config.fromYAML(in);
+
+            // 当使用 JsonJacksonCodec 时，需要注册 JavaTimeModule
+            if(config.getCodec() instanceof JsonJacksonCodec codec){
+                ObjectMapper mapper = codec.getObjectMapper();
+                mapper.registerModules(new JavaTimeModule());
+                mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);// 使用 ISO-8601 字符串更易读
+            }
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
         }
