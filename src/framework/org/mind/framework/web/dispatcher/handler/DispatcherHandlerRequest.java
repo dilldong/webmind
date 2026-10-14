@@ -207,18 +207,19 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         if (Objects.isNull(execution))
             return;
 
-        // pre-interceptor
-        final List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
-        if (doBeforeInterceptors(requestUri, processedRequest, response, currentInterceptors))
-            return;
-
-        // logging
-        if (execution.isRequestLog() && !execution.isSimpleLogging())
-            targetLog(execution, new ParameterizedMessage("[{}]", requestUri));
-
-        // execute action
-        Action.setActionContext(processedRequest, response);
         try {
+            // pre-interceptor
+            final List<HandlerInterceptor> currentInterceptors = new ArrayList<>();
+            if (doBeforeInterceptors(requestUri, processedRequest, response, currentInterceptors))
+                return;
+
+            // logging
+            if (execution.isRequestLog() && !execution.isSimpleLogging())
+                targetLog(execution, new ParameterizedMessage("[{}]", requestUri));
+
+            // execute action
+            Action.setActionContext(processedRequest, response);
+
             execute(requestUri, execution, processedRequest, response, currentInterceptors);
         } catch (Throwable ex) {
             Throwable root = ThrowProvider.unwrapCause(ex);

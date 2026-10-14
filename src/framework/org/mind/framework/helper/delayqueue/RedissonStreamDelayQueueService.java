@@ -145,12 +145,16 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      */
     private volatile ThreadPoolTaskScheduler schedulerExecutor;
 
+    public RedissonStreamDelayQueueService(String baseName, String consumerGroup){
+        this(baseName, consumerGroup, false);
+    }
+
     /**
      * @param baseName Redis key 前缀，如 {@code "payment:delay"}。
      *                 实际生成 4 个 key：{baseName}:zset / :stream / :map / :cancelled
      */
-    public RedissonStreamDelayQueueService(String baseName, String consumerGroup) {
-        super(consumerGroup, baseName + ":stream", "rdq-listen-");
+    public RedissonStreamDelayQueueService(String baseName, String consumerGroup, boolean producerOnly) {
+        super(consumerGroup, baseName + ":stream", "rdq-listen-", producerOnly);
 
         this.zsetKey = baseName + ":zset";
         this.mapKey = baseName + ":map";
@@ -166,14 +170,26 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         this.rScript = client.getScript(StringCodec.INSTANCE);
 
         // 尽早确保 Consumer Group 存在（幂等）
-        ensureConsumerGroupExists(StreamMessageId.ALL);
+        if (!producerOnly) {
+            ensureConsumerGroupExists(StreamMessageId.ALL);
+        }
     }
 
     /**
-     * 初始化所有线程池并启动服务
+     * 创建生产者模式实例。生产者模式下 consumerGroup 不会被写入 Redis，
+     */
+    public static RedissonStreamDelayQueueService newProducer(String baseName) {
+        return new RedissonStreamDelayQueueService(baseName, baseName + "-producer", true);
+    }
+
+    /**
+     * 初始化所有线程池并启动服务（生产者模式下为 no-op）
      */
     @Override
     public void init() {
+        if (isProducerOnly())
+            return;
+
         initTaskExecutor();
         initListenerExecutor();
         initSchedulerExecutor();
@@ -210,7 +226,9 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
                         task.getClass().getSimpleName(), taskId, delay, timeUnit);
             }
 
-            ensureRunning();
+            // 生产者模式不拉起调度/消费线程，交由消费方服务负责
+            if (!isProducerOnly())
+                ensureRunning();
             return true;
 
         } catch (Exception e) {
@@ -230,6 +248,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
         if (Objects.isNull(task))
             return false;
 
+        checkConsumerMode("addDelayTask(with consumer)");
         if (task instanceof DelayTask)
             registerConsumer((DelayTask<T>) task, (Consumer<DelayTask<T>>) consumer, true);
         else
@@ -286,6 +305,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * @param onlyTaskId 若为 {@code true}，仅注册 taskId 级路由（不注册 class 级路由）
      */
     public <T> void registerConsumer(DelayTask<T> task, Consumer<DelayTask<T>> consumer, boolean... onlyTaskId) {
+        checkConsumerMode("registerConsumer");
         boolean registerType = ArrayUtils.isEmpty(onlyTaskId) || !onlyTaskId[0];
         if (registerType) {
             if (queueConsumerMap.containsKey(task.getClass()))
@@ -306,6 +326,7 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * 注册 class 类型级别的消费者。
      */
     public <T> void registerConsumer(Class<T> taskType, Consumer<T> consumer) {
+        checkConsumerMode("registerConsumer");
         if (queueConsumerMap.containsKey(taskType))
             log.warn("[RStream-Delay] Consumer type overridden: {}", taskType.getSimpleName());
 
@@ -337,6 +358,9 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
      * - 另外,当容器频繁重启产生大量随机 consumerName，Redis 内部会记录，这会增加 autoClaim 扫描时的负担, 因为消息无论如何都要靠 autoClaim 来打捞
      */
     public void cleaConsumer() {
+        // 生产者模式无需清理
+        if (isProducerOnly())
+            return;
         rStream.removeConsumer(consumerGroup, consumerName);
     }
 
@@ -544,6 +568,12 @@ public class RedissonStreamDelayQueueService extends AbstractRStream {
 
     @Override
     public void destroy() {
+        // 生产者模式没有任何线程池与本地路由表，无需清理
+        if (isProducerOnly()) {
+            log.info("[RStream-Delay] Producer-only instance destroyed, stream: {}", getStreamKey());
+            return;
+        }
+
         stopQueueListener();
         shutdownExecutor(taskExecutor, "RStreamTask-Graceful", 10L);
         shutdownExecutor(listenerExecutor, "RStreamListen-Graceful", 5L);

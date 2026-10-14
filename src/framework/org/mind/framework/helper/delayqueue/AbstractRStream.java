@@ -58,6 +58,13 @@ public abstract class AbstractRStream implements Destroyable {
 
     private final String listenThreadPrefix;
 
+    /**
+     * 生产者模式：仅允许 addDelayTask / remove / get，
+     * 不创建 Consumer Group、不启动调度线程、不启动消费线程、不允许 registerConsumer。
+     */
+    @Getter
+    protected final boolean producerOnly;
+
     protected final RStream<String, String> rStream;
 
     /**
@@ -71,10 +78,11 @@ public abstract class AbstractRStream implements Destroyable {
     public abstract void init();
     protected abstract void handleMessage(StreamMessageId msgId, Map<String, String> fields);
 
-    public AbstractRStream(String consumerGroup, String streamKey, String listenThreadNamePrefix) {
+    public AbstractRStream(String consumerGroup, String streamKey, String listenThreadPrefix, boolean producerOnly) {
         this.consumerGroup = consumerGroup;
         this.streamKey = streamKey;
-        this.listenThreadPrefix = listenThreadNamePrefix;
+        this.listenThreadPrefix = listenThreadPrefix;
+        this.producerOnly = producerOnly;
         this.consumerName = buildConsumerName();
 
         this.rStream = RedissonHelper.getClient().getStream(streamKey, StringCodec.INSTANCE);
@@ -328,5 +336,10 @@ public abstract class AbstractRStream implements Destroyable {
             // 无新消息时 Redisson 3.x 的已知 bug，视为空结果静默处理
             return null;
         }
+    }
+
+    protected void checkConsumerMode(String action) {
+        if (producerOnly)
+            throw new IllegalStateException("[RStream-Delay] " + action + " is not allowed in producer-only mode, stream: " + getStreamKey());
     }
 }

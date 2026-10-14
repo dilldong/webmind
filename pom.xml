@@ -13,7 +13,7 @@
     </description>
     <url>https://github.com/dilldong/webmind</url>
     <packaging>jar</packaging>
-    <version>5.0.9</version>
+    <version>5.1.2</version>
 
     <licenses>
         <license>
@@ -38,9 +38,11 @@
     </developers>
 
     <properties>
-        <spring.version>6.2.17</spring.version>
-        <tomcat.version>10.1.55</tomcat.version>
+        <spring.version>6.2.19</spring.version>
+        <tomcat.version>10.1.59</tomcat.version>
         <gson.version>2.13.2</gson.version>
+        <log4j2.version>2.26.1</log4j2.version>
+        <bcp.version>1.85.2</bcp.version>
     </properties>
 
     <build>
@@ -170,7 +172,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.84</version>
+            <version>${bcp.version}</version>
         </dependency>
 
         <dependency>
@@ -205,13 +207,13 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
-            <version>2.25.4</version>
+            <version>${log4j2.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.25.4</version>
+            <version>${log4j2.version}</version>
             <scope>compile</scope>
         </dependency>
 

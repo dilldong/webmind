@@ -56,7 +56,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
 
     @Override
     public void publish(String key, long expire, TimeUnit unit) {
-        if (expire == 0L) {
+        if (expire <= 0L) {
             cacheEventListener.fastPutAsync(key, Instant.MAX.toString());
             return;
         }

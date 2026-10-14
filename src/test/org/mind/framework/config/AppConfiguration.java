@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.velocity.spring.VelocityEngineFactoryBean;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.EnableCache;
+import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.CaffeineCache;
+import org.mind.framework.cache.DefaultCacheEventPublisher;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
@@ -71,6 +73,11 @@ public class AppConfiguration {
         cacheable.setCapacity(capacity);
         cacheable.setTimeout(ttl);
         return cacheable;
+    }
+
+    @Bean
+    public CacheEventPublisher cacheEventPublisher() {
+        return new DefaultCacheEventPublisher(null, "test:cache:sync:listener");
     }
 
     @Bean(destroyMethod = "destroy")
