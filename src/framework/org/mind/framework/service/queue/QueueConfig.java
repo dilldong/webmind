@@ -22,6 +22,8 @@ public class QueueConfig {
     private boolean enableLogStatus = false;        // 是否启用监控日志输出
     private boolean enableDynamicAdjust = false;    // 是否启用动态调整
 
+    private boolean exceptionByQueueFull = false;   // 添加新任务时，如队列已满，是否抛出 QueueFullException
+
     private double highLoadThreshold = 0.8;         // 高负载阈值
     private double lowLoadThreshold = 0.2;          // 低负载阈值
     private int queueHighWaterMark = 800;           // 队列高水位
