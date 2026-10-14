@@ -32,11 +32,6 @@ public class QueueLittle extends LightweightQueueService implements QueueService
     }
 
     @Override
-    public void put(DelegateMessage message) throws InterruptedException {
-        super.put(ThreadContextPropagator.wrap(message));
-    }
-
-    @Override
     public void destroy() {
         super.stop();
     }

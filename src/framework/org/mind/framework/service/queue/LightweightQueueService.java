@@ -157,7 +157,7 @@ public class LightweightQueueService {
             throw new IllegalStateException("Queue service is not running");
 
         if (Objects.isNull(item))
-            throw new IllegalArgumentException("Item cannot be null");
+            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -190,7 +190,7 @@ public class LightweightQueueService {
             throw new IllegalStateException("Queue service is not running");
 
         if (Objects.isNull(item))
-            throw new IllegalArgumentException("Item cannot be null");
+            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -221,7 +221,7 @@ public class LightweightQueueService {
             throw new IllegalStateException("Queue service is not running");
 
         if (Objects.isNull(item))
-            throw new IllegalArgumentException("Item cannot be null");
+            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
