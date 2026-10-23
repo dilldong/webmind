@@ -5,6 +5,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.mind.framework.annotation.BeaconGuard;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
@@ -258,10 +259,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                 }
             }
 
-            resolveKey =
-                    resolveKey.replaceAll(
-                            "#\\{" + paramNames[i] + "\\}",
-                            StringUtils.defaultIfEmpty(value, StringUtils.EMPTY));
+            resolveKey = Strings.CS.replace(resolveKey, "#{" + paramNames[i] + "}", value);
         }
 
         return resolveKey;
