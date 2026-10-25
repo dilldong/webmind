@@ -3,8 +3,10 @@ package org.mind.framework.annotation.processor;
 import org.aopalliance.aop.Advice;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
+import org.mind.framework.annotation.Cacheout;
 import org.mind.framework.annotation.EnableCache;
 import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
@@ -36,16 +38,17 @@ import org.springframework.util.ObjectUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Basic configuration for <code>@Cachein</code> processing.
+ * Basic configuration for <code>@Cachein</code> <code>@Cacheout</code> processing.
  *
  * @author Marcus
- * @version 1.0
+ * @version 1.1
  * @date 2022/9/5
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -70,7 +73,10 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
 
     @Override
     public Class<?>[] getInterfaces() {
-        return new Class[]{org.mind.framework.cache.Cacheable.class};
+        return new Class[]{
+                Cachein.class,
+                Cacheout.class
+        };
     }
 
 
@@ -86,17 +92,20 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
         Cacheable cacheable = this.findBean(Cacheable.class);
-//        Set<Class<? extends Annotation>> cacheinAnnotationTypes = new LinkedHashSet<>(1);
-//        cacheinAnnotationTypes.add(Cachein.class);
-//        this.pointcut = buildPointcut(cacheinAnnotationTypes);
-        this.pointcut = buildPointcut();
+        Set<Class<? extends Annotation>> annotationTypes = new LinkedHashSet<>(2);
+        annotationTypes.add(Cachein.class);
+        annotationTypes.add(Cacheout.class);
+        this.pointcut = buildPointcut(annotationTypes);
+
+//        this.pointcut = buildPointcut();
+
         this.advice = new CacheinAnnotationAwareInterceptor(
                 cacheable, defaultLevels, cacheSyncName, beanFactory);
     }
@@ -144,15 +153,15 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     /**
-     * Calculate a pointcut for the given cachein annotation types, if any.
+     * Calculate a pointcut for the given annotation types, if any.
      *
-     * @param cacheinAnnotationTypes the cachein annotation types to introspect
+     * @param annotationTypes the <code>Cachein</code> <code>Cacheout</code> annotation types to introspect
      * @return the applicable Pointcut object, or {@code null} if none
      */
-    private Pointcut buildPointcut(Set<Class<? extends Annotation>> cacheinAnnotationTypes) {
+    private Pointcut buildPointcut(Set<Class<? extends Annotation>> annotationTypes) {
         ComposablePointcut result = null;
 
-        for (Class<? extends Annotation> clazzType : cacheinAnnotationTypes) {
+        for (Class<? extends Annotation> clazzType : annotationTypes) {
             Pointcut filter = new AnnotationClassOrMethodPointcut(clazzType);
             if (Objects.isNull(result)) {
                 result = new ComposablePointcut(filter);
@@ -218,9 +227,10 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
                 Annotation annotation = AnnotationUtils.findAnnotation(
                         method,
                         AnnotationMethodsResolver.this.annotationType);
-                if (Objects.nonNull(annotation))
-                    found.set(true);
+
+                found.compareAndSet(false, annotation != null);
             });
+
             return found.get();
         }
     }

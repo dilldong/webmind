@@ -5,9 +5,9 @@ import org.redisson.api.RMapCache;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author: Marcus
- * @date: 2026/5/18
- * @version: 1.0
+ * @author Marcus
+ * @date 2026/5/18
+ * @version 1.0
  */
 public interface CacheEventPublisher {
     String KEY_EVENT_MAPCACHE = "webmind:sync:cache:listener";
@@ -15,7 +15,7 @@ public interface CacheEventPublisher {
 
     CacheEventPublisher NO_PUBLISHER = new CacheEventPublisher() {
         @Override
-        public void registerCacheable(String key, Cacheable cacheable) {
+        public void registerCacheable(Cacheable cacheable) {
             // do nothing
         }
 
@@ -31,9 +31,9 @@ public interface CacheEventPublisher {
     };
 
     /**
-     * 注册 key 前缀与其对应的 Cacheable，供事件回调时定向清除本地缓存。
+     * 注册本地 Cacheable，供事件回调时清除本地缓存。
      */
-    void registerCacheable(String key, Cacheable cacheable);
+    void registerCacheable(Cacheable cacheable);
 
     /**
      * 发布缓存事件
