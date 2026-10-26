@@ -6,6 +6,7 @@ import org.mind.framework.service.Cloneable;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -19,8 +20,9 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  * @date 2022/9/4
  */
-@Target(ElementType.METHOD)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
+@Inherited
 @Documented
 public @interface Cachein {
 
@@ -35,14 +37,18 @@ public @interface Cachein {
     // 是否进行对象拷贝（防止修改本地缓存）
     Cloneable.CloneType strategy() default Cloneable.CloneType.NONE;
 
-    // default: unlimited
+    /**
+     * default: unlimited
+     */
     long expire() default 0L;
 
     TimeUnit unit() default TimeUnit.MILLISECONDS;
 
     CacheLevel[] levels() default {};
 
-    // 是否缓存null（防穿透）
+    /**
+     * 是否缓存 null 值（防穿透）
+     */
     boolean cacheNull() default false;
 
     /**

@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mind.framework.cache.CacheElement;
-import org.mind.framework.cache.CacheUtils;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.LruCache;
 import org.mind.framework.config.AppConfiguration;
@@ -37,7 +36,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import javax.annotation.Resource;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -219,15 +217,15 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void testLocalCache(){
+        testServiceComponent.getWithCache("cache", 222L);
+        testServiceComponent.outWithCache("cache", 222L);
+
 //        System.out.println("1.call string:");
 //        System.out.println(testServiceComponent.getWithCache(22222L));
 //        Thread.sleep(1000L);
 //
 //        System.out.println("2.call string:");
 //        System.out.println(testServiceComponent.getWithCache(22222L));
-
-        String value = CacheUtils.getAndSet("user_by_id_22222", cacheable, Duration.ofSeconds(60L), true, ()->null);
-        System.out.println("CacheUtils: "+ value);
     }
 
     @SneakyThrows

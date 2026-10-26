@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -169,15 +170,19 @@ public final class CacheUtils {
         return false;
     }
 
-    public static void clear(String key) {
-        deleteAsync(key).toCompletableFuture().join();
+    public static boolean clear(String key) {
+        return clearAsync(key).join();
     }
 
-    public static void clearAsync(String key) {
-        deleteAsync(key);
+    public static long clearByPattern(String keyPattern) {
+        return clearByPatternAsync(keyPattern).join();
     }
 
-    public static void clearByPatternAsync(String keyPattern) {
+    public static CompletableFuture<Boolean> clearAsync(String key) {
+        return deleteAsync(key).toCompletableFuture();
+    }
+
+    public static CompletableFuture<Long> clearByPatternAsync(String keyPattern) {
         List<String> listKeys = new ArrayList<>();
         RedissonHelper.getClient()
                 .getKeys()
@@ -190,43 +195,49 @@ public final class CacheUtils {
             // 直接筛选 keyEventSync（RMapCache）同步器中的 key
             // 防止 redis 中手动清除，但没有清除本地缓存
             listKeys.addAll(rMapCache.keySet(keyPattern));
-            if (!listKeys.isEmpty()) {
-                long localCount = rMapCache.fastRemove(listKeys.toArray(new String[0]));
-                log.debug("Remove from local: {}", localCount);
-            }
-            return;
+
+            if (listKeys.isEmpty())
+                return CompletableFuture.completedFuture(0L);
+
+            long localCount = rMapCache.fastRemove(listKeys.toArray(new String[0]));
+            log.debug("Remove local cache, key: {}, count: {}", keyPattern, localCount);
+            return CompletableFuture.completedFuture(localCount);
         }
 
         final String[] keyArray = listKeys.toArray(new String[0]);
-        RedissonHelper.getClient()
+        return RedissonHelper.getClient()
                 .getKeys()
                 // 1. 删除 Redis 数据（UNLINK 异步释放内存，不阻塞主线程）
                 .unlinkAsync(keyArray)
                 .whenCompleteAsync((count, ex) -> {
                     if (Objects.nonNull(ex))
-                        log.error("Clear cache error: {}", ex.getMessage());
+                        log.error("Clear cache key: {}, error: {}", keyPattern, ThrowProvider.unwrapCause(ex).getMessage(), ex);
 
                     // 2. 从 keyEventSync（RMapCache）同步器中移除对应记录
                     // 即使在第 1 步中异常，这里也干脆的在同步器中移除，主要原因是本地缓存无手动清除功能，
                     // 但redis可以在 cli 或 UI 界面中手动清除，为此提供了便利性。
                     long localCount = getCacheEventPublisher().getCacheEventListener().fastRemove(keyArray);
-                    log.debug("Remove from redis: {}, local: {}", count, localCount);
-                });
+                    log.debug("Remove from key: {}, redis: {}, local: {}", keyPattern, count, localCount);
+                }).exceptionally(ex -> {
+                    log.error("Clear cache key: {}, error: {}", keyPattern, ThrowProvider.unwrapCause(ex).getMessage(), ex);
+                    return 0L;
+                })
+                .toCompletableFuture();
     }
 
     private static CompletionStage<Boolean> deleteAsync(String key) {
         return RedissonHelper.getInstance().deleteAsync(key)
                 .whenCompleteAsync((result, ex) -> {
                     if (Objects.nonNull(ex))
-                        log.error("Clear cache error: {}", ex.getMessage());
+                        log.error("Clear cache error, key: {}, error: {}", key, ThrowProvider.unwrapCause(ex).getMessage(), ex);
 
                     // 从 keyEventSync（RMapCache）同步器中移除对应记录
-                    long count = getCacheEventPublisher().getCacheEventListener().fastRemove(key);
-                    log.debug("Remove count: {}", count);
+                    long localCount = getCacheEventPublisher().getCacheEventListener().fastRemove(key);
+                    log.debug("Remove from key: {}, redis: {}, local: {}", key,  result, localCount > 0L);
 
                 })
                 .exceptionally(ex -> {
-                    log.error("Clear cache error: {}", ThrowProvider.unwrapCause(ex).getMessage());
+                    log.error("Clear cache key: {}, error: {}", key, ThrowProvider.unwrapCause(ex).getMessage(), ex);
                     return Boolean.FALSE;
                 });
     }

@@ -11,9 +11,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Simple utility class for working with the reflection API and handling
@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Sam Brannen
  * @since 1.2.2
  */
-public abstract class ReflectionUtils {
+public class ReflectionUtils {
 
     /**
      * Pre-built FieldFilter that matches all non-static, non-final fields.
@@ -55,8 +55,8 @@ public abstract class ReflectionUtils {
      * superclasses up to {@link Object}.
      *
      * @param clazz the class to introspect
-     * @param name  the name of the field (may be <code>null</code> if type is specified)
-     * @param type  the type of the field (may be <code>null</code> if name is specified)
+     * @param name  the name of the field (maybe <code>null</code> if type is specified)
+     * @param type  the type of the field (maybe <code>null</code> if name is specified)
      * @return the corresponding Field object, or <code>null</code> if not found
      */
     public static Field findField(Class<?> clazz, String name, Class<?> type) {
@@ -92,11 +92,12 @@ public abstract class ReflectionUtils {
         if (ArrayUtils.isEmpty(fields))
             return Collections.emptyMap();
 
-        Map<String, Field> fieldMap = new HashMap<>(fields.length);
-        for (Field f : fields)
-            fieldMap.put(f.getName(), f);
-
-        return fieldMap;
+        return Arrays.stream(fields)
+                .collect(Collectors.toMap(
+                        Field::getName,
+                        v -> v,
+                        (v1, v2) -> v2
+                ));
     }
 
 
@@ -357,7 +358,7 @@ public abstract class ReflectionUtils {
 
     /**
      * Determine whether the given method explicitly declares the given exception
-     * or one of its superclasses, which means that an exception of that type
+     * or one of its superclasses, which means that an exception to that type
      * can be propagated as-is within a reflective invocation.
      *
      * @param method        the declaring method

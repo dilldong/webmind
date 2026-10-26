@@ -5,14 +5,19 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
+import org.mind.framework.annotation.Cacheout;
 import org.mind.framework.cache.CacheEventHandler;
 import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
 import org.mind.framework.cache.DefaultCacheEventPublisher;
+import org.mind.framework.util.IOUtils;
 import org.springframework.aop.IntroductionInterceptor;
+import org.springframework.aop.framework.AopProxyUtils;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -22,7 +27,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor {
     /**
-     * 没有 @Cachein 注释的缓存方法的哨兵值
+     * 没有 <code>@Cachein</code> <code>@Cacheout</code> 注释的缓存方法的哨兵值,
      * 防止反复反射扫描
      */
     private static final MethodInterceptor NULL_INTERCEPTOR = invocation -> {
@@ -55,6 +59,8 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     private volatile CacheEventPublisher cacheEventPublisher;
 
+    private final ConditionEvaluator conditionEvaluator;
+
     public CacheinAnnotationAwareInterceptor(Cacheable defaultCache,
                                              CacheLevel[] defaultLevels,
                                              String cacheSyncName,
@@ -68,110 +74,125 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         // 缓存同步器
         this.cacheEventPublisher =
                 this.enableRedis(defaultLevels) ? buildPublisher() : CacheEventPublisher.NO_PUBLISHER;
+
+        // SpEl 评估器
+        this.conditionEvaluator = this.buildConditionEvaluator();
     }
 
     @Override
     public boolean implementsInterface(@NotNull Class<?> clazz) {
-        return Cacheable.class.isAssignableFrom(clazz);
+        return Cachein.class.isAssignableFrom(clazz) || Cacheout.class.isAssignableFrom(clazz);
     }
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
-        Object target = Objects.requireNonNull(invocation.getThis());
+        // 当目标对象本身又被别的代理包装时, 能拿到真实类而不是代理类。
+        final Class<?> targetClass = AopProxyUtils.ultimateTargetClass(invocation.getThis());
+
+        // 获取实际的方法
+        Method method = AopUtils.getMostSpecificMethod(invocation.getMethod(), targetClass);
 
         Map<Method, MethodInterceptor> cachedMethods =
-                this.delegates.computeIfAbsent(target.getClass().getName(), k -> new ConcurrentHashMap<>(16));
+                this.delegates.computeIfAbsent(targetClass.getName(), k -> new ConcurrentHashMap<>(16));
 
-        MethodInterceptor delegate = cachedMethods.computeIfAbsent(invocation.getMethod(), m -> {
-            Cachein cachein = resolveCachein(target, m);
-            return Objects.isNull(cachein) ? NULL_INTERCEPTOR : getDefaultInterceptor(cachein);
+        MethodInterceptor delegate = cachedMethods.computeIfAbsent(method, m -> {
+            // 读写分开，禁止组合
+            Cachein cachein = resolveAnnotation(targetClass, m, Cachein.class);
+            Cacheout cacheout = resolveAnnotation(targetClass, m, Cacheout.class);
+            boolean hasIn = cachein != null;
+
+            if (hasIn && cacheout != null) {
+                String name = Strings.CS.replace(
+                        StringUtils.substringAfterLast(m.toString(), StringUtils.SPACE),
+                        targetClass.getPackage().getName() + IOUtils.DOT_SEPARATOR,
+                        StringUtils.EMPTY);
+
+                throw new IllegalStateException("@Cachein and @Cacheout must not be combined on " + name);
+            }
+
+            return hasIn? getCacheinInterceptor(cachein, m) : getCacheoutInterceptor(cacheout, m, targetClass);
         });
 
         return delegate == NULL_INTERCEPTOR ? invocation.proceed() : delegate.invoke(invocation);
     }
 
-    private Cachein resolveCachein(Object target, Method method) {
-        // 1. 接口方法上的 @Cachein
-        Cachein cachein = AnnotatedElementUtils.findMergedAnnotation(method, Cachein.class);
+    private <V extends Annotation> V resolveAnnotation(Class<?> targetClass, Method method, Class<V> annotationType) {
+        // 1. 接口 & 方法上的
+        V annotation = AnnotatedElementUtils.findMergedAnnotation(method, annotationType);
 
-        // 2. 实现类方法上的 @Cachein，或实现类类级别的 @Cachein
-        if (Objects.isNull(cachein))
-            cachein = findAnnotationOnMethod(target, method);
+        if (annotation != null)
+            return annotation;
 
-        // 3. 接口类级别的 @Cachein（method 此时是接口 method）
-        if (Objects.isNull(cachein))
-            cachein = classLevelAnnotation(method, Cachein.class);
+        // 2. 类级别上的
+        annotation = AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), annotationType);
+        if (annotation != null)
+            return annotation;
 
-        return cachein;
+        // 3. 目标类和声明类不同(方法继承自父类)时, 再查目标类
+        return targetClass != method.getDeclaringClass()
+                ? AnnotatedElementUtils.findMergedAnnotation(targetClass, annotationType)
+                : null;
     }
 
-    private <V extends Annotation> V findAnnotationOnMethod(Object target, Method method) {
-        try {
-            Method targetMethod = target.getClass().getMethod(method.getName(), method.getParameterTypes());
-            V cachein = AnnotatedElementUtils.findMergedAnnotation(targetMethod, (Class<V>) Cachein.class);
-            return Objects.isNull(cachein) ? classLevelAnnotation(targetMethod, (Class<V>) Cachein.class) : cachein;
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    private MethodInterceptor getCacheinInterceptor(Cachein cachein, Method method) {
+        if (cachein == null)
+            return NULL_INTERCEPTOR;
 
-    /*
-     * With a class level annotation, exclude @Recover methods.
-     */
-    private <V extends Annotation> V classLevelAnnotation(Method method, Class<V> annotation) {
-        return AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), annotation);
-    }
-
-    private MethodInterceptor getDefaultInterceptor(Cachein cachein) {
         Cacheable cacheable =
                 StringUtils.isEmpty(cachein.cacheable()) ?
                         defaultCache : this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
 
         CacheLevel[] levels = ArrayUtils.isEmpty(cachein.levels()) ? defaultLevels : cachein.levels();
-
-        // 计算静态 key
-        String staticKey = resolveStaticKey(cachein);
-
-        if (this.enableRedis(levels)) {
-
-            // 防止未初始化, 构造函数是针对全局配置, 而在方法上则允许启用 Redis Level
-            this.initCacheEventPublisher();
-
-            // 注册 prefix → cacheable 映射，供事件回调使用
-            cacheEventPublisher.registerCacheable(staticKey, cacheable);
-        }
+        this.enableAndRegisterLocalCache(levels, cacheable);
 
         return new CacheinOperationInterceptor(
                 cacheable,
                 cachein,
                 levels,
                 cacheEventPublisher,
-                staticKey);
+                method);
     }
 
-    private void initCacheEventPublisher(){
-        if(cacheEventPublisher != CacheEventPublisher.NO_PUBLISHER)
-            return;
+    private MethodInterceptor getCacheoutInterceptor(Cacheout cacheout, Method method, Class<?> targetClass) {
+        if (cacheout == null)
+            return NULL_INTERCEPTOR;
 
-        synchronized (this) {
-            if(cacheEventPublisher == CacheEventPublisher.NO_PUBLISHER) {
-                cacheEventPublisher = buildPublisher();
-            }
+        Cacheable cacheable =
+                StringUtils.isEmpty(cacheout.cacheable()) ?
+                        defaultCache : this.beanFactory.getBean(cacheout.cacheable(), Cacheable.class);
+
+        CacheLevel[] levels = ArrayUtils.isEmpty(cacheout.levels()) ? defaultLevels : cacheout.levels();
+        this.enableAndRegisterLocalCache(levels, cacheable);
+
+        return new CacheoutOperationInterceptor(
+                cacheable,
+                cacheout,
+                levels,
+                method,
+                targetClass,
+                conditionEvaluator);
+    }
+
+
+    private void enableAndRegisterLocalCache(CacheLevel[] levels, Cacheable cacheable) {
+        if (this.enableRedis(levels)) {
+            // 防止未初始化, 构造函数是针对全局配置, 而在方法上则允许启用 Redis Level
+            this.initCacheEventPublisher();
+
+            // 注册本地 cacheable，供事件回调清除使用
+            cacheEventPublisher.registerCacheable(cacheable);
         }
     }
 
-    private String resolveStaticKey(Cachein cachein) {
-        boolean isPrefix = StringUtils.isNotEmpty(cachein.prefix());
-        boolean isSuffix = StringUtils.isNotEmpty(cachein.suffix());
+    private void initCacheEventPublisher() {
+        if (cacheEventPublisher != CacheEventPublisher.NO_PUBLISHER)
+            return;
 
-        if (isPrefix && isSuffix)
-            return String.join(cachein.delimiter(), cachein.prefix(), cachein.suffix());
-        else if (isPrefix)
-            return cachein.prefix();
-        else if (isSuffix)
-            return cachein.suffix();
-        else
-            throw new IllegalArgumentException("At least one of 'prefix' or 'suffix' must be specified");
+        synchronized (this) {
+            if (cacheEventPublisher == CacheEventPublisher.NO_PUBLISHER) {
+                cacheEventPublisher = buildPublisher();
+            }
+        }
     }
 
     private boolean enableRedis(CacheLevel[] cacheLevels) {
@@ -192,4 +213,15 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
         return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
     }
+
+    // 自定义 SpEl 评估器
+    private ConditionEvaluator buildConditionEvaluator() {
+        try {
+            return this.beanFactory.getBean(ConditionEvaluator.BEAN_NAME, ConditionEvaluator.class);
+        } catch (NoSuchBeanDefinitionException ignored) {
+        }
+
+        return new ConditionEvaluator();
+    }
+
 }
