@@ -76,7 +76,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
         RMapCache<String, String> eventListener = this.buildRMapCache(cacheSyncName);
 
         eventListener.addListenerAsync((EntryRemovedListener<String, String>) event -> {
-            log.debug("Entry removed, key: {}, expire: {}", event.getKey(), event.getValue());
+            log.debug("Entry removed, key: {}", event.getKey());
             evictLocalCache(event.getKey());
 
             if (Objects.nonNull(cacheEventHandler))

@@ -31,20 +31,22 @@ public @interface Cacheout {
 
     String cacheable() default StringUtils.EMPTY;
 
+    String condition() default StringUtils.EMPTY;
+
     /**
-     * 使用 Pattern 模式匹配清除,
+     * 使用 Pattern 模式匹配清除
      */
     boolean pattern() default false;
 
     /**
-     * true: 方法执行前清除(异常也会清)
+     * true: 方法执行前清除 (异常也会清)
      */
-    boolean before() default false;
+    boolean beforeClean() default false;
 
     /**
-     * 有事务时, 等提交后再清除
+     * 有事务时: 提交后再清除, 否则直接清除
      */
-    boolean after() default true;
+    boolean afterCommit() default true;
 
     /**
      * 清理的缓存目标, 默认: Redis & Local

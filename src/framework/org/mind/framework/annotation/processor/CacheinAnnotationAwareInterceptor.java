@@ -59,6 +59,8 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     private volatile CacheEventPublisher cacheEventPublisher;
 
+    private final ConditionEvaluator conditionEvaluator;
+
     public CacheinAnnotationAwareInterceptor(Cacheable defaultCache,
                                              CacheLevel[] defaultLevels,
                                              String cacheSyncName,
@@ -72,6 +74,9 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         // 缓存同步器
         this.cacheEventPublisher =
                 this.enableRedis(defaultLevels) ? buildPublisher() : CacheEventPublisher.NO_PUBLISHER;
+
+        // SpEl 评估器
+        this.conditionEvaluator = this.buildConditionEvaluator();
     }
 
     @Override
@@ -105,7 +110,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                 throw new IllegalStateException("@Cachein and @Cacheout must not be combined on " + name);
             }
 
-            return hasIn? getCacheinInterceptor(cachein, m) : getCacheoutInterceptor(cacheout, m);
+            return hasIn? getCacheinInterceptor(cachein, m) : getCacheoutInterceptor(cacheout, m, targetClass);
         });
 
         return delegate == NULL_INTERCEPTOR ? invocation.proceed() : delegate.invoke(invocation);
@@ -123,7 +128,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         if (annotation != null)
             return annotation;
 
-        // 3. 目标类和声明类不同(方法继承自父类)时,再查目标类
+        // 3. 目标类和声明类不同(方法继承自父类)时, 再查目标类
         return targetClass != method.getDeclaringClass()
                 ? AnnotatedElementUtils.findMergedAnnotation(targetClass, annotationType)
                 : null;
@@ -138,15 +143,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                         defaultCache : this.beanFactory.getBean(cachein.cacheable(), Cacheable.class);
 
         CacheLevel[] levels = ArrayUtils.isEmpty(cachein.levels()) ? defaultLevels : cachein.levels();
-
-        if (this.enableRedis(levels)) {
-
-            // 防止未初始化, 构造函数是针对全局配置, 而在方法上则允许启用 Redis Level
-            this.initCacheEventPublisher();
-
-            // 注册 prefix → cacheable 映射，供事件回调使用
-            cacheEventPublisher.registerCacheable(cacheable);
-        }
+        this.enableAndRegisterLocalCache(levels, cacheable);
 
         return new CacheinOperationInterceptor(
                 cacheable,
@@ -156,8 +153,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                 method);
     }
 
-
-    private MethodInterceptor getCacheoutInterceptor(Cacheout cacheout, Method method) {
+    private MethodInterceptor getCacheoutInterceptor(Cacheout cacheout, Method method, Class<?> targetClass) {
         if (cacheout == null)
             return NULL_INTERCEPTOR;
 
@@ -166,23 +162,27 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                         defaultCache : this.beanFactory.getBean(cacheout.cacheable(), Cacheable.class);
 
         CacheLevel[] levels = ArrayUtils.isEmpty(cacheout.levels()) ? defaultLevels : cacheout.levels();
-
-        if (this.enableRedis(levels)) {
-
-            // 防止未初始化, 构造函数是针对全局配置, 而在方法上则允许启用 Redis Level
-            this.initCacheEventPublisher();
-
-            // 注册 prefix → cacheable 映射，供事件回调使用
-            cacheEventPublisher.registerCacheable(cacheable);
-        }
+        this.enableAndRegisterLocalCache(levels, cacheable);
 
         return new CacheoutOperationInterceptor(
                 cacheable,
                 cacheout,
                 levels,
-                method);
+                method,
+                targetClass,
+                conditionEvaluator);
     }
 
+
+    private void enableAndRegisterLocalCache(CacheLevel[] levels, Cacheable cacheable) {
+        if (this.enableRedis(levels)) {
+            // 防止未初始化, 构造函数是针对全局配置, 而在方法上则允许启用 Redis Level
+            this.initCacheEventPublisher();
+
+            // 注册本地 cacheable，供事件回调清除使用
+            cacheEventPublisher.registerCacheable(cacheable);
+        }
+    }
 
     private void initCacheEventPublisher() {
         if (cacheEventPublisher != CacheEventPublisher.NO_PUBLISHER)
@@ -215,4 +215,15 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
         return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
     }
+
+    // 自定义 SpEl 评估器
+    private ConditionEvaluator buildConditionEvaluator() {
+        try {
+            return this.beanFactory.getBean(ConditionEvaluator.BEAN_NAME, ConditionEvaluator.class);
+        } catch (NoSuchBeanDefinitionException ignored) {
+        }
+
+        return new ConditionEvaluator();
+    }
+
 }

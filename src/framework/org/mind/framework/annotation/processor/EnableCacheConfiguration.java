@@ -3,7 +3,6 @@ package org.mind.framework.annotation.processor;
 import org.aopalliance.aop.Advice;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.Cacheout;
@@ -92,7 +91,7 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     }
 
     @Override
-    public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NotNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 

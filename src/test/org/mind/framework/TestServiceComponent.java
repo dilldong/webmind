@@ -46,7 +46,7 @@ public class TestServiceComponent {
 
     @Cacheout(prefix = CACHE_KEY,
             suffix = "#{userId}_#{vars}",
-            before = true)
+            condition = "#result.isEmpty()")
     public List<Object> outWithCache(String vars, long userId) {
         log.debug("-------cache out method-------");
         return Collections.emptyList();
@@ -54,8 +54,8 @@ public class TestServiceComponent {
 
     @Cachein(prefix = CACHE_KEY,
             suffix = "#{userId}_#{vars}",
-            expire = 15L,
-            unit = TimeUnit.SECONDS,
+            expire = 1L,
+            unit = TimeUnit.MINUTES,
             cacheNull = true)
     public List<Object> getWithCache(String vars, long userId) {
         log.debug("-------1.call orig method-------");

@@ -46,7 +46,7 @@ public @interface Cachein {
     CacheLevel[] levels() default {};
 
     /**
-     * 是否缓存null(防穿透)
+     * 是否缓存 null 值（防穿透）
      */
     boolean cacheNull() default false;
 

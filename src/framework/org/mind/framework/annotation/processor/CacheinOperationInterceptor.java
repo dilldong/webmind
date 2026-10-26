@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.BeaconGuard;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
@@ -83,16 +83,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     @Override
-    public Object invoke(@NonNull MethodInvocation invocation) throws Throwable {
+    public Object invoke(@NotNull MethodInvocation invocation) throws Throwable {
         if (ArrayUtils.isEmpty(cacheLevels))
             return invocation.proceed();
 
         // cache key
         String resolverKey = CacheKeyResolver.resolverExpl(
-                staticKey, invocation.getArguments(), this.method, this.delimiter);
+                staticKey, invocation.getArguments(), method, delimiter);
 
         // Deduced return type
-        TypeMatchResult nullTypeValue = this.getNullTypeValue(this.method.getReturnType());
+        TypeMatchResult nullTypeValue = this.getNullTypeValue(method.getReturnType());
         Objects.requireNonNull(nullTypeValue, "The method should specify a return type");
 
         // for local
