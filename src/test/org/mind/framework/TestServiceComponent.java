@@ -45,9 +45,12 @@ public class TestServiceComponent {
         redissonStreamDelayQueueService.addDelayTask(DelayTask.of("webmind发送的测试消息"), 1L, TimeUnit.SECONDS);
     }
 
+
     @Cacheout(prefix = CACHE_KEY,
             suffix = "#{userId}_#{vars}",
             condition = "#result.isEmpty()")
+    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_#{vars}", beforeClean = true)
+    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_#{vars}_*", pattern = true)
     public List<Object> outWithCache(String vars, long userId) {
         log.debug("-------cache out method-------");
         return Collections.emptyList();

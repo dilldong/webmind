@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cacheout;
@@ -13,6 +15,7 @@ import org.mind.framework.util.TransactionUtils;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  *
@@ -23,57 +26,64 @@ import java.util.Arrays;
 @Slf4j(topic = "Cacheout")
 public class CacheoutOperationInterceptor implements MethodInterceptor {
 
-    private final Cacheable cacheable;
-    private final CacheLevel[] cacheLevels;
+    //    private final Set<Cacheable> cacheableSet;
+//    private final CacheLevel[] defaultLevels;
+//    private final List<Cacheout> cacheouts;
     private final Method method;
     private final Class<?> targetClass;
-    private final Cacheout cacheout;
+    private final Map<Cacheout, Object[]> cacheoutMap;
 
-    private final String staticKey;
     private final ConditionEvaluator conditionEvaluator;
 
-    public CacheoutOperationInterceptor(Cacheable cacheable,
-                                        Cacheout cacheout,
-                                        CacheLevel[] cacheLevels,
+    public CacheoutOperationInterceptor(//Set<Cacheable> cacheableSet,
+                                        //List<Cacheout> cacheouts,
+                                        //CacheLevel[] defaultLevels,
+                                        Map<Cacheout, Object[]> cacheoutMap,
                                         Method method,
                                         Class<?> targetClass,
                                         ConditionEvaluator conditionEvaluator) {
-        this.cacheable = cacheable;
-        this.staticKey = CacheKeyResolver.resolveStaticKey(cacheout);
-        this.cacheLevels = cacheLevels;
+//        this.cacheableSet = cacheableSet;
+//        this.defaultLevels = defaultLevels;
+//        this.cacheouts = cacheouts;
         this.method = method;
         this.targetClass = targetClass;
-        this.cacheout = cacheout;
         this.conditionEvaluator = conditionEvaluator;
+        this.cacheoutMap = cacheoutMap;
     }
 
     @Override
     public Object invoke(@NotNull MethodInvocation invocation) throws Throwable {
-        if (ArrayUtils.isEmpty(cacheLevels))
+        if (cacheoutMap.isEmpty())
             return invocation.proceed();
 
-        // cache key
-        String resolverKey = CacheKeyResolver.resolverExpl(
-                staticKey, invocation.getArguments(), method, cacheout.delimiter());
+        // beforeClean 不同规则分开处理
+        cacheoutMap.forEach((cacheout, values) -> {
+            if (cacheout.beforeClean() && ArrayUtils.isNotEmpty((Object[]) values[1])) {
+                String resolverKey = CacheKeyResolver.resolverExpl(
+                        CacheKeyResolver.resolveStaticKey(cacheout),
+                        invocation.getArguments(),
+                        method,
+                        cacheout.delimiter());
 
-        // pre-clear
-        if (cacheout.beforeClean())
-            evict(resolverKey);
+                evict(resolverKey, cacheout, (CacheLevel[]) values[1], (Cacheable) values[0]);
+            }
+        });
 
         Object result = invocation.proceed();
 
-        // post-clear
-        afterEvict(resolverKey, invocation, result);
+        // after
+        cacheoutMap.forEach((cacheout, values) -> afterEvict(cacheout, values, invocation, result));
+
         return result;
     }
 
-    private void evict(String resolverKey) {
+    private void evict(String resolverKey, Cacheout cacheout, CacheLevel[] levels, Cacheable cacheable) {
         // for redis
         boolean isRedis =
-                Arrays.stream(cacheLevels)
+                Arrays.stream(levels)
                         .anyMatch(v -> CacheLevel.REDIS == v);
 
-        if(isRedis) {
+        if (isRedis) {
             if (cacheout.pattern()) {
                 CacheUtils.clearByPattern(resolverKey);
                 return;
@@ -85,13 +95,19 @@ public class CacheoutOperationInterceptor implements MethodInterceptor {
 
         // for local
         boolean isLocal =
-                Arrays.stream(cacheLevels)
+                Arrays.stream(levels)
                         .anyMatch(v -> CacheLevel.LOCAL == v);
-        if(isLocal)
-            this.cacheable.removeCache(resolverKey);
+        if (isLocal) {
+            if (cacheout.pattern()) {
+                cacheable.removeCacheContains(Strings.CS.replace(resolverKey, "*", StringUtils.EMPTY));
+                return;
+            }
+
+            cacheable.removeCache(resolverKey);
+        }
     }
 
-    private void afterEvict(String resolverKey, MethodInvocation invocation, Object result) {
+    private void afterEvict(Cacheout cacheout, Object[] values, MethodInvocation invocation, Object result) {
         try {
             boolean spelResult = conditionEvaluator.matches(cacheout.condition(), invocation, targetClass, method, result);
             if (!spelResult)
@@ -102,8 +118,14 @@ public class CacheoutOperationInterceptor implements MethodInterceptor {
         }
 
         Runnable action = () -> {
+            String resolverKey = CacheKeyResolver.resolverExpl(
+                    CacheKeyResolver.resolveStaticKey(cacheout),
+                    invocation.getArguments(),
+                    method,
+                    cacheout.delimiter());
+
             try {
-                evict(resolverKey);
+                evict(resolverKey, cacheout, (CacheLevel[]) values[1], (Cacheable) values[0]);
             } catch (Exception e) {
                 log.error("Cacheout failed, key: {}", resolverKey, e);
             }

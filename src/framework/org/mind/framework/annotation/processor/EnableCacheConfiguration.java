@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.Cacheout;
+import org.mind.framework.annotation.Cacheouts;
 import org.mind.framework.annotation.EnableCache;
 import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
@@ -74,7 +75,8 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     public Class<?>[] getInterfaces() {
         return new Class[]{
                 Cachein.class,
-                Cacheout.class
+                Cacheout.class,
+                Cacheouts.class
         };
     }
 
@@ -98,14 +100,15 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
     @Override
     public void afterPropertiesSet() throws Exception {
         Cacheable cacheable = this.findBean(Cacheable.class);
-        Set<Class<? extends Annotation>> annotationTypes = new LinkedHashSet<>(2);
+        Set<Class<? extends Annotation>> annotationTypes = new LinkedHashSet<>(3);
         annotationTypes.add(Cachein.class);
         annotationTypes.add(Cacheout.class);
+        annotationTypes.add(Cacheouts.class);
         this.pointcut = buildPointcut(annotationTypes);
 
 //        this.pointcut = buildPointcut();
 
-        this.advice = new CacheinAnnotationAwareInterceptor(
+        this.advice = new CacheAnnotationAwareInterceptor(
                 cacheable, defaultLevels, cacheSyncName, beanFactory);
     }
 
@@ -172,11 +175,6 @@ public class EnableCacheConfiguration extends AbstractPointcutAdvisor implements
         }
 
         return result;
-    }
-
-    private Pointcut buildPointcut() {
-        Pointcut filter = new AnnotationClassOrMethodPointcut(Cachein.class);
-        return new ComposablePointcut(filter);
     }
 
     private static class AnnotationClassOrMethodPointcut extends StaticMethodMatcherPointcut {

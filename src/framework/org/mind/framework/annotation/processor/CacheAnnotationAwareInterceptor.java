@@ -3,6 +3,7 @@ package org.mind.framework.annotation.processor;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
 import org.mind.framework.annotation.Cacheout;
+import org.mind.framework.annotation.Cacheouts;
 import org.mind.framework.cache.CacheEventHandler;
 import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.Cacheable;
@@ -21,24 +23,33 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.MergedAnnotation;
+import org.springframework.core.annotation.MergedAnnotationPredicates;
+import org.springframework.core.annotation.MergedAnnotations;
+import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
- * Interceptor that parses the cachein metadata on the method it is invoking and delegates
- * to an appropriate CacheinOperationsInterceptor.
+ * Interceptor that parses the cache metadata on the method it is invoking and delegates
+ * to an appropriate CacheinOperationsInterceptor or CacheoutOperationInterceptor.
  *
  * @author Marcus
- * @version 1.0
+ * @version 1.1
  * @date 2022/9/5
  */
 @Slf4j
-public class CacheinAnnotationAwareInterceptor implements IntroductionInterceptor {
+public class CacheAnnotationAwareInterceptor implements IntroductionInterceptor {
     /**
      * 没有 <code>@Cachein</code> <code>@Cacheout</code> 注释的缓存方法的哨兵值,
      * 防止反复反射扫描
@@ -61,14 +72,14 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     private final ConditionEvaluator conditionEvaluator;
 
-    public CacheinAnnotationAwareInterceptor(Cacheable defaultCache,
-                                             CacheLevel[] defaultLevels,
-                                             String cacheSyncName,
-                                             BeanFactory beanFactory) {
+    public CacheAnnotationAwareInterceptor(Cacheable defaultCache,
+                                           CacheLevel[] defaultLevels,
+                                           String cacheSyncName,
+                                           BeanFactory beanFactory) {
         this.defaultCache = defaultCache;
         this.defaultLevels = defaultLevels;
         this.cacheSyncName = cacheSyncName;
-        this.delegates = new ConcurrentReferenceHashMap<>();
+        this.delegates = new ConcurrentReferenceHashMap<>(128);
         this.beanFactory = beanFactory;
 
         // 缓存同步器
@@ -81,7 +92,9 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
 
     @Override
     public boolean implementsInterface(@NotNull Class<?> clazz) {
-        return Cachein.class.isAssignableFrom(clazz) || Cacheout.class.isAssignableFrom(clazz);
+        return Cachein.class.isAssignableFrom(clazz)
+                || Cacheout.class.isAssignableFrom(clazz)
+                || Cacheouts.class.isAssignableFrom(clazz);
     }
 
     @Override
@@ -98,10 +111,12 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
         MethodInterceptor delegate = cachedMethods.computeIfAbsent(method, m -> {
             // 读写分开，禁止组合
             Cachein cachein = resolveAnnotation(targetClass, m, Cachein.class);
-            Cacheout cacheout = resolveAnnotation(targetClass, m, Cacheout.class);
+            List<Cacheout> cacheouts = parseCollectAnnotation(targetClass, m, Cacheout.class);
+
+            validateRules(cacheouts);
             boolean hasIn = cachein != null;
 
-            if (hasIn && cacheout != null) {
+            if (hasIn && CollectionUtils.isNotEmpty(cacheouts)) {
                 String name = Strings.CS.replace(
                         StringUtils.substringAfterLast(m.toString(), StringUtils.SPACE),
                         targetClass.getPackage().getName() + IOUtils.DOT_SEPARATOR,
@@ -110,7 +125,7 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                 throw new IllegalStateException("@Cachein and @Cacheout must not be combined on " + name);
             }
 
-            return hasIn? getCacheinInterceptor(cachein, m) : getCacheoutInterceptor(cacheout, m, targetClass);
+            return hasIn ? getCacheinInterceptor(cachein, m) : getCacheoutInterceptor(cacheouts, m, targetClass);
         });
 
         return delegate == NULL_INTERCEPTOR ? invocation.proceed() : delegate.invoke(invocation);
@@ -134,6 +149,44 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                 : null;
     }
 
+    private <V extends Annotation> List<V> parseCollectAnnotation(Class<?> targetClass, Method method, Class<V> annotationType) {
+        // 1. 接口 & 方法上的
+        List<V> list = resolveCollectAnnotation(method, annotationType);
+        if (!list.isEmpty())
+            return list;
+
+        // 2. 类级别上的
+        list = resolveCollectAnnotation(method.getDeclaringClass(), annotationType);
+        if (!list.isEmpty())
+            return list;
+
+        // 3. 目标类和声明类不同(方法继承自父类)时, 再查目标类
+        return targetClass != method.getDeclaringClass()
+                ? resolveCollectAnnotation(targetClass, annotationType)
+                : Collections.emptyList();
+    }
+
+    /**
+     * 同时识别单个 @Cacheout 和被包进 @Cacheouts 的多个 @Cacheout。
+     * 沿层级查找,只取最近一层: 实现方法上有注解时, 接口方法上的不再合并进来。
+     */
+    private <V extends Annotation> List<V> resolveCollectAnnotation(AnnotatedElement element, Class<V> annotationType) {
+        return MergedAnnotations
+                .from(element, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY, RepeatableContainers.standardRepeatables())
+                .stream(annotationType)
+                .filter(MergedAnnotationPredicates.firstRunOf(MergedAnnotation::getAggregateIndex))
+                .map(MergedAnnotation::synthesize)
+                .collect(Collectors.toList());
+    }
+
+    private void validateRules(List<Cacheout> rules) {
+        for (Cacheout rule : rules) {
+            if (rule.beforeClean() && rule.condition().contains("#result")) {
+                throw new IllegalStateException("#result is unavailable when beforeClean=true");
+            }
+        }
+    }
+
     private MethodInterceptor getCacheinInterceptor(Cachein cachein, Method method) {
         if (cachein == null)
             return NULL_INTERCEPTOR;
@@ -153,21 +206,24 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
                 method);
     }
 
-    private MethodInterceptor getCacheoutInterceptor(Cacheout cacheout, Method method, Class<?> targetClass) {
-        if (cacheout == null)
+    private MethodInterceptor getCacheoutInterceptor(List<Cacheout> cacheouts, Method method, Class<?> targetClass) {
+        if (CollectionUtils.isEmpty(cacheouts))
             return NULL_INTERCEPTOR;
 
-        Cacheable cacheable =
-                StringUtils.isEmpty(cacheout.cacheable()) ?
-                        defaultCache : this.beanFactory.getBean(cacheout.cacheable(), Cacheable.class);
+        Map<Cacheout, Object[]> cacheoutMap = new HashMap<>(cacheouts.size());
+        for (Cacheout cacheout : cacheouts) {
+            Cacheable cacheable =
+                    StringUtils.isEmpty(cacheout.cacheable()) ?
+                            defaultCache : this.beanFactory.getBean(cacheout.cacheable(), Cacheable.class);
 
-        CacheLevel[] levels = ArrayUtils.isEmpty(cacheout.levels()) ? defaultLevels : cacheout.levels();
-        this.enableAndRegisterLocalCache(levels, cacheable);
+            CacheLevel[] levels = ArrayUtils.isEmpty(cacheout.levels()) ? defaultLevels : cacheout.levels();
+            this.enableAndRegisterLocalCache(levels, cacheable);
+            cacheoutMap.put(cacheout, new Object[]{cacheable, levels});
+        }
 
         return new CacheoutOperationInterceptor(
-                cacheable,
-                cacheout,
-                levels,
+                //cacheEventPublisher.getCacheableRegistry(),
+                cacheoutMap,
                 method,
                 targetClass,
                 conditionEvaluator);
@@ -203,13 +259,15 @@ public class CacheinAnnotationAwareInterceptor implements IntroductionIntercepto
     private CacheEventPublisher buildPublisher() {
         try {
             return this.beanFactory.getBean(CacheEventPublisher.BEAN_NAME, CacheEventPublisher.class);
-        } catch (NoSuchBeanDefinitionException ignored) {}
+        } catch (NoSuchBeanDefinitionException ignored) {
+        }
 
         // 自定义缓存事件接收器
         CacheEventHandler cacheEventHandler = null;
         try {
             cacheEventHandler = this.beanFactory.getBean(CacheEventHandler.BEAN_NAME, CacheEventHandler.class);
-        } catch (NoSuchBeanDefinitionException ignored) {}
+        } catch (NoSuchBeanDefinitionException ignored) {
+        }
 
         return new DefaultCacheEventPublisher(cacheEventHandler, cacheSyncName);
     }
