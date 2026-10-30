@@ -2,12 +2,13 @@ package org.mind.framework.cache;
 
 import org.redisson.api.RMapCache;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Marcus
- * @date 2026/5/18
- * @version 1.0
+ * @author: Marcus
+ * @date: 2026/5/18
+ * @version: 1.0
  */
 public interface CacheEventPublisher {
     String KEY_EVENT_MAPCACHE = "webmind:sync:cache:listener";
@@ -22,6 +23,11 @@ public interface CacheEventPublisher {
         @Override
         public void publish(String key, long expire, TimeUnit unit) {
             // do nothing
+        }
+
+        @Override
+        public Set<Cacheable> getCacheableRegistry() {
+            return null;
         }
 
         @Override
@@ -44,4 +50,9 @@ public interface CacheEventPublisher {
      * 获取当前的 (RMapCache) 同步器对象
      */
     RMapCache<String, String> getCacheEventListener();
+
+    /**
+     * 获取本地 Cacheable 列表
+     */
+    Set<Cacheable> getCacheableRegistry();
 }

@@ -29,6 +29,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
     /**
      * 本地 Cacheable 列表。
      */
+    @Getter
     private final Set<Cacheable> cacheableRegistry;
 
     @Getter
@@ -44,7 +45,7 @@ public class DefaultCacheEventPublisher implements CacheEventPublisher {
         this.cacheEventHandler = cacheEventHandler;
         this.cacheSyncName = cacheSyncName;
 
-        this.cacheableRegistry = Collections.synchronizedSet(new HashSet<>());
+        this.cacheableRegistry = Collections.synchronizedSet(new HashSet<>(16));
         this.cacheEventListener = this.registerCacheSyncListener();
     }
 
