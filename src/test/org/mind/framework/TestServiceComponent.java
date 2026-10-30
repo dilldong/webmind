@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mind.framework.annotation.Cachein;
+import org.mind.framework.annotation.Cacheout;
 import org.mind.framework.cache.AbstractCache;
 import org.mind.framework.helper.broadcast.RedissonStreamBroadcastService;
 import org.mind.framework.helper.delayqueue.DelayTask;
@@ -11,7 +12,7 @@ import org.mind.framework.helper.delayqueue.RedissonStreamDelayQueueService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -43,14 +44,25 @@ public class TestServiceComponent {
         redissonStreamDelayQueueService.addDelayTask(DelayTask.of("webmind发送的测试消息"), 1L, TimeUnit.SECONDS);
     }
 
+
+    @Cacheout(prefix = CACHE_KEY,
+            suffix = "#{userId}_#{vars}",
+            condition = "#result.isEmpty()")
+    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_#{vars}")
+    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_*", pattern = true, beforeClean = true)
+    public List<Object> outWithCache(String vars, long userId) {
+        log.debug("-------cache out method-------");
+        return Collections.emptyList();
+    }
+
     @Cachein(prefix = CACHE_KEY,
             suffix = "#{userId}_#{vars}",
-            expire = 15L,
-            unit = TimeUnit.SECONDS,
+            expire = 1L,
+            unit = TimeUnit.MINUTES,
             cacheNull = true)
     public List<Object> getWithCache(String vars, long userId) {
         log.debug("-------1.call orig method-------");
-        return Arrays.asList(234L, 32, 32);
+        return List.of(234L, 32, 32);
     }
 
     @Cachein(prefix = CACHE_KEY,

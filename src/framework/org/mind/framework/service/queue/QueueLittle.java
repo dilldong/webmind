@@ -5,7 +5,7 @@ import org.mind.framework.service.threads.ThreadContextPropagator;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 轻量级的消息队列接口
+ * 本地轻量级消息队列
  *
  * @author dp
  * @version 2.0
@@ -23,12 +23,12 @@ public class QueueLittle extends LightweightQueueService implements QueueService
 
     @Override
     public boolean producer(DelegateMessage message) {
-        return this.offer(ThreadContextPropagator.wrap(message));
+        return offer(ThreadContextPropagator.wrap(message));
     }
 
     @Override
     public boolean producer(DelegateMessage message, long timeout, TimeUnit unit) throws InterruptedException {
-        return this.offer(ThreadContextPropagator.wrap(message), timeout, unit);
+        return offer(ThreadContextPropagator.wrap(message), timeout, unit);
     }
 
     @Override

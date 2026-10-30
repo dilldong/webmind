@@ -4,30 +4,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.BeaconGuard;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cachein;
-import org.mind.framework.annotation.CacheinFace;
 import org.mind.framework.cache.CacheElement;
 import org.mind.framework.cache.CacheEventPublisher;
 import org.mind.framework.cache.CacheUtils;
 import org.mind.framework.cache.Cacheable;
-import org.mind.framework.exception.NotSupportedException;
 import org.mind.framework.helper.RedissonHelper;
 import org.mind.framework.service.Cloneable;
-import org.mind.framework.util.MatcherUtils;
-import org.mind.framework.web.dispatcher.support.ConverterFactory;
 import org.redisson.api.RLock;
-import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.aop.support.AopUtils;
-import org.springframework.core.DefaultParameterNameDiscoverer;
-import org.springframework.core.ParameterNameDiscoverer;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +26,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * @author Marcus
@@ -47,19 +34,19 @@ import java.util.stream.Stream;
  */
 @Slf4j(topic = "Cachein")
 public class CacheinOperationInterceptor implements MethodInterceptor {
-    private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
     private static final Map<Class<?>, String> NULL_TYPE_MAP = new HashMap<>(3);
 
-    private final String staticKey;
     private final long expire;
+    private final String staticKey;
+    private final String delimiter;
     private final TimeUnit timeUnit;
     private final Cacheable cacheable;
     private final Cloneable.CloneType cloneType;
     private final boolean cacheNull;
     private final CacheLevel[] cacheLevels;
     private final CacheEventPublisher eventPublisher;
-    private final String delimiter;
     private final BeaconGuard beaconGuard;
+    private final Method method;
 
     static {
         NULL_TYPE_MAP.put(List.class, RedissonHelper.EMPTY_LIST_MARKER);
@@ -71,17 +58,19 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                                        Cachein cachein,
                                        CacheLevel[] cacheLevels,
                                        CacheEventPublisher eventPublisher,
-                                       String staticKey) {
+                                       Method method) {
         this.cacheable = cacheable;
         this.cloneType = cachein.strategy();
         this.cacheNull = cachein.cacheNull();
         this.expire = Math.max(cachein.expire(), 0L);
         this.timeUnit = cachein.unit();
-        this.cacheLevels = cacheLevels;
         this.delimiter = cachein.delimiter();
+        this.cacheLevels = cacheLevels;
         this.beaconGuard = cachein.beaconGuard();
-        this.staticKey = staticKey;
         this.eventPublisher = eventPublisher;
+        this.method = method;
+
+        this.staticKey = CacheKeyResolver.resolveStaticKey(cachein);
 
         if(this.beaconGuard.exclusive()){
             boolean isRedis =
@@ -94,14 +83,16 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     }
 
     @Override
-    public Object invoke(MethodInvocation invocation) throws Throwable {
-        String resolverKey = resolverExpl(invocation.getArguments(), invocation.getThis(), invocation.getMethod());
-
+    public Object invoke(@NotNull MethodInvocation invocation) throws Throwable {
         if (ArrayUtils.isEmpty(cacheLevels))
-            return this.callback(invocation);
+            return invocation.proceed();
+
+        // cache key
+        String resolverKey = CacheKeyResolver.resolverExpl(
+                staticKey, invocation.getArguments(), method, delimiter);
 
         // Deduced return type
-        TypeMatchResult nullTypeValue = this.getNullTypeValue(invocation.getMethod().getReturnType());
+        TypeMatchResult nullTypeValue = this.getNullTypeValue(method.getReturnType());
         Objects.requireNonNull(nullTypeValue, "The method should specify a return type");
 
         // for local
@@ -140,8 +131,8 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                           MethodInvocation invocation,
                           TypeMatchResult nullTypeValue,
                           boolean isRedis,
-                          boolean isLocal) throws Exception {
-        Object result = this.callback(invocation);
+                          boolean isLocal) throws Throwable {
+        Object result = invocation.proceed();
         if (isRedis)
             save2redis(key, result, nullTypeValue);
 
@@ -154,7 +145,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
     private Object loadWithGuard(String key,
                                  MethodInvocation invocation,
                                  TypeMatchResult nullTypeValue,
-                                 boolean isLocal) throws Exception {
+                                 boolean isLocal) throws Throwable {
 
         // The same CacheUtils.loadWithGuard()
         RLock lock = RedissonHelper.getInstance().getLock(key + CacheUtils.BACKFILL_CACHE);
@@ -191,7 +182,7 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
                 beaconGuard.waitTime(), beaconGuard.timeUnit(), key);
 
         // degrade to L1-only (与 CacheUtils 对齐)
-        Object result = this.callback(invocation);
+        Object result = invocation.proceed();
         if(isLocal)
             save2local(key, result, nullTypeValue);
         return result;
@@ -218,54 +209,6 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
         );
     }
 
-    private String resolverExpl(Object[] params, Object target, Method method) {
-        if (ArrayUtils.isEmpty(params))
-            return staticKey;
-
-        if (MatcherUtils.checkCount(staticKey, MatcherUtils.PARAM_MATCH_PATTERN) == 0)
-            return staticKey;
-
-        /*
-         * 使用 Spring 提供的方法解析 + 参数名发现器
-         * 接口 → 实现类
-         * bridge method
-         * 泛型擦除问题
-         */
-        Method specificMethod = AopUtils.getMostSpecificMethod(method, target.getClass());
-        String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(specificMethod);
-
-        Objects.requireNonNull(paramNames);
-        int size = params.length;
-        String resolveKey = staticKey;
-
-        for (int i = 0; i < size; ++i) {
-            String value = null;
-            if (Objects.nonNull(params[i])) {
-                if (ConverterFactory.getInstance().isConvert(params[i].getClass()))
-                    value = String.valueOf(params[i]);
-                else if (params[i] instanceof CacheinFace<?> v)
-                    value = String.valueOf(v.getValue());
-                else if (params[i].getClass().isArray())
-                    value = arrayToString(params[i]);
-                else if (params[i] instanceof Collection<?> collection) {
-                    value = collection.stream().map(v -> {
-                        if (v instanceof CacheinFace<?> face)
-                            return String.valueOf(face.getValue());
-                        return String.valueOf(v);
-                    }).collect(Collectors.joining(delimiter));
-                } else {
-                    throw new NotSupportedException("Key value conversion failed. Supported types: basic-types, one-dimensional arrays(basic-types), CacheinFace, Collection(basic-types and CacheinFace");
-                }
-            }
-
-            resolveKey =
-                    resolveKey.replaceAll(
-                            "#\\{" + paramNames[i] + "\\}",
-                            StringUtils.defaultIfEmpty(value, StringUtils.EMPTY));
-        }
-
-        return resolveKey;
-    }
 
     private void save2local(String resolverKey, Object result, TypeMatchResult nullTypeValue, boolean... remainTimeToLive) {
         long remainMs = ArrayUtils.isEmpty(remainTimeToLive) || !remainTimeToLive[0] ?
@@ -316,40 +259,6 @@ public class CacheinOperationInterceptor implements MethodInterceptor {
             RedissonHelper.getInstance().setWithLock(resolverKey, result, expireTime, timeUnit);
 
         eventPublisher.publish(resolverKey, expire, timeUnit);
-    }
-
-    private Object callback(MethodInvocation invocation) throws Exception {
-        if (ProxyMethodInvocation.class.isAssignableFrom(invocation.getClass())) {
-            try {
-                return ((ProxyMethodInvocation) invocation).invocableClone().proceed();
-            } catch (Exception | Error e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        throw new IllegalStateException("MethodInvocation of the wrong type detected - this should not happen with Spring AOP.");
-    }
-
-    private String arrayToString(Object obj) {
-        int length = ArrayUtils.getLength(obj);
-        if (length == 0)
-            return StringUtils.EMPTY;
-
-        // If a basic type array
-        if (obj.getClass().getComponentType().isPrimitive()) {
-            return IntStream.range(0, length)
-                    .mapToObj(i -> String.valueOf(Array.get(obj, i)))
-                    .collect(Collectors.joining(delimiter));
-        }
-
-        // Object type array
-        return Stream.of((Object[]) obj).map(v -> {
-            if (v instanceof CacheinFace<?> face)
-                return String.valueOf(face.getValue());
-            return String.valueOf(v);
-        }).collect(Collectors.joining(delimiter));
     }
 
     private TypeMatchResult getNullTypeValue(Class<?> returnType) {

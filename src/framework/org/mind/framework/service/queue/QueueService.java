@@ -28,6 +28,11 @@ public interface QueueService extends Destroyable {
     boolean producer(DelegateMessage message, long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
+     * 向队列添加元素（阻塞）
+     */
+    void put(DelegateMessage message) throws InterruptedException;
+
+    /**
      * 检查队列是否为空
      */
     boolean isEmpty();

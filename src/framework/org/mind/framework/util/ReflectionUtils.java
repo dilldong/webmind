@@ -11,9 +11,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Simple utility class for working with the reflection API and handling
@@ -92,11 +92,12 @@ public class ReflectionUtils {
         if (ArrayUtils.isEmpty(fields))
             return Collections.emptyMap();
 
-        Map<String, Field> fieldMap = new HashMap<>(fields.length);
-        for (Field f : fields)
-            fieldMap.put(f.getName(), f);
-
-        return fieldMap;
+        return Arrays.stream(fields)
+                .collect(Collectors.toMap(
+                        Field::getName,
+                        v -> v,
+                        (v1, v2) -> v2
+                ));
     }
 
 

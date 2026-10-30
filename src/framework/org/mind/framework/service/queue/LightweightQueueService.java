@@ -1,6 +1,7 @@
 package org.mind.framework.service.queue;
 
 import lombok.extern.slf4j.Slf4j;
+import org.mind.framework.exception.QueueFullException;
 import org.mind.framework.service.threads.CallerRunsExecutionHandler;
 import org.mind.framework.service.threads.ExecutorFactory;
 import org.mind.framework.util.DateUtils;
@@ -156,7 +157,7 @@ public class LightweightQueueService {
             throw new IllegalStateException("Queue service is not running");
 
         if (Objects.isNull(item))
-            throw new IllegalArgumentException("Item cannot be null");
+            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -166,8 +167,11 @@ public class LightweightQueueService {
         }
 
         boolean added = workerQueue.offer(item);
-        if (!added)
+        if (!added) {
             log.warn("Failed to add item to queue - queue is full");
+            if(config.isExceptionByQueueFull())
+                throw new QueueFullException("Failed to add item to queue - queue is full");
+        }
 
         return added;
     }
@@ -186,7 +190,7 @@ public class LightweightQueueService {
             throw new IllegalStateException("Queue service is not running");
 
         if (Objects.isNull(item))
-            throw new IllegalArgumentException("Item cannot be null");
+            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -195,7 +199,15 @@ public class LightweightQueueService {
                 return context.addNestedTask(item);
         }
 
-        return workerQueue.offer(item, timeout, unit);
+        boolean added = workerQueue.offer(item, timeout, unit);
+        if (!added) {
+            log.warn("Add item timeout to queue.");
+            if(config.isExceptionByQueueFull())
+                throw new QueueFullException("Add item timeout to queue");
+        }
+
+        return added;
+
     }
 
     /**
@@ -209,7 +221,7 @@ public class LightweightQueueService {
             throw new IllegalStateException("Queue service is not running");
 
         if (Objects.isNull(item))
-            throw new IllegalArgumentException("Item cannot be null");
+            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -551,7 +563,7 @@ public class LightweightQueueService {
     private static class NestedTaskContext {
         private final AtomicInteger depth = new AtomicInteger(0);
 
-        // 非阻塞 的并发队列
+        // 非阻塞的并发队列
         private final List<Queue<DelegateMessage>> taskLevels = new ArrayList<>();
 
         // 最大深度限制
