@@ -26,25 +26,16 @@ import java.util.Map;
 @Slf4j(topic = "Cacheout")
 public class CacheoutOperationInterceptor implements MethodInterceptor {
 
-    //    private final Set<Cacheable> cacheableSet;
-//    private final CacheLevel[] defaultLevels;
-//    private final List<Cacheout> cacheouts;
     private final Method method;
     private final Class<?> targetClass;
     private final Map<Cacheout, Object[]> cacheoutMap;
 
     private final ConditionEvaluator conditionEvaluator;
 
-    public CacheoutOperationInterceptor(//Set<Cacheable> cacheableSet,
-                                        //List<Cacheout> cacheouts,
-                                        //CacheLevel[] defaultLevels,
-                                        Map<Cacheout, Object[]> cacheoutMap,
+    public CacheoutOperationInterceptor(Map<Cacheout, Object[]> cacheoutMap,
                                         Method method,
                                         Class<?> targetClass,
                                         ConditionEvaluator conditionEvaluator) {
-//        this.cacheableSet = cacheableSet;
-//        this.defaultLevels = defaultLevels;
-//        this.cacheouts = cacheouts;
         this.method = method;
         this.targetClass = targetClass;
         this.conditionEvaluator = conditionEvaluator;
