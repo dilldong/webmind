@@ -222,7 +222,6 @@ public class CacheAnnotationAwareInterceptor implements IntroductionInterceptor 
         }
 
         return new CacheoutOperationInterceptor(
-                //cacheEventPublisher.getCacheableRegistry(),
                 cacheoutMap,
                 method,
                 targetClass,
