@@ -1,5 +1,7 @@
 package org.mind.framework.helper;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -100,6 +102,7 @@ public class RedissonHelper {
                 ObjectMapper mapper = codec.getObjectMapper();
                 mapper.registerModules(new JavaTimeModule());
                 mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);// 使用 ISO-8601 字符串更易读
+                mapper.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);// 关闭 Codec 对 isXxx() 的自动识别
             }
         } catch (IOException e) {
             ThrowProvider.doThrow(e);
