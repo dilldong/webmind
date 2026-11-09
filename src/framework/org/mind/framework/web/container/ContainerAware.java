@@ -6,7 +6,6 @@ import org.mind.framework.web.Destroyable;
 import org.mind.framework.web.dispatcher.handler.Execution;
 import org.mind.framework.web.dispatcher.support.Catcher;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -26,11 +25,9 @@ public interface ContainerAware extends Destroyable {
 
     List<Object> loadBeans(boolean ... excludeSpringSelf);
 
-    void loadInterceptor(Object bean, Consumer<Catcher> consumer);
+    void loadInterceptor(Consumer<Catcher> consumer);
 
-    void loadMapping(Object bean, BiConsumer<String, Execution> biConsumer);
+    void loadMapping(BiConsumer<String, Execution> biConsumer);
 
-    void loadCorsOrigin(Object bean, Consumer<Catcher> consumer);
-
-    boolean isMappingMethod(Method method);
+    void loadCorsOrigin(Consumer<Catcher> consumer);
 }

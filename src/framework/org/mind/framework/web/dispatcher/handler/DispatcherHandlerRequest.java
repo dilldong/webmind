@@ -113,13 +113,10 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         /*
          * init Action by Spring Container and create on the URI mapping relationship
          */
-        List<Object> beanList = container.loadBeans(true);
         List<Catcher> mappingInterceptor = new ArrayList<>();
-        for (Object bean : beanList) {
-            container.loadInterceptor(bean, mappingInterceptor::add);
-            container.loadMapping(bean, this.actions::put);
-            container.loadCorsOrigin(bean, this.interceptorsCatcher::add);
-        }
+        container.loadInterceptor(mappingInterceptor::add);
+        container.loadMapping(this.actions::put);
+        container.loadCorsOrigin(this.interceptorsCatcher::add);
 
         // Interceptor forward sorting
         if (mappingInterceptor.size() > 1)
