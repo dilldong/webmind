@@ -48,7 +48,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Web Container Wrapper for Spring 2+
+ * Web Container Wrapper for Spring 5.0+
  *
  * @author dp
  */
@@ -201,7 +201,7 @@ public class SpringContainerAware implements ContainerAware {
                     consumer.accept(new CorsCatcher(mapping.value(), interceptor));
                     log.info("Loaded cross origin: {}, {}", mapping.value(), interceptor);
                 },
-                this::isValidMethod
+                SpringContainerAware::isValidMethod
         );
     }
 
@@ -231,7 +231,7 @@ public class SpringContainerAware implements ContainerAware {
                     Execution execution = new Execution(bean, method, mapping);
                     Arrays.stream(mapping.value()).forEach(route -> biConsumer.accept(route, execution));
                 },
-                this::isValidMethod
+                SpringContainerAware::isValidMethod
         );
     }
 
@@ -291,7 +291,7 @@ public class SpringContainerAware implements ContainerAware {
         return config;
     }
 
-    private boolean isValidMethod(Method method) {
+    public static boolean isValidMethod(Method method) {
         if (method == null || method.isBridge() || method.isSynthetic())
             return false;
 
@@ -302,7 +302,7 @@ public class SpringContainerAware implements ContainerAware {
         return true;
     }
 
-    private boolean noneMappingMethod(Method method, Mapping mapping) {
+    public static boolean noneMappingMethod(Method method, Mapping mapping) {
         if(mapping == null)
             return true;
 
