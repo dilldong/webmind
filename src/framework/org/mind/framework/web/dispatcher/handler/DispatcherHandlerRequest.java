@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
+
 /**
  * Dispatcher handles ALL requests from clients, and dispatches to appropriate
  * handler to handle each request.
@@ -318,15 +319,14 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             // 2. regex match
             for (String regex : this.uriRegexList) {
                 Matcher matcher = MatcherUtils.matcher(requestUri, regex, MatcherUtils.DEFAULT_EQ);
-                if (!matcher.matches())// not-match
-                    continue;
-
-                execution = this.actions.get(regex);
-                break;
+                if(matcher.matches()){
+                    execution = this.actions.get(regex);
+                    break;
+                }
             }
         }
 
-        if (Objects.isNull(execution)) {
+        if (execution == null) {
             log.warn("(404) Not found: [{}]", requestUri);
             this.renderError(
                     HttpServletResponse.SC_NOT_FOUND,
@@ -476,6 +476,9 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
             if (matcher.matches())
                 break;
         }
+
+        if(matcher == null)
+            return null;
 
         // Fetch request parameters in the URI
         Class<?> type;

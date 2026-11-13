@@ -194,14 +194,14 @@ public class SpringContainerAware implements ContainerAware {
                         return;
 
                     Mapping mapping = resolveAnnotation(targetClass, method, Mapping.class);
-                    if(!checkMappingMethod(method, mapping))
+                    if(noneMappingMethod(method, mapping))
                         return;
 
                     HandlerInterceptor interceptor = new CorsInterceptor(this.initCorsConfiguration(crossOrigin, mapping.method()));
                     consumer.accept(new CorsCatcher(mapping.value(), interceptor));
                     log.info("Loaded cross origin: {}, {}", mapping.value(), interceptor);
                 },
-                this::isValidMethod
+                SpringContainerAware::isValidMethod
         );
     }
 
@@ -226,13 +226,13 @@ public class SpringContainerAware implements ContainerAware {
                 method -> {
                     // 查找 @Mapping
                     Mapping mapping = resolveAnnotation(targetClass, method, Mapping.class);
-                    if(!checkMappingMethod(method, mapping))
+                    if(noneMappingMethod(method, mapping))
                         return;
 
                     Execution execution = new Execution(bean, method, mapping);
                     Arrays.stream(mapping.value()).forEach(route -> biConsumer.accept(route, execution));
                 },
-                this::isValidMethod
+                SpringContainerAware::isValidMethod
         );
     }
 
@@ -292,7 +292,7 @@ public class SpringContainerAware implements ContainerAware {
         return config;
     }
 
-    private boolean isValidMethod(Method method) {
+    public static boolean isValidMethod(Method method) {
         if (method == null || method.isBridge() || method.isSynthetic())
             return false;
 
@@ -303,18 +303,18 @@ public class SpringContainerAware implements ContainerAware {
         return true;
     }
 
-    private boolean checkMappingMethod(Method method, Mapping mapping) {
+    public static boolean noneMappingMethod(Method method, Mapping mapping) {
         if(mapping == null)
-            return false;
+            return true;
 
         if (ArrayUtils.isEmpty(mapping.value())) {
             log.warn("Invalid Action method '{}', URI mapping value cannot be empty.", method.toGenericString());
-            return false;
+            return true;
         }
 
         if(ArrayUtils.isEmpty(mapping.method())){
             log.warn("Invalid Action method '{}', URI mapping method cannot be empty.", method.toGenericString());
-            return false;
+            return true;
         }
 
         Class<?>[] argTypes = method.getParameterTypes();
@@ -323,10 +323,10 @@ public class SpringContainerAware implements ContainerAware {
         for (Class<?> argType : argTypes) {
             if (!converter.isConvert(argType)) {
                 log.warn("Invalid Action method '{}' unsupported parameter type '{}'.", method.toGenericString(), argType.getName());
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 }
