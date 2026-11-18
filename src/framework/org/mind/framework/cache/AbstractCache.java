@@ -1,7 +1,6 @@
 package org.mind.framework.cache;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.mind.framework.web.Destroyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,30 +37,20 @@ public abstract class AbstractCache implements Destroyable {
         return String.join(CACHE_DELIMITER, prefix, key);
     }
 
-    protected boolean isExcluded(String key, String[] excludes, Cacheable.CompareType rule) {
+    protected boolean isExcluded(String key, String[] excludes) {
         for (String ex : excludes) {
-            boolean match = Cacheable.CompareType.EQ_FULL == rule
-                    ? Strings.CS.equals(key, ex)
-                    : Strings.CS.contains(key, ex);
-
-            if (match)
+            if (key.equals(ex))
                 return true;
         }
         return false;
     }
 
-
     @Override
     public void destroy() {
-        if(log.isDebugEnabled())
-            log.debug("Destroy {} manager.", cacheName);
+        log.debug("Destroy {} manager.", cacheName);
     }
 
     public String getCacheName() {
         return cacheName;
-    }
-
-    public void setCacheName(String cacheName) {
-        this.cacheName = cacheName;
     }
 }

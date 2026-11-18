@@ -217,8 +217,14 @@ public class TestSpringModule extends AbstractJUnit4SpringContextTests {
     @SneakyThrows
     @Test
     public void testLocalCache(){
-        testServiceComponent.getWithCache("cache", 222L);
-        testServiceComponent.outWithCache("cache", 222L);
+        String key = TestServiceComponent.CACHE_KEY +"_222_cache";
+        String key1 = TestServiceComponent.CACHE_KEY +"_223_cache";
+
+        cacheable.addCache(key, "1");
+        cacheable.addCache(key1, "2");
+
+        System.out.println("Local: "+ cacheable.getCache(key).getValue());
+        System.out.println("Local: "+ cacheable.getCache(key1).getValue());
 
 //        System.out.println("1.call string:");
 //        System.out.println(testServiceComponent.getWithCache(22222L));
