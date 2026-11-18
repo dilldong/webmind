@@ -1,6 +1,6 @@
 package org.mind.framework.cache;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateUtils;
 import org.slf4j.Logger;
@@ -159,26 +159,23 @@ public class LruCache extends AbstractCache implements Cacheable {
 
     @Override
     public List<CacheElement> removeCacheContains(String searchStr, String[] excludes) {
-        return removeCacheContains(searchStr, excludes, Cacheable.CompareType.EQ_FULL);
-    }
-
-    @Override
-    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, CompareType excludesRule) {
         lock.lock();
         try {
             if (this.isEmpty())
                 return Collections.emptyList();
 
             List<CacheElement> removeList = new ArrayList<>();
+            WildcardMatcher matcher = new WildcardMatcher(searchStr);
+            boolean nonNullExcludes = ArrayUtils.isNotEmpty(excludes);
             Iterator<Entry<String, CacheElement>> iterator = itemsMap.entrySet().iterator();
 
             while (iterator.hasNext()) {
                 Map.Entry<String, CacheElement> entry = iterator.next();
 
-                if (!StringUtils.containsIgnoreCase(entry.getKey(), searchStr))
+                if (!matcher.matches(entry.getKey()))
                     continue;
 
-                if (excludes != null && excludes.length > 0 && isExcluded(entry.getKey(), excludes, excludesRule))
+                if (nonNullExcludes && isExcluded(entry.getKey(), excludes))
                     continue;
 
                 iterator.remove();

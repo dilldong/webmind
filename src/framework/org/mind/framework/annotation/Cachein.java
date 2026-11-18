@@ -43,6 +43,9 @@ public @interface Cachein {
 
     TimeUnit unit() default TimeUnit.MILLISECONDS;
 
+    /**
+     * 默认为 {@link EnableCache} 中的 {@code levels}
+     */
     CacheLevel[] levels() default {};
 
     /**
@@ -52,7 +55,7 @@ public @interface Cachein {
 
     /**
      * 默认无锁回源
-     * 当 exclusive=true 时，要求 levels 包含 REDIS
+     * 当 exclusive=true 时，要求 levels 包含 {@code REDIS}
      * 其中 beaconGuard.waitTime 应大于目标方法的 P99 耗时
      */
     BeaconGuard beaconGuard() default @BeaconGuard();

@@ -14,10 +14,6 @@ import java.util.List;
  */
 public interface Cacheable extends Serializable, Destroyable {
 
-    enum CompareType {
-        EQ_FULL, EQ_PART
-    }
-
     /**
      * 添加一个新条目，如果该条目已经存在，将不做任何操作
      *
@@ -56,7 +52,7 @@ public interface Cacheable extends Serializable, Destroyable {
 
 
     /**
-     * 删除包含的searchStr缓存
+     * 删除包含的 searchStr 缓存
      *
      * @param searchStr
      * @return
@@ -65,21 +61,12 @@ public interface Cacheable extends Serializable, Destroyable {
     List<CacheElement> removeCacheContains(String searchStr);
 
     /**
-     * 删除包含的searchStr缓存, 排除excludes的key值
+     * 删除包含的 searchStr 缓存, 排除 excludes 的 key 值
      *
      * @param searchStr
      * @param excludes  排除的key
      */
     List<CacheElement> removeCacheContains(String searchStr, String[] excludes);
-
-    /**
-     * 删除包含的searchStr缓存, 排除excludes的key值
-     *
-     * @param searchStr
-     * @param excludes     排除的key
-     * @param excludesRule 排除对象的匹配规则, CompareType.EQ_FULL 精确匹配, CompareType.EQ_PART 包含匹配
-     */
-    List<CacheElement> removeCacheContains(String searchStr, String[] excludes, Cacheable.CompareType excludesRule);
 
     /**
      * 获得缓存对象

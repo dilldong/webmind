@@ -37,13 +37,9 @@ public abstract class AbstractCache implements Destroyable {
         return String.join(CACHE_DELIMITER, prefix, key);
     }
 
-    protected boolean isExcluded(String key, String[] excludes, Cacheable.CompareType rule) {
+    protected boolean isExcluded(String key, String[] excludes) {
         for (String ex : excludes) {
-            boolean match = Cacheable.CompareType.EQ_FULL == rule
-                    ? StringUtils.equals(key, ex)
-                    : StringUtils.contains(key, ex);
-
-            if (match)
+            if (key.equals(ex))
                 return true;
         }
         return false;
@@ -56,9 +52,5 @@ public abstract class AbstractCache implements Destroyable {
 
     public String getCacheName() {
         return cacheName;
-    }
-
-    public void setCacheName(String cacheName) {
-        this.cacheName = cacheName;
     }
 }

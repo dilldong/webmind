@@ -7,7 +7,6 @@ import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.mind.framework.service.Cloneable;
 import org.mind.framework.util.DateUtils;
 
@@ -152,26 +151,21 @@ public class CaffeineCache extends AbstractCache implements Cacheable {
 
     @Override
     public List<CacheElement> removeCacheContains(String searchStr, String[] excludes) {
-        return removeCacheContains(searchStr, excludes, Cacheable.CompareType.EQ_FULL);
-    }
-
-    @Override
-    public List<CacheElement> removeCacheContains(String searchStr, String[] excludes, CompareType excludesRule) {
         if (isEmpty())
             return Collections.emptyList();
 
         boolean nonNullExcludes = ArrayUtils.isNotEmpty(excludes);
         List<CacheElement> removed = new CopyOnWriteArrayList<>();
+        WildcardMatcher matcher = new WildcardMatcher(searchStr);
 
         store.asMap().entrySet().removeIf(entry -> {
-            if (!StringUtils.containsIgnoreCase(entry.getKey(), searchStr))
+            if (!matcher.matches(entry.getKey()))
                 return false;
 
-            if (nonNullExcludes && isExcluded(entry.getKey(), excludes, excludesRule))
+            if (nonNullExcludes && isExcluded(entry.getKey(), excludes))
                 return false;
 
-            removed.add(entry.getValue());
-            return true;
+            return removed.add(entry.getValue());
         });
 
         return removed;
