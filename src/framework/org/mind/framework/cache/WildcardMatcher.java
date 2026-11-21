@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * 把通配符按 * 切成固定片段，然后用 startsWith + indexOf 顺序推进，全程纯字符比较，零正则开销。
- * ssss
+ *
  * @author: Marcus
  * @date: 2026/11/17
  * @version: 1.0
