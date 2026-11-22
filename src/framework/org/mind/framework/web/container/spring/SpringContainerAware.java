@@ -295,11 +295,7 @@ public class SpringContainerAware implements ContainerAware {
         if (method == null || method.isBridge() || method.isSynthetic())
             return false;
 
-        if (Modifier.isStatic(method.getModifiers())) {
-            log.warn("Invalid Action method '{}' is static.", method.toGenericString());
-            return false;
-        }
-        return true;
+        return !Modifier.isStatic(method.getModifiers());
     }
 
     public static boolean noneMappingMethod(Method method, Mapping mapping) {
