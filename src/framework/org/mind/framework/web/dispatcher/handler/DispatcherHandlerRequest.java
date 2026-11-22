@@ -87,7 +87,7 @@ public class DispatcherHandlerRequest implements HandlerRequest, HandlerResult {
         this.interceptorsCatcher = new ArrayList<>();
 
         // init Action Maps
-        this.actions = new HashMap<>(16) {
+        this.actions = new HashMap<>(64) {
             @Override
             public Execution put(String key, Execution value) {
                 // convert URI to Regex
