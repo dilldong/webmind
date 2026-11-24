@@ -5,7 +5,7 @@ import lombok.Setter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.mind.framework.annotation.AsyncAction;
 import org.mind.framework.annotation.Mapping;
-import org.mind.framework.util.ReflectionUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.lang.reflect.Method;

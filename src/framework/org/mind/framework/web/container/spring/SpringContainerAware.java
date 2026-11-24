@@ -10,7 +10,6 @@ import org.mind.framework.ContextSupport;
 import org.mind.framework.annotation.Interceptor;
 import org.mind.framework.annotation.Mapping;
 import org.mind.framework.exception.NotSupportedException;
-import org.mind.framework.util.ReflectionUtils;
 import org.mind.framework.web.container.ContainerAware;
 import org.mind.framework.web.dispatcher.handler.Execution;
 import org.mind.framework.web.dispatcher.support.Catcher;
@@ -27,6 +26,7 @@ import org.springframework.core.annotation.MergedAnnotationPredicates;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.RepeatableContainers;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.cors.CorsConfiguration;
@@ -48,7 +48,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Web Container Wrapper for Spring 2+
+ * Web Container Wrapper for Spring 5.0+
  *
  * @author dp
  */
@@ -296,11 +296,7 @@ public class SpringContainerAware implements ContainerAware {
         if (method == null || method.isBridge() || method.isSynthetic())
             return false;
 
-        if (Modifier.isStatic(method.getModifiers())) {
-            log.warn("Invalid Action method '{}' is static.", method.toGenericString());
-            return false;
-        }
-        return true;
+        return !Modifier.isStatic(method.getModifiers());
     }
 
     public static boolean noneMappingMethod(Method method, Mapping mapping) {

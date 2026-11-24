@@ -1,14 +1,22 @@
 package org.mind.framework.util;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.mind.framework.exception.ThrowProvider;
+
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
- * @version 1.0
  * @author Marcus
+ * @version 1.0
  * @date 2022/8/7
  */
 public class ClassUtils {
@@ -17,27 +25,47 @@ public class ClassUtils {
     private ClassUtils() {
     }
 
-    public static Class<?> getClass(String clazz) throws ClassNotFoundException {
-        if(CLAZZ_MAP.containsKey(clazz))
-            return CLAZZ_MAP.get(clazz);
+    public static Field[] getDeclaredFields(Class<?> clazz) {
+        if (clazz == null)
+            throw new IllegalArgumentException("Class must not be null");
 
-        Class<?> c = null;
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (Objects.nonNull(loader)) {
-            try {
-                c = Class.forName(clazz, true, loader);
-            } catch (ClassNotFoundException ignored) {}
-        }
-
-        if(Objects.isNull(c))
-            c = Class.forName(clazz);
-
-        CLAZZ_MAP.put(clazz, c);
-        return c;
+        return clazz.getDeclaredFields();
     }
 
-    public static Object newInstance(String clazz) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        return getClass(clazz).newInstance();
+    public static Map<String, Field> getDeclaredFieldByMap(Class<?> clazz) {
+        Field[] fields = getDeclaredFields(clazz);
+        if (ArrayUtils.isEmpty(fields))
+            return Collections.emptyMap();
+
+        return Arrays.stream(fields)
+                .collect(Collectors.toMap(
+                        Field::getName,
+                        v -> v,
+                        (v1, v2) -> v2
+                ));
+    }
+
+
+    public static Class<?> getClass(String clazz) throws ClassNotFoundException {
+        return CLAZZ_MAP.computeIfAbsent(clazz, c -> {
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            if (loader != null) {
+                try {
+                    return Class.forName(clazz, true, loader);
+                } catch (ClassNotFoundException ignored) {}
+            }
+
+            try {
+                return Class.forName(clazz);
+            } catch (ClassNotFoundException e) {
+                ThrowProvider.doThrow(e);
+                return null;
+            }
+        });
+    }
+
+    public static Object newInstance(String clazz) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        return getClass(clazz).getDeclaredConstructor().newInstance();
     }
 
     public static InputStream getResourceAsStream(Class<?> classObj, String name) {
