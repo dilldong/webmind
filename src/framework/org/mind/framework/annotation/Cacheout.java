@@ -49,7 +49,7 @@ public @interface Cacheout {
     boolean afterCommit() default true;
 
     /**
-     * 清理的缓存目标, 默认: Redis & Local
+     * 清理的缓存目标, 默认为 {@link EnableCache} 中的 {@code levels}
      */
     CacheLevel[] levels() default {};
 

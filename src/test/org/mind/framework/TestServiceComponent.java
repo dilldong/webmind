@@ -30,7 +30,7 @@ public class TestServiceComponent {
     private final RedissonStreamDelayQueueService redissonStreamDelayQueueService;
     private final RedissonStreamDelayQueueService redissonStreamDelayQueueService02;
 
-    private static final String CACHE_KEY = "user_by_id";
+    public static final String CACHE_KEY = "user_by_id";
 
     @PostConstruct
     private void init(){
@@ -48,16 +48,24 @@ public class TestServiceComponent {
     @Cacheout(prefix = CACHE_KEY,
             suffix = "#{userId}_#{vars}",
             condition = "#result.isEmpty()")
-    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_#{vars}")
-    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_*", pattern = true, beforeClean = true)
+    @Cacheout(prefix = CACHE_KEY, suffix = "#{userId}_*", pattern = true)
     public List<Object> outWithCache(String vars, long userId) {
         log.debug("-------cache out method-------");
         return Collections.emptyList();
     }
 
+    @Cacheout(prefix = CACHE_KEY,
+            suffix = "*_#{vars}",
+            pattern = true,
+            condition = "#result == true")
+    public boolean outWithCache1(String vars, long userId) {
+        log.debug("-------cache out method-------");
+        return true;
+    }
+
     @Cachein(prefix = CACHE_KEY,
             suffix = "#{userId}_#{vars}",
-            expire = 1L,
+            expire = 5L,
             unit = TimeUnit.MINUTES,
             cacheNull = true)
     public List<Object> getWithCache(String vars, long userId) {

@@ -236,7 +236,7 @@ public class JsonUtils {
                 .newBuilder()
                 .setExclusionStrategies(
                         new ExclusionStrategy() {
-                            final Map<String, Field> fieldMap = ReflectionUtils.getDeclaredFieldByMap(Response.class);
+                            final Map<String, Field> fieldMap = ClassUtils.getDeclaredFieldByMap(Response.class);
 
                             @Override
                             public boolean shouldSkipField(FieldAttributes field) {

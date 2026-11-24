@@ -4,8 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.mind.framework.annotation.CacheLevel;
 import org.mind.framework.annotation.Cacheout;
@@ -90,7 +88,7 @@ public class CacheoutOperationInterceptor implements MethodInterceptor {
                         .anyMatch(v -> CacheLevel.LOCAL == v);
         if (isLocal) {
             if (cacheout.pattern()) {
-                cacheable.removeCacheContains(Strings.CS.replace(resolverKey, "*", StringUtils.EMPTY));
+                cacheable.removeCacheContains(resolverKey);
                 return;
             }
 

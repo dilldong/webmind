@@ -153,11 +153,10 @@ public class LightweightQueueService {
      * @return true如果添加成功，false如果队列已满
      */
     public boolean offer(DelegateMessage item) {
+        Objects.requireNonNull(item, "item cannot be null");
+
         if (!isRunning())
             throw new IllegalStateException("Queue service is not running");
-
-        if (Objects.isNull(item))
-            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -186,11 +185,10 @@ public class LightweightQueueService {
      * @throws InterruptedException 如果等待时被中断
      */
     public boolean offer(DelegateMessage item, long timeout, TimeUnit unit) throws InterruptedException {
+        Objects.requireNonNull(item, "item cannot be null");
+
         if (!isRunning())
             throw new IllegalStateException("Queue service is not running");
-
-        if (Objects.isNull(item))
-            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
@@ -217,11 +215,10 @@ public class LightweightQueueService {
      * @throws InterruptedException 如果等待时被中断
      */
     public void put(DelegateMessage item) throws InterruptedException {
+        Objects.requireNonNull(item, "item cannot be null");
+
         if (!isRunning())
             throw new IllegalStateException("Queue service is not running");
-
-        if (Objects.isNull(item))
-            throw new NullPointerException("Item cannot be null");
 
         // 处理嵌套提交任务
         if (Boolean.TRUE.equals(isWorkerThread.get())) {
