@@ -12,18 +12,18 @@ Add the following Maven dependency to your project's pom.xml
 <dependency>
     <groupId>io.github.dilldong</groupId>
     <artifactId>webmind-framework</artifactId>
-    <version>5.1.4</version>
+    <version>5.1.5</version>
 </dependency>
 ```
 ## Gradle
 ```text
-implementation 'io.github.dilldong:webmind-framework:5.1.4'
+implementation 'io.github.dilldong:webmind-framework:5.1.5'
 ```
 
 ## Required
 ```text
-Java 17+ > v5.1.4
-Java 8+  > v4.7.16
+Java 17+ > v5.1.5
+Java 8+  > v4.7.17
 ```
 
 ## Example
